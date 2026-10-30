@@ -1,11 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-
+import AppShell from "@/components/layout/app-shell";
 import "./globals.css";
-
-/* =========================================================
-   MOKU FONT CONFIGURATION
-========================================================= */
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,21 +10,14 @@ const inter = Inter({
   preload: true,
 });
 
-/* =========================================================
-   MOKU APPLICATION METADATA
-========================================================= */
-
 export const metadata: Metadata = {
   title: {
     default: "MOKU | Monitoring Operasional Kunjungan Unit",
     template: "%s | MOKU",
   },
-
   description:
     "MOKU adalah aplikasi monitoring operasional untuk mengelola kunjungan, aktivitas, dan pemantauan unit mesin secara terintegrasi.",
-
   applicationName: "MOKU",
-
   keywords: [
     "MOKU",
     "Machine Visit Monitoring",
@@ -37,38 +26,24 @@ export const metadata: Metadata = {
     "Equipment Monitoring",
     "Visit Management",
   ],
-
-  authors: [
-    {
-      name: "MOKU",
-    },
-  ],
-
+  authors: [{ name: "MOKU" }],
   creator: "MOKU",
-
   publisher: "MOKU",
-
   robots: {
     index: false,
     follow: false,
   },
-
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "MOKU",
   },
-
   formatDetection: {
     telephone: false,
     email: false,
     address: false,
   },
 };
-
-/* =========================================================
-   VIEWPORT CONFIGURATION
-========================================================= */
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -77,10 +52,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: "#7C0041",
 };
-
-/* =========================================================
-   ROOT APPLICATION LAYOUT
-========================================================= */
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -95,8 +66,8 @@ export default function RootLayout({
       className={inter.variable}
       suppressHydrationWarning
     >
-      <body>
-        {children}
+      <body className="min-h-screen antialiased">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
