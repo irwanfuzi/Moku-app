@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Activity,
-  ClipboardList,
+  House,
   Monitor,
-  Building2,
-  History,
+  ClipboardText,
+  Desktop,
+  Buildings,
+  ClockCounterClockwise,
   Users,
-  BarChart3,
+  ChartBar,
   Bell,
-  Settings,
+  Gear,
   UserCircle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+  CaretLeft,
+  CaretRight,
+} from "@phosphor-icons/react";
 
 interface AppSidebarProps {
   collapsed?: boolean;
@@ -30,12 +30,12 @@ const navigationGroups = [
       {
         label: "Dashboard",
         href: "/",
-        icon: LayoutDashboard,
+        icon: House,
       },
       {
         label: "Monitoring",
         href: "/monitoring",
-        icon: Activity,
+        icon: Monitor,
       },
     ],
   },
@@ -45,22 +45,22 @@ const navigationGroups = [
       {
         label: "Kunjungan",
         href: "/visits",
-        icon: ClipboardList,
+        icon: ClipboardText,
       },
       {
         label: "Data Mesin",
         href: "/equipment",
-        icon: Monitor,
+        icon: Desktop,
       },
       {
         label: "Pelanggan",
         href: "/customers",
-        icon: Building2,
+        icon: Buildings,
       },
       {
         label: "Riwayat Kunjungan",
         href: "/visit-history",
-        icon: History,
+        icon: ClockCounterClockwise,
       },
     ],
   },
@@ -70,7 +70,7 @@ const navigationGroups = [
       {
         label: "Laporan",
         href: "/reports",
-        icon: BarChart3,
+        icon: ChartBar,
       },
     ],
   },
@@ -90,7 +90,7 @@ const navigationGroups = [
       {
         label: "Pengaturan",
         href: "/settings",
-        icon: Settings,
+        icon: Gear,
       },
     ],
   },
@@ -113,26 +113,27 @@ export default function AppSidebar({
   return (
     <aside
       className={`
-        hidden lg:flex
-        sticky top-0 z-30
-        h-screen shrink-0
-        flex-col
-        border-r border-[#EEE7EB]
-        bg-white
-        transition-[width] duration-300
+        sticky top-0 z-30 hidden h-screen shrink-0
+        flex-col border-r border-[#EEE7EB] bg-white
+        transition-[width] duration-300 ease-in-out
+        motion-reduce:transition-none lg:flex
         ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
       aria-label="Navigasi utama"
     >
       {/* Brand */}
-      <div className="flex h-[76px] shrink-0 items-center border-b border-[#F1EBEF] px-5">
+      <div
+        className={`flex h-[76px] shrink-0 items-center border-b border-[#F1EBEF] ${
+          collapsed ? "justify-center px-2" : "px-5"
+        }`}
+      >
         <Link
           href="/"
           className="flex min-w-0 items-center gap-3"
           aria-label="MOKU Dashboard"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C0041] text-white">
-            <Monitor size={21} strokeWidth={2.2} />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C0041] text-white transition-transform duration-200 hover:scale-105">
+            <Monitor size={22} weight="fill" />
           </div>
 
           {!collapsed && (
@@ -150,7 +151,7 @@ export default function AppSidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-5">
         <div className="space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.title}>
@@ -174,29 +175,58 @@ export default function AppSidebar({
                       className={`
                         group relative flex h-11 items-center gap-3
                         rounded-xl px-3
-                        text-[13px] font-medium
-                        transition-all duration-200
+                        transition-all duration-200 ease-out
+                        motion-reduce:transition-none
                         ${
                           active
                             ? "bg-[#F8E7EE] text-[#7C0041]"
                             : "text-[#817780] hover:bg-[#FBF6F8] hover:text-[#7C0041]"
                         }
-                        ${collapsed ? "justify-center px-0" : ""}
+                        ${
+                          collapsed
+                            ? "justify-center px-0"
+                            : "justify-start"
+                        }
                       `}
                     >
-                      {active && (
-                        <span className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-[#7C0041]" />
-                      )}
-
-                      <Icon
-                        size={19}
-                        strokeWidth={active ? 2.3 : 1.8}
-                        fill={active ? "currentColor" : "none"}
-                        className="shrink-0"
+                      {/* Active indicator */}
+                      <span
+                        className={`absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-[#7C0041] transition-all duration-200 ${
+                          active
+                            ? "translate-x-0 opacity-100"
+                            : "-translate-x-1 opacity-0"
+                        }`}
                       />
 
+                      {/* Icon transition */}
+                      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                        <Icon
+                          size={20}
+                          weight="regular"
+                          className={`absolute transition-all duration-200 ${
+                            active
+                              ? "scale-75 opacity-0"
+                              : "scale-100 opacity-100"
+                          }`}
+                        />
+
+                        <Icon
+                          size={20}
+                          weight="fill"
+                          className={`absolute transition-all duration-200 ${
+                            active
+                              ? "scale-100 opacity-100"
+                              : "scale-125 opacity-0"
+                          }`}
+                        />
+                      </span>
+
                       {!collapsed && (
-                        <span className="truncate">
+                        <span
+                          className={`truncate text-[13px] transition-all duration-200 ${
+                            active ? "font-semibold" : "font-medium"
+                          }`}
+                        >
                           {item.label}
                         </span>
                       )}
@@ -223,17 +253,20 @@ export default function AppSidebar({
           </div>
         )}
 
+        {/* Profile */}
         <Link
           href="/profile"
+          title={collapsed ? "Profil Saya" : undefined}
           className={`
             flex h-11 items-center gap-3 rounded-xl px-3
-            transition hover:bg-[#FBF6F8]
+            transition-colors duration-200
+            hover:bg-[#FBF6F8]
             ${collapsed ? "justify-center px-0" : ""}
           `}
-          title={collapsed ? "Profil Saya" : undefined}
         >
           <UserCircle
-            size={20}
+            size={21}
+            weight="regular"
             className="shrink-0 text-[#817780]"
           />
 
@@ -255,22 +288,20 @@ export default function AppSidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="mt-2 flex h-9 w-full items-center justify-center rounded-lg text-[#817780] transition hover:bg-[#F8E7EE] hover:text-[#7C0041]"
+            className="mt-2 flex h-9 w-full items-center justify-center rounded-lg text-[#817780] transition-all duration-200 hover:bg-[#F8E7EE] hover:text-[#7C0041] active:scale-95 motion-reduce:transition-none"
             aria-label={
-              collapsed
-                ? "Perluas sidebar"
-                : "Perkecil sidebar"
+              collapsed ? "Perluas sidebar" : "Perkecil sidebar"
             }
+            title={collapsed ? "Perluas sidebar" : "Perkecil sidebar"}
           >
             {collapsed ? (
-              <ChevronRight size={18} />
+              <CaretRight size={19} weight="bold" />
             ) : (
-              <ChevronLeft size={18} />
+              <CaretLeft size={19} weight="bold" />
             )}
           </button>
         )}
       </div>
     </aside>
   );
-            }
- 
+        }
