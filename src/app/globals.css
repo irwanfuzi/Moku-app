@@ -1,0 +1,525 @@
+@import "tailwindcss";
+
+/* =========================================================
+   MOKU DESIGN SYSTEM
+   Monitoring Operasional Kunjungan Unit
+   Brand: Burgundy Corporate
+   Framework: Tailwind CSS v4
+========================================================= */
+
+/* =========================================================
+   1. THEME CONFIGURATION
+========================================================= */
+
+@theme inline {
+  --color-primary: var(--moku-primary);
+  --color-primary-hover: var(--moku-primary-hover);
+  --color-primary-light: var(--moku-primary-light);
+
+  --color-secondary: var(--moku-secondary);
+  --color-secondary-light: var(--moku-secondary-light);
+
+  --color-background: var(--moku-background);
+  --color-surface: var(--moku-surface);
+  --color-surface-secondary: var(--moku-surface-secondary);
+
+  --color-foreground: var(--moku-text);
+  --color-muted: var(--moku-text-secondary);
+
+  --color-border: var(--moku-border);
+  --color-input: var(--moku-input);
+
+  --color-success: var(--moku-success);
+  --color-warning: var(--moku-warning);
+  --color-danger: var(--moku-danger);
+  --color-info: var(--moku-info);
+
+  --font-sans: var(--font-inter);
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-panel: 20px;
+}
+
+/* =========================================================
+   2. LIGHT THEME
+========================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --moku-primary: #7c0041;
+  --moku-primary-hover: #650035;
+  --moku-primary-light: #f8e7ee;
+
+  --moku-secondary: #c2185b;
+  --moku-secondary-light: #fce8ef;
+
+  /* Background */
+  --moku-background: #f8f6f7;
+  --moku-surface: #ffffff;
+  --moku-surface-secondary: #f5f1f3;
+
+  /* Typography */
+  --moku-text: #29232a;
+  --moku-text-secondary: #817780;
+  --moku-text-muted: #a49aa1;
+
+  /* Borders */
+  --moku-border: #eee7eb;
+  --moku-input: #e8dfe5;
+
+  /* Status */
+  --moku-success: #23966b;
+  --moku-warning: #e5a12b;
+  --moku-danger: #dc4c55;
+  --moku-info: #4285b8;
+
+  /* Additional colors */
+  --moku-honey: #ffc107;
+  --moku-cream: #fff8f5;
+
+  /* Shadows */
+  --moku-shadow-sm:
+    0 1px 2px rgba(41, 35, 42, 0.04);
+
+  --moku-shadow-md:
+    0 4px 16px rgba(41, 35, 42, 0.06);
+
+  --moku-shadow-lg:
+    0 12px 32px rgba(41, 35, 42, 0.08);
+
+  /* Layout */
+  --moku-sidebar-width: 260px;
+  --moku-header-height: 72px;
+}
+
+/* =========================================================
+   3. DARK THEME
+========================================================= */
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --moku-primary: #e36a9c;
+  --moku-primary-hover: #f18bb3;
+  --moku-primary-light: #482238;
+
+  --moku-secondary: #ed82aa;
+  --moku-secondary-light: #422337;
+
+  --moku-background: #171217;
+  --moku-surface: #211a21;
+  --moku-surface-secondary: #2a222a;
+
+  --moku-text: #f5edf2;
+  --moku-text-secondary: #b7aab3;
+  --moku-text-muted: #8f818b;
+
+  --moku-border: #3a3039;
+  --moku-input: #493b47;
+
+  --moku-success: #50bd91;
+  --moku-warning: #efb94e;
+  --moku-danger: #f17a80;
+  --moku-info: #70b4e0;
+
+  --moku-honey: #ffd15c;
+  --moku-cream: #30252c;
+
+  --moku-shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.16);
+
+  --moku-shadow-md:
+    0 4px 16px rgba(0, 0, 0, 0.20);
+
+  --moku-shadow-lg:
+    0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+/* =========================================================
+   4. RESET & BASE STYLES
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+
+  background-color: var(--moku-background);
+  color: var(--moku-text);
+
+  font-family:
+    var(--font-inter),
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 14px;
+  line-height: 1.6;
+
+  font-feature-settings:
+    "cv02",
+    "cv03",
+    "cv04",
+    "cv11";
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background-color: var(--moku-primary-light);
+  color: var(--moku-primary);
+}
+
+/* =========================================================
+   5. SCROLLBAR
+========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--moku-input) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--moku-input);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--moku-text-muted);
+}
+
+/* =========================================================
+   6. TYPOGRAPHY
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: var(--moku-text);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 20px;
+}
+
+h4 {
+  font-size: 16px;
+}
+
+p {
+  margin: 0;
+}
+
+small {
+  font-size: 12px;
+}
+
+.text-muted {
+  color: var(--moku-text-secondary);
+}
+
+.text-primary {
+  color: var(--moku-primary);
+}
+
+/* =========================================================
+   7. FOCUS & ACCESSIBILITY
+========================================================= */
+
+:focus-visible {
+  outline: 3px solid var(--moku-primary);
+  outline-offset: 3px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+}
+
+/* =========================================================
+   8. FORM ELEMENTS
+========================================================= */
+
+input,
+textarea,
+select {
+  color: var(--moku-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--moku-text-muted);
+  opacity: 1;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =========================================================
+   9. COMMON COMPONENT UTILITIES
+========================================================= */
+
+.moku-card {
+  background-color: var(--moku-surface);
+  border: 1px solid var(--moku-border);
+  border-radius: 16px;
+  box-shadow: var(--moku-shadow-sm);
+}
+
+.moku-panel {
+  background-color: var(--moku-surface-secondary);
+  border: 1px solid var(--moku-border);
+  border-radius: 20px;
+}
+
+.moku-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+
+  background-color: var(--moku-surface);
+  border: 1px solid var(--moku-input);
+  border-radius: 10px;
+
+  color: var(--moku-text);
+
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.moku-input:focus {
+  border-color: var(--moku-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--moku-primary) 12%, transparent);
+}
+
+.moku-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 42px;
+  padding: 10px 18px;
+
+  background-color: var(--moku-primary);
+  border: 1px solid var(--moku-primary);
+  border-radius: 10px;
+
+  color: #ffffff;
+  font-weight: 600;
+
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.moku-button-primary:hover {
+  background-color: var(--moku-primary-hover);
+}
+
+.moku-button-primary:active {
+  transform: scale(0.98);
+}
+
+/* =========================================================
+   10. STATUS BADGES
+========================================================= */
+
+.moku-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 5px 10px;
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.moku-status-success {
+  background-color: color-mix(
+    in srgb,
+    var(--moku-success) 12%,
+    transparent
+  );
+  color: var(--moku-success);
+}
+
+.moku-status-warning {
+  background-color: color-mix(
+    in srgb,
+    var(--moku-warning) 14%,
+    transparent
+  );
+  color: var(--moku-warning);
+}
+
+.moku-status-danger {
+  background-color: color-mix(
+    in srgb,
+    var(--moku-danger) 12%,
+    transparent
+  );
+  color: var(--moku-danger);
+}
+
+.moku-status-info {
+  background-color: color-mix(
+    in srgb,
+    var(--moku-info) 12%,
+    transparent
+  );
+  color: var(--moku-info);
+}
+
+/* =========================================================
+   11. ANIMATIONS
+========================================================= */
+
+@keyframes moku-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes moku-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.moku-fade-in {
+  animation: moku-fade-in 220ms ease-out both;
+}
+
+.moku-skeleton {
+  background: var(--moku-surface-secondary);
+  border-radius: 8px;
+  animation: moku-pulse 1.5s ease-in-out infinite;
+}
+
+/* =========================================================
+   12. RESPONSIVE TYPOGRAPHY
+========================================================= */
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  body {
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   13. REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  }
