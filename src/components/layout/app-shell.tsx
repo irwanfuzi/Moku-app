@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import AppSidebar from "@/components/layout/app-sidebar";
 import AppHeader from "@/components/layout/app-header";
+import BottomNavigation from "@/components/layout/bottom-navigation";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -135,7 +136,7 @@ export default function AppShell({
           </div>
         </main>
 
-        {/* Application Footer */}
+        {/* Desktop Footer */}
         <footer className="hidden border-t border-[#EEE7EB] bg-white px-6 py-4 lg:block">
           <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
 
@@ -151,6 +152,10 @@ export default function AppShell({
         </footer>
 
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
+
     </div>
   );
 }
