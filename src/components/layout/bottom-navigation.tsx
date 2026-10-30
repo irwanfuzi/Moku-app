@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import {
   House,
-  Activity,
+  Monitor,
   ClipboardText,
   ChartBar,
   UserCircle,
@@ -15,27 +14,27 @@ const navigationItems = [
   {
     label: "Dashboard",
     href: "/",
-    icon: House,
+    Icon: House,
   },
   {
     label: "Monitoring",
     href: "/monitoring",
-    icon: Activity,
+    Icon: Monitor,
   },
   {
     label: "Kunjungan",
     href: "/visits",
-    icon: ClipboardText,
+    Icon: ClipboardText,
   },
   {
     label: "Laporan",
     href: "/reports",
-    icon: ChartBar,
+    Icon: ChartBar,
   },
   {
     label: "Profil",
     href: "/profile",
-    icon: UserCircle,
+    Icon: UserCircle,
   },
 ];
 
@@ -43,7 +42,9 @@ export default function BottomNavigation() {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/") {
+      return pathname === "/";
+    }
 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
@@ -51,95 +52,53 @@ export default function BottomNavigation() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="
-        fixed bottom-0 left-0 right-0 z-30
-        border-t border-[#EEE7EB]
-        bg-white
-        pb-[env(safe-area-inset-bottom)]
-        lg:hidden
-      "
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#EEE7EB] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
-      <div className="
-        mx-auto grid h-[66px] max-w-xl
-        grid-cols-5 items-center px-2
-      ">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
+      <div className="mx-auto grid h-[68px] max-w-screen-sm grid-cols-5">
+        {navigationItems.map(({ label, href, Icon }) => {
+          const active = isActive(href);
 
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               aria-current={active ? "page" : undefined}
-              className="
-                group relative flex h-full
-                flex-col items-center justify-center gap-1
-              "
+              className="relative flex flex-col items-center justify-center gap-1 transition-colors duration-200"
             >
-              {/* Active Indicator */}
               <span
-                className={`
-                  absolute top-0 h-[3px] w-7
-                  rounded-b-full bg-[#7C0041]
-                  transition-all duration-300
-                  motion-reduce:transition-none
-                  ${
-                    active
-                      ? "scale-x-100 opacity-100"
-                      : "scale-x-0 opacity-0"
-                  }
-                `}
+                className={`absolute top-0 h-[3px] w-8 rounded-b-full transition-all duration-200 ${
+                  active ? "bg-[#7C0041] opacity-100" : "opacity-0"
+                }`}
               />
 
-              {/* Icon Container */}
-              <span className="relative flex h-8 w-10 items-center justify-center">
-
-                {/* Regular Icon */}
+              <span className="relative flex h-6 w-6 items-center justify-center">
                 <Icon
                   size={24}
                   weight="regular"
-                  className={`
-                    absolute transition-all duration-200
-                    motion-reduce:transition-none
-                    ${
-                      active
-                        ? "scale-75 opacity-0"
-                        : "scale-100 opacity-100 text-[#817780]"
-                    }
-                  `}
+                  className={`absolute transition-all duration-200 motion-reduce:transition-none ${
+                    active
+                      ? "scale-75 opacity-0"
+                      : "scale-100 opacity-100"
+                  }`}
                 />
 
-                {/* Filled Icon */}
                 <Icon
                   size={24}
                   weight="fill"
-                  className={`
-                    absolute text-[#7C0041]
-                    transition-all duration-200
-                    motion-reduce:transition-none
-                    ${
-                      active
-                        ? "scale-100 opacity-100"
-                        : "scale-125 opacity-0"
-                    }
-                  `}
+                  className={`absolute transition-all duration-200 motion-reduce:transition-none ${
+                    active
+                      ? "scale-100 opacity-100"
+                      : "scale-125 opacity-0"
+                  }`}
                 />
               </span>
 
-              {/* Label */}
               <span
-                className={`
-                  text-[10px] leading-none
-                  transition-colors duration-200
-                  ${
-                    active
-                      ? "font-bold text-[#7C0041]"
-                      : "font-medium text-[#817780]"
-                  }
-                `}
+                className={`text-[10px] font-medium transition-colors duration-200 ${
+                  active ? "text-[#7C0041]" : "text-[#817780]"
+                }`}
               >
-                {item.label}
+                {label}
               </span>
             </Link>
           );
