@@ -63,39 +63,46 @@ export default function BottomNavigation() {
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className="relative flex flex-col items-center justify-center gap-1 transition-colors duration-200"
+              className="group relative flex flex-col items-center justify-center gap-1 transition-transform duration-200 active:scale-95 motion-reduce:transition-none"
             >
+              {/* Active indicator */}
               <span
-                className={`absolute top-0 h-[3px] w-8 rounded-b-full transition-all duration-200 ${
-                  active ? "bg-[#7C0041] opacity-100" : "opacity-0"
+                className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-[#7C0041] transition-all duration-300 ease-out motion-reduce:transition-none ${
+                  active
+                    ? "translate-y-0 opacity-100"
+                    : "-translate-y-1 opacity-0"
                 }`}
               />
 
-              <span className="relative flex h-6 w-6 items-center justify-center">
+              {/* Animated icon */}
+              <span className="relative flex h-7 w-7 items-center justify-center">
                 <Icon
                   size={24}
                   weight="regular"
-                  className={`absolute transition-all duration-200 motion-reduce:transition-none ${
+                  className={`absolute transition-all duration-300 ease-out motion-reduce:transition-none ${
                     active
-                      ? "scale-75 opacity-0"
-                      : "scale-100 opacity-100"
+                      ? "scale-75 rotate-[-8deg] opacity-0"
+                      : "scale-100 rotate-0 opacity-100"
                   }`}
                 />
 
                 <Icon
                   size={24}
                   weight="fill"
-                  className={`absolute transition-all duration-200 motion-reduce:transition-none ${
+                  className={`absolute text-[#7C0041] transition-all duration-300 ease-out motion-reduce:transition-none ${
                     active
-                      ? "scale-100 opacity-100"
-                      : "scale-125 opacity-0"
+                      ? "scale-100 rotate-0 opacity-100"
+                      : "scale-125 rotate-[8deg] opacity-0"
                   }`}
                 />
               </span>
 
+              {/* Navigation label */}
               <span
-                className={`text-[10px] font-medium transition-colors duration-200 ${
-                  active ? "text-[#7C0041]" : "text-[#817780]"
+                className={`text-[10px] transition-all duration-200 motion-reduce:transition-none ${
+                  active
+                    ? "font-semibold text-[#7C0041]"
+                    : "font-medium text-[#817780]"
                 }`}
               >
                 {label}
