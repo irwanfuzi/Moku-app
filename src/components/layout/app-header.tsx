@@ -49,13 +49,7 @@ export default function AppHeader({
   };
 
   return (
-    <header
-      className="
-        sticky top-0 z-20
-        w-full border-b border-[#EEE7EB]
-        bg-white/95 backdrop-blur-md
-      "
-    >
+    <header className="sticky top-0 z-20 w-full border-b border-[#EEE7EB] bg-white/95 backdrop-blur-md">
       <div
         className="
           flex min-h-[68px] items-center
@@ -80,18 +74,12 @@ export default function AppHeader({
 
         {/* Header Actions */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-
           {/* Desktop Search */}
           <div className="relative hidden w-48 md:block lg:w-64">
             <MagnifyingGlass
               size={18}
               weight="regular"
-              className="
-                pointer-events-none absolute
-                left-3 top-1/2
-                -translate-y-1/2
-                text-[#A49AA1]
-              "
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A49AA1]"
             />
 
             <input
@@ -122,15 +110,11 @@ export default function AppHeader({
             type="button"
             onClick={toggleMobileSearch}
             className="
-              flex h-10 w-10
-              items-center justify-center
-              rounded-xl
-              text-[#817780]
+              flex h-10 w-10 items-center justify-center
+              rounded-xl text-[#817780]
               transition-all duration-200
-              hover:bg-[#F8E7EE]
-              hover:text-[#7C0041]
-              active:scale-95
-              md:hidden
+              hover:bg-[#F8E7EE] hover:text-[#7C0041]
+              active:scale-95 md:hidden
             "
             aria-label={
               mobileSearchOpen
@@ -150,13 +134,11 @@ export default function AppHeader({
           <Link
             href="/notifications"
             className="
-              relative flex h-10 w-10
-              shrink-0 items-center justify-center
-              rounded-xl
+              relative flex h-10 w-10 shrink-0
+              items-center justify-center rounded-xl
               text-[#817780]
               transition-all duration-200
-              hover:bg-[#F8E7EE]
-              hover:text-[#7C0041]
+              hover:bg-[#F8E7EE] hover:text-[#7C0041]
               active:scale-95
             "
             aria-label={
@@ -173,10 +155,8 @@ export default function AppHeader({
                   absolute right-1.5 top-1.5
                   flex h-[17px] min-w-[17px]
                   items-center justify-center
-                  rounded-full
-                  border-2 border-white
-                  bg-[#DC4C55]
-                  px-1
+                  rounded-full border-2 border-white
+                  bg-[#DC4C55] px-1
                   text-[9px] font-bold text-white
                 "
               >
@@ -194,8 +174,7 @@ export default function AppHeader({
           <Link
             href="/profile"
             className="
-              flex items-center gap-2
-              rounded-xl p-1.5
+              flex items-center gap-2 rounded-xl p-1.5
               transition-colors duration-200
               hover:bg-[#FBF6F8]
               active:scale-[0.98]
@@ -207,10 +186,8 @@ export default function AppHeader({
               className="
                 flex h-9 w-9 shrink-0
                 items-center justify-center
-                rounded-xl
-                bg-[#F8E7EE]
-                text-xs font-bold
-                text-[#7C0041]
+                rounded-xl bg-[#F8E7EE]
+                text-xs font-bold text-[#7C0041]
               "
             >
               {initials || <UserCircle size={20} />}
@@ -239,8 +216,7 @@ export default function AppHeader({
       <div
         className={`
           grid transition-all duration-200 ease-out
-          motion-reduce:transition-none
-          md:hidden
+          motion-reduce:transition-none md:hidden
           ${
             mobileSearchOpen
               ? "grid-rows-[1fr] opacity-100"
@@ -250,17 +226,12 @@ export default function AppHeader({
         aria-hidden={!mobileSearchOpen}
       >
         <div className="overflow-hidden">
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-4 pt-3">
             <div className="relative">
               <MagnifyingGlass
-                size={18}
+                size={19}
                 weight="regular"
-                className="
-                  pointer-events-none absolute
-                  left-3 top-1/2
-                  -translate-y-1/2
-                  text-[#A49AA1]
-                "
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A49AA1]"
               />
 
               <input
