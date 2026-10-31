@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import {
   House,
   Monitor,
@@ -28,16 +29,36 @@ const navigationGroups = [
   {
     title: "OVERVIEW",
     items: [
-      { label: "Dashboard", href: "/", icon: House },
-      { label: "Monitoring", href: "/monitoring", icon: Monitor },
+      {
+        label: "Dashboard",
+        href: "/",
+        icon: House,
+      },
+      {
+        label: "Monitoring",
+        href: "/monitoring",
+        icon: Monitor,
+      },
     ],
   },
   {
     title: "OPERASIONAL",
     items: [
-      { label: "Kunjungan", href: "/visits", icon: ClipboardText },
-      { label: "Data Mesin", href: "/equipment", icon: Desktop },
-      { label: "Pelanggan", href: "/customers", icon: Buildings },
+      {
+        label: "Kunjungan",
+        href: "/visits",
+        icon: ClipboardText,
+      },
+      {
+        label: "Data Mesin",
+        href: "/equipment",
+        icon: Desktop,
+      },
+      {
+        label: "Pelanggan",
+        href: "/customers",
+        icon: Buildings,
+      },
       {
         label: "Riwayat Kunjungan",
         href: "/visit-history",
@@ -48,15 +69,31 @@ const navigationGroups = [
   {
     title: "ANALISIS",
     items: [
-      { label: "Laporan", href: "/reports", icon: ChartBar },
+      {
+        label: "Laporan",
+        href: "/reports",
+        icon: ChartBar,
+      },
     ],
   },
   {
     title: "PREFERENSI",
     items: [
-      { label: "Pengguna", href: "/users", icon: Users },
-      { label: "Notifikasi", href: "/notifications", icon: Bell },
-      { label: "Pengaturan", href: "/settings", icon: Gear },
+      {
+        label: "Pengguna",
+        href: "/users",
+        icon: Users,
+      },
+      {
+        label: "Notifikasi",
+        href: "/notifications",
+        icon: Bell,
+      },
+      {
+        label: "Pengaturan",
+        href: "/settings",
+        icon: Gear,
+      },
     ],
   },
 ];
@@ -68,7 +105,10 @@ export default function AppSidebar({
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/") {
+      return pathname === "/";
+    }
+
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -105,27 +145,16 @@ export default function AppSidebar({
               width={42}
               height={42}
               priority
-              className="h-[42px] w-[42px] object-contain"
+              className="h-[42px] w-[42px] object-contain transition-transform duration-200 hover:scale-105"
             />
           ) : (
-            <Image
-              src="/images/moku/brand/logo-light.png"
-              alt="MOKU"
-              width={170}
-              height={48}
-              priority
-              className="h-auto max-h-10 w-auto max-w-[170px] object-contain object-left dark:hidden"
-            />
-          )}
-
-          {!collapsed && (
             <Image
               src="/images/moku/brand/logo-dark.png"
               alt="MOKU"
               width={170}
               height={48}
               priority
-              className="hidden h-auto max-h-10 w-auto max-w-[170px] object-contain object-left dark:block"
+              className="h-auto max-h-10 w-auto max-w-[170px] object-contain object-left"
             />
           )}
         </Link>
@@ -155,7 +184,8 @@ export default function AppSidebar({
                       aria-current={active ? "page" : undefined}
                       className={`
                         group relative flex h-11 items-center gap-3
-                        rounded-xl px-3 transition-all duration-200
+                        rounded-xl px-3
+                        transition-all duration-200 ease-out
                         motion-reduce:transition-none
                         ${
                           active
@@ -165,10 +195,12 @@ export default function AppSidebar({
                         ${collapsed ? "justify-center px-0" : ""}
                       `}
                     >
+                      {/* ACTIVE INDICATOR */}
                       <span
                         className={`
-                          absolute bottom-2 left-0 top-2 w-[3px]
-                          rounded-r-full bg-[#7C0041]
+                          absolute bottom-2 left-0 top-2
+                          w-[3px] rounded-r-full
+                          bg-[#7C0041]
                           transition-all duration-200
                           dark:bg-[#E99AB9]
                           ${
@@ -179,32 +211,46 @@ export default function AppSidebar({
                         `}
                       />
 
+                      {/* ICON TRANSITION */}
                       <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                         <Icon
                           size={20}
                           weight="regular"
-                          className={`absolute transition-all duration-200 ${
-                            active
-                              ? "scale-75 opacity-0"
-                              : "scale-100 opacity-100"
-                          }`}
+                          className={`
+                            absolute transition-all duration-200
+                            ${
+                              active
+                                ? "scale-75 opacity-0"
+                                : "scale-100 opacity-100"
+                            }
+                          `}
                         />
+
                         <Icon
                           size={20}
                           weight="fill"
-                          className={`absolute transition-all duration-200 ${
-                            active
-                              ? "scale-100 opacity-100"
-                              : "scale-125 opacity-0"
-                          }`}
+                          className={`
+                            absolute transition-all duration-200
+                            ${
+                              active
+                                ? "scale-100 opacity-100"
+                                : "scale-125 opacity-0"
+                            }
+                          `}
                         />
                       </span>
 
                       {!collapsed && (
                         <span
-                          className={`truncate text-[13px] transition-all duration-200 ${
-                            active ? "font-semibold" : "font-medium"
-                          }`}
+                          className={`
+                            truncate text-[13px]
+                            transition-all duration-200
+                            ${
+                              active
+                                ? "font-semibold"
+                                : "font-medium"
+                            }
+                          `}
                         >
                           {item.label}
                         </span>
@@ -225,19 +271,22 @@ export default function AppSidebar({
             <p className="text-[11px] font-semibold text-[#7C0041] dark:text-[#F4B9D0]">
               MOKU Workspace
             </p>
+
             <p className="mt-1 text-[10px] leading-relaxed text-[#817780] dark:text-[#B0A5AD]">
               Monitoring operasional kunjungan unit mesin.
             </p>
           </div>
         )}
 
+        {/* PROFILE */}
         <Link
           href="/profile"
           title={collapsed ? "Profil Saya" : undefined}
           className={`
             flex h-11 items-center gap-3 rounded-xl px-3
             transition-colors duration-200
-            hover:bg-[#FBF6F8] dark:hover:bg-[#30252D]
+            hover:bg-[#FBF6F8]
+            dark:hover:bg-[#30252D]
             ${collapsed ? "justify-center px-0" : ""}
           `}
         >
@@ -252,6 +301,7 @@ export default function AppSidebar({
               <span className="block truncate text-[12px] font-semibold text-[#29232A] dark:text-[#F4EDF1]">
                 Akun Pengguna
               </span>
+
               <span className="block text-[10px] text-[#817780] dark:text-[#B0A5AD]">
                 Profil Saya
               </span>
@@ -259,12 +309,25 @@ export default function AppSidebar({
           )}
         </Link>
 
+        {/* COLLAPSE BUTTON */}
         {onToggleCollapse && (
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="mt-2 flex h-9 w-full items-center justify-center rounded-lg text-[#817780] transition-all duration-200 hover:bg-[#F8E7EE] hover:text-[#7C0041] active:scale-95 motion-reduce:transition-none dark:text-[#B0A5AD] dark:hover:bg-[#492337] dark:hover:text-[#F4B9D0]"
-            aria-label={collapsed ? "Perluas sidebar" : "Perkecil sidebar"}
+            className="
+              mt-2 flex h-9 w-full items-center justify-center
+              rounded-lg text-[#817780]
+              transition-all duration-200
+              hover:bg-[#F8E7EE] hover:text-[#7C0041]
+              active:scale-95
+              motion-reduce:transition-none
+              dark:text-[#B0A5AD]
+              dark:hover:bg-[#492337]
+              dark:hover:text-[#F4B9D0]
+            "
+            aria-label={
+              collapsed ? "Perluas sidebar" : "Perkecil sidebar"
+            }
             title={collapsed ? "Perluas sidebar" : "Perkecil sidebar"}
           >
             {collapsed ? (
