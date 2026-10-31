@@ -3,7 +3,7 @@
 /* =========================================================
    MOKU DESIGN SYSTEM
    Monitoring Operasional Kunjungan Unit
-   Brand: Burgundy Corporate
+   Brand: Deep Burgundy & Crimson
    Framework: Tailwind CSS v4
 ========================================================= */
 
@@ -12,6 +12,7 @@
 ========================================================= */
 
 @theme inline {
+  /* Brand */
   --color-primary: var(--moku-primary);
   --color-primary-hover: var(--moku-primary-hover);
   --color-primary-light: var(--moku-primary-light);
@@ -19,23 +20,32 @@
   --color-secondary: var(--moku-secondary);
   --color-secondary-light: var(--moku-secondary-light);
 
+  --color-accent: var(--moku-accent);
+  --color-highlight: var(--moku-highlight);
+
+  /* Background */
   --color-background: var(--moku-background);
   --color-surface: var(--moku-surface);
   --color-surface-secondary: var(--moku-surface-secondary);
 
+  /* Typography */
   --color-foreground: var(--moku-text);
   --color-muted: var(--moku-text-secondary);
 
+  /* Borders */
   --color-border: var(--moku-border);
   --color-input: var(--moku-input);
 
+  /* Status */
   --color-success: var(--moku-success);
   --color-warning: var(--moku-warning);
   --color-danger: var(--moku-danger);
   --color-info: var(--moku-info);
 
+  /* Typography */
   --font-sans: var(--font-inter);
 
+  /* Radius */
   --radius-card: 16px;
   --radius-control: 10px;
   --radius-panel: 20px;
@@ -48,37 +58,40 @@
 :root {
   color-scheme: light;
 
-  /* Brand */
-  --moku-primary: #7c0041;
-  --moku-primary-hover: #650035;
-  --moku-primary-light: #f8e7ee;
+  /* Official Brand Palette */
+  --moku-primary: #730217;
+  --moku-primary-hover: #5c0112;
+  --moku-primary-light: #f5e6e9;
 
-  --moku-secondary: #c2185b;
-  --moku-secondary-light: #fce8ef;
+  --moku-secondary: #bf0b2c;
+  --moku-secondary-light: #f9e7eb;
+
+  --moku-accent: #f28c0f;
+  --moku-highlight: #eb5513;
 
   /* Background */
-  --moku-background: #f8f6f7;
+  --moku-background: #f2f2f2;
   --moku-surface: #ffffff;
-  --moku-surface-secondary: #f5f1f3;
+  --moku-surface-secondary: #f7f7f7;
 
   /* Typography */
   --moku-text: #29232a;
-  --moku-text-secondary: #817780;
-  --moku-text-muted: #a49aa1;
+  --moku-text-secondary: #716a70;
+  --moku-text-muted: #999399;
 
   /* Borders */
-  --moku-border: #eee7eb;
-  --moku-input: #e8dfe5;
+  --moku-border: #e6e3e4;
+  --moku-input: #dcd7d9;
 
   /* Status */
   --moku-success: #23966b;
-  --moku-warning: #e5a12b;
+  --moku-warning: #c98219;
   --moku-danger: #dc4c55;
   --moku-info: #4285b8;
 
-  /* Additional colors */
-  --moku-honey: #ffc107;
-  --moku-cream: #fff8f5;
+  /* Additional Colors */
+  --moku-white: #ffffff;
+  --moku-light-gray: #f2f2f2;
 
   /* Shadows */
   --moku-shadow-sm:
@@ -103,32 +116,42 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --moku-primary: #e36a9c;
-  --moku-primary-hover: #f18bb3;
-  --moku-primary-light: #482238;
+  /* Brand */
+  --moku-primary: #bf0b2c;
+  --moku-primary-hover: #d51b3e;
+  --moku-primary-light: #451b25;
 
-  --moku-secondary: #ed82aa;
-  --moku-secondary-light: #422337;
+  --moku-secondary: #e13b59;
+  --moku-secondary-light: #40202a;
 
-  --moku-background: #171217;
-  --moku-surface: #211a21;
-  --moku-surface-secondary: #2a222a;
+  --moku-accent: #f5a33d;
+  --moku-highlight: #f07843;
 
-  --moku-text: #f5edf2;
-  --moku-text-secondary: #b7aab3;
-  --moku-text-muted: #8f818b;
+  /* Background */
+  --moku-background: #181517;
+  --moku-surface: #231e20;
+  --moku-surface-secondary: #2d2629;
 
-  --moku-border: #3a3039;
-  --moku-input: #493b47;
+  /* Typography */
+  --moku-text: #f5f1f2;
+  --moku-text-secondary: #c0b6ba;
+  --moku-text-muted: #91858a;
 
+  /* Borders */
+  --moku-border: #40373b;
+  --moku-input: #51454a;
+
+  /* Status */
   --moku-success: #50bd91;
   --moku-warning: #efb94e;
   --moku-danger: #f17a80;
   --moku-info: #70b4e0;
 
-  --moku-honey: #ffd15c;
-  --moku-cream: #30252c;
+  /* Additional Colors */
+  --moku-white: #ffffff;
+  --moku-light-gray: #302b2d;
 
+  /* Shadows */
   --moku-shadow-sm:
     0 1px 2px rgba(0, 0, 0, 0.16);
 
@@ -295,7 +318,7 @@ small {
 ========================================================= */
 
 :focus-visible {
-  outline: 3px solid var(--moku-primary);
+  outline: 3px solid var(--moku-accent);
   outline-offset: 3px;
 }
 
@@ -386,11 +409,13 @@ select:disabled {
 
   transition:
     background-color 160ms ease,
+    border-color 160ms ease,
     transform 160ms ease;
 }
 
 .moku-button-primary:hover {
   background-color: var(--moku-primary-hover);
+  border-color: var(--moku-primary-hover);
 }
 
 .moku-button-primary:active {
@@ -522,4 +547,4 @@ select:disabled {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+   }
