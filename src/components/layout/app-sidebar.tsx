@@ -118,7 +118,7 @@ export default function AppSidebar({
         sticky top-0 z-30 hidden h-screen shrink-0
         flex-col overflow-hidden
         border-r border-white/10
-        bg-[#730217]
+        bg-[#6F010E]
         transition-[width] duration-300 ease-in-out
         motion-reduce:transition-none
         lg:flex
@@ -204,8 +204,8 @@ export default function AppSidebar({
                         motion-reduce:transition-none
                         ${
                           active
-                            ? "bg-[#BF0B2C] text-white shadow-sm"
-                            : "text-white/80 hover:bg-white/10 hover:text-white"
+                            ? "bg-[#B10618] text-[#FDFDFD]"
+                            : "text-white/80 hover:bg-[#520107] hover:text-white"
                         }
                         ${collapsed ? "justify-center px-0" : ""}
                       `}
@@ -215,7 +215,7 @@ export default function AppSidebar({
                         className={`
                           absolute bottom-2 left-0 top-2
                           w-[3px] rounded-r-full
-                          bg-[#F28C0F]
+                          bg-[#FEAF27]
                           transition-all duration-200
                           ${
                             active
@@ -305,9 +305,9 @@ export default function AppSidebar({
           className={`
             flex h-11 items-center gap-3
             rounded-xl px-3
-            transition-colors duration-200
             text-white/80
-            hover:bg-white/10 hover:text-white
+            transition-colors duration-200
+            hover:bg-[#520107] hover:text-white
             ${collapsed ? "justify-center px-0" : ""}
           `}
         >
@@ -339,7 +339,7 @@ export default function AppSidebar({
               mt-2 flex h-9 w-full items-center justify-center
               rounded-lg text-white/65
               transition-all duration-200
-              hover:bg-white/10 hover:text-white
+              hover:bg-[#520107] hover:text-white
               active:scale-95
               motion-reduce:transition-none
             "
