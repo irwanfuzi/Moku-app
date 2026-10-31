@@ -81,7 +81,7 @@ export default function AppSidebar({
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
 
-  const [isInstalled, setIsInstalled] = useState(true);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const checkInstalled = () => {
@@ -126,17 +126,27 @@ export default function AppSidebar({
   }, []);
 
   const handleInstall = async () => {
-    if (!installPrompt) return;
+    if (installPrompt) {
+      try {
+        await installPrompt.prompt();
 
-    await installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
 
-    const choice = await installPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setIsInstalled(true);
+        }
 
-    if (choice.outcome === "accepted") {
-      setIsInstalled(true);
+        setInstallPrompt(null);
+      } catch (error) {
+        console.error("MOKU installation error:", error);
+      }
+
+      return;
     }
 
-    setInstallPrompt(null);
+    window.alert(
+      "Untuk memasang MOKU, buka menu browser (ikon tiga titik), kemudian pilih Install app atau Tambahkan ke layar utama jika tersedia."
+    );
   };
 
   const isActive = (href: string) => {
@@ -161,6 +171,30 @@ export default function AppSidebar({
       `}
       aria-label="Navigasi utama"
     >
+      <style>{`
+        .moku-sidebar-scroll {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .moku-sidebar-scroll::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          background: transparent !important;
+        }
+
+        .moku-sidebar-scroll::-webkit-scrollbar-track {
+          display: none !important;
+        }
+
+        .moku-sidebar-scroll::-webkit-scrollbar-thumb {
+          display: none !important;
+        }
+      `}</style>
+
       {/* BRAND */}
       <div
         className={`
@@ -197,9 +231,7 @@ export default function AppSidebar({
       </div>
 
       {/* NAVIGATION */}
-      <nav
-        className={`moku-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-3 py-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}
-      >
+      <nav className="moku-sidebar-scroll flex-1 px-3 py-5">
         <div className="space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.title}>
@@ -292,34 +324,60 @@ export default function AppSidebar({
       </nav>
 
       {/* FOOTER */}
-      <div className="shrink-0 border-t border-white/10 p-3">
-        {/* PWA INSTALL BUTTON */}
-        {!isInstalled && installPrompt && (
+      <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
+        {/* PWA INSTALL PANEL */}
+        {!isInstalled && (
           <button
             type="button"
             onClick={handleInstall}
             title="Install MOKU"
             className={`
-              mb-3 flex h-11 w-full items-center gap-3
-              rounded-xl border border-[#FEAF27]/40
-              bg-[#520107] px-3 text-left
-              text-[#FDFDFD]
+              group flex min-h-[66px] w-full items-center gap-3
+              rounded-2xl border border-[#B10618]/70
+              bg-[#520107] px-3 py-3
+              text-left !text-[#FDFDFD]
               transition-all duration-200
-              hover:bg-[#3E0204]
+              hover:border-[#FEAF27]/50 hover:bg-[#3E0204]
               active:scale-[0.98]
-              ${collapsed ? "justify-center px-0" : ""}
+              motion-reduce:transition-none
+              ${collapsed ? "justify-center px-1" : ""}
             `}
           >
-            <DownloadSimple
-              size={21}
-              weight="bold"
-              className="shrink-0 text-[#FEAF27]"
-            />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center">
+              <Image
+                src="/images/moku/brand/app-icon.png"
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+              />
+            </span>
 
             {!collapsed && (
-              <span className="text-[12px] font-semibold">
-                Install MOKU
-              </span>
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold leading-5 !text-[#FDFDFD]">
+                    Install MOKU
+                  </span>
+                  <span className="block text-[11px] leading-4 !text-[#FDFDFD]/65">
+                    Aplikasi Web / Desktop
+                  </span>
+                </span>
+
+                <DownloadSimple
+                  size={21}
+                  weight="bold"
+                  className="shrink-0 !text-[#FEAF27] transition-transform duration-200 group-hover:translate-y-0.5"
+                />
+              </>
+            )}
+
+            {collapsed && (
+              <DownloadSimple
+                size={17}
+                weight="bold"
+                className="absolute right-2 top-2 !text-[#FEAF27]"
+              />
             )}
           </button>
         )}
