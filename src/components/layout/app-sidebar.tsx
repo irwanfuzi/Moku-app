@@ -1,3 +1,4 @@
+```tsx
 "use client";
 
 import Image from "next/image";
@@ -29,36 +30,16 @@ const navigationGroups = [
   {
     title: "OVERVIEW",
     items: [
-      {
-        label: "Dashboard",
-        href: "/",
-        icon: House,
-      },
-      {
-        label: "Monitoring",
-        href: "/monitoring",
-        icon: Monitor,
-      },
+      { label: "Dashboard", href: "/", icon: House },
+      { label: "Monitoring", href: "/monitoring", icon: Monitor },
     ],
   },
   {
     title: "OPERASIONAL",
     items: [
-      {
-        label: "Kunjungan",
-        href: "/visits",
-        icon: ClipboardText,
-      },
-      {
-        label: "Data Mesin",
-        href: "/equipment",
-        icon: Desktop,
-      },
-      {
-        label: "Pelanggan",
-        href: "/customers",
-        icon: Buildings,
-      },
+      { label: "Kunjungan", href: "/visits", icon: ClipboardText },
+      { label: "Data Mesin", href: "/equipment", icon: Desktop },
+      { label: "Pelanggan", href: "/customers", icon: Buildings },
       {
         label: "Riwayat Kunjungan",
         href: "/visit-history",
@@ -69,31 +50,15 @@ const navigationGroups = [
   {
     title: "ANALISIS",
     items: [
-      {
-        label: "Laporan",
-        href: "/reports",
-        icon: ChartBar,
-      },
+      { label: "Laporan", href: "/reports", icon: ChartBar },
     ],
   },
   {
     title: "PREFERENSI",
     items: [
-      {
-        label: "Pengguna",
-        href: "/users",
-        icon: Users,
-      },
-      {
-        label: "Notifikasi",
-        href: "/notifications",
-        icon: Bell,
-      },
-      {
-        label: "Pengaturan",
-        href: "/settings",
-        icon: Gear,
-      },
+      { label: "Pengguna", href: "/users", icon: Users },
+      { label: "Notifikasi", href: "/notifications", icon: Bell },
+      { label: "Pengaturan", href: "/settings", icon: Gear },
     ],
   },
 ];
@@ -105,10 +70,7 @@ export default function AppSidebar({
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
+    if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -143,11 +105,11 @@ export default function AppSidebar({
             <Image
               src="/images/moku/brand/app-icon.png"
               alt="MOKU"
-              width={42}
-              height={42}
+              width={46}
+              height={46}
               priority
               className="
-                h-[42px] w-[42px] object-contain
+                h-[46px] w-[46px] object-contain
                 transition-transform duration-200
                 hover:scale-105
               "
@@ -156,12 +118,14 @@ export default function AppSidebar({
             <Image
               src="/images/moku/brand/logo-dark.png"
               alt="MOKU"
-              width={170}
-              height={48}
+              width={195}
+              height={56}
               priority
               className="
-                h-auto max-h-10 w-auto
-                max-w-[170px] object-contain object-left
+                h-auto max-h-12 w-auto
+                max-w-[195px] object-contain object-left
+                transition-transform duration-200
+                hover:scale-[1.02]
               "
             />
           )}
@@ -169,7 +133,14 @@ export default function AppSidebar({
       </div>
 
       {/* NAVIGATION */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-5">
+      <nav
+        className="
+          flex-1 overflow-y-auto overflow-x-hidden
+          px-3 py-5
+          [scrollbar-width:none]
+          [&::-webkit-scrollbar]:hidden
+        "
+      >
         <div className="space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.title}>
@@ -179,7 +150,7 @@ export default function AppSidebar({
                     mb-2 px-3
                     text-[10px] font-bold
                     tracking-[0.12em]
-                    text-white/55
+                    text-[#FDFDFD]/65
                   "
                 >
                   {group.title}
@@ -200,12 +171,13 @@ export default function AppSidebar({
                       className={`
                         group relative flex h-11 items-center gap-3
                         rounded-xl px-3
+                        !text-[#FDFDFD]
                         transition-all duration-200 ease-out
                         motion-reduce:transition-none
                         ${
                           active
-                            ? "bg-[#B10618] text-[#FDFDFD]"
-                            : "text-white/80 hover:bg-[#520107] hover:text-white"
+                            ? "mr-[-12px] rounded-r-none bg-[#B10618] pr-6"
+                            : "bg-transparent hover:bg-[#520107]"
                         }
                         ${collapsed ? "justify-center px-0" : ""}
                       `}
@@ -225,40 +197,29 @@ export default function AppSidebar({
                         `}
                       />
 
-                      {/* ICON TRANSITION */}
+                      {/* ICON */}
                       <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                         <Icon
                           size={20}
-                          weight="regular"
+                          weight={active ? "fill" : "regular"}
                           className={`
-                            absolute transition-all duration-200
-                            ${
-                              active
-                                ? "scale-75 opacity-0"
-                                : "scale-100 opacity-100"
-                            }
-                          `}
-                        />
-
-                        <Icon
-                          size={20}
-                          weight="fill"
-                          className={`
-                            absolute transition-all duration-200
+                            absolute !text-[#FDFDFD]
+                            transition-all duration-200
                             ${
                               active
                                 ? "scale-100 opacity-100"
-                                : "scale-125 opacity-0"
+                                : "scale-100 opacity-80 group-hover:opacity-100"
                             }
                           `}
                         />
                       </span>
 
+                      {/* LABEL */}
                       {!collapsed && (
                         <span
                           className={`
                             truncate text-[13px]
-                            transition-all duration-200
+                            !text-[#FDFDFD]
                             ${
                               active
                                 ? "font-semibold"
@@ -288,11 +249,11 @@ export default function AppSidebar({
               bg-white/10 p-3
             "
           >
-            <p className="text-[11px] font-semibold text-white">
+            <p className="text-[11px] font-semibold text-[#FDFDFD]">
               MOKU Workspace
             </p>
 
-            <p className="mt-1 text-[10px] leading-relaxed text-white/65">
+            <p className="mt-1 text-[10px] leading-relaxed text-white/70">
               Monitoring operasional kunjungan unit mesin.
             </p>
           </div>
@@ -305,25 +266,25 @@ export default function AppSidebar({
           className={`
             flex h-11 items-center gap-3
             rounded-xl px-3
-            text-white/80
+            !text-[#FDFDFD]
             transition-colors duration-200
-            hover:bg-[#520107] hover:text-white
+            hover:bg-[#520107]
             ${collapsed ? "justify-center px-0" : ""}
           `}
         >
           <UserCircle
             size={21}
             weight="regular"
-            className="shrink-0"
+            className="shrink-0 !text-[#FDFDFD]"
           />
 
           {!collapsed && (
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12px] font-semibold text-white">
+              <span className="block truncate text-[12px] font-semibold !text-[#FDFDFD]">
                 Akun Pengguna
               </span>
 
-              <span className="block text-[10px] text-white/60">
+              <span className="block text-[10px] !text-[#FDFDFD]/70">
                 Profil Saya
               </span>
             </span>
@@ -337,9 +298,9 @@ export default function AppSidebar({
             onClick={onToggleCollapse}
             className="
               mt-2 flex h-9 w-full items-center justify-center
-              rounded-lg text-white/65
+              rounded-lg !text-[#FDFDFD]/75
               transition-all duration-200
-              hover:bg-[#520107] hover:text-white
+              hover:bg-[#520107] hover:!text-[#FDFDFD]
               active:scale-95
               motion-reduce:transition-none
             "
@@ -359,3 +320,4 @@ export default function AppSidebar({
     </aside>
   );
 }
+```
