@@ -116,10 +116,11 @@ export default function AppSidebar({
     <aside
       className={`
         sticky top-0 z-30 hidden h-screen shrink-0
-        flex-col border-r border-[#E6E3E4] bg-white
+        flex-col overflow-hidden
+        border-r border-white/10
+        bg-[#730217]
         transition-[width] duration-300 ease-in-out
         motion-reduce:transition-none
-        dark:border-[#40373B] dark:bg-[#231E20]
         lg:flex
         ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
@@ -129,8 +130,7 @@ export default function AppSidebar({
       <div
         className={`
           flex h-[76px] shrink-0 items-center
-          border-b border-[#E6E3E4]
-          dark:border-[#40373B]
+          border-b border-white/15
           ${collapsed ? "justify-center px-2" : "px-5"}
         `}
       >
@@ -153,35 +153,17 @@ export default function AppSidebar({
               "
             />
           ) : (
-            <>
-              {/* LIGHT MODE LOGO */}
-              <Image
-                src="/images/moku/brand/logo-light.png"
-                alt="MOKU"
-                width={170}
-                height={48}
-                priority
-                className="
-                  block h-auto max-h-10 w-auto
-                  max-w-[170px] object-contain object-left
-                  dark:hidden
-                "
-              />
-
-              {/* DARK MODE LOGO */}
-              <Image
-                src="/images/moku/brand/logo-dark.png"
-                alt="MOKU"
-                width={170}
-                height={48}
-                priority
-                className="
-                  hidden h-auto max-h-10 w-auto
-                  max-w-[170px] object-contain object-left
-                  dark:block
-                "
-              />
-            </>
+            <Image
+              src="/images/moku/brand/logo-dark.png"
+              alt="MOKU"
+              width={170}
+              height={48}
+              priority
+              className="
+                h-auto max-h-10 w-auto
+                max-w-[170px] object-contain object-left
+              "
+            />
           )}
         </Link>
       </div>
@@ -194,9 +176,10 @@ export default function AppSidebar({
               {!collapsed && (
                 <p
                   className="
-                    mb-2 px-3 text-[10px] font-bold
-                    tracking-[0.12em] text-[#999399]
-                    dark:text-[#91858A]
+                    mb-2 px-3
+                    text-[10px] font-bold
+                    tracking-[0.12em]
+                    text-white/55
                   "
                 >
                   {group.title}
@@ -221,8 +204,8 @@ export default function AppSidebar({
                         motion-reduce:transition-none
                         ${
                           active
-                            ? "bg-[#F5E6E9] text-[#730217] dark:bg-[#451B25] dark:text-[#F2B7C1]"
-                            : "text-[#716A70] hover:bg-[#F7F2F3] hover:text-[#730217] dark:text-[#C0B6BA] dark:hover:bg-[#302529] dark:hover:text-[#F2B7C1]"
+                            ? "bg-[#BF0B2C] text-white shadow-sm"
+                            : "text-white/80 hover:bg-white/10 hover:text-white"
                         }
                         ${collapsed ? "justify-center px-0" : ""}
                       `}
@@ -232,9 +215,8 @@ export default function AppSidebar({
                         className={`
                           absolute bottom-2 left-0 top-2
                           w-[3px] rounded-r-full
-                          bg-[#730217]
+                          bg-[#F28C0F]
                           transition-all duration-200
-                          dark:bg-[#BF0B2C]
                           ${
                             active
                               ? "translate-x-0 opacity-100"
@@ -297,26 +279,20 @@ export default function AppSidebar({
       </nav>
 
       {/* FOOTER */}
-      <div
-        className="
-          shrink-0 border-t border-[#E6E3E4] p-3
-          dark:border-[#40373B]
-        "
-      >
+      <div className="shrink-0 border-t border-white/15 p-3">
         {!collapsed && (
           <div
             className="
-              mb-3 rounded-xl border border-[#E6E3E4]
-              bg-[#F7F7F7] p-3
-              dark:border-[#40373B]
-              dark:bg-[#2D2629]
+              mb-3 rounded-xl
+              border border-white/15
+              bg-white/10 p-3
             "
           >
-            <p className="text-[11px] font-semibold text-[#730217] dark:text-[#F2B7C1]">
+            <p className="text-[11px] font-semibold text-white">
               MOKU Workspace
             </p>
 
-            <p className="mt-1 text-[10px] leading-relaxed text-[#716A70] dark:text-[#C0B6BA]">
+            <p className="mt-1 text-[10px] leading-relaxed text-white/65">
               Monitoring operasional kunjungan unit mesin.
             </p>
           </div>
@@ -327,26 +303,27 @@ export default function AppSidebar({
           href="/profile"
           title={collapsed ? "Profil Saya" : undefined}
           className={`
-            flex h-11 items-center gap-3 rounded-xl px-3
+            flex h-11 items-center gap-3
+            rounded-xl px-3
             transition-colors duration-200
-            hover:bg-[#F7F2F3]
-            dark:hover:bg-[#302529]
+            text-white/80
+            hover:bg-white/10 hover:text-white
             ${collapsed ? "justify-center px-0" : ""}
           `}
         >
           <UserCircle
             size={21}
             weight="regular"
-            className="shrink-0 text-[#716A70] dark:text-[#C0B6BA]"
+            className="shrink-0"
           />
 
           {!collapsed && (
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12px] font-semibold text-[#29232A] dark:text-[#F5F1F2]">
+              <span className="block truncate text-[12px] font-semibold text-white">
                 Akun Pengguna
               </span>
 
-              <span className="block text-[10px] text-[#716A70] dark:text-[#C0B6BA]">
+              <span className="block text-[10px] text-white/60">
                 Profil Saya
               </span>
             </span>
@@ -360,14 +337,11 @@ export default function AppSidebar({
             onClick={onToggleCollapse}
             className="
               mt-2 flex h-9 w-full items-center justify-center
-              rounded-lg text-[#716A70]
+              rounded-lg text-white/65
               transition-all duration-200
-              hover:bg-[#F5E6E9] hover:text-[#730217]
+              hover:bg-white/10 hover:text-white
               active:scale-95
               motion-reduce:transition-none
-              dark:text-[#C0B6BA]
-              dark:hover:bg-[#451B25]
-              dark:hover:text-[#F2B7C1]
             "
             aria-label={
               collapsed ? "Perluas sidebar" : "Perkecil sidebar"
