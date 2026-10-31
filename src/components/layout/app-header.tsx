@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
+
 import {
   Bell,
   CaretDown,
@@ -49,7 +50,16 @@ export default function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-20 w-full border-b border-[#EEE7EB] bg-white/95 backdrop-blur-md">
+    <header
+      className="
+        sticky top-0 z-20 w-full
+        border-b border-border
+        bg-surface/95
+        backdrop-blur-md
+        transition-colors duration-200
+      "
+    >
+      {/* HEADER MAIN */}
       <div
         className="
           flex min-h-[68px] items-center
@@ -59,27 +69,32 @@ export default function AppHeader({
           lg:px-8
         "
       >
-        {/* Page Information */}
+        {/* PAGE INFORMATION */}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold tracking-tight text-[#29232A] sm:text-xl">
+          <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
             {title}
           </h1>
 
           {description && (
-            <p className="mt-0.5 hidden truncate text-xs text-[#817780] sm:block">
+            <p className="mt-0.5 hidden truncate text-xs text-muted sm:block">
               {description}
             </p>
           )}
         </div>
 
-        {/* Header Actions */}
+        {/* HEADER ACTIONS */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-          {/* Desktop Search */}
+
+          {/* DESKTOP SEARCH */}
           <div className="relative hidden w-48 md:block lg:w-64">
             <MagnifyingGlass
               size={18}
               weight="regular"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A49AA1]"
+              className="
+                pointer-events-none absolute left-3
+                top-1/2 -translate-y-1/2
+                text-muted
+              "
             />
 
             <input
@@ -89,32 +104,36 @@ export default function AppHeader({
               placeholder="Cari sesuatu..."
               aria-label="Pencarian"
               className="
-                h-10 w-full rounded-xl
-                border border-[#EEE7EB]
-                bg-[#FBF9FA]
+                h-10 w-full rounded-control
+                border border-border
+                bg-background
                 pl-10 pr-3
-                text-xs text-[#29232A]
+                text-xs text-foreground
                 outline-none
                 transition-all duration-200
-                placeholder:text-[#A49AA1]
-                focus:border-[#7C0041]
-                focus:bg-white
+                placeholder:text-muted
+                focus:border-primary
+                focus:bg-surface
                 focus:ring-2
-                focus:ring-[#7C0041]/10
+                focus:ring-primary/10
               "
             />
           </div>
 
-          {/* Mobile Search Toggle */}
+          {/* MOBILE SEARCH TOGGLE */}
           <button
             type="button"
             onClick={toggleMobileSearch}
             className="
               flex h-10 w-10 items-center justify-center
-              rounded-xl text-[#817780]
+              rounded-control
+              text-muted
               transition-all duration-200
-              hover:bg-[#F8E7EE] hover:text-[#7C0041]
-              active:scale-95 md:hidden
+              hover:bg-primary-light
+              hover:text-primary
+              active:scale-95
+              motion-reduce:transition-none
+              md:hidden
             "
             aria-label={
               mobileSearchOpen
@@ -130,16 +149,19 @@ export default function AppHeader({
             )}
           </button>
 
-          {/* Notifications */}
+          {/* NOTIFICATIONS */}
           <Link
             href="/notifications"
             className="
               relative flex h-10 w-10 shrink-0
-              items-center justify-center rounded-xl
-              text-[#817780]
+              items-center justify-center
+              rounded-control
+              text-muted
               transition-all duration-200
-              hover:bg-[#F8E7EE] hover:text-[#7C0041]
+              hover:bg-primary-light
+              hover:text-primary
               active:scale-95
+              motion-reduce:transition-none
             "
             aria-label={
               notificationCount > 0
@@ -155,8 +177,10 @@ export default function AppHeader({
                   absolute right-1.5 top-1.5
                   flex h-[17px] min-w-[17px]
                   items-center justify-center
-                  rounded-full border-2 border-white
-                  bg-[#DC4C55] px-1
+                  rounded-full
+                  border-2 border-surface
+                  bg-danger
+                  px-1
                   text-[9px] font-bold text-white
                 "
               >
@@ -167,18 +191,20 @@ export default function AppHeader({
             )}
           </Link>
 
-          {/* Divider */}
-          <div className="hidden h-9 w-px bg-[#EEE7EB] sm:block" />
+          {/* DIVIDER */}
+          <div className="hidden h-9 w-px bg-border sm:block" />
 
-          {/* User Profile */}
+          {/* USER PROFILE */}
           <Link
             href="/profile"
             className="
-              flex items-center gap-2 rounded-xl p-1.5
+              flex items-center gap-2
+              rounded-control p-1.5
               transition-colors duration-200
-              hover:bg-[#FBF6F8]
+              hover:bg-primary-light
               active:scale-[0.98]
               sm:gap-3 sm:px-2
+              motion-reduce:transition-none
             "
             aria-label="Buka profil pengguna"
           >
@@ -186,19 +212,20 @@ export default function AppHeader({
               className="
                 flex h-9 w-9 shrink-0
                 items-center justify-center
-                rounded-xl bg-[#F8E7EE]
-                text-xs font-bold text-[#7C0041]
+                rounded-control
+                bg-primary-light
+                text-xs font-bold text-primary
               "
             >
               {initials || <UserCircle size={20} />}
             </div>
 
             <div className="hidden min-w-0 text-left sm:block">
-              <p className="max-w-[120px] truncate text-xs font-semibold text-[#29232A]">
+              <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
                 {userName}
               </p>
 
-              <p className="max-w-[120px] truncate text-[10px] text-[#817780]">
+              <p className="max-w-[120px] truncate text-[10px] text-muted">
                 {userEmail}
               </p>
             </div>
@@ -206,13 +233,13 @@ export default function AppHeader({
             <CaretDown
               size={15}
               weight="bold"
-              className="hidden text-[#A49AA1] sm:block"
+              className="hidden text-muted sm:block"
             />
           </Link>
         </div>
       </div>
 
-      {/* Mobile Search Panel */}
+      {/* MOBILE SEARCH PANEL */}
       <div
         className={`
           grid transition-all duration-200 ease-out
@@ -231,7 +258,11 @@ export default function AppHeader({
               <MagnifyingGlass
                 size={19}
                 weight="regular"
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A49AA1]"
+                className="
+                  pointer-events-none absolute left-3
+                  top-1/2 -translate-y-1/2
+                  text-muted
+                "
               />
 
               <input
@@ -242,18 +273,18 @@ export default function AppHeader({
                 aria-label="Pencarian mobile"
                 tabIndex={mobileSearchOpen ? 0 : -1}
                 className="
-                  h-11 w-full rounded-xl
-                  border border-[#EEE7EB]
-                  bg-[#FBF9FA]
+                  h-11 w-full rounded-control
+                  border border-border
+                  bg-background
                   pl-10 pr-3
-                  text-sm text-[#29232A]
+                  text-sm text-foreground
                   outline-none
                   transition-all duration-200
-                  placeholder:text-[#A49AA1]
-                  focus:border-[#7C0041]
-                  focus:bg-white
+                  placeholder:text-muted
+                  focus:border-primary
+                  focus:bg-surface
                   focus:ring-2
-                  focus:ring-[#7C0041]/10
+                  focus:ring-primary/10
                 "
               />
             </div>
