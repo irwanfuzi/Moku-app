@@ -97,32 +97,35 @@ export default function AppShell({
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#FBF9FA] text-[#29232A]">
+    <div className="flex min-h-screen w-full bg-background text-foreground transition-colors duration-200">
 
-      {/* Desktop Sidebar */}
+      {/* DESKTOP SIDEBAR */}
       <AppSidebar
         collapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebar}
       />
 
-      {/* Main Application Area */}
+      {/* MAIN APPLICATION AREA */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
 
-        {/* Responsive Header */}
+        {/* RESPONSIVE HEADER */}
         <AppHeader
           title={currentPage.title}
           description={currentPage.description}
         />
 
-        {/* Page Content */}
+        {/* PAGE CONTENT */}
         <main
           id="main-content"
           className="
             min-h-0
             flex-1
+            bg-background
             px-4
             py-5
             pb-24
+            transition-colors
+            duration-200
             sm:px-6
             sm:py-6
             sm:pb-24
@@ -136,15 +139,27 @@ export default function AppShell({
           </div>
         </main>
 
-        {/* Desktop Footer */}
-        <footer className="hidden border-t border-[#EEE7EB] bg-white px-6 py-4 lg:block">
+        {/* DESKTOP FOOTER */}
+        <footer
+          className="
+            hidden
+            border-t
+            border-border
+            bg-surface
+            px-6
+            py-4
+            transition-colors
+            duration-200
+            lg:block
+          "
+        >
           <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
 
-            <p className="text-[11px] text-[#817780]">
+            <p className="text-[11px] text-muted">
               © {new Date().getFullYear()} MOKU. All rights reserved.
             </p>
 
-            <p className="text-[11px] text-[#A49AA1]">
+            <p className="text-[11px] text-muted">
               Track Precisely, Deliver Quality.
             </p>
 
@@ -153,7 +168,7 @@ export default function AppShell({
 
       </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* MOBILE BOTTOM NAVIGATION */}
       <BottomNavigation />
 
     </div>
