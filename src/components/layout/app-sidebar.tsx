@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import Image from "next/image";
@@ -70,7 +69,10 @@ export default function AppSidebar({
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/") {
+      return pathname === "/";
+    }
+
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -320,4 +322,3 @@ export default function AppSidebar({
     </aside>
   );
 }
-```
