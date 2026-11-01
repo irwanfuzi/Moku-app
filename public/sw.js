@@ -94,6 +94,6 @@ self.addEventListener("fetch", (event) => {
 
         return networkResponse;
       });
-    })
+    }) 
   );
 }); 
