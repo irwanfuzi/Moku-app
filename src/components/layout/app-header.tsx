@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 import {
   Bell,
@@ -9,6 +9,7 @@ import {
   MagnifyingGlass,
   UserCircle,
   X,
+  Gear,
 } from "@phosphor-icons/react";
 
 interface AppHeaderProps {
@@ -30,6 +31,9 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const [searchValue, setSearchValue] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const initials = userName
     .trim()
@@ -48,6 +52,31 @@ export default function AppHeader({
   const toggleMobileSearch = () => {
     setMobileSearchOpen((previous) => !previous);
   };
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   return (
     <header
@@ -84,7 +113,6 @@ export default function AppHeader({
 
         {/* HEADER ACTIONS */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-
           {/* DESKTOP SEARCH */}
           <div className="relative hidden w-48 md:block lg:w-64">
             <MagnifyingGlass
@@ -194,48 +222,121 @@ export default function AppHeader({
           {/* DIVIDER */}
           <div className="hidden h-9 w-px bg-border sm:block" />
 
-          {/* USER PROFILE */}
-          <Link
-            href="/profile"
-            className="
-              flex items-center gap-2
-              rounded-control p-1.5
-              transition-colors duration-200
-              hover:bg-primary-light
-              active:scale-[0.98]
-              sm:gap-3 sm:px-2
-              motion-reduce:transition-none
-            "
-            aria-label="Buka profil pengguna"
-          >
-            <div
+          {/* USER PROFILE DROPDOWN */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              type="button"
+              onClick={() =>
+                setProfileMenuOpen((previous) => !previous)
+              }
               className="
-                flex h-9 w-9 shrink-0
-                items-center justify-center
-                rounded-control
-                bg-primary-light
-                text-xs font-bold text-primary
+                flex items-center gap-2
+                rounded-control p-1.5
+                transition-colors duration-200
+                hover:bg-primary-light
+                active:scale-[0.98]
+                sm:gap-3 sm:px-2
+                motion-reduce:transition-none
               "
+              aria-label="Menu akun pengguna"
+              aria-expanded={profileMenuOpen}
+              aria-haspopup="menu"
             >
-              {initials || <UserCircle size={20} />}
-            </div>
+              <div
+                className="
+                  flex h-9 w-9 shrink-0
+                  items-center justify-center
+                  rounded-control
+                  bg-primary-light
+                  text-xs font-bold text-primary
+                "
+              >
+                {initials || <UserCircle size={20} />}
+              </div>
 
-            <div className="hidden min-w-0 text-left sm:block">
-              <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
-                {userName}
-              </p>
+              <div className="hidden min-w-0 text-left sm:block">
+                <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
+                  {userName}
+                </p>
 
-              <p className="max-w-[120px] truncate text-[10px] text-muted">
-                {userEmail}
-              </p>
-            </div>
+                <p className="max-w-[120px] truncate text-[10px] text-muted">
+                  {userEmail}
+                </p>
+              </div>
 
-            <CaretDown
-              size={15}
-              weight="bold"
-              className="hidden text-muted sm:block"
-            />
-          </Link>
+              <CaretDown
+                size={15}
+                weight="bold"
+                className={`
+                  hidden text-muted transition-transform duration-200 sm:block
+                  ${profileMenuOpen ? "rotate-180" : ""}
+                `}
+              />
+            </button>
+
+            {/* DROPDOWN MENU */}
+            {profileMenuOpen && (
+              <div
+                role="menu"
+                className="
+                  absolute right-0 top-full z-50 mt-2
+                  w-[220px] overflow-hidden
+                  rounded-xl border border-border
+                  bg-surface
+                  shadow-lg shadow-black/10
+                  animate-in fade-in slide-in-from-top-1
+                  duration-150
+                "
+              >
+                {/* USER INFORMATION */}
+                <div className="border-b border-border px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {userName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted">
+                    {userEmail}
+                  </p>
+                </div>
+
+                {/* MENU ITEMS */}
+                <div className="p-1.5">
+                  <Link
+                    href="/profile"
+                    role="menuitem"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="
+                      flex items-center gap-3
+                      rounded-lg px-3 py-2.5
+                      text-sm text-foreground
+                      transition-colors duration-150
+                      hover:bg-primary-light
+                      hover:text-primary
+                    "
+                  >
+                    <UserCircle size={19} weight="regular" />
+                    <span>Profil Saya</span>
+                  </Link>
+
+                  <Link
+                    href="/settings"
+                    role="menuitem"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="
+                      flex items-center gap-3
+                      rounded-lg px-3 py-2.5
+                      text-sm text-foreground
+                      transition-colors duration-150
+                      hover:bg-primary-light
+                      hover:text-primary
+                    "
+                  >
+                    <Gear size={19} weight="regular" />
+                    <span>Pengaturan Akun</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
