@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import AppShell from "@/components/layout/app-shell";
+import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 import "./globals.css";
 
 const inter = Inter({
@@ -99,6 +100,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased">
+        <ServiceWorkerRegister />
         <AppShell>{children}</AppShell>
       </body>
     </html>
