@@ -22,6 +22,30 @@ export const metadata: Metadata = {
 
   applicationName: "MOKU",
 
+  manifest: "/manifest.webmanifest",
+
+  icons: {
+    icon: [
+      {
+        url: "/images/moku/brand/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "/images/moku/brand/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/images/moku/brand/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+
   keywords: [
     "MOKU",
     "Machine Visit Monitoring",
@@ -58,7 +82,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   viewportFit: "cover",
-  themeColor: "#730217",
+  themeColor: "#6F010E",
 };
 
 interface RootLayoutProps {
