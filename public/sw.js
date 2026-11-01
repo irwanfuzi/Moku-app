@@ -96,4 +96,4 @@ self.addEventListener("fetch", (event) => {
       });
     })
   );
-});
+}); 
