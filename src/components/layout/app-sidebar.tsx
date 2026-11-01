@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,6 +34,8 @@ interface BeforeInstallPromptEvent extends Event {
     platform: string;
   }>;
 }
+
+const INSTALL_STORAGE_KEY = "moku-pwa-installed";
 
 const navigationGroups = [
   {
@@ -82,28 +84,91 @@ export default function AppSidebar({
     useState<BeforeInstallPromptEvent | null>(null);
 
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstallStateReady, setIsInstallStateReady] =
+    useState(false);
+
+  const checkStandalone = useCallback(() => {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean })
+        .standalone === true
+    );
+  }, []);
+
+  const markAsInstalled = useCallback(() => {
+    setIsInstalled(true);
+    setInstallPrompt(null);
+
+    try {
+      localStorage.setItem(INSTALL_STORAGE_KEY, "true");
+    } catch {
+      // Storage may be unavailable in some browser contexts.
+    }
+  }, []);
 
   useEffect(() => {
     const checkInstalled = () => {
-      const standalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean })
-          .standalone === true;
+      const standalone = checkStandalone();
 
-      setIsInstalled(standalone);
+      let previouslyInstalled = false;
+
+      try {
+        previouslyInstalled =
+          localStorage.getItem(INSTALL_STORAGE_KEY) === "true";
+      } catch {
+        // Continue without persistent storage.
+      }
+
+      if (standalone) {
+        markAsInstalled();
+      } else {
+        setIsInstalled(previouslyInstalled);
+      }
+
+      setIsInstallStateReady(true);
     };
-
-    checkInstalled();
 
     const handleBeforeInstall = (event: Event) => {
       event.preventDefault();
+
+      if (checkStandalone()) {
+        markAsInstalled();
+        return;
+      }
+
+      try {
+        if (localStorage.getItem(INSTALL_STORAGE_KEY) === "true") {
+          setIsInstalled(true);
+          return;
+        }
+      } catch {
+        // Continue with the browser install prompt.
+      }
+
       setInstallPrompt(event as BeforeInstallPromptEvent);
     };
 
     const handleInstalled = () => {
-      setIsInstalled(true);
-      setInstallPrompt(null);
+      markAsInstalled();
     };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === INSTALL_STORAGE_KEY) {
+        setIsInstalled(event.newValue === "true");
+
+        if (event.newValue === "true") {
+          setInstallPrompt(null);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkInstalled();
+      }
+    };
+
+    checkInstalled();
 
     window.addEventListener(
       "beforeinstallprompt",
@@ -111,6 +176,18 @@ export default function AppSidebar({
     );
 
     window.addEventListener("appinstalled", handleInstalled);
+    window.addEventListener("storage", handleStorage);
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
+    const displayMode = window.matchMedia(
+      "(display-mode: standalone)"
+    );
+
+    displayMode.addEventListener("change", checkInstalled);
 
     return () => {
       window.removeEventListener(
@@ -122,31 +199,36 @@ export default function AppSidebar({
         "appinstalled",
         handleInstalled
       );
+
+      window.removeEventListener("storage", handleStorage);
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+
+      displayMode.removeEventListener("change", checkInstalled);
     };
-  }, []);
+  }, [checkStandalone, markAsInstalled]);
 
   const handleInstall = async () => {
-    if (installPrompt) {
-      try {
-        await installPrompt.prompt();
-
-        const choice = await installPrompt.userChoice;
-
-        if (choice.outcome === "accepted") {
-          setIsInstalled(true);
-        }
-
-        setInstallPrompt(null);
-      } catch (error) {
-        console.error("MOKU installation error:", error);
-      }
-
+    if (!installPrompt) {
       return;
     }
 
-    window.alert(
-      "Untuk memasang MOKU, buka menu browser (ikon tiga titik), kemudian pilih Install app atau Tambahkan ke layar utama jika tersedia."
-    );
+    try {
+      await installPrompt.prompt();
+
+      const choice = await installPrompt.userChoice;
+
+      if (choice.outcome === "accepted") {
+        markAsInstalled();
+      }
+
+      setInstallPrompt(null);
+    } catch (error) {
+      console.error("MOKU installation error:", error);
+    }
   };
 
   const isActive = (href: string) => {
@@ -156,6 +238,9 @@ export default function AppSidebar({
 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
+
+  const showInstallButton =
+    isInstallStateReady && !isInstalled;
 
   return (
     <aside
@@ -167,7 +252,7 @@ export default function AppSidebar({
         transition-[width] duration-300 ease-in-out
         motion-reduce:transition-none
         lg:flex
-        ${collapsed ? "w-[76px]" : "w-[260px]"}
+        ${collapsed ? "w-[72px]" : "w-[240px]"}
       `}
       aria-label="Navigasi utama"
     >
@@ -186,10 +271,7 @@ export default function AppSidebar({
           background: transparent !important;
         }
 
-        .moku-sidebar-scroll::-webkit-scrollbar-track {
-          display: none !important;
-        }
-
+        .moku-sidebar-scroll::-webkit-scrollbar-track,
         .moku-sidebar-scroll::-webkit-scrollbar-thumb {
           display: none !important;
         }
@@ -200,7 +282,7 @@ export default function AppSidebar({
         className={`
           flex h-[76px] shrink-0 items-center
           border-b border-white/10
-          ${collapsed ? "justify-center px-2" : "px-5"}
+          ${collapsed ? "justify-center px-2" : "px-4"}
         `}
       >
         <Link
@@ -212,19 +294,19 @@ export default function AppSidebar({
             <Image
               src="/images/moku/brand/app-icon.png"
               alt="MOKU"
-              width={46}
-              height={46}
+              width={43}
+              height={43}
               priority
-              className="h-[46px] w-[46px] object-contain transition-transform duration-200 hover:scale-105"
+              className="h-[43px] w-[43px] object-contain transition-transform duration-200 hover:scale-105"
             />
           ) : (
             <Image
               src="/images/moku/brand/logo-dark.png"
               alt="MOKU"
-              width={195}
+              width={180}
               height={56}
               priority
-              className="h-auto max-h-12 w-auto max-w-[195px] object-contain object-left transition-transform duration-200 hover:scale-[1.02]"
+              className="h-auto max-h-12 w-auto max-w-[180px] object-contain object-left transition-transform duration-200 hover:scale-[1.02]"
             />
           )}
         </Link>
@@ -326,39 +408,58 @@ export default function AppSidebar({
       {/* FOOTER */}
       <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
         {/* PWA INSTALL PANEL */}
-        {!isInstalled && (
+        {showInstallButton && (
           <button
             type="button"
             onClick={handleInstall}
-            title="Install MOKU"
+            disabled={!installPrompt}
+            title={
+              collapsed
+                ? "Install MOKU"
+                : installPrompt
+                  ? "Install MOKU"
+                  : "Install MOKU belum tersedia di browser ini"
+            }
+            aria-label="Install MOKU"
             className={`
-              group flex min-h-[66px] w-full items-center gap-3
+              group relative flex min-h-[66px] w-full
+              items-center gap-3
               rounded-2xl border border-[#B10618]/70
               bg-[#520107] px-3 py-3
               text-left !text-[#FDFDFD]
               transition-all duration-200
-              hover:border-[#FEAF27]/50 hover:bg-[#3E0204]
-              active:scale-[0.98]
+              ${
+                installPrompt
+                  ? "cursor-pointer hover:border-[#FEAF27]/50 hover:bg-[#3E0204] active:scale-[0.98]"
+                  : "cursor-default opacity-90"
+              }
               motion-reduce:transition-none
-              ${collapsed ? "justify-center px-1" : ""}
+              ${collapsed ? "min-h-[54px] justify-center px-0 py-2" : ""}
             `}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center">
-              <Image
-                src="/images/moku/brand/app-icon.png"
-                alt=""
-                width={36}
-                height={36}
-                className="h-9 w-9 object-contain"
+            {collapsed ? (
+              <DownloadSimple
+                size={23}
+                weight="bold"
+                className="!text-[#FEAF27]"
               />
-            </span>
-
-            {!collapsed && (
+            ) : (
               <>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center">
+                  <Image
+                    src="/images/moku/brand/app-icon.png"
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 object-contain"
+                  />
+                </span>
+
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold leading-5 !text-[#FDFDFD]">
                     Install MOKU
                   </span>
+
                   <span className="block text-[11px] leading-4 !text-[#FDFDFD]/65">
                     Aplikasi Web / Desktop
                   </span>
@@ -367,17 +468,17 @@ export default function AppSidebar({
                 <DownloadSimple
                   size={21}
                   weight="bold"
-                  className="shrink-0 !text-[#FEAF27] transition-transform duration-200 group-hover:translate-y-0.5"
+                  className={`
+                    shrink-0 !text-[#FEAF27]
+                    transition-transform duration-200
+                    ${
+                      installPrompt
+                        ? "group-hover:translate-y-0.5"
+                        : ""
+                    }
+                  `}
                 />
               </>
-            )}
-
-            {collapsed && (
-              <DownloadSimple
-                size={17}
-                weight="bold"
-                className="absolute right-2 top-2 !text-[#FEAF27]"
-              />
             )}
           </button>
         )}
