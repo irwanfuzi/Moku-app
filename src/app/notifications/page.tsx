@@ -7,141 +7,142 @@ import {
   ArrowLeft,
   Bell,
   Check,
-  CheckCheck,
-  ChevronRight,
   ClipboardText,
   Monitor,
-  Trash,
-  User,
   Wrench,
+  User,
+  Trash,
+  CaretDown,
+  CaretUp,
   X,
+  Info,
+  CheckCircle,
+  Package,
 } from "@phosphor-icons/react";
 
-type NotificationType = "visit" | "equipment" | "user" | "general";
+type NotificationType =
+  | "visit"
+  | "equipment"
+  | "user"
+  | "monitoring"
+  | "general";
 
 interface NotificationItem {
-  id: string;
+  id: number;
   title: string;
   description: string;
   detail: string;
   time: string;
-  date: string;
   type: NotificationType;
   isRead: boolean;
 }
 
 const initialNotifications: NotificationItem[] = [
   {
-    id: "NOT-001",
+    id: 1,
     title: "Kunjungan berhasil dicatat",
-    description: "PMC · MOKU-001 · PT Maju Jaya",
+    description: "Preventive Maintenance - MOKU-001",
     detail:
-      "Kunjungan Preventive Maintenance untuk equipment MOKU-001 telah berhasil dicatat oleh Andi Pratama. Data kunjungan tersimpan dalam riwayat kunjungan.",
-    time: "5 menit lalu",
-    date: "Hari ini",
+      "Kunjungan Preventive Maintenance untuk mesin MOKU-001 milik PT Maju Jaya berhasil dicatat. Data kunjungan telah masuk ke riwayat monitoring.",
+    time: "5 menit yang lalu",
     type: "visit",
     isRead: false,
   },
   {
-    id: "NOT-002",
-    title: "Equipment baru ditambahkan",
-    description: "MOKU-012 · Canon imageRUNNER",
+    id: 2,
+    title: "Peralatan baru ditambahkan",
+    description: "MOKU-012 - Canon imageRUNNER",
     detail:
-      "Equipment MOKU-012 dengan model Canon imageRUNNER telah ditambahkan ke dalam data equipment MOKU.",
-    time: "1 jam lalu",
-    date: "Hari ini",
+      "Peralatan MOKU-012 dengan model Canon imageRUNNER telah ditambahkan ke dalam daftar peralatan.",
+    time: "1 jam yang lalu",
     type: "equipment",
     isRead: false,
   },
   {
-    id: "NOT-003",
+    id: 3,
     title: "Informasi pengguna diperbarui",
-    description: "Profil Andi Pratama telah diperbarui",
+    description: "Andi Pratama",
     detail:
-      "Informasi profil pengguna Andi Pratama telah diperbarui. Perubahan informasi akun berhasil disimpan.",
-    time: "Kemarin, 15:30",
-    date: "Kemarin",
+      "Informasi akun pengguna Andi Pratama telah diperbarui.",
+    time: "3 jam yang lalu",
     type: "user",
-    isRead: false,
-  },
-  {
-    id: "NOT-004",
-    title: "Monitoring bulanan diperbarui",
-    description: "Periode November 2026",
-    detail:
-      "Data monitoring kunjungan equipment untuk periode November 2026 telah diperbarui berdasarkan aktivitas kunjungan terbaru.",
-    time: "Kemarin, 10:15",
-    date: "Kemarin",
-    type: "general",
     isRead: true,
   },
   {
-    id: "NOT-005",
-    title: "Riwayat kunjungan tersimpan",
-    description: "UMC · MOKU-002 · PT Sinar Abadi",
+    id: 4,
+    title: "Monitoring bulanan diperbarui",
+    description: "Periode November 2026",
     detail:
-      "Kunjungan Unscheduled Maintenance untuk equipment MOKU-002 telah berhasil disimpan ke dalam riwayat kunjungan.",
-    time: "30 Oktober 2026",
-    date: "Sebelumnya",
+      "Data monitoring kunjungan untuk periode November 2026 telah diperbarui berdasarkan aktivitas kunjungan yang tercatat.",
+    time: "Kemarin",
+    type: "monitoring",
+    isRead: true,
+  },
+  {
+    id: 5,
+    title: "Kunjungan berhasil dicatat",
+    description: "Unscheduled Maintenance - MOKU-002",
+    detail:
+      "Kunjungan Unscheduled Maintenance untuk mesin MOKU-002 milik PT Sinar Abadi berhasil dicatat.",
+    time: "2 hari yang lalu",
     type: "visit",
     isRead: true,
   },
 ];
 
-const notificationConfig = {
-  visit: {
-    label: "Kunjungan",
-    icon: Wrench,
-    style: "bg-primary-light text-primary",
-  },
-  equipment: {
-    label: "Equipment",
-    icon: Monitor,
-    style: "bg-orange-50 text-orange-600",
-  },
-  user: {
-    label: "Pengguna",
-    icon: User,
-    style: "bg-surface-secondary text-muted",
-  },
-  general: {
-    label: "Monitoring",
-    icon: ClipboardText,
-    style: "bg-surface-secondary text-muted",
-  },
+const iconMap = {
+  visit: Wrench,
+  equipment: Monitor,
+  user: User,
+  monitoring: ClipboardText,
+  general: Bell,
 };
 
-type FilterType = "all" | "unread";
+const iconColorMap = {
+  visit: "text-primary bg-primary/10",
+  equipment: "text-blue-600 bg-blue-50",
+  user: "text-violet-600 bg-violet-50",
+  monitoring: "text-amber-600 bg-amber-50",
+  general: "text-muted-foreground bg-muted",
+};
 
 export default function NotificationsPage() {
   const router = useRouter();
 
-  const [items, setItems] = useState(initialNotifications);
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState(
+    initialNotifications
+  );
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "unread"
+  >("all");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const unreadCount = items.filter((item) => !item.isRead).length;
+  const unreadCount = notifications.filter(
+    (item) => !item.isRead
+  ).length;
 
-  const filteredItems = items.filter((item) =>
-    filter === "unread" ? !item.isRead : true
+  const filteredNotifications = notifications.filter((item) =>
+    activeFilter === "unread" ? !item.isRead : true
   );
 
-  const markAsRead = (id: string) => {
-    setItems((previous) =>
-      previous.map((item) =>
+  const markAsRead = (id: number) => {
+    setNotifications((current) =>
+      current.map((item) =>
         item.id === id ? { ...item, isRead: true } : item
       )
     );
   };
 
   const markAllAsRead = () => {
-    setItems((previous) =>
-      previous.map((item) => ({ ...item, isRead: true }))
+    setNotifications((current) =>
+      current.map((item) => ({ ...item, isRead: true }))
     );
   };
 
-  const deleteNotification = (id: string) => {
-    setItems((previous) => previous.filter((item) => item.id !== id));
+  const deleteNotification = (id: number) => {
+    setNotifications((current) =>
+      current.filter((item) => item.id !== id)
+    );
 
     if (expandedId === id) {
       setExpandedId(null);
@@ -149,13 +150,13 @@ export default function NotificationsPage() {
   };
 
   const deleteAllNotifications = () => {
-    setItems([]);
+    setNotifications([]);
     setExpandedId(null);
   };
 
   const toggleNotification = (item: NotificationItem) => {
-    setExpandedId((previous) =>
-      previous === item.id ? null : item.id
+    setExpandedId((current) =>
+      current === item.id ? null : item.id
     );
 
     if (!item.isRead) {
@@ -164,370 +165,287 @@ export default function NotificationsPage() {
   };
 
   const handleBack = () => {
-    router.back();
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
   };
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-
-        {/* MOBILE SUBPAGE HEADER */}
-        <div className="mb-6 flex items-center gap-3 md:hidden">
+      <div className="page-enter mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
+        {/* Mobile heading */}
+        <div className="mb-6 flex items-center gap-3 lg:hidden">
           <button
             type="button"
             onClick={handleBack}
             aria-label="Kembali"
-            className="
-              flex h-10 w-10 shrink-0 items-center justify-center
-              rounded-xl border border-border/70
-              text-foreground transition-colors
-              hover:bg-primary-light hover:text-primary
-            "
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:bg-muted"
           >
-            <ArrowLeft size={21} />
+            <ArrowLeft size={20} />
           </button>
 
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold text-foreground">
-              Notifikasi
-            </h1>
-            <p className="text-xs text-muted">
-              Informasi aktivitas MOKU
-            </p>
-          </div>
-        </div>
-
-        {/* DESKTOP PAGE HEADER */}
-        <div className="mb-7 hidden items-start justify-between gap-4 md:flex">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
+            <h1 className="text-lg font-semibold text-foreground">
               Notifikasi
             </h1>
-            <p className="mt-1 text-sm text-muted">
-              Pantau informasi dan aktivitas terbaru MOKU.
+            <p className="text-xs text-muted-foreground">
+              Aktivitas dan informasi terbaru
             </p>
           </div>
         </div>
 
-        {/* SUMMARY */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        {/* Desktop heading */}
+        <div className="mb-7 hidden lg:block">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Notifikasi
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Aktivitas dan informasi terbaru dari MOKU.
+          </p>
+        </div>
+
+        {/* Summary */}
+        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-border bg-background p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-light text-primary">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Bell size={22} weight="duotone" />
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-foreground">
-                {unreadCount} belum dibaca
+              <p className="text-sm text-muted-foreground">
+                Belum dibaca
               </p>
-              <p className="text-xs text-muted">
-                Dari {items.length} notifikasi
+              <p className="text-2xl font-semibold tabular-nums text-foreground">
+                {unreadCount}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={markAllAsRead}
-                className="
-                  flex items-center gap-1.5 rounded-lg
-                  border border-border bg-surface
-                  px-3 py-2 text-xs font-medium text-foreground
-                  transition-colors hover:bg-primary-light hover:text-primary
-                "
-              >
-                <CheckCheck size={16} />
-                <span className="hidden sm:inline">
-                  Tandai semua dibaca
-                </span>
-                <span className="sm:hidden">Baca semua</span>
-              </button>
-            )}
-
-            {items.length > 0 && (
-              <button
-                type="button"
-                onClick={deleteAllNotifications}
-                className="
-                  flex items-center gap-1.5 rounded-lg
-                  border border-border bg-surface
-                  px-3 py-2 text-xs font-medium text-muted
-                  transition-colors hover:border-danger/30
-                  hover:bg-danger/5 hover:text-danger
-                "
-              >
-                <Trash size={16} />
-                Hapus semua
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* FILTER */}
-        <div className="mb-4 flex items-center gap-2 border-b border-border/70">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={`
-              relative px-4 py-3 text-xs font-semibold transition-colors
-              ${
-                filter === "all"
-                  ? "text-primary"
-                  : "text-muted hover:text-foreground"
-              }
-            `}
-          >
-            Semua
-            {filter === "all" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("unread")}
-            className={`
-              relative px-4 py-3 text-xs font-semibold transition-colors
-              ${
-                filter === "unread"
-                  ? "text-primary"
-                  : "text-muted hover:text-foreground"
-              }
-            `}
-          >
-            Belum dibaca
-            {filter === "unread" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-        </div>
-
-        {/* NOTIFICATION LIST */}
-        {filteredItems.length > 0 ? (
-          <div className="divide-y divide-border/70">
-            {filteredItems.map((item) => {
-              const config = notificationConfig[item.type];
-              const Icon = config.icon;
-              const isExpanded = expandedId === item.id;
-
-              return (
-                <article
-                  key={item.id}
-                  className={`
-                    py-4 transition-colors duration-200
-                    ${
-                      !item.isRead
-                        ? "bg-primary/[0.025]"
-                        : "bg-transparent"
-                    }
-                  `}
-                >
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    {/* ICON */}
-                    <div
-                      className={`
-                        flex h-10 w-10 shrink-0 items-center
-                        justify-center rounded-xl
-                        ${config.style}
-                      `}
-                    >
-                      <Icon size={20} weight="duotone" />
-                    </div>
-
-                    {/* CONTENT */}
-                    <button
-                      type="button"
-                      onClick={() => toggleNotification(item)}
-                      aria-expanded={isExpanded}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p
-                          className={`
-                            text-sm text-foreground
-                            ${
-                              !item.isRead
-                                ? "font-bold"
-                                : "font-medium"
-                            }
-                          `}
-                        >
-                          {item.title}
-                        </p>
-
-                        {!item.isRead && (
-                          <span className="h-2 w-2 rounded-full bg-primary" />
-                        )}
-                      </div>
-
-                      <p className="mt-1 text-xs leading-relaxed text-muted">
-                        {item.description}
-                      </p>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] text-muted">
-                          {item.time}
-                        </span>
-
-                        <span className="text-[10px] text-muted">
-                          ·
-                        </span>
-
-                        <span className="text-[10px] text-muted">
-                          {config.label}
-                        </span>
-
-                        <span
-                          className={`
-                            ml-auto flex items-center gap-1
-                            text-[10px] font-medium
-                            ${
-                              isExpanded
-                                ? "text-primary"
-                                : "text-muted"
-                            }
-                          `}
-                        >
-                          {isExpanded ? "Tutup detail" : "Lihat detail"}
-                          <ChevronRight
-                            size={13}
-                            className={`
-                              transition-transform duration-200
-                              ${isExpanded ? "rotate-90" : ""}
-                            `}
-                          />
-                        </span>
-                      </div>
-                    </button>
-
-                    {/* DELETE */}
-                    <button
-                      type="button"
-                      onClick={() => deleteNotification(item.id)}
-                      aria-label={`Hapus ${item.title}`}
-                      title="Hapus notifikasi"
-                      className="
-                        flex h-9 w-9 shrink-0 items-center
-                        justify-center rounded-lg text-muted
-                        transition-colors hover:bg-danger/5
-                        hover:text-danger
-                      "
-                    >
-                      <Trash size={17} />
-                    </button>
-                  </div>
-
-                  {/* EXPANDED DETAIL */}
-                  <div
-                    className={`
-                      grid transition-all duration-200 ease-out
-                      ${
-                        isExpanded
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
-                      }
-                    `}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="ml-[52px] mr-2 mt-3 rounded-xl border border-border/70 bg-surface p-3 sm:ml-[56px]">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                          Detail aktivitas
-                        </p>
-
-                        <p className="mt-2 text-xs leading-relaxed text-foreground">
-                          {item.detail}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-[10px] text-muted">
-                            ID: {item.id}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => deleteNotification(item.id)}
-                            className="
-                              flex items-center gap-1.5
-                              rounded-md px-2 py-1.5
-                              text-[11px] font-medium text-danger
-                              transition-colors hover:bg-danger/5
-                            "
-                          >
-                            <Trash size={14} />
-                            Hapus notifikasi
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-light text-primary">
-              <Bell size={30} weight="duotone" />
-            </div>
-
-            <h2 className="text-sm font-semibold text-foreground">
-              {items.length === 0
-                ? "Belum ada notifikasi"
-                : "Semua notifikasi sudah dibaca"}
-            </h2>
-
-            <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted">
-              {items.length === 0
-                ? "Aktivitas terbaru MOKU akan muncul di sini."
-                : "Tidak ada notifikasi yang perlu ditampilkan pada filter ini."}
-            </p>
-
-            {filter === "unread" && items.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className="mt-4 text-xs font-semibold text-primary hover:underline"
-              >
-                Lihat semua notifikasi
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* DEMO RESET */}
-        {items.length === 0 && (
-          <div className="mt-5 flex justify-center">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => {
-                setItems(initialNotifications);
-                setFilter("all");
-                setExpandedId(null);
-              }}
-              className="
-                rounded-lg border border-border bg-surface
-                px-4 py-2.5 text-xs font-medium text-foreground
-                transition-colors hover:bg-primary-light
-                hover:text-primary
-              "
+              onClick={markAllAsRead}
+              disabled={unreadCount === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Reset contoh notifikasi
+              <Check size={17} />
+              Tandai semua dibaca
+            </button>
+
+            <button
+              type="button"
+              onClick={deleteAllNotifications}
+              disabled={notifications.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Trash size={17} />
+              Hapus semua
             </button>
           </div>
-        )}
-
-        {/* DEMO NOTICE */}
-        <div className="mt-8 flex items-start gap-2 rounded-lg border border-border/70 bg-surface/60 px-3 py-3">
-          <Bell size={16} className="mt-0.5 shrink-0 text-muted" />
-          <p className="text-[10px] leading-relaxed text-muted">
-            Ini adalah data demonstrasi. Perubahan baca dan hapus hanya
-            berlaku sementara di halaman ini dan akan kembali ke data
-            awal saat halaman dimuat ulang.
-          </p>
         </div>
+
+        {/* Filters */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setActiveFilter("all")}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeFilter === "all"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Semua
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveFilter("unread")}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeFilter === "unread"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Belum dibaca
+              {unreadCount > 0 && (
+                <span className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-xs text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <span className="text-xs text-muted-foreground">
+            {filteredNotifications.length} notifikasi
+          </span>
+        </div>
+
+        {/* Notification list */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-background">
+          {filteredNotifications.length > 0 ? (
+            <div className="divide-y divide-border">
+              {filteredNotifications.map((item) => {
+                const Icon = iconMap[item.type];
+                const isExpanded = expandedId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`transition-colors ${
+                      !item.isRead ? "bg-primary/[0.025]" : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          iconColorMap[item.type]
+                        }`}
+                      >
+                        <Icon size={20} weight="duotone" />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleNotification(item)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-foreground">
+                            {item.title}
+                          </p>
+
+                          {!item.isRead && (
+                            <span className="h-2 w-2 rounded-full bg-primary" />
+                          )}
+                        </div>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {item.description}
+                        </p>
+
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {item.time}
+                        </p>
+                      </button>
+
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            deleteNotification(item.id)
+                          }
+                          aria-label="Hapus notifikasi"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash size={17} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleNotification(item)}
+                          aria-label={
+                            isExpanded
+                              ? "Tutup detail"
+                              : "Lihat detail"
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted"
+                        >
+                          {isExpanded ? (
+                            <CaretUp size={18} />
+                          ) : (
+                            <CaretDown size={18} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="border-t border-border bg-muted/30 px-4 py-4 sm:px-5 sm:pl-[4.75rem]">
+                        <div className="flex items-start gap-2">
+                          <Info
+                            size={17}
+                            className="mt-0.5 shrink-0 text-muted-foreground"
+                          />
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            {item.detail}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                {activeFilter === "unread" ? (
+                  <CheckCircle size={28} weight="duotone" />
+                ) : (
+                  <Bell size={28} weight="duotone" />
+                )}
+              </div>
+
+              <h3 className="text-base font-semibold text-foreground">
+                {activeFilter === "unread"
+                  ? "Semua sudah dibaca"
+                  : "Belum ada notifikasi"}
+              </h3>
+
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                {activeFilter === "unread"
+                  ? "Tidak ada notifikasi yang perlu dibaca."
+                  : "Aktivitas terbaru akan muncul di sini."}
+              </p>
+
+              {notifications.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotifications(initialNotifications);
+                    setActiveFilter("all");
+                  }}
+                  className="mt-5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+                >
+                  Muat ulang data demo
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Data notifikasi saat ini merupakan data demo untuk pengujian
+          tampilan.
+        </p>
       </div>
+
+      <style jsx>{`
+        .page-enter {
+          animation: notification-enter 220ms ease-out both;
+        }
+
+        @keyframes notification-enter {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .page-enter {
+            animation: none;
+          }
+        }
+      `}</style>
     </main>
   );
 }
