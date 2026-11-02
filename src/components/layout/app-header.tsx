@@ -50,15 +50,26 @@ const notificationStyles = {
   general: "bg-surface-secondary text-muted",
 };
 
-function getDropdownAnimation(isOpen: boolean) {
-  return `
-    pointer-events-${isOpen ? "auto" : "none"}
-    translate-y-${isOpen ? "0" : "-1"}
-    scale-${isOpen ? "100" : "[0.98]"}
-    opacity-${isOpen ? "100" : "0"}
-    ${isOpen ? "duration-200" : "duration-150"}
-  `;
-}
+const dropdownBase = `
+  absolute right-0 top-full z-50 mt-2
+  origin-top-right overflow-hidden rounded-xl
+  border border-border bg-surface
+  shadow-lg shadow-black/10
+  transform-gpu
+  transition-[opacity,transform]
+  ease-out
+  motion-reduce:transition-none
+`;
+
+const dropdownOpen = `
+  pointer-events-auto translate-y-0 scale-100
+  opacity-100 duration-200
+`;
+
+const dropdownClosed = `
+  pointer-events-none -translate-y-1 scale-[0.98]
+  opacity-0 duration-150
+`;
 
 function EmptyNotificationIllustration() {
   return (
@@ -69,16 +80,9 @@ function EmptyNotificationIllustration() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Ilustrasi belum ada notifikasi"
+      aria-label="Belum ada notifikasi"
     >
-      <ellipse
-        cx="90"
-        cy="112"
-        rx="62"
-        ry="8"
-        fill="#F2F2F2"
-      />
-
+      <ellipse cx="90" cy="112" rx="62" ry="8" fill="#F2F2F2" />
       <circle cx="90" cy="61" r="48" fill="#F9EEEE" />
       <circle cx="90" cy="61" r="37" fill="#F3DCDD" />
 
@@ -95,22 +99,8 @@ function EmptyNotificationIllustration() {
       />
 
       <path
-        d="M90 20V15"
+        d="M90 20V15M49 43L43 39M131 43L137 39"
         stroke="#B10618"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M49 43L43 39"
-        stroke="#C26C5D"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M131 43L137 39"
-        stroke="#C26C5D"
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -157,14 +147,8 @@ export default function AppHeader({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
 
-  const initials = userName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
-
   const unreadCount = notifications.filter((item) => !item.isRead).length;
+
   const displayedNotificationCount =
     notifications.length > 0 ? unreadCount : notificationCount;
 
@@ -214,17 +198,21 @@ export default function AppHeader({
   }, []);
 
   return (
-    <header className="
-      sticky top-0 z-20 w-full
-      border-b border-border
-      bg-surface/95 backdrop-blur-md
-      transition-colors duration-200
-    ">
+    <header
+      className="
+        sticky top-0 z-20 w-full
+        border-b border-border
+        bg-surface/95 backdrop-blur-md
+        transition-colors duration-200
+      "
+    >
       {/* HEADER MAIN */}
-      <div className="
-        flex min-h-[68px] items-center justify-between gap-3
-        px-4 py-3 sm:min-h-[76px] sm:px-6 lg:px-8
-      ">
+      <div
+        className="
+          flex min-h-[68px] items-center justify-between gap-3
+          px-4 py-3 sm:min-h-[76px] sm:px-6 lg:px-8
+        "
+      >
         {/* PAGE INFORMATION */}
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
@@ -244,7 +232,10 @@ export default function AppHeader({
           <div className="relative hidden w-48 md:block lg:w-64">
             <MagnifyingGlass
               size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+              className="
+                pointer-events-none absolute left-3
+                top-1/2 -translate-y-1/2 text-muted
+              "
             />
 
             <input
@@ -265,11 +256,13 @@ export default function AppHeader({
             />
           </div>
 
-          {/* MOBILE SEARCH TOGGLE */}
+          {/* MOBILE SEARCH */}
           <button
             type="button"
             onClick={() => setMobileSearchOpen((previous) => !previous)}
-            aria-label={mobileSearchOpen ? "Tutup pencarian" : "Buka pencarian"}
+            aria-label={
+              mobileSearchOpen ? "Tutup pencarian" : "Buka pencarian"
+            }
             aria-expanded={mobileSearchOpen}
             className="
               flex h-10 w-10 items-center justify-center
@@ -280,7 +273,11 @@ export default function AppHeader({
               md:hidden
             "
           >
-            {mobileSearchOpen ? <X size={21} /> : <MagnifyingGlass size={21} />}
+            {mobileSearchOpen ? (
+              <X size={21} />
+            ) : (
+              <MagnifyingGlass size={21} />
+            )}
           </button>
 
           {/* NOTIFICATION DROPDOWN */}
@@ -309,13 +306,15 @@ export default function AppHeader({
               />
 
               {displayedNotificationCount > 0 && (
-                <span className="
-                  absolute right-1 top-1
-                  flex h-[17px] min-w-[17px]
-                  items-center justify-center rounded-full
-                  border-2 border-surface bg-danger
-                  px-1 text-[9px] font-bold text-white
-                ">
+                <span
+                  className="
+                    absolute right-1 top-1
+                    flex h-[17px] min-w-[17px]
+                    items-center justify-center rounded-full
+                    border-2 border-surface bg-danger
+                    px-1 text-[9px] font-bold text-white
+                  "
+                >
                   {displayedNotificationCount > 99
                     ? "99+"
                     : displayedNotificationCount}
@@ -327,16 +326,9 @@ export default function AppHeader({
             <div
               aria-hidden={!notificationMenuOpen}
               className={`
-                absolute right-0 top-full z-50 mt-2
+                ${dropdownBase}
                 w-[min(360px,calc(100vw-24px))]
-                origin-top-right overflow-hidden rounded-xl
-                border border-border bg-surface
-                shadow-lg shadow-black/10
-                transform-gpu will-change-transform
-                transition-[opacity,transform]
-                ease-[cubic-bezier(0.2,0.7,0.3,1)]
-                motion-reduce:transition-none
-                ${getDropdownAnimation(notificationMenuOpen)}
+                ${notificationMenuOpen ? dropdownOpen : dropdownClosed}
               `}
             >
               {/* NOTIFICATION HEADER */}
@@ -345,6 +337,7 @@ export default function AppHeader({
                   <h2 className="text-sm font-semibold text-foreground">
                     Notifikasi
                   </h2>
+
                   <p className="mt-0.5 text-[11px] text-muted">
                     {displayedNotificationCount > 0
                       ? `${displayedNotificationCount} belum dibaca`
@@ -377,7 +370,8 @@ export default function AppHeader({
                 {notifications.length > 0 ? (
                   <div className="divide-y divide-border">
                     {notifications.slice(0, 5).map((item) => {
-                      const Icon = notificationIcons[item.type || "general"];
+                      const Icon =
+                        notificationIcons[item.type || "general"];
 
                       return (
                         <Link
@@ -391,11 +385,13 @@ export default function AppHeader({
                             hover:bg-background
                           "
                         >
-                          <div className={`
-                            flex h-9 w-9 shrink-0 items-center
-                            justify-center rounded-lg
-                            ${notificationStyles[item.type || "general"]}
-                          `}>
+                          <div
+                            className={`
+                              flex h-9 w-9 shrink-0 items-center
+                              justify-center rounded-lg
+                              ${notificationStyles[item.type || "general"]}
+                            `}
+                          >
                             <Icon size={19} />
                           </div>
 
@@ -406,10 +402,12 @@ export default function AppHeader({
                               </p>
 
                               {!item.isRead && (
-                                <span className="
-                                  mt-1.5 h-2 w-2 shrink-0
-                                  rounded-full bg-primary
-                                " />
+                                <span
+                                  className="
+                                    mt-1.5 h-2 w-2 shrink-0
+                                    rounded-full bg-primary
+                                  "
+                                />
                               )}
                             </div>
 
@@ -426,7 +424,6 @@ export default function AppHeader({
                     })}
                   </div>
                 ) : (
-                  /* EMPTY STATE */
                   <div className="flex flex-col items-center px-5 py-7 text-center">
                     <EmptyNotificationIllustration />
 
@@ -481,18 +478,22 @@ export default function AppHeader({
                 motion-reduce:transition-none
               "
             >
-              <div className="
-                flex h-9 w-9 shrink-0 items-center
-                justify-center rounded-control
-                bg-primary-light text-xs font-bold text-primary
-              ">
-                {initials || <UserCircle size={20} />}
+              {/* DEFAULT AVATAR */}
+              <div
+                className="
+                  flex h-9 w-9 shrink-0 items-center
+                  justify-center rounded-control
+                  bg-primary-light text-primary
+                "
+              >
+                <UserCircle size={23} weight="regular" />
               </div>
 
               <div className="hidden min-w-0 text-left sm:block">
                 <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
                   {userName}
                 </p>
+
                 <p className="max-w-[120px] truncate text-[10px] text-muted">
                   {userEmail}
                 </p>
@@ -514,16 +515,16 @@ export default function AppHeader({
               role="menu"
               aria-hidden={!profileMenuOpen}
               className={`
-                ${dropdownTransitionClasses}
+                ${dropdownBase}
                 w-[220px]
-                transform-gpu will-change-transform
-                ${getDropdownAnimation(profileMenuOpen)}
+                ${profileMenuOpen ? dropdownOpen : dropdownClosed}
               `}
             >
               <div className="border-b border-border px-4 py-3">
                 <p className="truncate text-sm font-semibold text-foreground">
                   {userName}
                 </p>
+
                 <p className="mt-0.5 truncate text-xs text-muted">
                   {userEmail}
                 </p>
