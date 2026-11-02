@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bell,
@@ -259,7 +260,7 @@ function SearchSuggestionList({
   if (query.trim().length < 2) return null;
 
   return (
-    <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_5px_18px_rgba(0,0,0,0.055)]">
+    <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_5px_18px_rgba(0,0,0,0.055)]">
       <div className="border-b border-border px-4 py-3">
         <p className="text-xs font-semibold text-foreground">
           Hasil pencarian
@@ -336,9 +337,13 @@ export default function AppHeader({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
 
+  const pathname = usePathname();
+  const isNotificationsPage = pathname === "/notifications";
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
 
@@ -381,7 +386,12 @@ export default function AppHeader({
         setNotificationMenuOpen(false);
       }
 
-      if (!searchRef.current?.contains(target)) {
+      const clickedOutsideDesktopSearch =
+        !desktopSearchRef.current?.contains(target);
+      const clickedOutsideMobileSearch =
+        !mobileSearchRef.current?.contains(target);
+
+      if (clickedOutsideDesktopSearch && clickedOutsideMobileSearch) {
         setSearchOpen(false);
       }
     };
@@ -404,12 +414,21 @@ export default function AppHeader({
     };
   }, []);
 
+  useEffect(() => {
+    if (isNotificationsPage) {
+      setMobileSearchOpen(false);
+      setSearchOpen(false);
+      setNotificationMenuOpen(false);
+      setProfileMenuOpen(false);
+    }
+  }, [isNotificationsPage]);
+
   return (
     <header
       className="
-        sticky top-0 z-20 w-full
+        sticky top-0 z-50 w-full
         border-b border-border/50
-        bg-surface/95 backdrop-blur-md
+        bg-background/95 backdrop-blur-md
         shadow-[0_1px_2px_rgba(0,0,0,0.025)]
         transition-colors duration-200
       "
@@ -437,113 +456,91 @@ export default function AppHeader({
         {/* HEADER ACTIONS */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           {/* DESKTOP SEARCH */}
-          <div className="relative hidden w-48 md:block lg:w-64" ref={searchRef}>
-            <MagnifyingGlass
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-            />
-
-            <input
-              type="search"
-              value={searchValue}
-              onChange={handleSearch}
-              onFocus={() => setSearchOpen(true)}
-              placeholder="Cari equipment, customer..."
-              aria-label="Pencarian"
-              className="
-                h-10 w-full rounded-control
-                border border-border bg-background
-                pl-10 pr-3 text-xs text-foreground
-                outline-none transition-all duration-200
-                placeholder:text-muted
-                focus:border-primary focus:bg-surface
-                focus:ring-2 focus:ring-primary/10
-              "
-            />
-
-            {searchOpen && (
-              <SearchSuggestionList
-                query={searchValue}
-                onClose={closeSearch}
+          {!isNotificationsPage && (
+            <div
+              className="relative hidden w-48 lg:block lg:w-64"
+              ref={desktopSearchRef}
+            >
+              <MagnifyingGlass
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
               />
-            )}
-          </div>
+
+              <input
+                type="search"
+                value={searchValue}
+                onChange={handleSearch}
+                onFocus={() => setSearchOpen(true)}
+                placeholder="Cari equipment, customer..."
+                aria-label="Pencarian"
+                className="
+                  h-10 w-full rounded-control
+                  border border-border bg-background
+                  pl-10 pr-3 text-xs text-foreground
+                  outline-none transition-all duration-200
+                  placeholder:text-muted
+                  focus:border-primary focus:bg-surface
+                  focus:ring-2 focus:ring-primary/10
+                "
+              />
+
+              {searchOpen && (
+                <SearchSuggestionList
+                  query={searchValue}
+                  onClose={closeSearch}
+                />
+              )}
+            </div>
+          )}
 
           {/* MOBILE SEARCH BUTTON */}
-          <button
-            type="button"
-            onClick={() => {
-              setMobileSearchOpen((previous) => !previous);
-              setSearchOpen(false);
-            }}
-            aria-label={
-              mobileSearchOpen ? "Tutup pencarian" : "Buka pencarian"
-            }
-            aria-expanded={mobileSearchOpen}
-            className="
-              flex h-10 w-10 items-center justify-center
-              rounded-control text-muted
-              transition-all duration-200
-              hover:bg-primary-light hover:text-primary
-              active:scale-95 motion-reduce:transition-none
-              md:hidden
-            "
-          >
-            {mobileSearchOpen ? (
-              <X size={21} />
-            ) : (
-              <MagnifyingGlass size={21} />
-            )}
-          </button>
-
-          {/* NOTIFICATION: MOBILE SUBPAGE */}
-          <Link
-            href="/notifications"
-            aria-label={
-              displayedNotificationCount > 0
-                ? `${displayedNotificationCount} notifikasi belum dibaca`
-                : "Notifikasi"
-            }
-            className="
-              relative flex h-10 w-10 shrink-0
-              items-center justify-center rounded-control
-              text-muted transition-all duration-200
-              hover:bg-primary-light hover:text-primary
-              active:scale-95 motion-reduce:transition-none
-              md:hidden
-            "
-          >
-            <Bell size={21} />
-
-            {displayedNotificationCount > 0 && (
-              <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-surface bg-danger px-1 text-[9px] font-bold text-white">
-                {displayedNotificationCount > 99
-                  ? "99+"
-                  : displayedNotificationCount}
-              </span>
-            )}
-          </Link>
-
-          {/* NOTIFICATION DROPDOWN: DESKTOP */}
-          <div className="relative hidden md:block" ref={notificationMenuRef}>
+          {!isNotificationsPage && (
             <button
               type="button"
-              onClick={toggleNotificationMenu}
-              aria-label="Notifikasi"
-              aria-expanded={notificationMenuOpen}
-              aria-haspopup="true"
+              onClick={() => {
+                setMobileSearchOpen((previous) => !previous);
+                setSearchOpen(false);
+              }}
+              aria-label={
+                mobileSearchOpen ? "Tutup pencarian" : "Buka pencarian"
+              }
+              aria-expanded={mobileSearchOpen}
+              className="
+                flex h-10 w-10 items-center justify-center
+                rounded-control text-muted
+                transition-all duration-200
+                hover:bg-primary-light hover:text-primary
+                active:scale-95 motion-reduce:transition-none
+                lg:hidden
+              "
+            >
+              {mobileSearchOpen ? (
+                <X size={21} />
+              ) : (
+                <MagnifyingGlass size={21} />
+              )}
+            </button>
+          )}
+
+          {/* NOTIFICATION: MOBILE SUBPAGE */}
+          {!isNotificationsPage && (
+            <Link
+              href="/notifications"
+              aria-label={
+                displayedNotificationCount > 0
+                  ? `${displayedNotificationCount} notifikasi belum dibaca`
+                  : "Notifikasi"
+              }
               className="
                 relative flex h-10 w-10 shrink-0
                 items-center justify-center rounded-control
                 text-muted transition-all duration-200
                 hover:bg-primary-light hover:text-primary
                 active:scale-95 motion-reduce:transition-none
+                lg:hidden
               "
             >
-              <Bell
-                size={21}
-                weight={notificationMenuOpen ? "fill" : "regular"}
-              />
+              <Bell size={21} />
 
               {displayedNotificationCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-surface bg-danger px-1 text-[9px] font-bold text-white">
@@ -552,137 +549,173 @@ export default function AppHeader({
                     : displayedNotificationCount}
                 </span>
               )}
-            </button>
+            </Link>
+          )}
 
+          {/* NOTIFICATION DROPDOWN: DESKTOP */}
+          {!isNotificationsPage && (
             <div
-              aria-hidden={!notificationMenuOpen}
-              className={`
-                ${dropdownBase}
-                w-[360px]
-                ${notificationMenuOpen ? dropdownOpen : dropdownClosed}
-              `}
+              className="relative hidden lg:block"
+              ref={notificationMenuRef}
             >
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Notifikasi
-                  </h2>
-                  <p className="mt-0.5 text-[11px] text-muted">
-                    {displayedNotificationCount > 0
-                      ? `${displayedNotificationCount} belum dibaca`
-                      : "Informasi terbaru MOKU"}
-                  </p>
-                </div>
+              <button
+                type="button"
+                onClick={toggleNotificationMenu}
+                aria-label="Notifikasi"
+                aria-expanded={notificationMenuOpen}
+                aria-haspopup="true"
+                className="
+                  relative flex h-10 w-10 shrink-0
+                  items-center justify-center rounded-control
+                  text-muted transition-all duration-200
+                  hover:bg-primary-light hover:text-primary
+                  active:scale-95 motion-reduce:transition-none
+                "
+              >
+                <Bell
+                  size={21}
+                  weight={notificationMenuOpen ? "fill" : "regular"}
+                />
 
                 {displayedNotificationCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={onMarkAllNotificationsRead}
-                    disabled={!onMarkAllNotificationsRead}
-                    tabIndex={notificationMenuOpen ? 0 : -1}
-                    className="
-                      flex items-center gap-1.5 rounded-md
-                      px-2 py-1.5 text-[11px] font-medium
-                      text-primary transition-colors
-                      hover:bg-primary-light
-                      disabled:cursor-not-allowed disabled:opacity-50
-                    "
-                  >
-                    <Check size={15} />
-                    Tandai dibaca
-                  </button>
+                  <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-surface bg-danger px-1 text-[9px] font-bold text-white">
+                    {displayedNotificationCount > 99
+                      ? "99+"
+                      : displayedNotificationCount}
+                  </span>
                 )}
-              </div>
+              </button>
 
-              <div className="max-h-[360px] overflow-y-auto">
-                {notifications.length > 0 ? (
-                  <div className="divide-y divide-border">
-                    {notifications.slice(0, 5).map((item) => {
-                      const Icon =
-                        notificationIcons[item.type || "general"];
+              <div
+                aria-hidden={!notificationMenuOpen}
+                className={`
+                  ${dropdownBase}
+                  w-[360px]
+                  ${notificationMenuOpen ? dropdownOpen : dropdownClosed}
+                `}
+              >
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      Notifikasi
+                    </h2>
+                    <p className="mt-0.5 text-[11px] text-muted">
+                      {displayedNotificationCount > 0
+                        ? `${displayedNotificationCount} belum dibaca`
+                        : "Informasi terbaru MOKU"}
+                    </p>
+                  </div>
 
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.href || "/notifications"}
-                          tabIndex={notificationMenuOpen ? 0 : -1}
-                          onClick={() => setNotificationMenuOpen(false)}
-                          className="
-                            flex items-start gap-3 px-4 py-3.5
-                            transition-colors duration-150
-                            hover:bg-background
-                          "
-                        >
-                          <div
-                            className={`
-                              flex h-9 w-9 shrink-0 items-center
-                              justify-center rounded-lg
-                              ${notificationStyles[item.type || "general"]}
-                            `}
+                  {displayedNotificationCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={onMarkAllNotificationsRead}
+                      disabled={!onMarkAllNotificationsRead}
+                      tabIndex={notificationMenuOpen ? 0 : -1}
+                      className="
+                        flex items-center gap-1.5 rounded-md
+                        px-2 py-1.5 text-[11px] font-medium
+                        text-primary transition-colors
+                        hover:bg-primary-light
+                        disabled:cursor-not-allowed disabled:opacity-50
+                      "
+                    >
+                      <Check size={15} />
+                      Tandai dibaca
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-[360px] overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    <div className="divide-y divide-border">
+                      {notifications.slice(0, 5).map((item) => {
+                        const Icon =
+                          notificationIcons[item.type || "general"];
+
+                        return (
+                          <Link
+                            key={item.id}
+                            href={item.href || "/notifications"}
+                            tabIndex={notificationMenuOpen ? 0 : -1}
+                            onClick={() => setNotificationMenuOpen(false)}
+                            className="
+                              flex items-start gap-3 px-4 py-3.5
+                              transition-colors duration-150
+                              hover:bg-background
+                            "
                           >
-                            <Icon size={19} />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-xs font-semibold text-foreground">
-                                {item.title}
-                              </p>
-
-                              {!item.isRead && (
-                                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                              )}
+                            <div
+                              className={`
+                                flex h-9 w-9 shrink-0 items-center
+                                justify-center rounded-lg
+                                ${notificationStyles[item.type || "general"]}
+                              `}
+                            >
+                              <Icon size={19} />
                             </div>
 
-                            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">
-                              {item.description}
-                            </p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-xs font-semibold text-foreground">
+                                  {item.title}
+                                </p>
 
-                            <p className="mt-1.5 text-[10px] text-muted">
-                              {item.time}
-                            </p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center px-5 py-6 text-center">
-                    <EmptyNotificationIllustration />
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      Belum ada notifikasi
-                    </p>
-                    <p className="mt-1 whitespace-nowrap text-[11px] text-muted">
-                      Aktivitas terbaru akan muncul di sini.
-                    </p>
-                  </div>
-                )}
-              </div>
+                                {!item.isRead && (
+                                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                )}
+                              </div>
 
-              <div className="border-t border-border p-2">
-                <Link
-                  href="/notifications"
-                  tabIndex={notificationMenuOpen ? 0 : -1}
-                  onClick={() => setNotificationMenuOpen(false)}
-                  className="
-                    flex items-center justify-center gap-2
-                    rounded-lg px-3 py-2.5
-                    text-xs font-semibold text-primary
-                    transition-colors duration-150
-                    hover:bg-primary-light
-                  "
-                >
-                  Lihat Semua Notifikasi <span>→</span>
-                </Link>
+                              <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">
+                                {item.description}
+                              </p>
+
+                              <p className="mt-1.5 text-[10px] text-muted">
+                                {item.time}
+                              </p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center px-5 py-6 text-center">
+                      <EmptyNotificationIllustration />
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        Belum ada notifikasi
+                      </p>
+                      <p className="mt-1 whitespace-nowrap text-[11px] text-muted">
+                        Aktivitas terbaru akan muncul di sini.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-border p-2">
+                  <Link
+                    href="/notifications"
+                    tabIndex={notificationMenuOpen ? 0 : -1}
+                    onClick={() => setNotificationMenuOpen(false)}
+                    className="
+                      flex items-center justify-center gap-2
+                      rounded-lg px-3 py-2.5
+                      text-xs font-semibold text-primary
+                      transition-colors duration-150
+                      hover:bg-primary-light
+                    "
+                  >
+                    Lihat Semua Notifikasi <span>→</span>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* DIVIDER */}
-          <div className="hidden h-9 w-px bg-border/70 sm:block" />
+          <div className="hidden h-9 w-px bg-border/70 lg:block" />
 
           {/* PROFILE: DESKTOP ONLY */}
-          <div className="relative hidden sm:block" ref={profileMenuRef}>
+          <div className="relative hidden lg:block" ref={profileMenuRef}>
             <button
               type="button"
               onClick={toggleProfileMenu}
@@ -697,11 +730,13 @@ export default function AppHeader({
                 motion-reduce:transition-none
               "
             >
-              <User
-                size={23}
-                weight="duotone"
-                className="text-primary"
-              />
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5">
+                <User
+                  size={21}
+                  weight="duotone"
+                  className="text-primary"
+                />
+              </span>
 
               <div className="hidden min-w-0 text-left sm:block">
                 <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
@@ -780,56 +815,58 @@ export default function AppHeader({
       </div>
 
       {/* MOBILE SEARCH PANEL */}
-      <div
-        ref={searchRef}
-        aria-hidden={!mobileSearchOpen}
-        className={`
-          grid transition-all duration-200 ease-out
-          motion-reduce:transition-none md:hidden
-          ${
-            mobileSearchOpen
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
-          }
-        `}
-      >
-        <div className="overflow-hidden">
-          <div className="px-4 pb-4 pt-3">
-            <div className="relative">
-              <MagnifyingGlass
-                size={19}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-              />
-
-              <input
-                type="search"
-                value={searchValue}
-                onChange={handleSearch}
-                onFocus={() => setSearchOpen(true)}
-                placeholder="Cari equipment, customer..."
-                aria-label="Pencarian mobile"
-                tabIndex={mobileSearchOpen ? 0 : -1}
-                className="
-                  h-11 w-full rounded-control
-                  border border-border bg-background
-                  pl-10 pr-3 text-sm text-foreground
-                  outline-none transition-all duration-200
-                  placeholder:text-muted
-                  focus:border-primary focus:bg-surface
-                  focus:ring-2 focus:ring-primary/10
-                "
-              />
-
-              {searchOpen && mobileSearchOpen && (
-                <SearchSuggestionList
-                  query={searchValue}
-                  onClose={closeSearch}
+      {!isNotificationsPage && (
+        <div
+          ref={mobileSearchRef}
+          aria-hidden={!mobileSearchOpen}
+          className={`
+            relative z-[60] grid transition-all duration-200 ease-out
+            motion-reduce:transition-none lg:hidden
+            ${
+              mobileSearchOpen
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
+            }
+          `}
+        >
+          <div className="min-h-0 overflow-visible">
+            <div className="px-4 pb-4 pt-3">
+              <div className="relative">
+                <MagnifyingGlass
+                  size={19}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                 />
-              )}
+
+                <input
+                  type="search"
+                  value={searchValue}
+                  onChange={handleSearch}
+                  onFocus={() => setSearchOpen(true)}
+                  placeholder="Cari equipment, customer..."
+                  aria-label="Pencarian mobile"
+                  tabIndex={mobileSearchOpen ? 0 : -1}
+                  className="
+                    h-11 w-full rounded-control
+                    border border-border bg-background
+                    pl-10 pr-3 text-sm text-foreground
+                    outline-none transition-all duration-200
+                    placeholder:text-muted
+                    focus:border-primary focus:bg-surface
+                    focus:ring-2 focus:ring-primary/10
+                  "
+                />
+
+                {searchOpen && mobileSearchOpen && (
+                  <SearchSuggestionList
+                    query={searchValue}
+                    onClose={closeSearch}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
