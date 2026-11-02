@@ -1,94 +1,30 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
-  Check,
-  ClipboardText,
-  Monitor,
-  Wrench,
-  User,
-  Trash,
   CaretDown,
   CaretUp,
-  X,
-  Info,
+  Check,
   CheckCircle,
-  Package,
+  ClipboardText,
+  Info,
+  Monitor,
+  Trash,
+  User,
+  Wrench,
 } from "@phosphor-icons/react";
 
-type NotificationType =
-  | "visit"
-  | "equipment"
-  | "user"
-  | "monitoring"
-  | "general";
-
-interface NotificationItem {
-  id: number;
-  title: string;
-  description: string;
-  detail: string;
-  time: string;
-  type: NotificationType;
-  isRead: boolean;
-}
-
-const initialNotifications: NotificationItem[] = [
-  {
-    id: 1,
-    title: "Kunjungan berhasil dicatat",
-    description: "Preventive Maintenance - MOKU-001",
-    detail:
-      "Kunjungan Preventive Maintenance untuk mesin MOKU-001 milik PT Maju Jaya berhasil dicatat. Data kunjungan telah masuk ke riwayat monitoring.",
-    time: "5 menit yang lalu",
-    type: "visit",
-    isRead: false,
-  },
-  {
-    id: 2,
-    title: "Peralatan baru ditambahkan",
-    description: "MOKU-012 - Canon imageRUNNER",
-    detail:
-      "Peralatan MOKU-012 dengan model Canon imageRUNNER telah ditambahkan ke dalam daftar peralatan.",
-    time: "1 jam yang lalu",
-    type: "equipment",
-    isRead: false,
-  },
-  {
-    id: 3,
-    title: "Informasi pengguna diperbarui",
-    description: "Andi Pratama",
-    detail:
-      "Informasi akun pengguna Andi Pratama telah diperbarui.",
-    time: "3 jam yang lalu",
-    type: "user",
-    isRead: true,
-  },
-  {
-    id: 4,
-    title: "Monitoring bulanan diperbarui",
-    description: "Periode November 2026",
-    detail:
-      "Data monitoring kunjungan untuk periode November 2026 telah diperbarui berdasarkan aktivitas kunjungan yang tercatat.",
-    time: "Kemarin",
-    type: "monitoring",
-    isRead: true,
-  },
-  {
-    id: 5,
-    title: "Kunjungan berhasil dicatat",
-    description: "Unscheduled Maintenance - MOKU-002",
-    detail:
-      "Kunjungan Unscheduled Maintenance untuk mesin MOKU-002 milik PT Sinar Abadi berhasil dicatat.",
-    time: "2 hari yang lalu",
-    type: "visit",
-    isRead: true,
-  },
-];
+import {
+  demoNotifications,
+  loadNotifications,
+  saveNotifications,
+  subscribeNotifications,
+  type NotificationItem,
+} from "@/lib/notification-store";
 
 const iconMap = {
   visit: Wrench,
@@ -99,23 +35,32 @@ const iconMap = {
 };
 
 const iconColorMap = {
-  visit: "text-primary bg-primary/10",
-  equipment: "text-blue-600 bg-blue-50",
-  user: "text-violet-600 bg-violet-50",
-  monitoring: "text-amber-600 bg-amber-50",
-  general: "text-muted-foreground bg-muted",
+  visit: "bg-primary/10 text-primary",
+  equipment: "bg-orange-50 text-orange-600",
+  user: "bg-violet-50 text-violet-600",
+  monitoring: "bg-amber-50 text-amber-700",
+  general: "bg-muted text-muted-foreground",
 };
 
 export default function NotificationsPage() {
   const router = useRouter();
 
-  const [notifications, setNotifications] = useState(
-    initialNotifications
-  );
+  const [notifications, setNotifications] = useState<
+    NotificationItem[]
+  >([]);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "unread"
   >("all");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const syncNotifications = () => {
+      setNotifications(loadNotifications());
+    };
+
+    syncNotifications();
+    return subscribeNotifications(syncNotifications);
+  }, []);
 
   const unreadCount = notifications.filter(
     (item) => !item.isRead
@@ -125,23 +70,26 @@ export default function NotificationsPage() {
     activeFilter === "unread" ? !item.isRead : true
   );
 
-  const markAsRead = (id: number) => {
-    setNotifications((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, isRead: true } : item
-      )
+  const markAsRead = (id: string) => {
+    const updated = notifications.map((item) =>
+      item.id === id ? { ...item, isRead: true } : item
     );
+
+    saveNotifications(updated);
   };
 
   const markAllAsRead = () => {
-    setNotifications((current) =>
-      current.map((item) => ({ ...item, isRead: true }))
+    saveNotifications(
+      notifications.map((item) => ({
+        ...item,
+        isRead: true,
+      }))
     );
   };
 
-  const deleteNotification = (id: number) => {
-    setNotifications((current) =>
-      current.filter((item) => item.id !== id)
+  const deleteNotification = (id: string) => {
+    saveNotifications(
+      notifications.filter((item) => item.id !== id)
     );
 
     if (expandedId === id) {
@@ -150,7 +98,7 @@ export default function NotificationsPage() {
   };
 
   const deleteAllNotifications = () => {
-    setNotifications([]);
+    saveNotifications([]);
     setExpandedId(null);
   };
 
@@ -173,15 +121,15 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-white">
       <div className="page-enter mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
-        {/* Mobile heading */}
+        {/* MOBILE TITLE */}
         <div className="mb-6 flex items-center gap-3 lg:hidden">
           <button
             type="button"
             onClick={handleBack}
             aria-label="Kembali"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white transition-colors hover:bg-[#F1F2F5]"
           >
             <ArrowLeft size={20} />
           </button>
@@ -196,7 +144,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* Desktop heading */}
+        {/* DESKTOP TITLE */}
         <div className="mb-7 hidden lg:block">
           <h1 className="text-2xl font-semibold text-foreground">
             Notifikasi
@@ -206,8 +154,8 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-        {/* Summary */}
-        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-border bg-background p-5 sm:flex-row sm:items-center sm:justify-between">
+        {/* SUMMARY */}
+        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Bell size={22} weight="duotone" />
@@ -228,7 +176,7 @@ export default function NotificationsPage() {
               type="button"
               onClick={markAllAsRead}
               disabled={unreadCount === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[#F1F2F5] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check size={17} />
               Tandai semua dibaca
@@ -246,15 +194,15 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* FILTER */}
         <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex rounded-lg bg-muted p-1">
+          <div className="flex rounded-lg bg-[#F1F2F5] p-1">
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeFilter === "all"
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-white text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -266,7 +214,7 @@ export default function NotificationsPage() {
               onClick={() => setActiveFilter("unread")}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeFilter === "unread"
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-white text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -284,8 +232,8 @@ export default function NotificationsPage() {
           </span>
         </div>
 
-        {/* Notification list */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-background">
+        {/* NOTIFICATION LIST */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-white">
           {filteredNotifications.length > 0 ? (
             <div className="divide-y divide-border">
               {filteredNotifications.map((item) => {
@@ -301,9 +249,7 @@ export default function NotificationsPage() {
                   >
                     <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                          iconColorMap[item.type]
-                        }`}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
                       >
                         <Icon size={20} weight="duotone" />
                       </div>
@@ -352,7 +298,7 @@ export default function NotificationsPage() {
                               ? "Tutup detail"
                               : "Lihat detail"
                           }
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5]"
                         >
                           {isExpanded ? (
                             <CaretUp size={18} />
@@ -364,7 +310,7 @@ export default function NotificationsPage() {
                     </div>
 
                     {isExpanded && (
-                      <div className="border-t border-border bg-muted/30 px-4 py-4 sm:px-5 sm:pl-[4.75rem]">
+                      <div className="border-t border-border bg-[#F8F8F9] px-4 py-4 sm:px-5 sm:pl-[4.75rem]">
                         <div className="flex items-start gap-2">
                           <Info
                             size={17}
@@ -382,7 +328,7 @@ export default function NotificationsPage() {
             </div>
           ) : (
             <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F1F2F5] text-muted-foreground">
                 {activeFilter === "unread" ? (
                   <CheckCircle size={28} weight="duotone" />
                 ) : (
@@ -406,7 +352,7 @@ export default function NotificationsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNotifications(initialNotifications);
+                    saveNotifications(demoNotifications);
                     setActiveFilter("all");
                   }}
                   className="mt-5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
