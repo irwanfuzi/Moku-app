@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -54,7 +55,7 @@ const dropdownBase = `
   absolute right-0 top-full z-50 mt-2
   origin-top-right overflow-hidden rounded-xl
   border border-border bg-surface
-  shadow-lg shadow-black/10
+  shadow-[0_6px_20px_rgba(0,0,0,0.06)]
   transform-gpu
   transition-[opacity,transform]
   ease-out
@@ -428,12 +429,11 @@ export default function AppHeader({
                     <EmptyNotificationIllustration />
 
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      Semua sudah terpantau!
+                      Belum ada notifikasi
                     </p>
 
                     <p className="mt-1 max-w-[230px] text-xs leading-relaxed text-muted">
-                      Belum ada notifikasi baru. Informasi aktivitas MOKU akan
-                      muncul di sini.
+                      Aktivitas terbaru MOKU akan muncul di sini.
                     </p>
                   </div>
                 )}
@@ -482,11 +482,12 @@ export default function AppHeader({
               <div
                 className="
                   flex h-9 w-9 shrink-0 items-center
-                  justify-center rounded-control
+                  justify-center rounded-full
+                  border border-primary/10
                   bg-primary-light text-primary
                 "
               >
-                <UserCircle size={23} weight="regular" />
+                <UserCircle size={24} weight="duotone" />
               </div>
 
               <div className="hidden min-w-0 text-left sm:block">
