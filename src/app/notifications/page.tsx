@@ -15,6 +15,7 @@ import {
   Monitor,
   Trash,
   User,
+  Users,
   Wrench,
 } from "@phosphor-icons/react";
 
@@ -26,21 +27,46 @@ import {
   type NotificationItem,
 } from "@/lib/notification-store";
 
+/* =========================================================
+   NOTIFICATION ICONS
+========================================================= */
+
 const iconMap = {
   visit: Wrench,
   equipment: Monitor,
+  customer: Users,
   user: User,
   monitoring: ClipboardText,
   general: Bell,
-};
+} satisfies Record<NotificationItem["type"], typeof Bell>;
 
 const iconColorMap = {
   visit: "bg-primary/10 text-primary",
   equipment: "bg-orange-50 text-orange-600",
+  customer: "bg-sky-50 text-sky-600",
   user: "bg-violet-50 text-violet-600",
   monitoring: "bg-amber-50 text-amber-700",
   general: "bg-muted text-muted-foreground",
+} satisfies Record<NotificationItem["type"], string>;
+
+const detailLabels: Record<string, string> = {
+  equipmentNumber: "Nomor Equipment",
+  equipmentModel: "Model Mesin",
+  customerName: "Pelanggan",
+  technicianName: "Teknisi",
+  visitDate: "Tanggal Kunjungan",
+  visitType: "Jenis Kunjungan",
+  activityDescription: "Deskripsi Aktivitas",
+  customerAddress: "Alamat Pelanggan",
+  customerContact: "Kontak Pelanggan",
+  monitoringPeriod: "Periode Monitoring",
+  monitoringStatus: "Status Monitoring",
+  changeDescription: "Perubahan",
 };
+
+/* =========================================================
+   NOTIFICATIONS PAGE
+========================================================= */
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -48,10 +74,16 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<
     NotificationItem[]
   >([]);
+
   const [activeFilter, setActiveFilter] = useState<
     "all" | "unread"
   >("all");
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  /* =======================================================
+     SYNC NOTIFICATIONS
+  ======================================================= */
 
   useEffect(() => {
     const syncNotifications = () => {
@@ -59,8 +91,13 @@ export default function NotificationsPage() {
     };
 
     syncNotifications();
+
     return subscribeNotifications(syncNotifications);
   }, []);
+
+  /* =======================================================
+     FILTER & COUNTS
+  ======================================================= */
 
   const unreadCount = notifications.filter(
     (item) => !item.isRead
@@ -69,6 +106,10 @@ export default function NotificationsPage() {
   const filteredNotifications = notifications.filter((item) =>
     activeFilter === "unread" ? !item.isRead : true
   );
+
+  /* =======================================================
+     NOTIFICATION ACTIONS
+  ======================================================= */
 
   const markAsRead = (id: string) => {
     const updated = notifications.map((item) =>
@@ -120,9 +161,14 @@ export default function NotificationsPage() {
     }
   };
 
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <main className="min-h-screen bg-white">
       <div className="page-enter mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
+
         {/* MOBILE TITLE */}
         <div className="mb-6 flex items-center gap-3 lg:hidden">
           <button
@@ -219,6 +265,7 @@ export default function NotificationsPage() {
               }`}
             >
               Belum dibaca
+
               {unreadCount > 0 && (
                 <span className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-xs text-white">
                   {unreadCount}
@@ -240,6 +287,14 @@ export default function NotificationsPage() {
                 const Icon = iconMap[item.type];
                 const isExpanded = expandedId === item.id;
 
+                const detailEntries = item.detail
+                  ? Object.entries(item.detail).filter(
+                      ([, value]) =>
+                        typeof value === "string" &&
+                        value.trim().length > 0
+                    )
+                  : [];
+
                 return (
                   <div
                     key={item.id}
@@ -248,12 +303,14 @@ export default function NotificationsPage() {
                     }`}
                   >
                     <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
+                      {/* ICON */}
                       <div
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
                       >
                         <Icon size={20} weight="duotone" />
                       </div>
 
+                      {/* CONTENT */}
                       <button
                         type="button"
                         onClick={() => toggleNotification(item)}
@@ -278,6 +335,7 @@ export default function NotificationsPage() {
                         </p>
                       </button>
 
+                      {/* ACTIONS */}
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
@@ -309,17 +367,36 @@ export default function NotificationsPage() {
                       </div>
                     </div>
 
+                    {/* EXPANDED DETAIL */}
                     {isExpanded && (
                       <div className="border-t border-border bg-[#F8F8F9] px-4 py-4 sm:px-5 sm:pl-[4.75rem]">
-                        <div className="flex items-start gap-2">
-                          <Info
-                            size={17}
-                            className="mt-0.5 shrink-0 text-muted-foreground"
-                          />
-                          <p className="text-sm leading-relaxed text-muted-foreground">
-                            {item.detail}
-                          </p>
-                        </div>
+                        {detailEntries.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {detailEntries.map(([key, value]) => (
+                              <div
+                                key={key}
+                                className="min-w-0"
+                              >
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  {detailLabels[key] ?? key}
+                                </p>
+                                <p className="mt-1 break-words text-sm leading-relaxed text-foreground">
+                                  {value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Info
+                              size={17}
+                              className="mt-0.5 shrink-0 text-muted-foreground"
+                            />
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              Tidak ada informasi detail tambahan untuk notifikasi ini.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -364,6 +441,7 @@ export default function NotificationsPage() {
           )}
         </div>
 
+        {/* FOOTER */}
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Data notifikasi saat ini merupakan data demo untuk pengujian
           tampilan.
@@ -380,6 +458,7 @@ export default function NotificationsPage() {
             opacity: 0;
             transform: translateY(8px);
           }
+
           to {
             opacity: 1;
             transform: translateY(0);
