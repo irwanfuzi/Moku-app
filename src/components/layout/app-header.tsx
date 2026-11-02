@@ -50,20 +50,93 @@ const notificationStyles = {
   general: "bg-surface-secondary text-muted",
 };
 
-const dropdownTransition = `
-  absolute right-0 top-full z-50 mt-2
-  origin-top-right overflow-hidden rounded-xl
-  border border-border bg-surface
-  shadow-lg shadow-black/10
-  transition-[opacity,transform,visibility]
-  duration-200 ease-out
-  motion-reduce:transition-none
-`;
+function getDropdownAnimation(isOpen: boolean) {
+  return `
+    pointer-events-${isOpen ? "auto" : "none"}
+    translate-y-${isOpen ? "0" : "-1"}
+    scale-${isOpen ? "100" : "[0.98]"}
+    opacity-${isOpen ? "100" : "0"}
+    ${isOpen ? "duration-200" : "duration-150"}
+  `;
+}
 
-function getDropdownState(isOpen: boolean) {
-  return isOpen
-    ? "visible translate-y-0 scale-100 opacity-100"
-    : "invisible -translate-y-2 scale-[0.98] opacity-0";
+function EmptyNotificationIllustration() {
+  return (
+    <svg
+      viewBox="0 0 180 130"
+      width="180"
+      height="130"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Ilustrasi belum ada notifikasi"
+    >
+      <ellipse
+        cx="90"
+        cy="112"
+        rx="62"
+        ry="8"
+        fill="#F2F2F2"
+      />
+
+      <circle cx="90" cy="61" r="48" fill="#F9EEEE" />
+      <circle cx="90" cy="61" r="37" fill="#F3DCDD" />
+
+      <path
+        d="M90 28C78.4 28 69 37.4 69 49V61C69 68 65.5 73.5 60 78H120C114.5 73.5 111 68 111 61V49C111 37.4 101.6 28 90 28Z"
+        fill="#6F010E"
+      />
+
+      <path
+        d="M81 85C82.7 91 87 94 90 94C93 94 97.3 91 99 85"
+        stroke="#6F010E"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M90 20V15"
+        stroke="#B10618"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M49 43L43 39"
+        stroke="#C26C5D"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M131 43L137 39"
+        stroke="#C26C5D"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      <circle cx="43" cy="76" r="4" fill="#FEAF27" />
+      <circle cx="137" cy="76" r="4" fill="#FEAF27" />
+
+      <path
+        d="M37 22L40 16L43 22L49 25L43 28L40 34L37 28L31 25L37 22Z"
+        fill="#FEAF27"
+      />
+
+      <path
+        d="M139 17L141 13L143 17L147 19L143 21L141 25L139 21L135 19L139 17Z"
+        fill="#C26C5D"
+      />
+
+      <path
+        d="M70 103H110"
+        stroke="#C26C5D"
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.5"
+      />
+    </svg>
+  );
 }
 
 export default function AppHeader({
@@ -207,11 +280,7 @@ export default function AppHeader({
               md:hidden
             "
           >
-            {mobileSearchOpen ? (
-              <X size={21} />
-            ) : (
-              <MagnifyingGlass size={21} />
-            )}
+            {mobileSearchOpen ? <X size={21} /> : <MagnifyingGlass size={21} />}
           </button>
 
           {/* NOTIFICATION DROPDOWN */}
@@ -254,12 +323,20 @@ export default function AppHeader({
               )}
             </button>
 
+            {/* NOTIFICATION PANEL */}
             <div
               aria-hidden={!notificationMenuOpen}
               className={`
-                ${dropdownTransition}
+                absolute right-0 top-full z-50 mt-2
                 w-[min(360px,calc(100vw-24px))]
-                ${getDropdownState(notificationMenuOpen)}
+                origin-top-right overflow-hidden rounded-xl
+                border border-border bg-surface
+                shadow-lg shadow-black/10
+                transform-gpu will-change-transform
+                transition-[opacity,transform]
+                ease-[cubic-bezier(0.2,0.7,0.3,1)]
+                motion-reduce:transition-none
+                ${getDropdownAnimation(notificationMenuOpen)}
               `}
             >
               {/* NOTIFICATION HEADER */}
@@ -280,6 +357,7 @@ export default function AppHeader({
                     type="button"
                     onClick={onMarkAllNotificationsRead}
                     disabled={!onMarkAllNotificationsRead}
+                    tabIndex={notificationMenuOpen ? 0 : -1}
                     className="
                       flex items-center gap-1.5 rounded-md
                       px-2 py-1.5 text-[11px] font-medium
@@ -299,13 +377,13 @@ export default function AppHeader({
                 {notifications.length > 0 ? (
                   <div className="divide-y divide-border">
                     {notifications.slice(0, 5).map((item) => {
-                      const Icon =
-                        notificationIcons[item.type || "general"];
+                      const Icon = notificationIcons[item.type || "general"];
 
                       return (
                         <Link
                           key={item.id}
                           href={item.href || "/notifications"}
+                          tabIndex={notificationMenuOpen ? 0 : -1}
                           onClick={() => setNotificationMenuOpen(false)}
                           className="
                             flex items-start gap-3 px-4 py-3.5
@@ -348,19 +426,17 @@ export default function AppHeader({
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center px-5 py-10 text-center">
-                    <div className="
-                      flex h-12 w-12 items-center justify-center
-                      rounded-full bg-surface-secondary text-muted
-                    ">
-                      <Bell size={23} />
-                    </div>
+                  /* EMPTY STATE */
+                  <div className="flex flex-col items-center px-5 py-7 text-center">
+                    <EmptyNotificationIllustration />
 
-                    <p className="mt-3 text-sm font-semibold text-foreground">
-                      Belum ada notifikasi
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Semua sudah terpantau!
                     </p>
-                    <p className="mt-1 max-w-[220px] text-xs leading-relaxed text-muted">
-                      Notifikasi aktivitas MOKU akan muncul di sini.
+
+                    <p className="mt-1 max-w-[230px] text-xs leading-relaxed text-muted">
+                      Belum ada notifikasi baru. Informasi aktivitas MOKU akan
+                      muncul di sini.
                     </p>
                   </div>
                 )}
@@ -370,6 +446,7 @@ export default function AppHeader({
               <div className="border-t border-border p-2">
                 <Link
                   href="/notifications"
+                  tabIndex={notificationMenuOpen ? 0 : -1}
                   onClick={() => setNotificationMenuOpen(false)}
                   className="
                     flex items-center justify-center gap-2
@@ -432,13 +509,15 @@ export default function AppHeader({
               />
             </button>
 
+            {/* PROFILE PANEL */}
             <div
               role="menu"
               aria-hidden={!profileMenuOpen}
               className={`
-                ${dropdownTransition}
+                ${dropdownTransitionClasses}
                 w-[220px]
-                ${getDropdownState(profileMenuOpen)}
+                transform-gpu will-change-transform
+                ${getDropdownAnimation(profileMenuOpen)}
               `}
             >
               <div className="border-b border-border px-4 py-3">
