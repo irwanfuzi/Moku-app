@@ -210,9 +210,7 @@ export default function NotificationsPage() {
     deleted: DeletedNotification[];
   } | null>(null);
 
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>(
-    {}
-  );
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const [exitingIds, setExitingIds] = useState<string[]>([]);
 
   const touchStartRef = useRef<{
@@ -224,11 +222,12 @@ export default function NotificationsPage() {
   } | null>(null);
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+
+  // Browser setTimeout returns a number.
+  const longPressTimerRef = useRef<number | null>(null);
+  const deleteTimerRef = useRef<number | null>(null);
+
   const suppressClickRef = useRef(false);
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* =======================================================
      SYNC NOTIFICATIONS
@@ -417,8 +416,8 @@ export default function NotificationsPage() {
   ======================================================= */
 
   const clearLongPressTimer = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
   };
@@ -510,13 +509,14 @@ export default function NotificationsPage() {
         current.includes(id) ? current : [...current, id]
       );
 
-      if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current);
+      if (deleteTimerRef.current !== null) {
+        window.clearTimeout(deleteTimerRef.current);
       }
 
       deleteTimerRef.current = window.setTimeout(() => {
         finishDeletion([id], "Notifikasi dihapus");
         suppressClickRef.current = false;
+        deleteTimerRef.current = null;
       }, 220);
 
       return;
@@ -556,12 +556,12 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
       }
 
-      if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current);
+      if (deleteTimerRef.current !== null) {
+        window.clearTimeout(deleteTimerRef.current);
       }
     };
   }, []);
