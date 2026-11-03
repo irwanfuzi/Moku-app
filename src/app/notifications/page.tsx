@@ -2,14 +2,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TouchEvent } from "react";
+import type { TouchEvent, MouseEvent } from "react";
 import Link from "next/link";
 import {
   Bell,
   Check,
   CheckCircle,
-  ChevronDown,
-  Filter,
+  CaretDown,
+  Funnel,
   Monitor,
   Trash,
   User,
@@ -84,10 +84,6 @@ const filters: { id: FilterType; label: string }[] = [
 
 /* =========================================================
    DATE FORMATTER
-
-   Hari ini       : 10:35
-   Hari sebelumnya: 2 Nov
-   Tahun berbeda  : 15 Agu 2025
 ========================================================= */
 
 function formatNotificationDate(value: unknown, fallback?: string) {
@@ -151,7 +147,6 @@ function EmptyNotificationWatermark() {
       <g opacity="0.55">
         <circle cx="66" cy="70" r="5" fill="#F28C0F" />
         <circle cx="258" cy="83" r="4" fill="#BF0B2C" />
-
         <path
           d="M82 43L86 53L96 57L86 61L82 71L78 61L68 57L78 53L82 43Z"
           fill="#F28C0F"
@@ -186,13 +181,20 @@ function EmptyNotificationWatermark() {
         <circle cx="202" cy="66" r="17" fill="#F28C0F" />
       </g>
 
-      <ellipse cx="160" cy="192" rx="76" ry="8" fill="#EADDE0" opacity="0.45" />
+      <ellipse
+        cx="160"
+        cy="192"
+        rx="76"
+        ry="8"
+        fill="#EADDE0"
+        opacity="0.45"
+      />
     </svg>
   );
 }
 
 /* =========================================================
-   PAGE
+   NOTIFICATIONS PAGE
 ========================================================= */
 
 export default function NotificationsPage() {
@@ -208,7 +210,9 @@ export default function NotificationsPage() {
     deleted: DeletedNotification[];
   } | null>(null);
 
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>(
+    {}
+  );
   const [exitingIds, setExitingIds] = useState<string[]>([]);
 
   const touchStartRef = useRef<{
@@ -220,12 +224,14 @@ export default function NotificationsPage() {
   } | null>(null);
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const suppressClickRef = useRef(false);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* =======================================================
-     SYNC STORE
+     SYNC NOTIFICATIONS
   ======================================================= */
 
   useEffect(() => {
@@ -245,7 +251,7 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     SNACKBAR
+     SNACKBAR AUTO DISMISS
   ======================================================= */
 
   useEffect(() => {
@@ -259,7 +265,7 @@ export default function NotificationsPage() {
   }, [snackbar]);
 
   /* =======================================================
-     FILTER
+     FILTER & COUNTS
   ======================================================= */
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
@@ -407,7 +413,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     TOUCH INTERACTION
+     MOBILE TOUCH INTERACTION
   ======================================================= */
 
   const clearLongPressTimer = () => {
@@ -477,7 +483,6 @@ export default function NotificationsPage() {
       Math.abs(deltaX) > Math.abs(deltaY) * 1.15
     ) {
       start.horizontal = true;
-
       updateSwipeOffset(id, Math.max(deltaX, -112));
     }
   };
@@ -500,6 +505,7 @@ export default function NotificationsPage() {
       suppressClickRef.current = true;
 
       updateSwipeOffset(id, -320);
+
       setExitingIds((current) =>
         current.includes(id) ? current : [...current, id]
       );
@@ -526,7 +532,7 @@ export default function NotificationsPage() {
   };
 
   const handleDetailClick = (
-    event: React.MouseEvent<HTMLAnchorElement>
+    event: MouseEvent<HTMLAnchorElement>
   ) => {
     if (isSelectionMode) {
       event.preventDefault();
@@ -550,7 +556,9 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     return () => {
-      clearLongPressTimer();
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
 
       if (deleteTimerRef.current) {
         clearTimeout(deleteTimerRef.current);
@@ -559,12 +567,10 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     EMPTY STATES
+     EMPTY STATE
   ======================================================= */
 
   const isCompletelyEmpty = notifications.length === 0;
-  const isFilterEmpty =
-    notifications.length > 0 && filteredNotifications.length === 0;
 
   /* =======================================================
      RENDER
@@ -590,9 +596,9 @@ export default function NotificationsPage() {
                     : "border-[#E8E9ED] bg-white text-foreground hover:bg-[#F8F8F9]"
                 }`}
               >
-                <Filter size={17} />
+                <Funnel size={17} />
                 <span>{activeFilterLabel}</span>
-                <ChevronDown
+                <CaretDown
                   size={15}
                   className={`transition-transform ${
                     filterOpen ? "rotate-180" : ""
@@ -711,9 +717,7 @@ export default function NotificationsPage() {
               </>
             ) : (
               <span className="text-xs text-muted-foreground">
-                {filteredNotifications.length > 0
-                  ? `${filteredNotifications.length} notifikasi`
-                  : ""}
+                {filteredNotifications.length} notifikasi
               </span>
             )}
           </div>
@@ -852,8 +856,6 @@ export default function NotificationsPage() {
                     {/* MOBILE ROW */}
 
                     <div className="relative overflow-hidden md:hidden">
-                      {/* DELETE BACKGROUND: ONLY VISIBLE DURING SWIPE */}
-
                       <div
                         className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-red-600 transition-opacity duration-100"
                         style={{
@@ -890,8 +892,6 @@ export default function NotificationsPage() {
                           touchAction: "pan-y",
                         }}
                       >
-                        {/* SELECTION INDICATOR */}
-
                         {isSelectionMode && (
                           <div className="mt-2 flex h-5 w-5 shrink-0 animate-selection-in items-center justify-center">
                             <input
@@ -1052,7 +1052,7 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* SNACKBAR */}
+      {/* SNACKBAR WITH UNDO */}
 
       {snackbar && (
         <div
