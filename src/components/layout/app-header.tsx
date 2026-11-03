@@ -12,6 +12,7 @@ import {
   type ElementType,
 } from "react";
 import {
+  ArrowLeft,
   Bell,
   CaretDown,
   Check,
@@ -226,6 +227,10 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const pathname = usePathname();
   const isNotificationsPage = pathname === "/notifications";
+  const isNotificationDetail = pathname.startsWith("/notifications/");
+
+  const isNotificationSection =
+    isNotificationsPage || isNotificationDetail;
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsReady, setNotificationsReady] = useState(false);
@@ -332,31 +337,47 @@ export default function AppHeader({
   }, []);
 
   useEffect(() => {
-    if (isNotificationsPage) {
+    if (isNotificationSection) {
       setMobileSearchOpen(false);
       setSearchOpen(false);
       setNotificationMenuOpen(false);
       setProfileMenuOpen(false);
     }
-  }, [isNotificationsPage]);
+  }, [isNotificationSection]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/95 shadow-[0_1px_2px_rgba(0,0,0,0.025)] backdrop-blur-md transition-colors duration-200">
-      <div className="flex min-h-[68px] items-center justify-between gap-3 px-4 py-3 sm:min-h-[76px] sm:px-6 lg:px-8">
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
-            {title}
-          </h1>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-white/95 backdrop-blur-md transition-colors duration-200">
+      <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-2.5 sm:min-h-[68px] sm:px-6 sm:py-3 lg:px-8">
 
-          {description && (
-            <p className="mt-0.5 hidden truncate text-xs text-muted sm:block">
-              {description}
-            </p>
+        {/* PAGE TITLE */}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {/* BACK BUTTON: MOBILE NOTIFICATION PAGES */}
+          {isNotificationSection && (
+            <Link
+              href="/"
+              aria-label="Kembali ke dashboard"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-[#F1F2F5] active:scale-95 md:hidden"
+            >
+              <ArrowLeft size={21} weight="regular" />
+            </Link>
           )}
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              {title}
+            </h1>
+
+            {description && (
+              <p className="mt-0.5 hidden truncate text-xs text-muted sm:block">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
 
+        {/* HEADER ACTIONS */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-          {!isNotificationsPage && (
+          {!isNotificationSection && (
             <div
               ref={desktopSearchRef}
               className="relative hidden w-48 lg:block lg:w-64"
@@ -365,6 +386,7 @@ export default function AppHeader({
                 size={18}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
               />
+
               <input
                 type="search"
                 value={searchValue}
@@ -384,7 +406,7 @@ export default function AppHeader({
             </div>
           )}
 
-          {!isNotificationsPage && (
+          {!isNotificationSection && (
             <button
               type="button"
               onClick={() => {
@@ -403,7 +425,7 @@ export default function AppHeader({
             </button>
           )}
 
-          {!isNotificationsPage && (
+          {!isNotificationSection && (
             <Link
               href="/notifications"
               aria-label={`${displayedNotificationCount} notifikasi belum dibaca`}
@@ -420,7 +442,7 @@ export default function AppHeader({
             </Link>
           )}
 
-          {!isNotificationsPage && (
+          {!isNotificationSection && (
             <div
               ref={notificationMenuRef}
               className="relative hidden lg:block"
@@ -436,6 +458,7 @@ export default function AppHeader({
                   size={21}
                   weight={notificationMenuOpen ? "fill" : "regular"}
                 />
+
                 {displayedNotificationCount > 0 && (
                   <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-danger px-1 text-[9px] font-bold text-white">
                     {displayedNotificationCount > 99
@@ -501,13 +524,16 @@ export default function AppHeader({
                                 <p className="text-xs font-semibold text-foreground">
                                   {item.title}
                                 </p>
+
                                 {!item.isRead && (
                                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                                 )}
                               </div>
+
                               <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">
                                 {item.description}
                               </p>
+
                               <p className="mt-1.5 text-[10px] text-muted">
                                 {item.time}
                               </p>
@@ -547,6 +573,7 @@ export default function AppHeader({
 
           <div className="hidden h-9 w-px bg-border/70 lg:block" />
 
+          {/* USER PROFILE */}
           <div
             ref={profileMenuRef}
             className="relative hidden lg:block"
@@ -610,6 +637,7 @@ export default function AppHeader({
                   <User size={19} />
                   Profil Saya
                 </Link>
+
                 <Link
                   href="/settings"
                   onClick={() => setProfileMenuOpen(false)}
@@ -624,7 +652,8 @@ export default function AppHeader({
         </div>
       </div>
 
-      {!isNotificationsPage && (
+      {/* MOBILE SEARCH */}
+      {!isNotificationSection && (
         <div
           ref={mobileSearchRef}
           aria-hidden={!mobileSearchOpen}
@@ -641,6 +670,7 @@ export default function AppHeader({
                   size={19}
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
                 />
+
                 <input
                   type="search"
                   value={searchValue}
