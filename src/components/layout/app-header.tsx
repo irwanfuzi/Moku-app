@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type ElementType,
 } from "react";
 import {
   Bell,
@@ -113,18 +114,20 @@ const searchSuggestions = [
 const notificationIcons = {
   visit: Wrench,
   equipment: Monitor,
+  customer: Users,
   user: User,
   monitoring: ClipboardText,
   general: Bell,
-};
+} satisfies Record<NotificationItem["type"], ElementType>;
 
 const notificationStyles = {
   visit: "bg-primary-light text-primary",
   equipment: "bg-orange-50 text-orange-600",
+  customer: "bg-sky-50 text-sky-600",
   user: "bg-surface-secondary text-muted",
   monitoring: "bg-amber-50 text-amber-700",
   general: "bg-surface-secondary text-muted",
-};
+} satisfies Record<NotificationItem["type"], string>;
 
 function SearchSuggestionList({
   query,
