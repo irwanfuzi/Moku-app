@@ -1281,4 +1281,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-                                                                                                       }
+                                                                                                     }
