@@ -59,7 +59,7 @@ const typeLabels: Record<NotificationItem["type"], string> = {
 };
 
 /* =========================================================
-   CUSTOM MOKU CHECKBOX
+   MOKU CHECKBOX
 ========================================================= */
 
 function MokuCheckbox({
@@ -157,13 +157,11 @@ function EmptyNotificationWatermark() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Soft background shape */}
       <path
         d="M45 166C29 120 67 75 112 75C143 75 157 91 183 76C220 54 269 79 298 113C330 151 304 202 266 215C218 232 164 211 121 221C83 230 54 205 45 166Z"
         fill="#F8F0F1"
       />
 
-      {/* Decorative details */}
       <g opacity="0.55">
         <circle cx="76" cy="96" r="5" fill="#F28C0F" />
         <circle cx="288" cy="111" r="5" fill="#BF0B2C" />
@@ -177,7 +175,6 @@ function EmptyNotificationWatermark() {
         />
       </g>
 
-      {/* MOKU location mark */}
       <g opacity="0.34">
         <path
           d="M180 47C145 47 118 74 118 108C118 151 180 205 180 205C180 205 242 151 242 108C242 74 215 47 180 47Z"
@@ -189,81 +186,29 @@ function EmptyNotificationWatermark() {
         />
       </g>
 
-      {/* Simplified robot face */}
       <g opacity="0.52">
-        <rect
-          x="145"
-          y="93"
-          width="70"
-          height="52"
-          rx="17"
-          fill="#730217"
-        />
+        <rect x="145" y="93" width="70" height="52" rx="17" fill="#730217" />
+        <rect x="154" y="104" width="52" height="31" rx="10" fill="#F2F2F2" />
+        <rect x="165" y="112" width="6" height="13" rx="3" fill="#730217" />
+        <rect x="189" y="112" width="6" height="13" rx="3" fill="#730217" />
 
-        <rect
-          x="154"
-          y="104"
-          width="52"
-          height="31"
-          rx="10"
-          fill="#F2F2F2"
-        />
-
-        <rect
-          x="165"
-          y="112"
-          width="6"
-          height="13"
-          rx="3"
-          fill="#730217"
-        />
-
-        <rect
-          x="189"
-          y="112"
-          width="6"
-          height="13"
-          rx="3"
-          fill="#730217"
-        />
-
-        {/* Robot cap */}
         <path
           d="M151 95C151 78 163 68 180 68C197 68 209 78 209 95H151Z"
           fill="#BF0B2C"
         />
-
         <path
           d="M173 79L180 74L187 79V88H173V79Z"
           fill="#FFFFFF"
         />
-
         <path
           d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
           fill="#F28C0F"
         />
 
-        {/* Side modules */}
-        <rect
-          x="132"
-          y="105"
-          width="13"
-          height="28"
-          rx="6"
-          fill="#F28C0F"
-        />
-
-        <rect
-          x="215"
-          y="105"
-          width="13"
-          height="28"
-          rx="6"
-          fill="#F28C0F"
-        />
+        <rect x="132" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
+        <rect x="215" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
       </g>
 
-      {/* Floating notification symbols */}
       <g opacity="0.4">
         <rect
           x="64"
@@ -275,7 +220,6 @@ function EmptyNotificationWatermark() {
           stroke="#DCC8CC"
           strokeWidth="2"
         />
-
         <path
           d="M75 170H96M75 178H91"
           stroke="#BF0B2C"
@@ -284,7 +228,6 @@ function EmptyNotificationWatermark() {
         />
 
         <circle cx="276" cy="177" r="20" fill="#F28C0F" />
-
         <path
           d="M267 177L273 183L285 170"
           stroke="white"
@@ -294,7 +237,6 @@ function EmptyNotificationWatermark() {
         />
       </g>
 
-      {/* Ground shadow */}
       <ellipse
         cx="180"
         cy="238"
@@ -313,7 +255,6 @@ function EmptyNotificationWatermark() {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
@@ -323,10 +264,7 @@ export default function NotificationsPage() {
     readUndo?: { id: string; isRead: boolean }[];
   } | null>(null);
 
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>(
-    {}
-  );
-
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const [exitingIds, setExitingIds] = useState<string[]>([]);
 
   const touchStartRef = useRef<{
@@ -338,10 +276,8 @@ export default function NotificationsPage() {
   } | null>(null);
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
-
   const longPressTimerRef = useRef<number | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
-
   const suppressClickRef = useRef(false);
 
   /* =======================================================
@@ -379,7 +315,7 @@ export default function NotificationsPage() {
   }, [snackbar]);
 
   /* =======================================================
-     NOTIFICATION COUNTS
+     COUNTS
   ======================================================= */
 
   const totalCount = notifications.length;
@@ -465,9 +401,7 @@ export default function NotificationsPage() {
       return;
     }
 
-    targets.forEach((item) => {
-      markNotificationAsRead(item.id);
-    });
+    targets.forEach((item) => markNotificationAsRead(item.id));
 
     setSnackbar({
       message: `${targets.length} ditandai sudah dibaca`,
@@ -496,10 +430,8 @@ export default function NotificationsPage() {
       );
 
       setIsSelectionMode(false);
-
       setSwipeOffsets({});
       swipeOffsetRef.current = {};
-
       setExitingIds([]);
 
       setSnackbar({
@@ -513,11 +445,9 @@ export default function NotificationsPage() {
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
 
-    const count = selectedIds.length;
-
     finishDeletion(
       selectedIds,
-      `${count} notifikasi dihapus`
+      `${selectedIds.length} notifikasi dihapus`
     );
   };
 
@@ -552,7 +482,6 @@ export default function NotificationsPage() {
 
   const handleResetDemo = () => {
     saveNotifications(demoNotifications);
-
     setSelectedIds([]);
     setIsSelectionMode(false);
     setSnackbar(null);
@@ -600,15 +529,12 @@ export default function NotificationsPage() {
     };
 
     suppressClickRef.current = false;
-
     clearLongPressTimer();
 
     longPressTimerRef.current = window.setTimeout(() => {
       enterSelectionMode(id);
-
       suppressClickRef.current = true;
       touchStartRef.current = null;
-
       updateSwipeOffset(id, 0);
     }, 550);
   };
@@ -622,7 +548,6 @@ export default function NotificationsPage() {
     if (isSelectionMode || !start || start.id !== id) return;
 
     const touch = event.touches[0];
-
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
 
@@ -636,7 +561,6 @@ export default function NotificationsPage() {
       Math.abs(deltaX) > Math.abs(deltaY) * 1.15
     ) {
       start.horizontal = true;
-
       updateSwipeOffset(id, deltaX);
     }
   };
@@ -670,7 +594,6 @@ export default function NotificationsPage() {
 
       deleteTimerRef.current = window.setTimeout(() => {
         finishDeletion([id], "1 notifikasi dihapus");
-
         suppressClickRef.current = false;
         deleteTimerRef.current = null;
       }, 220);
@@ -683,9 +606,7 @@ export default function NotificationsPage() {
 
   const handleTouchCancel = (id: string) => {
     clearLongPressTimer();
-
     touchStartRef.current = null;
-
     updateSwipeOffset(id, 0);
   };
 
@@ -707,7 +628,9 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     return () => {
-      clearLongPressTimer();
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+      }
 
       if (deleteTimerRef.current !== null) {
         window.clearTimeout(deleteTimerRef.current);
@@ -865,10 +788,8 @@ export default function NotificationsPage() {
             <div className="divide-y divide-[#ECEDEF]">
               {notifications.map((item) => {
                 const Icon = iconMap[item.type];
-
                 const isSelected = selectedIds.includes(item.id);
                 const isExiting = exitingIds.includes(item.id);
-
                 const swipeOffset = swipeOffsets[item.id] ?? 0;
 
                 const displayDate = formatNotificationDate(
@@ -932,8 +853,6 @@ export default function NotificationsPage() {
                         {typeLabels[item.type]}
                       </span>
 
-                      {/* TIME / HOVER ACTIONS */}
-
                       <div className="flex w-24 shrink-0 items-center justify-end">
                         <span className="text-xs text-muted-foreground transition-opacity group-hover:hidden group-focus-within:hidden">
                           {displayDate}
@@ -973,16 +892,10 @@ export default function NotificationsPage() {
                     {/* MOBILE ROW */}
 
                     <div className="relative overflow-hidden md:hidden">
-
-                      {/* DELETE BACKGROUND */}
-
                       <div
                         className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-[#BF0B2C]"
                         style={{
-                          opacity: Math.min(
-                            Math.abs(swipeOffset) / 65,
-                            1
-                          ),
+                          opacity: Math.min(Math.abs(swipeOffset) / 65, 1),
                         }}
                         aria-hidden="true"
                       >
@@ -992,8 +905,6 @@ export default function NotificationsPage() {
                           className="text-white"
                         />
                       </div>
-
-                      {/* COMPLETE SWIPE CONTENT */}
 
                       <div
                         onTouchStart={(event) =>
@@ -1005,7 +916,6 @@ export default function NotificationsPage() {
                         onTouchEnd={() => handleTouchEnd(item.id)}
                         onTouchCancel={() => handleTouchCancel(item.id)}
                         onContextMenu={(event) => event.preventDefault()}
-                        onSelectStart={(event) => event.preventDefault()}
                         className={`mobile-swipe-foreground relative flex w-full items-start gap-3 overflow-hidden px-2 py-4 ${
                           isSelected
                             ? "bg-[#730217]/[0.06]"
@@ -1043,8 +953,6 @@ export default function NotificationsPage() {
                             <Icon size={20} weight="duotone" />
                           </div>
                         )}
-
-                        {/* NOTIFICATION CONTENT */}
 
                         <Link
                           href={`/notifications/${encodeURIComponent(item.id)}`}
@@ -1097,19 +1005,14 @@ export default function NotificationsPage() {
               })}
             </div>
           ) : (
-            /* EMPTY DATABASE */
+            /* EMPTY STATE */
 
             <div className="relative flex min-h-[390px] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center sm:min-h-[440px]">
-
-              {/* MOKU WATERMARK */}
-
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="opacity-[0.17]">
                   <EmptyNotificationWatermark />
                 </div>
               </div>
-
-              {/* EMPTY STATE CONTENT */}
 
               <div className="relative z-10 mt-24 flex flex-col items-center">
                 <h2 className="text-base font-semibold tracking-tight text-[#730217] sm:text-lg">
@@ -1316,4 +1219,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-                }
+                        }
