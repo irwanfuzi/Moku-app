@@ -1,14 +1,15 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TouchEvent } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Bell,
   Check,
   CheckCircle,
+  ChevronDown,
+  Filter,
   Monitor,
   Trash,
   User,
@@ -30,7 +31,7 @@ import {
 } from "@/lib/notification-store";
 
 /* =========================================================
-   NOTIFICATION CONFIGURATION
+   CONFIGURATION
 ========================================================= */
 
 const iconMap = {
@@ -71,8 +72,8 @@ type FilterType =
   | "general";
 
 const filters: { id: FilterType; label: string }[] = [
-  { id: "all", label: "Semua" },
-  { id: "unread", label: "Belum Dibaca" },
+  { id: "all", label: "Semua notifikasi" },
+  { id: "unread", label: "Belum dibaca" },
   { id: "visit", label: "Kunjungan" },
   { id: "equipment", label: "Equipment" },
   { id: "customer", label: "Customer" },
@@ -82,40 +83,82 @@ const filters: { id: FilterType; label: string }[] = [
 ];
 
 /* =========================================================
-   EMPTY STATE ILLUSTRATION
-   Only displayed when the notification database is empty.
+   DATE FORMATTER
+
+   Hari ini       : 10:35
+   Hari sebelumnya: 2 Nov
+   Tahun berbeda  : 15 Agu 2025
 ========================================================= */
 
-function EmptyNotificationIllustration() {
+function formatNotificationDate(value: unknown, fallback?: string) {
+  if (value === null || value === undefined || value === "") {
+    return fallback ?? "";
+  }
+
+  const date =
+    value instanceof Date
+      ? value
+      : typeof value === "number"
+        ? new Date(value)
+        : new Date(String(value));
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback ?? "";
+  }
+
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+
+  const isSameYear = date.getFullYear() === now.getFullYear();
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    ...(isSameYear ? {} : { year: "numeric" }),
+  }).format(date);
+}
+
+/* =========================================================
+   EMPTY STATE WATERMARK
+========================================================= */
+
+function EmptyNotificationWatermark() {
   return (
     <svg
       viewBox="0 0 320 220"
-      role="img"
-      aria-label="Ilustrasi belum ada notifikasi"
-      className="h-auto w-[210px] sm:w-[250px] md:w-[280px]"
+      aria-hidden="true"
+      className="pointer-events-none h-auto w-[210px] sm:w-[250px] md:w-[270px]"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Decorative shapes */}
       <path
         d="M42 145C28 116 49 77 82 69C111 62 132 79 149 65C170 47 203 45 228 66C258 91 276 124 258 155C242 183 199 187 161 179C120 171 62 181 42 145Z"
         fill="#F8F0F1"
       />
 
-      <circle cx="66" cy="70" r="5" fill="#F28C0F" />
-      <circle cx="258" cy="83" r="4" fill="#BF0B2C" />
-      <circle cx="244" cy="151" r="3" fill="#F28C0F" />
-      <path
-        d="M82 43L86 53L96 57L86 61L82 71L78 61L68 57L78 53L82 43Z"
-        fill="#F28C0F"
-      />
-      <path
-        d="M235 43L238 50L245 53L238 56L235 63L232 56L225 53L232 50L235 43Z"
-        fill="#BF0B2C"
-      />
+      <g opacity="0.55">
+        <circle cx="66" cy="70" r="5" fill="#F28C0F" />
+        <circle cx="258" cy="83" r="4" fill="#BF0B2C" />
 
-      {/* Floating notification card */}
-      <g transform="rotate(-8 103 112)">
+        <path
+          d="M82 43L86 53L96 57L86 61L82 71L78 61L68 57L78 53L82 43Z"
+          fill="#F28C0F"
+        />
+      </g>
+
+      <g opacity="0.55" transform="rotate(-8 103 112)">
         <rect
           x="57"
           y="91"
@@ -129,55 +172,33 @@ function EmptyNotificationIllustration() {
         <rect x="70" y="105" width="30" height="6" rx="3" fill="#E9DADD" />
         <rect x="70" y="117" width="56" height="5" rx="2.5" fill="#F0E8E9" />
         <rect x="70" y="128" width="43" height="5" rx="2.5" fill="#F0E8E9" />
-        <circle cx="127" cy="105" r="5" fill="#F28C0F" />
       </g>
 
-      {/* Main bell body */}
-      <path
-        d="M160 53C135 53 117 73 117 99V121C117 132 110 141 101 149C97 153 100 160 106 160H214C220 160 223 153 219 149C210 141 203 132 203 121V99C203 73 185 53 160 53Z"
-        fill="#730217"
-      />
+      <g opacity="0.35">
+        <path
+          d="M160 53C135 53 117 73 117 99V121C117 132 110 141 101 149C97 153 100 160 106 160H214C220 160 223 153 219 149C210 141 203 132 203 121V99C203 73 185 53 160 53Z"
+          fill="#730217"
+        />
+        <path
+          d="M145 164C147 174 153 180 160 180C167 180 173 174 175 164H145Z"
+          fill="#F28C0F"
+        />
+        <circle cx="202" cy="66" r="17" fill="#F28C0F" />
+      </g>
 
-      {/* Bell highlight */}
-      <path
-        d="M135 75C142 66 151 62 161 62"
-        stroke="#BF5267"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
-
-      {/* Bell base */}
-      <path
-        d="M145 164C147 174 153 180 160 180C167 180 173 174 175 164H145Z"
-        fill="#F28C0F"
-      />
-
-      {/* Bell clapper */}
-      <circle cx="160" cy="151" r="5" fill="#F28C0F" />
-
-      {/* Small notification badge */}
-      <circle cx="202" cy="66" r="17" fill="#F28C0F" />
-      <path
-        d="M196 66L200 70L208 61"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Bottom soft shadow */}
-      <ellipse cx="160" cy="192" rx="76" ry="8" fill="#EADDE0" />
+      <ellipse cx="160" cy="192" rx="76" ry="8" fill="#EADDE0" opacity="0.45" />
     </svg>
   );
 }
 
 /* =========================================================
-   NOTIFICATIONS PAGE
+   PAGE
 ========================================================= */
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -195,13 +216,16 @@ export default function NotificationsPage() {
     x: number;
     y: number;
     moved: boolean;
+    horizontal: boolean;
   } | null>(null);
 
+  const swipeOffsetRef = useRef<Record<string, number>>({});
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressClickRef = useRef(false);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* =======================================================
-     SYNC NOTIFICATIONS
+     SYNC STORE
   ======================================================= */
 
   useEffect(() => {
@@ -221,7 +245,7 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     SNACKBAR AUTO DISMISS
+     SNACKBAR
   ======================================================= */
 
   useEffect(() => {
@@ -235,7 +259,7 @@ export default function NotificationsPage() {
   }, [snackbar]);
 
   /* =======================================================
-     FILTER & COUNTS
+     FILTER
   ======================================================= */
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
@@ -253,6 +277,17 @@ export default function NotificationsPage() {
     filteredNotifications.length > 0 &&
     filteredNotifications.every((item) => selectedIds.includes(item.id));
 
+  const activeFilterLabel =
+    filters.find((filter) => filter.id === activeFilter)?.label ??
+    "Semua notifikasi";
+
+  const changeFilter = (filter: FilterType) => {
+    setActiveFilter(filter);
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+    setFilterOpen(false);
+  };
+
   /* =======================================================
      SELECTION
   ======================================================= */
@@ -263,6 +298,21 @@ export default function NotificationsPage() {
         ? current.filter((selectedId) => selectedId !== id)
         : [...current, id]
     );
+  };
+
+  const enterSelectionMode = (id?: string) => {
+    setIsSelectionMode(true);
+
+    if (id) {
+      setSelectedIds((current) =>
+        current.includes(id) ? current : [...current, id]
+      );
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+    setIsSelectionMode(false);
   };
 
   const toggleSelectAll = () => {
@@ -288,24 +338,13 @@ export default function NotificationsPage() {
     );
   };
 
-  const clearSelection = () => {
-    setSelectedIds([]);
-    setIsSelectionMode(false);
-  };
-
-  const enterSelectionMode = (id?: string) => {
-    setIsSelectionMode(true);
-
-    if (id) {
-      setSelectedIds((current) =>
-        current.includes(id) ? current : [...current, id]
-      );
-    }
-  };
-
   /* =======================================================
      READ ACTION
   ======================================================= */
+
+  const handleMarkAsRead = (id: string) => {
+    markNotificationAsRead(id);
+  };
 
   const handleMarkSelectedAsRead = () => {
     selectedIds.forEach((id) => {
@@ -319,21 +358,25 @@ export default function NotificationsPage() {
      DELETE & UNDO
   ======================================================= */
 
-  const finishDeletion = (ids: string[], message: string) => {
-    const deleted = deleteNotifications(ids);
+  const finishDeletion = useCallback(
+    (ids: string[], message: string) => {
+      const deleted = deleteNotifications(ids);
 
-    if (deleted.length === 0) return;
+      if (deleted.length === 0) return;
 
-    setSelectedIds((current) =>
-      current.filter((id) => !ids.includes(id))
-    );
+      setSelectedIds((current) =>
+        current.filter((id) => !ids.includes(id))
+      );
 
-    setIsSelectionMode(false);
-    setSwipeOffsets({});
-    setExitingIds([]);
+      setIsSelectionMode(false);
+      setSwipeOffsets({});
+      swipeOffsetRef.current = {};
+      setExitingIds([]);
 
-    setSnackbar({ message, deleted });
-  };
+      setSnackbar({ message, deleted });
+    },
+    []
+  );
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
@@ -364,7 +407,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     MOBILE TOUCH INTERACTION
+     TOUCH INTERACTION
   ======================================================= */
 
   const clearLongPressTimer = () => {
@@ -372,6 +415,18 @@ export default function NotificationsPage() {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+  };
+
+  const updateSwipeOffset = (id: string, offset: number) => {
+    swipeOffsetRef.current = {
+      ...swipeOffsetRef.current,
+      [id]: offset,
+    };
+
+    setSwipeOffsets((current) => ({
+      ...current,
+      [id]: offset,
+    }));
   };
 
   const handleTouchStart = (
@@ -387,66 +442,73 @@ export default function NotificationsPage() {
       x: touch.clientX,
       y: touch.clientY,
       moved: false,
+      horizontal: false,
     };
 
     suppressClickRef.current = false;
-
     clearLongPressTimer();
 
-    longPressTimerRef.current = setTimeout(() => {
+    longPressTimerRef.current = window.setTimeout(() => {
       enterSelectionMode(id);
       suppressClickRef.current = true;
       touchStartRef.current = null;
     }, 550);
   };
 
-  const handleTouchMove = (event: TouchEvent<HTMLDivElement>, id: string) => {
-    if (isSelectionMode || !touchStartRef.current) return;
-    if (touchStartRef.current.id !== id) return;
+  const handleTouchMove = (
+    event: TouchEvent<HTMLDivElement>,
+    id: string
+  ) => {
+    const start = touchStartRef.current;
+
+    if (isSelectionMode || !start || start.id !== id) return;
 
     const touch = event.touches[0];
-    const deltaX = touch.clientX - touchStartRef.current.x;
-    const deltaY = touch.clientY - touchStartRef.current.y;
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
 
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
       clearLongPressTimer();
-      touchStartRef.current.moved = true;
+      start.moved = true;
     }
 
-    // Only handle horizontal left swipe.
-    if (deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-      setSwipeOffsets((current) => ({
-        ...current,
-        [id]: Math.max(deltaX, -130),
-      }));
+    if (
+      deltaX < 0 &&
+      Math.abs(deltaX) > Math.abs(deltaY) * 1.15
+    ) {
+      start.horizontal = true;
+
+      updateSwipeOffset(id, Math.max(deltaX, -112));
     }
   };
 
   const handleTouchEnd = (id: string) => {
     clearLongPressTimer();
 
-    if (isSelectionMode || !touchStartRef.current) {
+    const start = touchStartRef.current;
+
+    if (!start || start.id !== id || isSelectionMode) {
       touchStartRef.current = null;
       return;
     }
 
-    const offset = swipeOffsets[id] ?? 0;
+    const offset = swipeOffsetRef.current[id] ?? 0;
 
     touchStartRef.current = null;
 
-    if (offset < -85) {
+    if (offset < -78) {
       suppressClickRef.current = true;
 
+      updateSwipeOffset(id, -320);
       setExitingIds((current) =>
         current.includes(id) ? current : [...current, id]
       );
 
-      setSwipeOffsets((current) => ({
-        ...current,
-        [id]: -320,
-      }));
+      if (deleteTimerRef.current) {
+        clearTimeout(deleteTimerRef.current);
+      }
 
-      window.setTimeout(() => {
+      deleteTimerRef.current = window.setTimeout(() => {
         finishDeletion([id], "Notifikasi dihapus");
         suppressClickRef.current = false;
       }, 220);
@@ -454,15 +516,32 @@ export default function NotificationsPage() {
       return;
     }
 
-    setSwipeOffsets((current) => ({
-      ...current,
-      [id]: 0,
-    }));
+    updateSwipeOffset(id, 0);
+  };
+
+  const handleTouchCancel = (id: string) => {
+    clearLongPressTimer();
+    touchStartRef.current = null;
+    updateSwipeOffset(id, 0);
   };
 
   const handleDetailClick = (
     event: React.MouseEvent<HTMLAnchorElement>
   ) => {
+    if (isSelectionMode) {
+      event.preventDefault();
+
+      const href = event.currentTarget.getAttribute("href");
+
+      const id = notifications.find((item) =>
+        href?.endsWith(encodeURIComponent(item.id))
+      )?.id;
+
+      if (id) toggleSelection(id);
+
+      return;
+    }
+
     if (suppressClickRef.current) {
       event.preventDefault();
       suppressClickRef.current = false;
@@ -472,11 +551,15 @@ export default function NotificationsPage() {
   useEffect(() => {
     return () => {
       clearLongPressTimer();
+
+      if (deleteTimerRef.current) {
+        clearTimeout(deleteTimerRef.current);
+      }
     };
   }, []);
 
   /* =======================================================
-     EMPTY STATE
+     EMPTY STATES
   ======================================================= */
 
   const isCompletelyEmpty = notifications.length === 0;
@@ -491,217 +574,201 @@ export default function NotificationsPage() {
     <main className="min-h-screen bg-white">
       <div className="page-enter mx-auto w-full max-w-5xl px-4 pb-36 pt-3 sm:px-6 sm:pt-5 md:pb-8 lg:px-8">
 
-        {/* MOBILE HEADER */}
-        <div className="mb-5 flex items-center justify-between md:hidden">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/"
-              aria-label="Kembali"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-[#F1F2F5]"
-            >
-              <ArrowLeft size={21} />
-            </Link>
+        {/* FILTER BAR */}
 
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold text-foreground">
-                Notifikasi
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Informasi dan aktivitas terbaru
-              </p>
-            </div>
-          </div>
-
-          {notifications.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                if (isSelectionMode) {
-                  clearSelection();
-                } else {
-                  enterSelectionMode();
-                }
-              }}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                isSelectionMode
-                  ? "bg-[#F1F2F5] text-foreground"
-                  : "bg-primary/10 text-primary"
-              }`}
-            >
-              {isSelectionMode ? "Batal" : "Pilih"}
-            </button>
-          )}
-        </div>
-
-        {/* DESKTOP PAGE TITLE */}
-        <div className="mb-6 hidden md:block">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Notifikasi
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Informasi dan aktivitas terbaru dari MOKU.
-          </p>
-        </div>
-
-        {/* FILTER */}
         {!isCompletelyEmpty && (
-          <section className="mb-4">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter.id;
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((open) => !open)}
+                aria-expanded={filterOpen}
+                aria-haspopup="listbox"
+                className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors ${
+                  filterOpen
+                    ? "border-primary/40 bg-primary/[0.04] text-primary"
+                    : "border-[#E8E9ED] bg-white text-foreground hover:bg-[#F8F8F9]"
+                }`}
+              >
+                <Filter size={17} />
+                <span>{activeFilterLabel}</span>
+                <ChevronDown
+                  size={15}
+                  className={`transition-transform ${
+                    filterOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveFilter(filter.id);
-                      setSelectedIds([]);
-                      setIsSelectionMode(false);
-                    }}
-                    aria-pressed={isActive}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors sm:text-sm ${
-                      isActive
-                        ? "bg-primary text-white"
-                        : "bg-[#F1F2F5] text-muted-foreground hover:bg-[#E9EAED] hover:text-foreground"
-                    }`}
-                  >
-                    {filter.label}
-
-                    {filter.id === "unread" && unreadCount > 0 && (
-                      <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                          isActive
-                            ? "bg-white/20 text-white"
-                            : "bg-primary/10 text-primary"
-                        }`}
-                      >
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* SELECTION TOOLBAR */}
-        {filteredNotifications.length > 0 && (
-          <>
-            {/* DESKTOP TOOLBAR */}
-            <section className="mb-3 hidden min-h-11 items-center justify-between rounded-lg border border-border bg-white px-3 md:flex">
-              {selectedCount > 0 ? (
+              {filterOpen && (
                 <>
-                  <div className="flex items-center gap-3">
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={allFilteredSelected}
-                        onChange={toggleSelectAll}
-                        className="h-4 w-4 cursor-pointer accent-primary"
-                      />
-                      {allFilteredSelected
-                        ? "Batalkan pilih semua"
-                        : "Pilih semua"}
-                    </label>
+                  <button
+                    type="button"
+                    aria-label="Tutup pilihan filter"
+                    className="fixed inset-0 z-30 cursor-default"
+                    onClick={() => setFilterOpen(false)}
+                  />
 
-                    <span className="text-xs text-muted-foreground">
-                      {selectedCount} dipilih
-                    </span>
-                  </div>
+                  <div
+                    role="listbox"
+                    aria-label="Filter notifikasi"
+                    className="absolute left-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-xl border border-[#E8E9ED] bg-white py-1 shadow-lg"
+                  >
+                    {filters.map((filter) => {
+                      const active = activeFilter === filter.id;
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={handleMarkSelectedAsRead}
-                      title="Tandai sudah dibaca"
-                      aria-label="Tandai sudah dibaca"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-primary"
-                    >
-                      <Check size={19} />
-                    </button>
+                      return (
+                        <button
+                          key={filter.id}
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          onClick={() => changeFilter(filter.id)}
+                          className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm transition-colors ${
+                            active
+                              ? "bg-primary/[0.06] font-semibold text-primary"
+                              : "text-foreground hover:bg-[#F7F7F8]"
+                          }`}
+                        >
+                          <span>{filter.label}</span>
 
-                    <button
-                      type="button"
-                      onClick={handleDeleteSelected}
-                      title="Hapus notifikasi"
-                      aria-label="Hapus notifikasi"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash size={19} />
-                    </button>
+                          {filter.id === "unread" && unreadCount > 0 && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                              {unreadCount}
+                            </span>
+                          )}
 
-                    <button
-                      type="button"
-                      onClick={clearSelection}
-                      title="Batalkan pilihan"
-                      aria-label="Batalkan pilihan"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-foreground"
-                    >
-                      <X size={19} />
-                    </button>
+                          {active && <Check size={16} />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  {filteredNotifications.length} notifikasi
-                </span>
               )}
-            </section>
+            </div>
 
-            {/* MOBILE SELECTION INFO */}
-            {isSelectionMode && (
-              <section className="mb-3 flex items-center justify-between rounded-lg border border-border bg-white px-3 py-2.5 md:hidden">
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={allFilteredSelected}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4 accent-primary"
-                  />
-                  {allFilteredSelected
-                    ? "Batalkan pilih semua"
-                    : "Pilih semua"}
-                </label>
+            <span className="text-xs text-muted-foreground">
+              {filteredNotifications.length} notifikasi
+            </span>
+          </div>
+        )}
 
-                <span className="text-xs text-muted-foreground">
-                  {selectedCount} dipilih
-                </span>
-              </section>
+        {/* DESKTOP SELECTION TOOLBAR */}
+
+        {filteredNotifications.length > 0 && (
+          <div className="mb-2 hidden min-h-10 items-center justify-between md:flex">
+            {selectedCount > 0 ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 cursor-pointer accent-primary"
+                    />
+                    {allFilteredSelected
+                      ? "Batalkan pilih semua"
+                      : "Pilih semua"}
+                  </label>
+
+                  <span className="text-xs text-muted-foreground">
+                    {selectedCount} dipilih
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleMarkSelectedAsRead}
+                    title="Tandai sudah dibaca"
+                    aria-label="Tandai sudah dibaca"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-primary"
+                  >
+                    <Check size={19} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelected}
+                    title="Hapus notifikasi"
+                    aria-label="Hapus notifikasi"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash size={19} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    title="Batalkan pilihan"
+                    aria-label="Batalkan pilihan"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-foreground"
+                  >
+                    <X size={19} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {filteredNotifications.length > 0
+                  ? `${filteredNotifications.length} notifikasi`
+                  : ""}
+              </span>
             )}
-          </>
+          </div>
+        )}
+
+        {/* MOBILE SELECTION INFO */}
+
+        {isSelectionMode && filteredNotifications.length > 0 && (
+          <div className="mb-3 flex items-center justify-between border-b border-[#ECEDEF] px-1 py-2 md:hidden">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 accent-primary"
+              />
+              {allFilteredSelected ? "Batalkan pilih semua" : "Pilih semua"}
+            </label>
+
+            <span className="text-xs text-muted-foreground">
+              {selectedCount} dipilih
+            </span>
+          </div>
         )}
 
         {/* NOTIFICATION LIST */}
-        <section className="overflow-hidden rounded-xl border border-border bg-white">
 
+        <section>
           {filteredNotifications.length > 0 ? (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-[#ECEDEF]">
               {filteredNotifications.map((item) => {
                 const Icon = iconMap[item.type];
                 const isSelected = selectedIds.includes(item.id);
                 const isExiting = exitingIds.includes(item.id);
                 const swipeOffset = swipeOffsets[item.id] ?? 0;
 
+                const displayDate = formatNotificationDate(
+                  item.createdAt,
+                  item.time
+                );
+
                 return (
-                  <div key={item.id} className="relative overflow-hidden">
-
-                    {/* MOBILE SWIPE BACKGROUND */}
-                    <div className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-red-600 md:hidden">
-                      <Trash size={21} className="text-white" />
-                    </div>
-
+                  <div
+                    key={item.id}
+                    className="relative overflow-hidden"
+                  >
                     {/* DESKTOP ROW */}
+
                     <div
-                      className={`relative hidden items-center gap-4 px-5 py-4 transition-colors md:flex ${
+                      className={`group hidden items-center gap-4 px-2 py-4 transition-colors md:flex ${
                         isSelected
-                          ? "bg-primary/[0.06]"
+                          ? "bg-primary/[0.045]"
                           : !item.isRead
-                            ? "bg-primary/[0.025]"
+                            ? "bg-primary/[0.018]"
                             : "bg-white"
-                      } ${
-                        isExiting ? "notification-exit" : ""
                       }`}
                     >
                       <input
@@ -722,156 +789,220 @@ export default function NotificationsPage() {
                         href={`/notifications/${encodeURIComponent(item.id)}`}
                         className="min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">
                             {item.title}
                           </span>
 
                           {!item.isRead && (
-                            <span className="h-2 w-2 rounded-full bg-primary" />
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                              aria-label="Belum dibaca"
+                            />
                           )}
                         </div>
 
-                        <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                        <p className="mt-1 line-clamp-1 text-sm font-normal text-muted-foreground">
                           {item.description}
                         </p>
                       </Link>
 
-                      <div className="hidden w-24 shrink-0 text-right lg:block">
-                        <span className="text-xs text-muted-foreground">
-                          {typeLabels[item.type]}
-                        </span>
-                      </div>
-
-                      <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">
-                        {item.time}
+                      <span className="w-24 shrink-0 text-right text-xs font-medium text-muted-foreground">
+                        {typeLabels[item.type]}
                       </span>
+
+                      {/* TIME / HOVER ACTIONS */}
+
+                      <div className="flex w-24 shrink-0 items-center justify-end">
+                        <span className="text-xs text-muted-foreground group-hover:hidden group-focus-within:hidden">
+                          {displayDate}
+                        </span>
+
+                        <div className="hidden items-center justify-end gap-1 group-hover:flex group-focus-within:flex">
+                          {!item.isRead && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkAsRead(item.id)}
+                              title="Tandai sudah dibaca"
+                              aria-label={`Tandai ${item.title} sudah dibaca`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                            >
+                              <Check size={17} />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              finishDeletion(
+                                [item.id],
+                                "Notifikasi dihapus"
+                              )
+                            }
+                            title="Hapus notifikasi"
+                            aria-label={`Hapus ${item.title}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash size={17} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {/* MOBILE ROW */}
-                    <div
-                      onTouchStart={(event) =>
-                        handleTouchStart(event, item.id)
-                      }
-                      onTouchMove={(event) =>
-                        handleTouchMove(event, item.id)
-                      }
-                      onTouchEnd={() => handleTouchEnd(item.id)}
-                      onTouchCancel={() => {
-                        clearLongPressTimer();
-                        touchStartRef.current = null;
-                        setSwipeOffsets((current) => ({
-                          ...current,
-                          [item.id]: 0,
-                        }));
-                      }}
-                      className={`relative flex items-start gap-3 overflow-hidden p-4 transition-colors md:hidden ${
-                        isSelected
-                          ? "bg-primary/[0.06]"
-                          : !item.isRead
-                            ? "bg-primary/[0.025]"
-                            : "bg-white"
-                      } ${
-                        isExiting ? "notification-exit" : ""
-                      }`}
-                      style={{
-                        transform: `translateX(${swipeOffset}px)`,
-                        transition:
-                          touchStartRef.current?.id === item.id &&
-                          touchStartRef.current.moved
-                            ? "none"
-                            : "transform 220ms ease",
-                        touchAction: "pan-y",
-                      }}
-                    >
-                      {isSelectionMode && (
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelection(item.id)}
-                          aria-label={`Pilih ${item.title}`}
-                          className="mt-3 h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                        />
-                      )}
+
+                    <div className="relative overflow-hidden md:hidden">
+                      {/* DELETE BACKGROUND: ONLY VISIBLE DURING SWIPE */}
 
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
+                        className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-red-600 transition-opacity duration-100"
+                        style={{
+                          opacity: swipeOffset < 0 ? 1 : 0,
+                        }}
+                        aria-hidden="true"
                       >
-                        <Icon size={20} weight="duotone" />
+                        <Trash size={21} className="text-white" />
                       </div>
 
-                      <Link
-                        href={`/notifications/${encodeURIComponent(item.id)}`}
-                        onClick={handleDetailClick}
-                        className="min-w-0 flex-1 outline-none"
+                      <div
+                        onTouchStart={(event) =>
+                          handleTouchStart(event, item.id)
+                        }
+                        onTouchMove={(event) =>
+                          handleTouchMove(event, item.id)
+                        }
+                        onTouchEnd={() => handleTouchEnd(item.id)}
+                        onTouchCancel={() => handleTouchCancel(item.id)}
+                        className={`relative flex items-start gap-3 overflow-hidden px-2 py-4 ${
+                          isSelected
+                            ? "bg-primary/[0.06]"
+                            : !item.isRead
+                              ? "bg-primary/[0.025]"
+                              : "bg-white"
+                        }`}
+                        style={{
+                          transform: `translateX(${swipeOffset}px)`,
+                          transition:
+                            touchStartRef.current?.id === item.id &&
+                            touchStartRef.current.moved
+                              ? "none"
+                              : "transform 220ms ease",
+                          touchAction: "pan-y",
+                        }}
                       >
-                        <div className="flex items-center gap-2">
-                          <p className="line-clamp-1 text-sm font-semibold text-foreground">
-                            {item.title}
+                        {/* SELECTION INDICATOR */}
+
+                        {isSelectionMode && (
+                          <div className="mt-2 flex h-5 w-5 shrink-0 animate-selection-in items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelection(item.id)}
+                              aria-label={`Pilih ${item.title}`}
+                              className="h-4 w-4 cursor-pointer accent-primary"
+                            />
+                          </div>
+                        )}
+
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
+                        >
+                          <Icon size={20} weight="duotone" />
+                        </div>
+
+                        <Link
+                          href={`/notifications/${encodeURIComponent(item.id)}`}
+                          onClick={handleDetailClick}
+                          className="min-w-0 flex-1 outline-none"
+                        >
+                          <div className="flex items-center gap-2">
+                            <p className="line-clamp-1 text-sm font-semibold text-foreground">
+                              {item.title}
+                            </p>
+
+                            {!item.isRead && (
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                                aria-label="Belum dibaca"
+                              />
+                            )}
+                          </div>
+
+                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {item.description}
                           </p>
 
-                          {!item.isRead && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                          )}
-                        </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {typeLabels[item.type]}
+                            </span>
 
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                          {item.description}
-                        </p>
+                            <span className="text-xs text-muted-foreground">
+                              ·
+                            </span>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            {typeLabels[item.type]}
-                          </span>
-
-                          <span className="text-[11px] text-muted-foreground">
-                            ·
-                          </span>
-
-                          <span className="text-[11px] text-muted-foreground">
-                            {item.time}
-                          </span>
-                        </div>
-                      </Link>
+                            <span className="text-xs text-muted-foreground">
+                              {displayDate}
+                            </span>
+                          </div>
+                        </Link>
+                      </div>
                     </div>
+
+                    {isExiting && (
+                      <span className="sr-only">
+                        Notifikasi sedang dihapus
+                      </span>
+                    )}
                   </div>
                 );
               })}
             </div>
           ) : isCompletelyEmpty ? (
-            /* EMPTY DATABASE: ILLUSTRATION */
-            <div className="flex min-h-[390px] flex-col items-center justify-center px-5 py-10 text-center sm:min-h-[440px]">
-              <EmptyNotificationIllustration />
+            /* EMPTY DATABASE */
 
-              <h2 className="mt-3 text-base font-semibold text-foreground sm:text-lg">
-                Belum Ada Notifikasi
-              </h2>
+            <div className="relative flex min-h-[390px] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center sm:min-h-[440px]">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
+                <EmptyNotificationWatermark />
+              </div>
 
-              <p className="mt-1 max-w-full text-xs text-muted-foreground sm:text-sm">
-                Aktivitas dan informasi terbaru akan muncul di sini.
-              </p>
+              <div className="relative z-10 flex flex-col items-center">
+                <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                  Belum Ada Notifikasi
+                </h2>
 
-              <button
-                type="button"
-                onClick={handleResetDemo}
-                className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90 sm:text-sm"
-              >
-                Muat 15 Data Demo
-              </button>
+                <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                  Aktivitas dan informasi terbaru akan muncul di sini.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleResetDemo}
+                  className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90 sm:text-sm"
+                >
+                  Muat 15 Data Demo
+                </button>
+              </div>
             </div>
           ) : (
-            /* FILTER EMPTY: TEXT ONLY */
+            /* FILTER EMPTY */
+
             <div className="flex min-h-[130px] items-center justify-center px-5 py-8 text-center">
               <p className="text-sm text-muted-foreground">
                 {activeFilter === "unread"
                   ? "Semua notifikasi sudah dibaca."
-                  : `Tidak ada notifikasi kategori ${filters.find((filter) => filter.id === activeFilter)?.label ?? ""}.`}
+                  : `Tidak ada notifikasi kategori ${
+                      filters.find((filter) => filter.id === activeFilter)
+                        ?.label ?? ""
+                    }.`
+                }
               </p>
             </div>
           )}
         </section>
 
         {/* DEMO INFORMATION */}
+
         {notifications.length > 0 && (
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
             Data notifikasi saat ini merupakan data demo untuk pengujian tampilan.
@@ -880,8 +1011,9 @@ export default function NotificationsPage() {
       </div>
 
       {/* MOBILE FLOATING ACTION BAR */}
+
       {isSelectionMode && selectedCount > 0 && (
-        <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-md items-center justify-between rounded-xl border border-border bg-white px-3 py-2.5 shadow-lg md:hidden">
+        <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-md animate-toolbar-in items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg md:hidden">
           <span className="text-xs font-medium text-muted-foreground">
             {selectedCount} dipilih
           </span>
@@ -920,14 +1052,16 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* SNACKBAR WITH UNDO */}
+      {/* SNACKBAR */}
+
       {snackbar && (
         <div
+          key={snackbar.deleted.map((item) => item.item.id).join("-")}
           role="status"
           aria-live="polite"
           className="snackbar-enter fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-xl bg-[#292929] px-4 py-3 text-white shadow-xl md:bottom-6"
         >
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <CheckCircle
               size={20}
               weight="fill"
@@ -939,35 +1073,34 @@ export default function NotificationsPage() {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleUndo}
-            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-[#FDD563] transition-colors hover:bg-white/10"
-          >
-            URUNGKAN
-          </button>
+          <div className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-[#FDD563] transition-colors hover:bg-white/10"
+            >
+              URUNGKAN
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSnackbar(null)}
-            aria-label="Tutup notifikasi"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
-          >
-            <X size={16} />
-          </button>
+            <button
+              type="button"
+              onClick={() => setSnackbar(null)}
+              aria-label="Tutup notifikasi"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X size={17} />
+            </button>
+          </div>
 
           <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] bg-[#F28C0F]" />
         </div>
       )}
 
+      {/* ANIMATIONS */}
+
       <style jsx>{`
         .page-enter {
           animation: notification-enter 220ms ease-out both;
-        }
-
-        .notification-exit {
-          animation: notification-exit 220ms ease-in forwards;
-          pointer-events: none;
         }
 
         .snackbar-enter {
@@ -976,6 +1109,14 @@ export default function NotificationsPage() {
 
         .snackbar-progress {
           animation: snackbar-countdown 5s linear forwards;
+        }
+
+        .animate-selection-in {
+          animation: selection-in 180ms ease-out both;
+        }
+
+        .animate-toolbar-in {
+          animation: toolbar-in 180ms ease-out both;
         }
 
         @keyframes notification-enter {
@@ -987,18 +1128,6 @@ export default function NotificationsPage() {
           to {
             opacity: 1;
             transform: translateY(0);
-          }
-        }
-
-        @keyframes notification-exit {
-          from {
-            opacity: 1;
-            max-height: 120px;
-          }
-
-          to {
-            opacity: 0;
-            max-height: 0;
           }
         }
 
@@ -1024,10 +1153,35 @@ export default function NotificationsPage() {
           }
         }
 
+        @keyframes selection-in {
+          from {
+            opacity: 0;
+            transform: scale(0.7);
+          }
+
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes toolbar-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .page-enter,
           .snackbar-enter,
-          .notification-exit,
+          .animate-selection-in,
+          .animate-toolbar-in,
           .snackbar-progress {
             animation: none;
           }
