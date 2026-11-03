@@ -2,21 +2,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  ArrowLeft,
   Bell,
-  CaretDown,
-  CaretUp,
   Check,
   CheckCircle,
   ClipboardText,
-  Info,
   Monitor,
   Trash,
   User,
   Users,
   Wrench,
+  X,
 } from "@phosphor-icons/react";
 
 import {
@@ -49,28 +46,11 @@ const iconColorMap = {
   general: "bg-muted text-muted-foreground",
 } satisfies Record<NotificationItem["type"], string>;
 
-const detailLabels: Record<string, string> = {
-  equipmentNumber: "Nomor Equipment",
-  equipmentModel: "Model Mesin",
-  customerName: "Pelanggan",
-  technicianName: "Teknisi",
-  visitDate: "Tanggal Kunjungan",
-  visitType: "Jenis Kunjungan",
-  activityDescription: "Deskripsi Aktivitas",
-  customerAddress: "Alamat Pelanggan",
-  customerContact: "Kontak Pelanggan",
-  monitoringPeriod: "Periode Monitoring",
-  monitoringStatus: "Status Monitoring",
-  changeDescription: "Perubahan",
-};
-
 /* =========================================================
    NOTIFICATIONS PAGE
 ========================================================= */
 
 export default function NotificationsPage() {
-  const router = useRouter();
-
   const [notifications, setNotifications] = useState<
     NotificationItem[]
   >([]);
@@ -79,7 +59,7 @@ export default function NotificationsPage() {
     "all" | "unread"
   >("all");
 
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   /* =======================================================
      SYNC NOTIFICATIONS
@@ -87,7 +67,15 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const syncNotifications = () => {
-      setNotifications(loadNotifications());
+      const latestNotifications = loadNotifications();
+
+      setNotifications(latestNotifications);
+
+      setSelectedIds((current) =>
+        current.filter((id) =>
+          latestNotifications.some((item) => item.id === id)
+        )
+      );
     };
 
     syncNotifications();
@@ -107,17 +95,56 @@ export default function NotificationsPage() {
     activeFilter === "unread" ? !item.isRead : true
   );
 
+  const selectedCount = selectedIds.length;
+
+  const allFilteredSelected =
+    filteredNotifications.length > 0 &&
+    filteredNotifications.every((item) =>
+      selectedIds.includes(item.id)
+    );
+
+  /* =======================================================
+     SELECTION ACTIONS
+  ======================================================= */
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((current) =>
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIds = filteredNotifications.map(
+        (item) => item.id
+      );
+
+      setSelectedIds((current) =>
+        current.filter((id) => !filteredIds.includes(id))
+      );
+
+      return;
+    }
+
+    setSelectedIds((current) => {
+      const combined = new Set([
+        ...current,
+        ...filteredNotifications.map((item) => item.id),
+      ]);
+
+      return Array.from(combined);
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
   /* =======================================================
      NOTIFICATION ACTIONS
   ======================================================= */
-
-  const markAsRead = (id: string) => {
-    const updated = notifications.map((item) =>
-      item.id === id ? { ...item, isRead: true } : item
-    );
-
-    saveNotifications(updated);
-  };
 
   const markAllAsRead = () => {
     saveNotifications(
@@ -129,36 +156,46 @@ export default function NotificationsPage() {
   };
 
   const deleteNotification = (id: string) => {
+    const target = notifications.find((item) => item.id === id);
+
+    if (!target) return;
+
+    const confirmed = window.confirm(
+      `Hapus notifikasi "${target.title}"?`
+    );
+
+    if (!confirmed) return;
+
     saveNotifications(
       notifications.filter((item) => item.id !== id)
     );
 
-    if (expandedId === id) {
-      setExpandedId(null);
-    }
+    setSelectedIds((current) =>
+      current.filter((selectedId) => selectedId !== id)
+    );
   };
 
-  const deleteAllNotifications = () => {
-    saveNotifications([]);
-    setExpandedId(null);
-  };
+  const deleteSelectedNotifications = () => {
+    if (selectedIds.length === 0) return;
 
-  const toggleNotification = (item: NotificationItem) => {
-    setExpandedId((current) =>
-      current === item.id ? null : item.id
+    const confirmed = window.confirm(
+      `Apakah kamu yakin ingin menghapus ${selectedIds.length} notifikasi yang dipilih?`
     );
 
-    if (!item.isRead) {
-      markAsRead(item.id);
-    }
+    if (!confirmed) return;
+
+    const remainingNotifications = notifications.filter(
+      (item) => !selectedIds.includes(item.id)
+    );
+
+    saveNotifications(remainingNotifications);
+    setSelectedIds([]);
   };
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+  const restoreDemoNotifications = () => {
+    saveNotifications(demoNotifications);
+    setSelectedIds([]);
+    setActiveFilter("all");
   };
 
   /* =======================================================
@@ -168,37 +205,6 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="page-enter mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
-
-        {/* MOBILE TITLE */}
-        <div className="mb-6 flex items-center gap-3 lg:hidden">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Kembali"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white transition-colors hover:bg-[#F1F2F5]"
-          >
-            <ArrowLeft size={20} />
-          </button>
-
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              Notifikasi
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Aktivitas dan informasi terbaru
-            </p>
-          </div>
-        </div>
-
-        {/* DESKTOP TITLE */}
-        <div className="mb-7 hidden lg:block">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Notifikasi
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Aktivitas dan informasi terbaru dari MOKU.
-          </p>
-        </div>
 
         {/* SUMMARY */}
         <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -211,41 +217,31 @@ export default function NotificationsPage() {
               <p className="text-sm text-muted-foreground">
                 Belum dibaca
               </p>
+
               <p className="text-2xl font-semibold tabular-nums text-foreground">
                 {unreadCount}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={markAllAsRead}
-              disabled={unreadCount === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[#F1F2F5] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Check size={17} />
-              Tandai semua dibaca
-            </button>
-
-            <button
-              type="button"
-              onClick={deleteAllNotifications}
-              disabled={notifications.length === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Trash size={17} />
-              Hapus semua
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            disabled={unreadCount === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[#F1F2F5] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Check size={17} />
+            Tandai semua dibaca
+          </button>
         </div>
 
         {/* FILTER */}
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex rounded-lg bg-[#F1F2F5] p-1">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-fit rounded-lg bg-[#F1F2F5] p-1">
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
+              aria-pressed={activeFilter === "all"}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeFilter === "all"
                   ? "bg-white text-foreground shadow-sm"
@@ -258,6 +254,7 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => setActiveFilter("unread")}
+              aria-pressed={activeFilter === "unread"}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeFilter === "unread"
                   ? "bg-white text-foreground shadow-sm"
@@ -279,126 +276,127 @@ export default function NotificationsPage() {
           </span>
         </div>
 
+        {/* SELECTION TOOLBAR */}
+        {filteredNotifications.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+              />
+
+              {allFilteredSelected
+                ? "Batalkan pilih semua"
+                : "Pilih semua"}
+            </label>
+
+            {selectedCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {selectedCount} dipilih
+                </span>
+
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-foreground"
+                >
+                  <X size={16} />
+                  Batal
+                </button>
+
+                <button
+                  type="button"
+                  onClick={deleteSelectedNotifications}
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                >
+                  <Trash size={16} />
+                  Hapus Dipilih ({selectedCount})
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* NOTIFICATION LIST */}
         <div className="overflow-hidden rounded-2xl border border-border bg-white">
           {filteredNotifications.length > 0 ? (
             <div className="divide-y divide-border">
               {filteredNotifications.map((item) => {
                 const Icon = iconMap[item.type];
-                const isExpanded = expandedId === item.id;
-
-                const detailEntries = item.detail
-                  ? Object.entries(item.detail).filter(
-                      ([, value]) =>
-                        typeof value === "string" &&
-                        value.trim().length > 0
-                    )
-                  : [];
+                const isSelected = selectedIds.includes(item.id);
 
                 return (
                   <div
                     key={item.id}
-                    className={`transition-colors ${
-                      !item.isRead ? "bg-primary/[0.025]" : ""
+                    className={`flex items-start gap-3 p-4 transition-colors sm:gap-4 sm:p-5 ${
+                      isSelected
+                        ? "bg-primary/[0.06]"
+                        : !item.isRead
+                          ? "bg-primary/[0.025]"
+                          : "bg-white"
                     }`}
                   >
-                    <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
-                      {/* ICON */}
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
-                      >
-                        <Icon size={20} weight="duotone" />
-                      </div>
-
-                      {/* CONTENT */}
-                      <button
-                        type="button"
-                        onClick={() => toggleNotification(item)}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground">
-                            {item.title}
-                          </p>
-
-                          {!item.isRead && (
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                          )}
-                        </div>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {item.time}
-                        </p>
-                      </button>
-
-                      {/* ACTIONS */}
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            deleteNotification(item.id)
-                          }
-                          aria-label="Hapus notifikasi"
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash size={17} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => toggleNotification(item)}
-                          aria-label={
-                            isExpanded
-                              ? "Tutup detail"
-                              : "Lihat detail"
-                          }
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5]"
-                        >
-                          {isExpanded ? (
-                            <CaretUp size={18} />
-                          ) : (
-                            <CaretDown size={18} />
-                          )}
-                        </button>
-                      </div>
+                    {/* CHECKBOX */}
+                    <div className="flex shrink-0 items-center pt-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelection(item.id)}
+                        aria-label={`Pilih notifikasi ${item.title}`}
+                        className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                      />
                     </div>
 
-                    {/* EXPANDED DETAIL */}
-                    {isExpanded && (
-                      <div className="border-t border-border bg-[#F8F8F9] px-4 py-4 sm:px-5 sm:pl-[4.75rem]">
-                        {detailEntries.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {detailEntries.map(([key, value]) => (
-                              <div
-                                key={key}
-                                className="min-w-0"
-                              >
-                                <p className="text-xs font-medium text-muted-foreground">
-                                  {detailLabels[key] ?? key}
-                                </p>
-                                <p className="mt-1 break-words text-sm leading-relaxed text-foreground">
-                                  {value}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Info
-                              size={17}
-                              className="mt-0.5 shrink-0 text-muted-foreground"
-                            />
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              Tidak ada informasi detail tambahan untuk notifikasi ini.
-                            </p>
-                          </div>
+                    {/* ICON */}
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
+                    >
+                      <Icon size={20} weight="duotone" />
+                    </div>
+
+                    {/* CONTENT */}
+                    <Link
+                      href={`/notifications/${encodeURIComponent(item.id)}`}
+                      className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={`Buka detail notifikasi: ${item.title}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground">
+                          {item.title}
+                        </p>
+
+                        {!item.isRead && (
+                          <span
+                            className="h-2 w-2 rounded-full bg-primary"
+                            aria-label="Belum dibaca"
+                          />
                         )}
                       </div>
-                    )}
+
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        {item.description}
+                      </p>
+
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {item.time}
+                      </p>
+                    </Link>
+
+                    {/* DELETE ACTION */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        deleteNotification(item.id)
+                      }
+                      aria-label={`Hapus notifikasi ${item.title}`}
+                      title="Hapus notifikasi"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash size={17} />
+                    </button>
                   </div>
                 );
               })}
@@ -428,10 +426,7 @@ export default function NotificationsPage() {
               {notifications.length === 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    saveNotifications(demoNotifications);
-                    setActiveFilter("all");
-                  }}
+                  onClick={restoreDemoNotifications}
                   className="mt-5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
                 >
                   Muat ulang data demo
