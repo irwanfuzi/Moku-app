@@ -7,8 +7,6 @@ import {
   Bell,
   Check,
   CheckCircle,
-  CaretDown,
-  Funnel,
   Monitor,
   Trash,
   User,
@@ -60,27 +58,6 @@ const typeLabels: Record<NotificationItem["type"], string> = {
   general: "Umum",
 };
 
-type FilterType =
-  | "all"
-  | "unread"
-  | "visit"
-  | "equipment"
-  | "customer"
-  | "monitoring"
-  | "user"
-  | "general";
-
-const filters: { id: FilterType; label: string }[] = [
-  { id: "all", label: "Semua notifikasi" },
-  { id: "unread", label: "Belum dibaca" },
-  { id: "visit", label: "Kunjungan" },
-  { id: "equipment", label: "Equipment" },
-  { id: "customer", label: "Customer" },
-  { id: "monitoring", label: "Monitoring" },
-  { id: "user", label: "Akun" },
-  { id: "general", label: "Umum" },
-];
-
 /* =========================================================
    CUSTOM MOKU CHECKBOX
 ========================================================= */
@@ -102,7 +79,10 @@ function MokuCheckbox({
       role="checkbox"
       aria-checked={checked}
       aria-label={label}
-      onClick={onChange}
+      onClick={(event) => {
+        event.stopPropagation();
+        onChange();
+      }}
       className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
         checked
           ? "border-[#730217] bg-[#730217] text-white shadow-sm shadow-[#730217]/15"
@@ -165,67 +145,163 @@ function formatNotificationDate(value: unknown, fallback?: string) {
 }
 
 /* =========================================================
-   EMPTY STATE WATERMARK
+   MOKU EMPTY STATE WATERMARK
 ========================================================= */
 
 function EmptyNotificationWatermark() {
   return (
     <svg
-      viewBox="0 0 320 220"
+      viewBox="0 0 360 280"
       aria-hidden="true"
-      className="pointer-events-none h-auto w-[210px] sm:w-[250px] md:w-[270px]"
+      className="h-auto w-[250px] sm:w-[290px] md:w-[330px]"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Soft background shape */}
       <path
-        d="M42 145C28 116 49 77 82 69C111 62 132 79 149 65C170 47 203 45 228 66C258 91 276 124 258 155C242 183 199 187 161 179C120 171 62 181 42 145Z"
+        d="M45 166C29 120 67 75 112 75C143 75 157 91 183 76C220 54 269 79 298 113C330 151 304 202 266 215C218 232 164 211 121 221C83 230 54 205 45 166Z"
         fill="#F8F0F1"
       />
 
+      {/* Decorative details */}
       <g opacity="0.55">
-        <circle cx="66" cy="70" r="5" fill="#F28C0F" />
-        <circle cx="258" cy="83" r="4" fill="#BF0B2C" />
+        <circle cx="76" cy="96" r="5" fill="#F28C0F" />
+        <circle cx="288" cy="111" r="5" fill="#BF0B2C" />
         <path
-          d="M82 43L86 53L96 57L86 61L82 71L78 61L68 57L78 53L82 43Z"
+          d="M102 55L106 65L116 69L106 73L102 83L98 73L88 69L98 65L102 55Z"
           fill="#F28C0F"
         />
-      </g>
-
-      <g opacity="0.55" transform="rotate(-8 103 112)">
-        <rect
-          x="57"
-          y="91"
-          width="88"
-          height="67"
-          rx="13"
-          fill="white"
-          stroke="#E8D9DC"
-          strokeWidth="2"
-        />
-        <rect x="70" y="105" width="30" height="6" rx="3" fill="#E9DADD" />
-        <rect x="70" y="117" width="56" height="5" rx="2.5" fill="#F0E8E9" />
-        <rect x="70" y="128" width="43" height="5" rx="2.5" fill="#F0E8E9" />
-      </g>
-
-      <g opacity="0.35">
         <path
-          d="M160 53C135 53 117 73 117 99V121C117 132 110 141 101 149C97 153 100 160 106 160H214C220 160 223 153 219 149C210 141 203 132 203 121V99C203 73 185 53 160 53Z"
+          d="M274 64L278 73L287 77L278 81L274 90L270 81L261 77L270 73L274 64Z"
+          fill="#BF0B2C"
+        />
+      </g>
+
+      {/* MOKU location mark */}
+      <g opacity="0.34">
+        <path
+          d="M180 47C145 47 118 74 118 108C118 151 180 205 180 205C180 205 242 151 242 108C242 74 215 47 180 47Z"
           fill="#730217"
         />
         <path
-          d="M145 164C147 174 153 180 160 180C167 180 173 174 175 164H145Z"
-          fill="#F28C0F"
+          d="M180 63C154 63 134 83 134 109C134 139 180 180 180 180C180 180 226 139 226 109C226 83 206 63 180 63Z"
+          fill="#F8F0F1"
         />
-        <circle cx="202" cy="66" r="17" fill="#F28C0F" />
       </g>
 
+      {/* Simplified robot face */}
+      <g opacity="0.52">
+        <rect
+          x="145"
+          y="93"
+          width="70"
+          height="52"
+          rx="17"
+          fill="#730217"
+        />
+
+        <rect
+          x="154"
+          y="104"
+          width="52"
+          height="31"
+          rx="10"
+          fill="#F2F2F2"
+        />
+
+        <rect
+          x="165"
+          y="112"
+          width="6"
+          height="13"
+          rx="3"
+          fill="#730217"
+        />
+
+        <rect
+          x="189"
+          y="112"
+          width="6"
+          height="13"
+          rx="3"
+          fill="#730217"
+        />
+
+        {/* Robot cap */}
+        <path
+          d="M151 95C151 78 163 68 180 68C197 68 209 78 209 95H151Z"
+          fill="#BF0B2C"
+        />
+
+        <path
+          d="M173 79L180 74L187 79V88H173V79Z"
+          fill="#FFFFFF"
+        />
+
+        <path
+          d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
+          fill="#F28C0F"
+        />
+
+        {/* Side modules */}
+        <rect
+          x="132"
+          y="105"
+          width="13"
+          height="28"
+          rx="6"
+          fill="#F28C0F"
+        />
+
+        <rect
+          x="215"
+          y="105"
+          width="13"
+          height="28"
+          rx="6"
+          fill="#F28C0F"
+        />
+      </g>
+
+      {/* Floating notification symbols */}
+      <g opacity="0.4">
+        <rect
+          x="64"
+          y="158"
+          width="44"
+          height="34"
+          rx="8"
+          fill="white"
+          stroke="#DCC8CC"
+          strokeWidth="2"
+        />
+
+        <path
+          d="M75 170H96M75 178H91"
+          stroke="#BF0B2C"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+
+        <circle cx="276" cy="177" r="20" fill="#F28C0F" />
+
+        <path
+          d="M267 177L273 183L285 170"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      {/* Ground shadow */}
       <ellipse
-        cx="160"
-        cy="192"
-        rx="76"
-        ry="8"
+        cx="180"
+        cy="238"
+        rx="94"
+        ry="9"
         fill="#EADDE0"
-        opacity="0.45"
+        opacity="0.55"
       />
     </svg>
   );
@@ -237,8 +313,6 @@ function EmptyNotificationWatermark() {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-  const [filterOpen, setFilterOpen] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -249,7 +323,10 @@ export default function NotificationsPage() {
     readUndo?: { id: string; isRead: boolean }[];
   } | null>(null);
 
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>(
+    {}
+  );
+
   const [exitingIds, setExitingIds] = useState<string[]>([]);
 
   const touchStartRef = useRef<{
@@ -302,45 +379,37 @@ export default function NotificationsPage() {
   }, [snackbar]);
 
   /* =======================================================
-     FILTER & COUNTS
+     NOTIFICATION COUNTS
   ======================================================= */
 
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
+  const totalCount = notifications.length;
 
-  const filteredNotifications = notifications.filter((item) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "unread") return !item.isRead;
-
-    return item.type === activeFilter;
-  });
+  const unreadCount = notifications.filter(
+    (item) => !item.isRead
+  ).length;
 
   const selectedCount = selectedIds.length;
 
-  const allFilteredSelected =
-    filteredNotifications.length > 0 &&
-    filteredNotifications.every((item) => selectedIds.includes(item.id));
-
-  const activeFilterLabel =
-    filters.find((filter) => filter.id === activeFilter)?.label ??
-    "Semua notifikasi";
-
-  const changeFilter = (filter: FilterType) => {
-    setActiveFilter(filter);
-    setSelectedIds([]);
-    setIsSelectionMode(false);
-    setFilterOpen(false);
-  };
+  const allNotificationsSelected =
+    notifications.length > 0 &&
+    notifications.every((item) => selectedIds.includes(item.id));
 
   /* =======================================================
      SELECTION
   ======================================================= */
 
   const toggleSelection = (id: string) => {
-    setSelectedIds((current) =>
-      current.includes(id)
+    setSelectedIds((current) => {
+      const next = current.includes(id)
         ? current.filter((selectedId) => selectedId !== id)
-        : [...current, id]
-    );
+        : [...current, id];
+
+      if (next.length === 0) {
+        setIsSelectionMode(false);
+      }
+
+      return next;
+    });
   };
 
   const enterSelectionMode = (id?: string) => {
@@ -359,26 +428,13 @@ export default function NotificationsPage() {
   };
 
   const toggleSelectAll = () => {
-    if (allFilteredSelected) {
-      const visibleIds = new Set(
-        filteredNotifications.map((item) => item.id)
-      );
-
-      setSelectedIds((current) =>
-        current.filter((id) => !visibleIds.has(id))
-      );
-
+    if (allNotificationsSelected) {
+      clearSelection();
       return;
     }
 
-    setSelectedIds((current) =>
-      Array.from(
-        new Set([
-          ...current,
-          ...filteredNotifications.map((item) => item.id),
-        ])
-      )
-    );
+    setSelectedIds(notifications.map((item) => item.id));
+    setIsSelectionMode(true);
   };
 
   /* =======================================================
@@ -440,8 +496,10 @@ export default function NotificationsPage() {
       );
 
       setIsSelectionMode(false);
+
       setSwipeOffsets({});
       swipeOffsetRef.current = {};
+
       setExitingIds([]);
 
       setSnackbar({
@@ -457,7 +515,10 @@ export default function NotificationsPage() {
 
     const count = selectedIds.length;
 
-    finishDeletion(selectedIds, `${count} notifikasi dihapus`);
+    finishDeletion(
+      selectedIds,
+      `${count} notifikasi dihapus`
+    );
   };
 
   const handleUndo = () => {
@@ -494,7 +555,6 @@ export default function NotificationsPage() {
 
     setSelectedIds([]);
     setIsSelectionMode(false);
-    setActiveFilter("all");
     setSnackbar(null);
   };
 
@@ -510,14 +570,16 @@ export default function NotificationsPage() {
   };
 
   const updateSwipeOffset = (id: string, offset: number) => {
+    const nextOffset = Math.max(-112, Math.min(0, offset));
+
     swipeOffsetRef.current = {
       ...swipeOffsetRef.current,
-      [id]: offset,
+      [id]: nextOffset,
     };
 
     setSwipeOffsets((current) => ({
       ...current,
-      [id]: offset,
+      [id]: nextOffset,
     }));
   };
 
@@ -538,12 +600,16 @@ export default function NotificationsPage() {
     };
 
     suppressClickRef.current = false;
+
     clearLongPressTimer();
 
     longPressTimerRef.current = window.setTimeout(() => {
       enterSelectionMode(id);
+
       suppressClickRef.current = true;
       touchStartRef.current = null;
+
+      updateSwipeOffset(id, 0);
     }, 550);
   };
 
@@ -556,6 +622,7 @@ export default function NotificationsPage() {
     if (isSelectionMode || !start || start.id !== id) return;
 
     const touch = event.touches[0];
+
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
 
@@ -569,7 +636,8 @@ export default function NotificationsPage() {
       Math.abs(deltaX) > Math.abs(deltaY) * 1.15
     ) {
       start.horizontal = true;
-      updateSwipeOffset(id, Math.max(deltaX, -112));
+
+      updateSwipeOffset(id, deltaX);
     }
   };
 
@@ -590,7 +658,7 @@ export default function NotificationsPage() {
     if (offset < -78) {
       suppressClickRef.current = true;
 
-      updateSwipeOffset(id, -320);
+      updateSwipeOffset(id, -112);
 
       setExitingIds((current) =>
         current.includes(id) ? current : [...current, id]
@@ -602,6 +670,7 @@ export default function NotificationsPage() {
 
       deleteTimerRef.current = window.setTimeout(() => {
         finishDeletion([id], "1 notifikasi dihapus");
+
         suppressClickRef.current = false;
         deleteTimerRef.current = null;
       }, 220);
@@ -614,24 +683,19 @@ export default function NotificationsPage() {
 
   const handleTouchCancel = (id: string) => {
     clearLongPressTimer();
+
     touchStartRef.current = null;
+
     updateSwipeOffset(id, 0);
   };
 
   const handleDetailClick = (
-    event: MouseEvent<HTMLAnchorElement>
+    event: MouseEvent<HTMLAnchorElement>,
+    id: string
   ) => {
     if (isSelectionMode) {
       event.preventDefault();
-
-      const href = event.currentTarget.getAttribute("href");
-
-      const id = notifications.find((item) =>
-        href?.endsWith(encodeURIComponent(item.id))
-      )?.id;
-
-      if (id) toggleSelection(id);
-
+      toggleSelection(id);
       return;
     }
 
@@ -643,9 +707,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     return () => {
-      if (longPressTimerRef.current !== null) {
-        window.clearTimeout(longPressTimerRef.current);
-      }
+      clearLongPressTimer();
 
       if (deleteTimerRef.current !== null) {
         window.clearTimeout(deleteTimerRef.current);
@@ -667,88 +729,40 @@ export default function NotificationsPage() {
     <main className="min-h-screen bg-white">
       <div className="page-enter mx-auto w-full max-w-5xl px-4 pb-36 pt-3 sm:px-6 sm:pt-5 md:pb-8 lg:px-8">
 
-        {/* FILTER BAR */}
+        {/* NOTIFICATION SUMMARY */}
 
         {!isCompletelyEmpty && (
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setFilterOpen((open) => !open)}
-                aria-expanded={filterOpen}
-                aria-haspopup="listbox"
-                className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors ${
-                  filterOpen
-                    ? "border-[#730217]/30 bg-[#730217]/[0.04] text-[#730217]"
-                    : "border-[#E8E9ED] bg-white text-foreground hover:bg-[#F8F8F9]"
-                }`}
-              >
-                <Funnel size={17} />
-                <span>{activeFilterLabel}</span>
-                <CaretDown
-                  size={15}
-                  className={`transition-transform ${
-                    filterOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#ECEDEF] pb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                {totalCount} notifikasi
+              </span>
 
-              {filterOpen && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="Tutup pilihan filter"
-                    className="fixed inset-0 z-30 cursor-default"
-                    onClick={() => setFilterOpen(false)}
-                  />
+              <span className="text-[#D5D7DC]">·</span>
 
-                  <div
-                    role="listbox"
-                    aria-label="Filter notifikasi"
-                    className="absolute left-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-xl border border-[#E8E9ED] bg-white py-1 shadow-lg"
-                  >
-                    {filters.map((filter) => {
-                      const active = activeFilter === filter.id;
-
-                      return (
-                        <button
-                          key={filter.id}
-                          type="button"
-                          role="option"
-                          aria-selected={active}
-                          onClick={() => changeFilter(filter.id)}
-                          className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm transition-colors ${
-                            active
-                              ? "bg-[#730217]/[0.06] font-semibold text-[#730217]"
-                              : "text-foreground hover:bg-[#F7F7F8]"
-                          }`}
-                        >
-                          <span>{filter.label}</span>
-
-                          {filter.id === "unread" && unreadCount > 0 && (
-                            <span className="rounded-full bg-[#730217]/10 px-2 py-0.5 text-[11px] font-semibold text-[#730217]">
-                              {unreadCount}
-                            </span>
-                          )}
-
-                          {active && <Check size={16} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
+              {unreadCount > 0 ? (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-[#730217]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#730217]" />
+                  {unreadCount} belum dibaca
+                </span>
+              ) : (
+                <span className="text-xs font-medium text-muted-foreground">
+                  Semua sudah dibaca
+                </span>
               )}
             </div>
 
-            <span className="text-xs text-muted-foreground">
-              {filteredNotifications.length} notifikasi
-            </span>
+            {isSelectionMode && (
+              <span className="text-xs font-medium text-[#730217] md:hidden">
+                {selectedCount} dipilih
+              </span>
+            )}
           </div>
         )}
 
         {/* DESKTOP SELECTION TOOLBAR */}
 
-        {filteredNotifications.length > 0 && (
+        {notifications.length > 0 && (
           <div
             className={`mb-2 hidden min-h-11 items-center justify-between rounded-lg border px-3 transition-colors md:flex ${
               selectedCount > 0
@@ -760,10 +774,10 @@ export default function NotificationsPage() {
               <>
                 <div className="flex items-center gap-3">
                   <MokuCheckbox
-                    checked={allFilteredSelected}
+                    checked={allNotificationsSelected}
                     onChange={toggleSelectAll}
                     label={
-                      allFilteredSelected
+                      allNotificationsSelected
                         ? "Batalkan pilih semua"
                         : "Pilih semua"
                     }
@@ -808,7 +822,7 @@ export default function NotificationsPage() {
               </>
             ) : (
               <span className="text-xs text-muted-foreground">
-                {filteredNotifications.length} notifikasi
+                Pilih ikon notifikasi untuk mengelola beberapa notifikasi.
               </span>
             )}
           </div>
@@ -816,17 +830,27 @@ export default function NotificationsPage() {
 
         {/* MOBILE SELECTION INFO */}
 
-        {isSelectionMode && filteredNotifications.length > 0 && (
+        {isSelectionMode && notifications.length > 0 && (
           <div className="mb-3 flex items-center justify-between border-b border-[#ECEDEF] px-1 py-2 md:hidden">
-            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={allFilteredSelected}
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+            >
+              <MokuCheckbox
+                checked={allNotificationsSelected}
                 onChange={toggleSelectAll}
-                className="h-4 w-4 accent-primary"
+                label={
+                  allNotificationsSelected
+                    ? "Batalkan pilih semua"
+                    : "Pilih semua"
+                }
               />
-              {allFilteredSelected ? "Batalkan pilih semua" : "Pilih semua"}
-            </label>
+
+              {allNotificationsSelected
+                ? "Batalkan pilih semua"
+                : "Pilih semua"}
+            </button>
 
             <span className="text-xs text-muted-foreground">
               {selectedCount} dipilih
@@ -837,12 +861,14 @@ export default function NotificationsPage() {
         {/* NOTIFICATION LIST */}
 
         <section>
-          {filteredNotifications.length > 0 ? (
+          {notifications.length > 0 ? (
             <div className="divide-y divide-[#ECEDEF]">
-              {filteredNotifications.map((item) => {
+              {notifications.map((item) => {
                 const Icon = iconMap[item.type];
+
                 const isSelected = selectedIds.includes(item.id);
                 const isExiting = exitingIds.includes(item.id);
+
                 const swipeOffset = swipeOffsets[item.id] ?? 0;
 
                 const displayDate = formatNotificationDate(
@@ -947,15 +973,27 @@ export default function NotificationsPage() {
                     {/* MOBILE ROW */}
 
                     <div className="relative overflow-hidden md:hidden">
+
+                      {/* DELETE BACKGROUND */}
+
                       <div
-                        className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-[#BF0B2C] transition-opacity duration-100"
+                        className="absolute inset-y-0 right-0 flex w-28 items-center justify-center bg-[#BF0B2C]"
                         style={{
-                          opacity: swipeOffset < 0 ? 1 : 0,
+                          opacity: Math.min(
+                            Math.abs(swipeOffset) / 65,
+                            1
+                          ),
                         }}
                         aria-hidden="true"
                       >
-                        <Trash size={21} className="text-white" />
+                        <Trash
+                          size={21}
+                          weight="bold"
+                          className="text-white"
+                        />
                       </div>
+
+                      {/* COMPLETE SWIPE CONTENT */}
 
                       <div
                         onTouchStart={(event) =>
@@ -967,7 +1005,8 @@ export default function NotificationsPage() {
                         onTouchEnd={() => handleTouchEnd(item.id)}
                         onTouchCancel={() => handleTouchCancel(item.id)}
                         onContextMenu={(event) => event.preventDefault()}
-                        className={`relative flex items-start gap-3 overflow-hidden px-2 py-4 select-none ${
+                        onSelectStart={(event) => event.preventDefault()}
+                        className={`mobile-swipe-foreground relative flex w-full items-start gap-3 overflow-hidden px-2 py-4 ${
                           isSelected
                             ? "bg-[#730217]/[0.06]"
                             : !item.isRead
@@ -975,36 +1014,43 @@ export default function NotificationsPage() {
                               : "bg-white"
                         }`}
                         style={{
-                          transform: `translateX(${swipeOffset}px)`,
+                          transform: `translate3d(${swipeOffset}px, 0, 0)`,
                           transition:
                             touchStartRef.current?.id === item.id &&
                             touchStartRef.current.moved
                               ? "none"
                               : "transform 220ms ease",
                           touchAction: "pan-y",
+                          willChange:
+                            swipeOffset !== 0 ? "transform" : "auto",
                         }}
                       >
-                        {isSelectionMode && (
-                          <div className="mt-2 flex h-5 w-5 shrink-0 animate-selection-in items-center justify-center">
-                            <input
-                              type="checkbox"
+                        {/* CATEGORY ICON / SELECTION CONTROL */}
+
+                        {isSelectionMode ? (
+                          <div className="mt-2 flex h-10 w-10 shrink-0 animate-selection-in items-center justify-center">
+                            <MokuCheckbox
                               checked={isSelected}
                               onChange={() => toggleSelection(item.id)}
-                              aria-label={`Pilih ${item.title}`}
-                              className="h-4 w-4 cursor-pointer accent-primary"
+                              label={`Pilih ${item.title}`}
+                              className="h-6 w-6 rounded-[7px]"
                             />
+                          </div>
+                        ) : (
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
+                          >
+                            <Icon size={20} weight="duotone" />
                           </div>
                         )}
 
-                        <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColorMap[item.type]}`}
-                        >
-                          <Icon size={20} weight="duotone" />
-                        </div>
+                        {/* NOTIFICATION CONTENT */}
 
                         <Link
                           href={`/notifications/${encodeURIComponent(item.id)}`}
-                          onClick={handleDetailClick}
+                          onClick={(event) =>
+                            handleDetailClick(event, item.id)
+                          }
                           className="min-w-0 flex-1 outline-none"
                         >
                           <div className="flex items-center gap-2">
@@ -1050,20 +1096,27 @@ export default function NotificationsPage() {
                 );
               })}
             </div>
-          ) : isCompletelyEmpty ? (
+          ) : (
             /* EMPTY DATABASE */
 
             <div className="relative flex min-h-[390px] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center sm:min-h-[440px]">
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
-                <EmptyNotificationWatermark />
+
+              {/* MOKU WATERMARK */}
+
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="opacity-[0.17]">
+                  <EmptyNotificationWatermark />
+                </div>
               </div>
 
-              <div className="relative z-10 flex flex-col items-center">
-                <h2 className="text-base font-semibold text-foreground sm:text-lg">
+              {/* EMPTY STATE CONTENT */}
+
+              <div className="relative z-10 mt-24 flex flex-col items-center">
+                <h2 className="text-base font-semibold tracking-tight text-[#730217] sm:text-lg">
                   Belum Ada Notifikasi
                 </h2>
 
-                <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
                   Aktivitas dan informasi terbaru akan muncul di sini.
                 </p>
 
@@ -1075,19 +1128,6 @@ export default function NotificationsPage() {
                   Muat 15 Data Demo
                 </button>
               </div>
-            </div>
-          ) : (
-            /* FILTER EMPTY */
-
-            <div className="flex min-h-[130px] items-center justify-center px-5 py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {activeFilter === "unread"
-                  ? "Semua notifikasi sudah dibaca."
-                  : `Tidak ada notifikasi kategori ${
-                      filters.find((filter) => filter.id === activeFilter)
-                        ?.label ?? ""
-                    }.`}
-              </p>
             </div>
           )}
         </section>
@@ -1105,7 +1145,7 @@ export default function NotificationsPage() {
 
       {isSelectionMode && selectedCount > 0 && (
         <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-md animate-toolbar-in items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg md:hidden">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-[#730217]">
             {selectedCount} dipilih
           </span>
 
@@ -1143,20 +1183,19 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* SNACKBAR WITH UNDO */}
+      {/* MOKU SIGNATURE SNACKBAR */}
 
       {snackbar && (
         <div
-          key={`${snackbar.message}-${Date.now()}`}
           role="status"
           aria-live="polite"
-          className="snackbar-enter fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#292929] px-4 py-3 text-white shadow-xl md:bottom-6"
+          className="snackbar-enter fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl md:bottom-6"
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <CheckCircle
               size={19}
               weight="fill"
-              className="shrink-0 text-[#F28C0F]"
+              className="shrink-0 text-white"
             />
 
             <span className="truncate text-sm">
@@ -1167,7 +1206,7 @@ export default function NotificationsPage() {
           <button
             type="button"
             onClick={handleUndo}
-            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-[#F28C0F] transition-colors hover:bg-white/10"
+            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
             URUNGKAN
           </button>
@@ -1197,6 +1236,14 @@ export default function NotificationsPage() {
 
         .animate-toolbar-in {
           animation: toolbar-in 180ms ease-out both;
+        }
+
+        .mobile-swipe-foreground {
+          box-sizing: border-box;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-touch-callout: none;
+          backface-visibility: hidden;
         }
 
         @keyframes notification-enter {
@@ -1257,18 +1304,6 @@ export default function NotificationsPage() {
           }
         }
 
-        @keyframes notification-exit {
-          from {
-            opacity: 1;
-            max-height: 120px;
-          }
-
-          to {
-            opacity: 0;
-            max-height: 0;
-          }
-        }
-
         @media (prefers-reduced-motion: reduce) {
           .page-enter,
           .snackbar-enter,
@@ -1281,4 +1316,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-                                                                                                     }
+                }
