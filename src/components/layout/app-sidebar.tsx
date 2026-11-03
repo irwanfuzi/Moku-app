@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useAppLayout } from "@/components/layout/app-shell";
+
 import {
   House,
   Monitor,
@@ -79,6 +81,7 @@ export default function AppSidebar({
   onToggleCollapse,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const { isDesktop, isReady } = useAppLayout();
 
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -242,16 +245,20 @@ export default function AppSidebar({
   const showInstallButton =
     isInstallStateReady && !isInstalled;
 
+  // Sidebar hanya tampil pada mode desktop.
+  if (!isReady || !isDesktop) {
+    return null;
+  }
+
   return (
     <aside
       className={`
-        sticky top-0 z-30 hidden h-screen shrink-0
+        sticky top-0 z-30 flex h-screen shrink-0
         flex-col overflow-hidden
         border-r border-white/10
         bg-[#6F010E]
         transition-[width] duration-300 ease-in-out
         motion-reduce:transition-none
-        lg:flex
         ${collapsed ? "w-[72px]" : "w-[240px]"}
       `}
       aria-label="Navigasi utama"
