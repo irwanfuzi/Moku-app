@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -11,6 +10,9 @@ import {
   type ChangeEvent,
   type ElementType,
 } from "react";
+
+import { useAppLayout } from "@/components/layout/app-shell";
+
 import {
   ArrowLeft,
   Bell,
@@ -226,6 +228,9 @@ export default function AppHeader({
   userEmail = "Akun MOKU",
 }: AppHeaderProps) {
   const pathname = usePathname();
+
+  const { isMobile, isDesktop, isReady } = useAppLayout();
+
   const isNotificationsPage = pathname === "/notifications";
   const isNotificationDetail = pathname.startsWith("/notifications/");
 
@@ -345,18 +350,26 @@ export default function AppHeader({
     }
   }, [isNotificationSection]);
 
+  useEffect(() => {
+    setMobileSearchOpen(false);
+    setSearchOpen(false);
+    setNotificationMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [isDesktop, isMobile]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-white/95 backdrop-blur-md transition-colors duration-200">
       <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-2.5 sm:min-h-[68px] sm:px-6 sm:py-3 lg:px-8">
 
         {/* PAGE TITLE */}
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
+
           {/* BACK BUTTON: MOBILE NOTIFICATION PAGES */}
-          {isNotificationSection && (
+          {isReady && isMobile && isNotificationSection && (
             <Link
               href="/"
               aria-label="Kembali ke dashboard"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-[#F1F2F5] active:scale-95 md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-[#F1F2F5] active:scale-95"
             >
               <ArrowLeft size={21} weight="regular" />
             </Link>
@@ -377,10 +390,12 @@ export default function AppHeader({
 
         {/* HEADER ACTIONS */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-          {!isNotificationSection && (
+
+          {/* DESKTOP SEARCH */}
+          {isReady && isDesktop && !isNotificationSection && (
             <div
               ref={desktopSearchRef}
-              className="relative hidden w-48 lg:block lg:w-64"
+              className="relative w-48 lg:w-64"
             >
               <MagnifyingGlass
                 size={18}
@@ -406,7 +421,8 @@ export default function AppHeader({
             </div>
           )}
 
-          {!isNotificationSection && (
+          {/* MOBILE SEARCH BUTTON */}
+          {isReady && isMobile && !isNotificationSection && (
             <button
               type="button"
               onClick={() => {
@@ -415,7 +431,7 @@ export default function AppHeader({
               }}
               aria-label="Buka pencarian"
               aria-expanded={mobileSearchOpen}
-              className="flex h-10 w-10 items-center justify-center rounded-control text-muted transition-all hover:bg-primary-light hover:text-primary active:scale-95 lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-control text-muted transition-all hover:bg-primary-light hover:text-primary active:scale-95"
             >
               {mobileSearchOpen ? (
                 <X size={21} />
@@ -425,13 +441,15 @@ export default function AppHeader({
             </button>
           )}
 
-          {!isNotificationSection && (
+          {/* MOBILE NOTIFICATION BUTTON */}
+          {isReady && isMobile && !isNotificationSection && (
             <Link
               href="/notifications"
               aria-label={`${displayedNotificationCount} notifikasi belum dibaca`}
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-muted transition-all hover:bg-primary-light hover:text-primary active:scale-95 lg:hidden"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-muted transition-all hover:bg-primary-light hover:text-primary active:scale-95"
             >
               <Bell size={21} />
+
               {displayedNotificationCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-danger px-1 text-[9px] font-bold text-white">
                   {displayedNotificationCount > 99
@@ -442,10 +460,11 @@ export default function AppHeader({
             </Link>
           )}
 
-          {!isNotificationSection && (
+          {/* DESKTOP NOTIFICATION DROPDOWN */}
+          {isReady && isDesktop && !isNotificationSection && (
             <div
               ref={notificationMenuRef}
-              className="relative hidden lg:block"
+              className="relative"
             >
               <button
                 type="button"
@@ -571,93 +590,98 @@ export default function AppHeader({
             </div>
           )}
 
-          <div className="hidden h-9 w-px bg-border/70 lg:block" />
+          {/* DESKTOP DIVIDER */}
+          {isReady && isDesktop && (
+            <div className="h-9 w-px bg-border/70" />
+          )}
 
-          {/* USER PROFILE */}
-          <div
-            ref={profileMenuRef}
-            className="relative hidden lg:block"
-          >
-            <button
-              type="button"
-              onClick={toggleProfileMenu}
-              aria-label="Menu akun pengguna"
-              aria-expanded={profileMenuOpen}
-              className="flex items-center gap-2 rounded-control p-1.5 transition-colors hover:bg-primary-light sm:gap-3 sm:px-2"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5">
-                <User
-                  size={21}
-                  weight="duotone"
-                  className="text-primary"
-                />
-              </span>
-
-              <div className="min-w-0 text-left">
-                <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
-                  {userName}
-                </p>
-                <p className="max-w-[120px] truncate text-[10px] text-muted">
-                  {userEmail}
-                </p>
-              </div>
-
-              <CaretDown
-                size={15}
-                weight="bold"
-                className={`text-muted transition-transform ${
-                  profileMenuOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
+          {/* DESKTOP USER PROFILE */}
+          {isReady && isDesktop && (
             <div
-              aria-hidden={!profileMenuOpen}
-              className={`absolute right-0 top-full z-50 mt-2 w-[220px] overflow-hidden rounded-xl border border-border bg-white shadow-[0_5px_18px_rgba(0,0,0,0.055)] transition-all ${
-                profileMenuOpen
-                  ? "pointer-events-auto translate-y-0 opacity-100"
-                  : "pointer-events-none -translate-y-1 opacity-0"
-              }`}
+              ref={profileMenuRef}
+              className="relative"
             >
-              <div className="border-b border-border px-4 py-3">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {userName}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-muted">
-                  {userEmail}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={toggleProfileMenu}
+                aria-label="Menu akun pengguna"
+                aria-expanded={profileMenuOpen}
+                className="flex items-center gap-2 rounded-control p-1.5 transition-colors hover:bg-primary-light sm:gap-3 sm:px-2"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5">
+                  <User
+                    size={21}
+                    weight="duotone"
+                    className="text-primary"
+                  />
+                </span>
 
-              <div className="p-1.5">
-                <Link
-                  href="/profile"
-                  onClick={() => setProfileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-primary-light hover:text-primary"
-                >
-                  <User size={19} />
-                  Profil Saya
-                </Link>
+                <div className="min-w-0 text-left">
+                  <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
+                    {userName}
+                  </p>
+                  <p className="max-w-[120px] truncate text-[10px] text-muted">
+                    {userEmail}
+                  </p>
+                </div>
 
-                <Link
-                  href="/settings"
-                  onClick={() => setProfileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-primary-light hover:text-primary"
-                >
-                  <Gear size={19} />
-                  Pengaturan Akun
-                </Link>
+                <CaretDown
+                  size={15}
+                  weight="bold"
+                  className={`text-muted transition-transform ${
+                    profileMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <div
+                aria-hidden={!profileMenuOpen}
+                className={`absolute right-0 top-full z-50 mt-2 w-[220px] overflow-hidden rounded-xl border border-border bg-white shadow-[0_5px_18px_rgba(0,0,0,0.055)] transition-all ${
+                  profileMenuOpen
+                    ? "pointer-events-auto translate-y-0 opacity-100"
+                    : "pointer-events-none -translate-y-1 opacity-0"
+                }`}
+              >
+                <div className="border-b border-border px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {userName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted">
+                    {userEmail}
+                  </p>
+                </div>
+
+                <div className="p-1.5">
+                  <Link
+                    href="/profile"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-primary-light hover:text-primary"
+                  >
+                    <User size={19} />
+                    Profil Saya
+                  </Link>
+
+                  <Link
+                    href="/settings"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-primary-light hover:text-primary"
+                  >
+                    <Gear size={19} />
+                    Pengaturan Akun
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* MOBILE SEARCH */}
-      {!isNotificationSection && (
+      {isReady && isMobile && !isNotificationSection && (
         <div
           ref={mobileSearchRef}
           aria-hidden={!mobileSearchOpen}
-          className={`relative z-[60] grid transition-all duration-200 ease-out lg:hidden ${
+          className={`relative z-[60] grid transition-all duration-200 ease-out ${
             mobileSearchOpen
               ? "grid-rows-[1fr] opacity-100"
               : "grid-rows-[0fr] opacity-0"
@@ -695,4 +719,4 @@ export default function AppHeader({
       )}
     </header>
   );
-}
+                    }
