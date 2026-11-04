@@ -351,7 +351,7 @@ export default function AppShell({
   }, [updateLayout]);
 
   /* =======================================================
-     PAGE TRANSITION
+     PAGE TRANSITION DIRECTION
   ======================================================= */
 
   useEffect(() => {
@@ -417,6 +417,15 @@ export default function AppShell({
               flex-1
               overflow-x-hidden
               bg-background
+
+              ${layoutState.mode === "desktop"
+                ? `
+                  px-4 py-5 pb-24
+                  sm:px-6 sm:py-6 sm:pb-24
+                  lg:px-8 lg:py-7 lg:pb-7
+                `
+                : "p-0"
+              }
             `}
           >
             <div
@@ -424,7 +433,6 @@ export default function AppShell({
               data-page-transition={navigationDirection}
               className={`
                 page-transition
-                page-transition-${navigationDirection}
                 min-h-full
                 w-full
                 min-w-0
@@ -472,58 +480,52 @@ export default function AppShell({
       </div>
 
       {/* ===================================================
-          GLOBAL PAGE TRANSITION
+          MOBILE / PWA PUSH & SLIDE TRANSITION
       =================================================== */}
 
       <style jsx global>{`
         .page-transition {
-          transform: translate3d(0, 0, 0);
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          will-change: transform, opacity;
+          min-width: 0;
         }
 
-        /* NAVIGASI MAJU */
+        /* Hanya aktif pada layout mobile/PWA */
 
-        .page-transition-forward {
-          animation: moku-push-forward 280ms
+        [data-layout-mode="mobile"] .page-transition[data-page-transition="forward"] {
+          animation: moku-push-forward 300ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* NAVIGASI KEMBALI */
-
-        .page-transition-backward {
-          animation: moku-push-backward 280ms
+        [data-layout-mode="mobile"] .page-transition[data-page-transition="backward"] {
+          animation: moku-push-backward 300ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         @keyframes moku-push-forward {
-          from {
-            opacity: 0.82;
-            transform: translate3d(38px, 0, 0);
+          0% {
+            opacity: 0.85;
+            transform: translate3d(42px, 0, 0);
           }
 
-          to {
+          100% {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
         }
 
         @keyframes moku-push-backward {
-          from {
-            opacity: 0.82;
-            transform: translate3d(-38px, 0, 0);
+          0% {
+            opacity: 0.85;
+            transform: translate3d(-42px, 0, 0);
           }
 
-          to {
+          100% {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .page-transition-forward,
-          .page-transition-backward {
+          [data-layout-mode="mobile"] .page-transition {
             animation: none !important;
           }
         }
