@@ -22,6 +22,10 @@ import {
   DownloadSimple,
 } from "@phosphor-icons/react";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 interface AppSidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -35,7 +39,15 @@ interface BeforeInstallPromptEvent extends Event {
   }>;
 }
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
 const INSTALL_STORAGE_KEY = "moku-pwa-installed";
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 const navigationGroups = [
   {
@@ -74,6 +86,10 @@ const navigationGroups = [
   },
 ];
 
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
 export default function AppSidebar({
   collapsed = false,
   onToggleCollapse,
@@ -84,8 +100,13 @@ export default function AppSidebar({
     useState<BeforeInstallPromptEvent | null>(null);
 
   const [isInstalled, setIsInstalled] = useState(false);
+
   const [isInstallStateReady, setIsInstallStateReady] =
     useState(false);
+
+  /* =======================================================
+     PWA DETECTION
+  ======================================================= */
 
   const checkStandalone = useCallback(() => {
     return (
@@ -107,7 +128,7 @@ export default function AppSidebar({
   }, []);
 
   /* =======================================================
-     PWA INSTALL DETECTION
+     PWA INSTALL LISTENER
   ======================================================= */
 
   useEffect(() => {
@@ -252,13 +273,18 @@ export default function AppSidebar({
   const showInstallButton =
     isInstallStateReady && !isInstalled;
 
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <>
       <aside
         className={`
           moku-sidebar
-          fixed inset-y-0 left-0 z-40
-          hidden h-dvh shrink-0
+          fixed left-0 top-0 bottom-0 z-40
+          hidden h-screen h-dvh
+          min-h-0 shrink-0
           flex-col overflow-hidden
           border-r border-white/10
           bg-[#6F010E]
@@ -309,7 +335,15 @@ export default function AppSidebar({
 
         {/* NAVIGATION */}
 
-        <nav className="moku-sidebar-scroll min-h-0 flex-1 px-3 py-5">
+        <nav
+          className="
+            moku-sidebar-scroll
+            min-h-0 flex-1
+            overflow-x-hidden overflow-y-auto
+            px-3 py-5
+          "
+          aria-label="Menu navigasi"
+        >
           <div className="moku-sidebar-groups space-y-6">
             {navigationGroups.map((group) => (
               <div key={group.title}>
@@ -406,7 +440,14 @@ export default function AppSidebar({
 
         {/* FOOTER */}
 
-        <div className="moku-sidebar-footer shrink-0 space-y-2 border-t border-white/10 p-3">
+        <div
+          className="
+            moku-sidebar-footer
+            shrink-0 space-y-2
+            border-t border-white/10
+            p-3
+          "
+        >
           {/* PWA INSTALL PANEL */}
 
           {showInstallButton && (
@@ -423,10 +464,10 @@ export default function AppSidebar({
               }
               aria-label="Install MOKU"
               className={`
-                group relative flex min-h-[66px] w-full
+                group relative flex min-h-[58px] w-full
                 items-center gap-3
-                rounded-2xl border border-[#B10618]/70
-                bg-[#520107] px-3 py-3
+                rounded-xl border border-[#B10618]/70
+                bg-[#520107] px-3 py-2
                 text-left !text-[#FDFDFD]
                 transition-all duration-200
                 ${
@@ -435,7 +476,7 @@ export default function AppSidebar({
                     : "cursor-default opacity-90"
                 }
                 motion-reduce:transition-none
-                ${collapsed ? "min-h-[54px] justify-center px-0 py-2" : ""}
+                ${collapsed ? "min-h-[50px] justify-center px-0 py-2" : ""}
               `}
             >
               {collapsed ? (
@@ -519,7 +560,16 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="mt-2 flex h-9 w-full items-center justify-center rounded-lg !text-[#FDFDFD]/75 transition-all duration-200 hover:bg-[#520107] hover:!text-[#FDFDFD] active:scale-95 motion-reduce:transition-none"
+              className="
+                mt-2 flex h-9 w-full
+                items-center justify-center
+                rounded-lg !text-[#FDFDFD]/75
+                transition-all duration-200
+                hover:bg-[#520107]
+                hover:!text-[#FDFDFD]
+                active:scale-95
+                motion-reduce:transition-none
+              "
               aria-label={
                 collapsed ? "Perluas sidebar" : "Perkecil sidebar"
               }
@@ -537,15 +587,59 @@ export default function AppSidebar({
         </div>
       </aside>
 
-      {/* SIDEBAR SCROLL & COMPACT LANDSCAPE */}
+      {/* ===================================================
+          SIDEBAR RESPONSIVE STYLES
+      =================================================== */}
 
       <style jsx global>{`
+        /*
+          FIXED SIDEBAR
+        */
+
+        .moku-sidebar {
+          position: fixed !important;
+          top: 0 !important;
+          bottom: 0 !important;
+          left: 0 !important;
+
+          height: 100vh !important;
+          height: 100dvh !important;
+
+          min-height: 0 !important;
+          max-height: 100vh !important;
+          max-height: 100dvh !important;
+
+          display: none;
+          flex-direction: column;
+
+          overflow: hidden !important;
+          box-sizing: border-box;
+
+          isolation: isolate;
+        }
+
+        @media (min-width: 1024px) {
+          .moku-sidebar {
+            display: flex;
+          }
+        }
+
+        /*
+          INDEPENDENT NAVIGATION SCROLL
+        */
+
         .moku-sidebar-scroll {
+          min-height: 0 !important;
+          flex: 1 1 auto !important;
+
+          overflow-x: hidden !important;
+          overflow-y: auto !important;
+
           scrollbar-width: none !important;
           -ms-overflow-style: none !important;
-          overflow-y: auto;
-          overflow-x: hidden;
+
           overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
         }
 
         .moku-sidebar-scroll::-webkit-scrollbar {
@@ -555,13 +649,39 @@ export default function AppSidebar({
         }
 
         /*
-          MOBILE LANDSCAPE / DESKTOP SITE
-          Compact layout for short touch screens.
+          FOOTER STAYS AT BOTTOM
+        */
+
+        .moku-sidebar-footer {
+          flex: 0 0 auto !important;
+          position: relative;
+          z-index: 2;
+        }
+
+        .moku-sidebar-brand {
+          flex: 0 0 auto !important;
+        }
+
+        /*
+          MOBILE LANDSCAPE
+          Desktop structure with compact dimensions.
         */
 
         @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
           .moku-sidebar {
+            display: flex !important;
+
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+
             width: 190px !important;
+
+            height: 100vh !important;
+            height: 100dvh !important;
+
+            max-height: none !important;
           }
 
           .moku-sidebar[data-collapsed="true"] {
@@ -625,6 +745,16 @@ export default function AppSidebar({
           .moku-sidebar-footer > button:last-child {
             height: 28px !important;
             margin-top: 2px !important;
+          }
+        }
+
+        /*
+          MOBILE PORTRAIT / PWA
+        */
+
+        @media (orientation: portrait) {
+          .moku-sidebar {
+            display: none !important;
           }
         }
       `}</style>
