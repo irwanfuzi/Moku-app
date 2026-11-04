@@ -407,7 +407,6 @@ export default function AppSidebar({
         {/* FOOTER */}
 
         <div className="moku-sidebar-footer shrink-0 space-y-2 border-t border-white/10 p-3">
-
           {/* PWA INSTALL PANEL */}
 
           {showInstallButton && (
@@ -473,11 +472,7 @@ export default function AppSidebar({
                     className={`
                       shrink-0 !text-[#FEAF27]
                       transition-transform duration-200
-                      ${
-                        installPrompt
-                          ? "group-hover:translate-y-0.5"
-                          : ""
-                      }
+                      ${installPrompt ? "group-hover:translate-y-0.5" : ""}
                     `}
                   />
                 </>
