@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -129,9 +130,7 @@ function detectPhysicalLandscape(): boolean {
     return orientation.type.startsWith("landscape");
   }
 
-  if (
-    typeof window.screen.orientation?.angle === "number"
-  ) {
+  if (typeof window.screen.orientation?.angle === "number") {
     return Math.abs(window.screen.orientation.angle) % 180 === 90;
   }
 
@@ -312,6 +311,7 @@ export default function AppShell({
             id="main-content"
             className="
               min-h-0
+              w-full
               flex-1
               bg-background
               px-4
@@ -327,7 +327,7 @@ export default function AppShell({
               lg:pb-7
             "
           >
-            <div className="mx-auto w-full max-w-[1600px]">
+            <div className="w-full min-w-0">
               {children}
             </div>
           </main>
