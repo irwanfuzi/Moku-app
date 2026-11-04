@@ -1,3 +1,5 @@
+File: "src/components/layout/app-shell.tsx"
+
 "use client";
 
 import {
@@ -177,17 +179,11 @@ function detectPWA(): boolean {
 }
 
 function detectPhysicalLandscape(): boolean {
-  const orientation = window.screen.orientation;
-
-  if (orientation?.type) {
-    return orientation.type.startsWith("landscape");
+  if (window.screen.orientation?.type) {
+    return window.screen.orientation.type.startsWith("landscape");
   }
 
-  if (typeof orientation?.angle === "number") {
-    return Math.abs(orientation.angle) % 180 === 90;
-  }
-
-  return window.screen.width > window.screen.height;
+  return window.innerWidth > window.innerHeight;
 }
 
 function detectHandheldDevice(): boolean {
@@ -211,17 +207,17 @@ function detectLayoutMode(): {
   const isHandheld = detectHandheldDevice();
   const isLandscape = detectPhysicalLandscape();
 
-  if (!isHandheld) {
-    return {
-      mode: "desktop",
-      isPWA,
-    };
-  }
-
   if (isPWA) {
     return {
       mode: "mobile",
       isPWA: true,
+    };
+  }
+
+  if (!isHandheld) {
+    return {
+      mode: "desktop",
+      isPWA: false,
     };
   }
 
@@ -273,19 +269,39 @@ export default function AppShell({
   const updateLayout = useCallback(() => {
     const detected = detectLayoutMode();
 
-    setLayoutState({
-      mode: detected.mode,
-      isMobile: detected.mode === "mobile",
-      isDesktop: detected.mode === "desktop",
-      isPWA: detected.isPWA,
-      isReady: true,
+    setLayoutState((previous) => {
+      if (
+        previous.mode === detected.mode &&
+        previous.isPWA === detected.isPWA &&
+        previous.isReady
+      ) {
+        return previous;
+      }
+
+      return {
+        mode: detected.mode,
+        isMobile: detected.mode === "mobile",
+        isDesktop: detected.mode === "desktop",
+        isPWA: detected.isPWA,
+        isReady: true,
+      };
     });
   }, []);
 
   useEffect(() => {
     updateLayout();
 
-    window.addEventListener("resize", updateLayout);
+    let resizeTimer: ReturnType<typeof setTimeout>;
+
+    const handleResize = () => {
+      window.clearTimeout(resizeTimer);
+
+      resizeTimer = window.setTimeout(() => {
+        updateLayout();
+      }, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", updateLayout);
 
     const displayMode = window.matchMedia(
@@ -299,7 +315,9 @@ export default function AppShell({
     screenOrientation?.addEventListener("change", updateLayout);
 
     return () => {
-      window.removeEventListener("resize", updateLayout);
+      window.clearTimeout(resizeTimer);
+
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", updateLayout);
 
       displayMode.removeEventListener("change", updateLayout);
@@ -338,7 +356,7 @@ export default function AppShell({
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
-        className="moku-app-shell flex min-h-dvh w-full overflow-x-hidden bg-background text-foreground transition-colors duration-200"
+        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground transition-colors duration-200"
       >
         {/* SIDEBAR */}
 
@@ -349,8 +367,7 @@ export default function AppShell({
 
         {/* MAIN APPLICATION AREA */}
 
-        <div className="moku-main-layout flex min-h-dvh min-w-0 flex-1 flex-col">
-
+        <div className="moku-main-layout flex min-h-dvh min-w-0 flex-col">
           {/* HEADER */}
 
           <AppHeader
@@ -364,7 +381,7 @@ export default function AppShell({
             id="main-content"
             className={`
               relative min-h-0 w-full min-w-0 flex-1
-              overflow-x-hidden bg-background
+              overflow-x-clip bg-background
               ${
                 layoutState.mode === "desktop"
                   ? "px-4 py-5 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-7 lg:pb-7"
@@ -402,41 +419,68 @@ export default function AppShell({
       </div>
 
       {/* ===================================================
-          RESPONSIVE ADJUSTMENTS
+          RESPONSIVE LAYOUT
       =================================================== */}
 
       <style jsx global>{`
+        /*
+          BASE LAYOUT
+        */
+
+        .moku-app-shell {
+          position: relative;
+          min-height: 100dvh;
+          width: 100%;
+        }
+
+        .moku-main-layout {
+          position: relative;
+          min-width: 0;
+          width: 100%;
+          margin-left: 0;
+          min-height: 100dvh;
+          box-sizing: border-box;
+        }
+
         /*
           DESKTOP
         */
 
         @media (min-width: 1024px) {
           .moku-main-layout {
-            margin-left: 240px;
             width: calc(100% - 240px);
+            margin-left: 240px;
+            flex: 0 0 calc(100% - 240px);
             transition:
-              margin-left 300ms ease-in-out,
-              width 300ms ease-in-out;
+              margin-left 250ms ease,
+              width 250ms ease,
+              flex-basis 250ms ease;
           }
 
-          [data-sidebar-collapsed="true"] .moku-main-layout {
-            margin-left: 72px;
+          .moku-app-shell[data-sidebar-collapsed="true"]
+            .moku-main-layout {
             width: calc(100% - 72px);
+            margin-left: 72px;
+            flex-basis: calc(100% - 72px);
           }
         }
 
         /*
           MOBILE LANDSCAPE
-          Desktop structure remains unchanged.
-          Only spacing and dimensions are optimized.
+          Desktop structure, compact dimensions.
         */
 
         @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
           .moku-sidebar {
             display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
             width: 190px !important;
+            height: 100vh !important;
             height: 100dvh !important;
-            max-height: 100dvh !important;
+            max-height: none !important;
           }
 
           .moku-sidebar[data-collapsed="true"] {
@@ -444,17 +488,18 @@ export default function AppShell({
           }
 
           .moku-main-layout {
-            margin-left: 190px;
-            width: calc(100% - 190px);
+            width: calc(100% - 190px) !important;
+            margin-left: 190px !important;
+            flex: 0 0 calc(100% - 190px) !important;
+            min-height: 100vh;
             min-height: 100dvh;
-            transition:
-              margin-left 300ms ease-in-out,
-              width 300ms ease-in-out;
           }
 
-          [data-sidebar-collapsed="true"] .moku-main-layout {
-            margin-left: 64px;
-            width: calc(100% - 64px);
+          .moku-app-shell[data-sidebar-collapsed="true"]
+            .moku-main-layout {
+            width: calc(100% - 64px) !important;
+            margin-left: 64px !important;
+            flex-basis: calc(100% - 64px) !important;
           }
 
           .moku-app-shell #main-content {
@@ -464,6 +509,10 @@ export default function AppShell({
           .moku-desktop-footer {
             display: none !important;
           }
+
+          .moku-app-shell [data-mobile-navigation] {
+            display: none !important;
+          }
         }
 
         /*
@@ -471,18 +520,19 @@ export default function AppShell({
         */
 
         @media (orientation: portrait) {
-          [data-layout-mode="mobile"] .moku-sidebar {
+          .moku-sidebar {
             display: none !important;
           }
 
-          [data-layout-mode="mobile"] .moku-main-layout {
-            margin-left: 0 !important;
+          .moku-main-layout {
             width: 100% !important;
+            margin-left: 0 !important;
+            flex-basis: 100% !important;
           }
         }
 
         /*
-          DESKTOP TRANSITION
+          PAGE TRANSITIONS
         */
 
         .page-transition {
@@ -506,16 +556,14 @@ export default function AppShell({
           }
         }
 
-        /*
-          MOBILE TRANSITION
-        */
-
-        [data-layout-mode="mobile"] .page-transition[data-page-transition="forward"] {
+        [data-layout-mode="mobile"]
+          .page-transition[data-page-transition="forward"] {
           animation: moku-push-forward 340ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        [data-layout-mode="mobile"] .page-transition[data-page-transition="backward"] {
+        [data-layout-mode="mobile"]
+          .page-transition[data-page-transition="backward"] {
           animation: moku-push-backward 340ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
@@ -556,4 +604,4 @@ export default function AppShell({
       `}</style>
     </AppLayoutContext.Provider>
   );
-          }
+}
