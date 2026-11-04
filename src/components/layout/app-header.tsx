@@ -36,6 +36,10 @@ import {
   type NotificationItem,
 } from "@/lib/notification-store";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 interface AppHeaderProps {
   title: string;
   description?: string;
@@ -46,6 +50,10 @@ interface AppHeaderProps {
   userName?: string;
   userEmail?: string;
 }
+
+/* =========================================================
+   SEARCH SUGGESTIONS
+========================================================= */
 
 const searchSuggestions = [
   {
@@ -114,6 +122,10 @@ const searchSuggestions = [
   },
 ];
 
+/* =========================================================
+   NOTIFICATION ICONS
+========================================================= */
+
 const notificationIcons = {
   visit: Wrench,
   equipment: Monitor,
@@ -131,6 +143,10 @@ const notificationStyles = {
   monitoring: "bg-amber-50 text-amber-700",
   general: "bg-surface-secondary text-muted",
 } satisfies Record<NotificationItem["type"], string>;
+
+/* =========================================================
+   SEARCH SUGGESTION LIST
+========================================================= */
 
 function SearchSuggestionList({
   query,
@@ -161,6 +177,7 @@ function SearchSuggestionList({
         <p className="text-xs font-semibold text-foreground">
           Hasil pencarian
         </p>
+
         <p className="mt-0.5 text-[10px] text-muted">
           Contoh data sementara MOKU
         </p>
@@ -186,6 +203,7 @@ function SearchSuggestionList({
                   <p className="truncate text-xs font-semibold text-foreground">
                     {item.title}
                   </p>
+
                   <p className="mt-0.5 truncate text-[10px] text-muted">
                     {item.subtitle}
                   </p>
@@ -205,9 +223,11 @@ function SearchSuggestionList({
             className="mx-auto text-[#A0A0A0]"
             weight="light"
           />
+
           <p className="mt-2 text-xs font-medium text-foreground">
             Tidak ada hasil ditemukan
           </p>
+
           <p className="mt-1 text-[10px] text-muted">
             Coba kata kunci lainnya.
           </p>
@@ -216,6 +236,10 @@ function SearchSuggestionList({
     </div>
   );
 }
+
+/* =========================================================
+   APP HEADER
+========================================================= */
 
 export default function AppHeader({
   title,
@@ -232,24 +256,37 @@ export default function AppHeader({
   const { isMobile, isDesktop, isReady } = useAppLayout();
 
   const isNotificationsPage = pathname === "/notifications";
-  const isNotificationDetail = pathname.startsWith("/notifications/");
+
+  const isNotificationDetail = pathname.startsWith(
+    "/notifications/"
+  );
 
   const isNotificationSection =
     isNotificationsPage || isNotificationDetail;
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [notificationsReady, setNotificationsReady] = useState(false);
+  const [notifications, setNotifications] = useState<
+    NotificationItem[]
+  >([]);
+
+  const [notificationsReady, setNotificationsReady] =
+    useState(false);
 
   const [searchValue, setSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [notificationMenuOpen, setNotificationMenuOpen] =
+    useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
+
+  /* =======================================================
+     SYNC NOTIFICATIONS
+  ======================================================= */
 
   useEffect(() => {
     const syncNotifications = () => {
@@ -258,6 +295,7 @@ export default function AppHeader({
     };
 
     syncNotifications();
+
     return subscribeNotifications(syncNotifications);
   }, []);
 
@@ -269,10 +307,18 @@ export default function AppHeader({
     ? unreadCount
     : notificationCount;
 
-  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+  /* =======================================================
+     SEARCH
+  ======================================================= */
+
+  const handleSearch = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
     const value = event.target.value;
+
     setSearchValue(value);
     setSearchOpen(true);
+
     onSearch?.(value);
   };
 
@@ -280,6 +326,10 @@ export default function AppHeader({
     setSearchOpen(false);
     setMobileSearchOpen(false);
   };
+
+  /* =======================================================
+     NOTIFICATION ACTIONS
+  ======================================================= */
 
   const markAllAsRead = () => {
     const updated = notifications.map((item) => ({
@@ -290,6 +340,10 @@ export default function AppHeader({
     saveNotifications(updated);
     onMarkAllNotificationsRead?.();
   };
+
+  /* =======================================================
+     MENU ACTIONS
+  ======================================================= */
 
   const toggleProfileMenu = () => {
     setProfileMenuOpen((previous) => !previous);
@@ -302,6 +356,10 @@ export default function AppHeader({
     setProfileMenuOpen(false);
     setSearchOpen(false);
   };
+
+  /* =======================================================
+     OUTSIDE CLICK & ESCAPE
+  ======================================================= */
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -336,10 +394,21 @@ export default function AppHeader({
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
   }, []);
+
+  /* =======================================================
+     CLOSE MENUS ON NOTIFICATION SECTION
+  ======================================================= */
 
   useEffect(() => {
     if (isNotificationSection) {
@@ -350,6 +419,10 @@ export default function AppHeader({
     }
   }, [isNotificationSection]);
 
+  /* =======================================================
+     CLOSE MENUS ON LAYOUT CHANGE
+  ======================================================= */
+
   useEffect(() => {
     setMobileSearchOpen(false);
     setSearchOpen(false);
@@ -357,14 +430,37 @@ export default function AppHeader({
     setProfileMenuOpen(false);
   }, [isDesktop, isMobile]);
 
+  /* =======================================================
+     RESPONSIVE HEADER BORDER
+  ======================================================= */
+
+  const headerBorderClass =
+    isReady && isMobile
+      ? "border-b-0"
+      : "border-b border-border";
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-white/95 backdrop-blur-md transition-colors duration-200">
+    <header
+      className={`
+        sticky top-0 z-50 w-full shrink-0
+        ${headerBorderClass}
+        bg-white/95
+        backdrop-blur-md
+        transition-colors duration-200
+      `}
+    >
       <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-2.5 sm:min-h-[68px] sm:px-6 sm:py-3 lg:px-8">
 
         {/* PAGE TITLE */}
+
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
 
           {/* BACK BUTTON: MOBILE NOTIFICATION PAGES */}
+
           {isReady && isMobile && isNotificationSection && (
             <Link
               href="/"
@@ -389,9 +485,11 @@ export default function AppHeader({
         </div>
 
         {/* HEADER ACTIONS */}
+
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
 
           {/* DESKTOP SEARCH */}
+
           {isReady && isDesktop && !isNotificationSection && (
             <div
               ref={desktopSearchRef}
@@ -422,6 +520,7 @@ export default function AppHeader({
           )}
 
           {/* MOBILE SEARCH BUTTON */}
+
           {isReady && isMobile && !isNotificationSection && (
             <button
               type="button"
@@ -442,6 +541,7 @@ export default function AppHeader({
           )}
 
           {/* MOBILE NOTIFICATION BUTTON */}
+
           {isReady && isMobile && !isNotificationSection && (
             <Link
               href="/notifications"
@@ -461,6 +561,7 @@ export default function AppHeader({
           )}
 
           {/* DESKTOP NOTIFICATION DROPDOWN */}
+
           {isReady && isDesktop && !isNotificationSection && (
             <div
               ref={notificationMenuRef}
@@ -500,6 +601,7 @@ export default function AppHeader({
                     <h2 className="text-sm font-semibold text-foreground">
                       Notifikasi
                     </h2>
+
                     <p className="mt-0.5 text-[11px] text-muted">
                       {unreadCount} belum dibaca
                     </p>
@@ -567,9 +669,11 @@ export default function AppHeader({
                         size={28}
                         className="mx-auto text-muted"
                       />
+
                       <p className="mt-3 text-sm font-semibold text-foreground">
                         Belum ada notifikasi
                       </p>
+
                       <p className="mt-1 text-xs text-muted">
                         Aktivitas terbaru MOKU akan muncul di sini.
                       </p>
@@ -591,11 +695,13 @@ export default function AppHeader({
           )}
 
           {/* DESKTOP DIVIDER */}
+
           {isReady && isDesktop && (
             <div className="h-9 w-px bg-border/70" />
           )}
 
           {/* DESKTOP USER PROFILE */}
+
           {isReady && isDesktop && (
             <div
               ref={profileMenuRef}
@@ -620,6 +726,7 @@ export default function AppHeader({
                   <p className="max-w-[120px] truncate text-xs font-semibold text-foreground">
                     {userName}
                   </p>
+
                   <p className="max-w-[120px] truncate text-[10px] text-muted">
                     {userEmail}
                   </p>
@@ -646,6 +753,7 @@ export default function AppHeader({
                   <p className="truncate text-sm font-semibold text-foreground">
                     {userName}
                   </p>
+
                   <p className="mt-0.5 truncate text-xs text-muted">
                     {userEmail}
                   </p>
@@ -677,6 +785,7 @@ export default function AppHeader({
       </div>
 
       {/* MOBILE SEARCH */}
+
       {isReady && isMobile && !isNotificationSection && (
         <div
           ref={mobileSearchRef}
@@ -719,4 +828,4 @@ export default function AppHeader({
       )}
     </header>
   );
-                    }
+}
