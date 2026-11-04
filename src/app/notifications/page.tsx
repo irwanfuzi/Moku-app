@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TouchEvent, MouseEvent } from "react";
 import Link from "next/link";
+
+import { useAppLayout } from "@/components/layout/app-shell";
+
 import {
   Bell,
   Check,
@@ -41,10 +44,10 @@ const iconMap = {
 } satisfies Record<NotificationItem["type"], typeof Bell>;
 
 const iconColorMap = {
-  visit: "bg-[#730217]/[0.08] text-[#730217]",
-  equipment: "bg-[#F28C0F]/[0.10] text-[#C66A00]",
-  customer: "bg-sky-50 text-sky-700",
-  user: "bg-violet-50 text-violet-700",
+  visit: "bg-primary/10 text-primary",
+  equipment: "bg-orange-50 text-orange-600",
+  customer: "bg-sky-50 text-sky-600",
+  user: "bg-violet-50 text-violet-600",
   monitoring: "bg-amber-50 text-amber-700",
   general: "bg-[#F1F2F5] text-gray-600",
 } satisfies Record<NotificationItem["type"], string>;
@@ -58,7 +61,7 @@ const visitTypeLabels: Record<string, string> = {
 };
 
 /* =========================================================
-   MOKU CHECKBOX
+   CHECKBOX
 ========================================================= */
 
 function MokuCheckbox({
@@ -149,6 +152,7 @@ function formatNotificationDate(value: unknown, fallback?: string) {
 
 function getNotificationSubtitle(item: NotificationItem): string {
   const data = item.data;
+  const title = item.title?.toLowerCase() ?? "";
 
   const equipment = data?.equipmentNumber
     ? String(data.equipmentNumber)
@@ -157,8 +161,6 @@ function getNotificationSubtitle(item: NotificationItem): string {
   const customer = data?.customerName
     ? String(data.customerName)
     : "";
-
-  const title = item.title?.toLowerCase() ?? "";
 
   const activityDescription = data?.activityDescription
     ? String(data.activityDescription).trim()
@@ -182,17 +184,17 @@ function getNotificationSubtitle(item: NotificationItem): string {
     return `${description} (${equipment})`;
   };
 
-  // Deskripsi aktivitas yang memang disediakan oleh data.
+  // Deskripsi aktivitas dari sumber data.
   if (activityDescription) {
     return appendEquipment(activityDescription);
   }
 
-  // Deskripsi perubahan yang memang disediakan oleh data.
+  // Deskripsi perubahan dari sumber data.
   if (changeDescription) {
     return appendEquipment(changeDescription);
   }
 
-  // Aktivitas kunjungan teknisi.
+  // Aktivitas kunjungan.
   if (item.type === "visit") {
     const visitType = data?.visitType
       ? String(data.visitType).toUpperCase()
@@ -213,14 +215,14 @@ function getNotificationSubtitle(item: NotificationItem): string {
     }
   }
 
-  // Aktivitas data unit.
+  // Aktivitas equipment.
   if (item.type === "equipment" && equipment) {
     if (
       title.includes("ditambahkan") ||
       title.includes("penambahan") ||
       title.includes("berhasil didaftarkan")
     ) {
-      return `Unit ${equipment} berhasil didaftarkan ke sistem monitoring.`;
+      return `Equipment ${equipment} berhasil ditambahkan ke sistem monitoring.`;
     }
 
     if (
@@ -228,28 +230,28 @@ function getNotificationSubtitle(item: NotificationItem): string {
       title.includes("perubahan") ||
       title.includes("diubah")
     ) {
-      return `Perubahan informasi unit ${equipment} berhasil disimpan.`;
+      return `Informasi equipment ${equipment} berhasil diperbarui.`;
     }
 
     if (title.includes("dinonaktifkan") || title.includes("nonaktif")) {
-      return `Status unit ${equipment} telah diubah menjadi nonaktif.`;
+      return `Status equipment ${equipment} telah diubah menjadi Inactive.`;
     }
 
     if (title.includes("dihapus")) {
-      return `Data unit ${equipment} telah dihapus dari sistem.`;
+      return `Data equipment ${equipment} telah dihapus dari sistem.`;
     }
 
-    return `Informasi unit ${equipment} tersedia dalam sistem monitoring.`;
+    return `Informasi equipment ${equipment} tersedia dalam sistem monitoring.`;
   }
 
-  // Aktivitas data pelanggan.
+  // Aktivitas pelanggan.
   if (item.type === "customer" && customer) {
     if (
       title.includes("ditambahkan") ||
       title.includes("penambahan") ||
       title.includes("didaftarkan")
     ) {
-      return `Pelanggan ${customer} berhasil didaftarkan ke sistem.`;
+      return `Pelanggan ${customer} berhasil ditambahkan ke sistem.`;
     }
 
     if (
@@ -267,7 +269,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
     return `Informasi pelanggan ${customer} tercatat dalam sistem.`;
   }
 
-  // Status monitoring kunjungan.
+  // Status monitoring.
   if (item.type === "monitoring") {
     const status = data?.status
       ? String(data.status).toLowerCase()
@@ -275,7 +277,6 @@ function getNotificationSubtitle(item: NotificationItem): string {
 
     const isNotVisited =
       status.includes("not visited") ||
-      status.includes("belum dikunjungi") ||
       status.includes("belum dikunjungi");
 
     if (isNotVisited && equipment && monitoringPeriod) {
@@ -295,7 +296,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
     }
   }
 
-  // Informasi pengguna.
+  // Aktivitas akun pengguna.
   if (item.type === "user") {
     if (title.includes("ditambahkan") || title.includes("didaftarkan")) {
       return "Pengguna baru berhasil didaftarkan ke sistem MOKU.";
@@ -306,7 +307,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
     }
   }
 
-  // Gunakan deskripsi asli jika masih tersedia dan tidak mengulang judul.
+  // Gunakan deskripsi asli jika tidak mengulang judul.
   const description = item.description?.trim();
 
   if (
@@ -316,7 +317,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
     return description;
   }
 
-  // Fallback berdasarkan data yang benar-benar tersedia.
+  // Fallback berdasarkan data yang tersedia.
   if (equipment && customer) {
     return `Informasi unit ${equipment} milik ${customer} tercatat dalam sistem.`;
   }
@@ -333,7 +334,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
 }
 
 /* =========================================================
-   MOKU EMPTY STATE WATERMARK
+   EMPTY STATE WATERMARK
 ========================================================= */
 
 function EmptyNotificationWatermark() {
@@ -449,6 +450,8 @@ function EmptyNotificationWatermark() {
 ========================================================= */
 
 export default function NotificationsPage() {
+  const { isMobile, isReady } = useAppLayout();
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -467,7 +470,6 @@ export default function NotificationsPage() {
     id: string;
     x: number;
     y: number;
-    moved: boolean;
     horizontal: boolean;
   } | null>(null);
 
@@ -475,6 +477,14 @@ export default function NotificationsPage() {
   const longPressTimerRef = useRef<number | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
+
+  /* =======================================================
+     RESPONSIVE PAGE CONTAINER
+  ======================================================= */
+
+  const pageContainerClass = isReady && isMobile
+    ? "w-full min-w-0 pb-36 pt-0"
+    : "mx-auto w-full max-w-6xl px-4 pb-36 pt-3 sm:px-6 sm:pt-5 md:pb-8 lg:px-8";
 
   /* =======================================================
      SYNC NOTIFICATIONS
@@ -728,7 +738,6 @@ export default function NotificationsPage() {
       id,
       x: touch.clientX,
       y: touch.clientY,
-      moved: false,
       horizontal: false,
     };
 
@@ -758,10 +767,9 @@ export default function NotificationsPage() {
 
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
       clearLongPressTimer();
-      start.moved = true;
     }
 
-    // Hanya swipe horizontal ke kiri yang digunakan untuk menghapus.
+    // Hanya swipe horizontal ke kiri yang mengaktifkan hapus.
     if (
       deltaX < 0 &&
       Math.abs(deltaX) > Math.abs(deltaY) * 1.15
@@ -839,7 +847,7 @@ export default function NotificationsPage() {
       return;
     }
 
-    // Klik detail menandai sudah dibaca tanpa snackbar.
+    // Tandai dibaca tanpa snackbar saat membuka detail.
     handleMarkAsRead(id, false);
   };
 
@@ -862,19 +870,17 @@ export default function NotificationsPage() {
   ======================================================= */
 
   return (
-    <main className="min-h-screen w-full bg-white">
-      <div className="page-enter w-full min-w-0 px-4 pb-36 pt-4 sm:px-6 sm:pt-5 md:pb-8 lg:px-8">
+    <main
+      className={`min-h-screen w-full min-w-0 bg-white ${
+        isReady && isMobile ? "overflow-x-hidden" : ""
+      }`}
+    >
+      <div className={`page-enter ${pageContainerClass}`}>
 
         {/* DESKTOP SELECTION TOOLBAR */}
 
-        <div
-          className={`overflow-hidden transition-all duration-200 ease-out ${
-            isSelectionMode && notifications.length > 0
-              ? "mb-3 max-h-20 translate-y-0 opacity-100"
-              : "mb-0 max-h-0 -translate-y-1 opacity-0"
-          }`}
-        >
-          <div className="hidden min-h-11 items-center justify-between rounded-lg border border-[#730217]/15 bg-[#730217]/[0.035] px-3 md:flex">
+        {isSelectionMode && notifications.length > 0 && (
+          <div className="mb-3 hidden min-h-11 items-center justify-between rounded-lg border border-[#730217]/15 bg-[#730217]/[0.035] px-3 md:flex">
             <div className="flex items-center gap-3">
               <MokuCheckbox
                 checked={allNotificationsSelected}
@@ -923,12 +929,12 @@ export default function NotificationsPage() {
               </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* MOBILE SELECTION INFO */}
 
         {isSelectionMode && notifications.length > 0 && (
-          <div className="mb-3 flex items-center justify-between border-b border-[#ECEDEF] px-1 py-2 md:hidden">
+          <div className="mb-2 flex items-center justify-between border-b border-[#ECEDEF] px-4 py-2 md:hidden">
             <div className="flex items-center gap-2">
               <MokuCheckbox
                 checked={allNotificationsSelected}
@@ -980,7 +986,7 @@ export default function NotificationsPage() {
                     {/* DESKTOP ROW */}
 
                     <div
-                      className={`group relative hidden min-h-[72px] items-center gap-3 px-2 py-3 transition-colors duration-150 md:flex ${
+                      className={`group relative hidden min-h-[76px] items-center gap-4 px-3 py-4 transition-colors duration-150 md:flex ${
                         isSelected
                           ? "bg-[#730217]/[0.055]"
                           : !item.isRead
@@ -1014,8 +1020,6 @@ export default function NotificationsPage() {
                         </button>
                       )}
 
-                      {/* DESKTOP CONTENT */}
-
                       <Link
                         href={`/notifications/${encodeURIComponent(item.id)}`}
                         onClick={(event) =>
@@ -1048,8 +1052,6 @@ export default function NotificationsPage() {
                           {displayDate}
                         </span>
                       </Link>
-
-                      {/* DESKTOP ACTIONS */}
 
                       <div className="flex w-[76px] shrink-0 items-center justify-end gap-1">
                         {!item.isRead && (
@@ -1117,7 +1119,7 @@ export default function NotificationsPage() {
                           handleTouchCancel(item.id)
                         }
                         onContextMenu={(event) => event.preventDefault()}
-                        className={`mobile-swipe-foreground relative z-10 flex min-h-[72px] w-full items-center gap-3 overflow-hidden px-2 py-3 ${
+                        className={`mobile-swipe-foreground relative z-10 flex min-h-[72px] w-full items-center gap-3 overflow-hidden px-4 py-3 ${
                           isSelected
                             ? "bg-[#F8F1F2]"
                             : !item.isRead
@@ -1135,7 +1137,7 @@ export default function NotificationsPage() {
                             swipeOffset !== 0 ? "transform" : "auto",
                         }}
                       >
-                        {/* MOBILE ICON / CHECKBOX */}
+                        {/* ICON / CHECKBOX */}
 
                         {isSelectionMode ? (
                           <div className="flex h-10 w-10 shrink-0 animate-selection-in items-center justify-center">
@@ -1234,7 +1236,7 @@ export default function NotificationsPage() {
         {/* DEMO INFORMATION */}
 
         {notifications.length > 0 && (
-          <p className="mt-4 text-center text-[11px] text-muted-foreground">
+          <p className="mt-4 px-4 text-center text-[11px] text-muted-foreground md:px-0">
             Data notifikasi saat ini merupakan data demo untuk pengujian tampilan.
           </p>
         )}
@@ -1242,14 +1244,8 @@ export default function NotificationsPage() {
 
       {/* MOBILE FLOATING ACTION BAR */}
 
-      <div
-        className={`fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto max-w-md transition-all duration-200 ease-out md:hidden ${
-          isSelectionMode && selectedCount > 0
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none translate-y-4 opacity-0"
-        }`}
-      >
-        <div className="flex items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg">
+      {isSelectionMode && selectedCount > 0 && (
+        <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-md animate-toolbar-in items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg md:hidden">
           <span className="text-xs font-medium text-[#730217]">
             {selectedCount} dipilih
           </span>
@@ -1286,9 +1282,9 @@ export default function NotificationsPage() {
             </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* MOKU SIGNATURE SNACKBAR */}
+      {/* SNACKBAR */}
 
       {snackbar && (
         <div
@@ -1324,7 +1320,7 @@ export default function NotificationsPage() {
 
       <style jsx>{`
         .page-enter {
-          animation: notification-enter 240ms ease-out both;
+          animation: notification-enter 220ms ease-out both;
         }
 
         .snackbar-enter {
@@ -1339,6 +1335,10 @@ export default function NotificationsPage() {
           animation: selection-in 180ms ease-out both;
         }
 
+        .animate-toolbar-in {
+          animation: toolbar-in 180ms ease-out both;
+        }
+
         .mobile-swipe-foreground {
           box-sizing: border-box;
           background-clip: padding-box;
@@ -1351,11 +1351,6 @@ export default function NotificationsPage() {
 
         .notification-row {
           overflow: hidden;
-          transition:
-            opacity 220ms ease,
-            max-height 220ms ease,
-            margin 220ms ease;
-          max-height: 120px;
         }
 
         .notification-exit {
@@ -1410,6 +1405,18 @@ export default function NotificationsPage() {
           }
         }
 
+        @keyframes toolbar-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @keyframes notification-exit {
           0% {
             opacity: 1;
@@ -1434,13 +1441,10 @@ export default function NotificationsPage() {
           .page-enter,
           .snackbar-enter,
           .animate-selection-in,
+          .animate-toolbar-in,
           .snackbar-progress,
           .notification-exit {
             animation: none;
-          }
-
-          .notification-row {
-            transition: none;
           }
         }
       `}</style>
