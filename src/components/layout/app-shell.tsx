@@ -14,6 +14,10 @@ import AppSidebar from "@/components/layout/app-sidebar";
 import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 interface AppShellProps {
   children: React.ReactNode;
 }
@@ -34,6 +38,10 @@ interface AppLayoutContextValue {
 }
 
 type NavigationDirection = "forward" | "backward";
+
+/* =========================================================
+   APP LAYOUT CONTEXT
+========================================================= */
 
 const AppLayoutContext = createContext<AppLayoutContextValue>({
   mode: "mobile",
@@ -133,7 +141,7 @@ function getNavigationDirection(
   const previousDepth = getRouteDepth(previousPath);
   const currentDepth = getRouteDepth(currentPath);
 
-  // Navigasi dari halaman detail ke halaman induk.
+  // Halaman detail kembali ke halaman induk.
   if (
     previousDepth > currentDepth &&
     previousPath.startsWith(`${currentPath}/`)
@@ -141,7 +149,7 @@ function getNavigationDirection(
     return "backward";
   }
 
-  // Navigasi menuju halaman detail.
+  // Halaman induk menuju halaman detail.
   if (
     currentDepth > previousDepth &&
     currentPath.startsWith(`${previousPath}/`)
@@ -149,7 +157,7 @@ function getNavigationDirection(
     return "forward";
   }
 
-  // Navigasi antarhalaman dengan kedalaman yang sama.
+  // Antarhalaman dengan kedalaman URL yang sama.
   return "forward";
 }
 
@@ -158,11 +166,14 @@ function getNavigationDirection(
 ========================================================= */
 
 function detectPWA(): boolean {
-  const standalone =
-    window.matchMedia("(display-mode: standalone)").matches;
+  const standalone = window.matchMedia(
+    "(display-mode: standalone)"
+  ).matches;
 
   const iosStandalone = (
-    window.navigator as Navigator & { standalone?: boolean }
+    window.navigator as Navigator & {
+      standalone?: boolean;
+    }
   ).standalone === true;
 
   return standalone || iosStandalone;
@@ -213,6 +224,7 @@ function detectLayoutMode(): {
     };
   }
 
+  // PWA selalu menggunakan layout mobile.
   if (isPWA) {
     return {
       mode: "mobile",
@@ -220,6 +232,9 @@ function detectLayoutMode(): {
     };
   }
 
+  // Browser HP:
+  // Portrait = Mobile
+  // Landscape = Desktop
   return {
     mode: isLandscape ? "desktop" : "mobile",
     isPWA: false,
@@ -364,13 +379,13 @@ export default function AppShell({
         data-layout-mode={layoutState.mode}
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
-        className="
+        className={`
           flex min-h-screen w-full
           overflow-x-hidden
           bg-background
           text-foreground
           transition-colors duration-200
-        "
+        `}
       >
         {/* DESKTOP SIDEBAR */}
 
@@ -394,7 +409,7 @@ export default function AppShell({
 
           <main
             id="main-content"
-            className="
+            className={`
               relative
               min-h-0
               w-full
@@ -402,7 +417,7 @@ export default function AppShell({
               flex-1
               overflow-x-hidden
               bg-background
-            "
+            `}
           >
             <div
               key={pathname}
@@ -422,7 +437,7 @@ export default function AppShell({
           {/* DESKTOP FOOTER */}
 
           <footer
-            className="
+            className={`
               hidden
               shrink-0
               border-t
@@ -433,7 +448,7 @@ export default function AppShell({
               transition-colors
               duration-200
               lg:block
-            "
+            `}
           >
             <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
 
@@ -468,14 +483,14 @@ export default function AppShell({
           will-change: transform, opacity;
         }
 
-        /* FORWARD: PUSH FROM RIGHT */
+        /* NAVIGASI MAJU */
 
         .page-transition-forward {
           animation: moku-push-forward 280ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* BACKWARD: PUSH FROM LEFT */
+        /* NAVIGASI KEMBALI */
 
         .page-transition-backward {
           animation: moku-push-backward 280ms
@@ -483,24 +498,24 @@ export default function AppShell({
         }
 
         @keyframes moku-push-forward {
-          0% {
+          from {
             opacity: 0.82;
             transform: translate3d(38px, 0, 0);
           }
 
-          100% {
+          to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
         }
 
         @keyframes moku-push-backward {
-          0% {
+          from {
             opacity: 0.82;
             transform: translate3d(-38px, 0, 0);
           }
 
-          100% {
+          to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
