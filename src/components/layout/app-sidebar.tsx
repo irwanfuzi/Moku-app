@@ -87,7 +87,7 @@ const navigationGroups = [
 ];
 
 /* =========================================================
-   SIDEBAR
+   SIDEBAR COMPONENT
 ========================================================= */
 
 export default function AppSidebar({
@@ -336,12 +336,12 @@ export default function AppSidebar({
         {/* NAVIGATION */}
 
         <nav
-          className="
+          className={`
             moku-sidebar-scroll
             min-h-0 flex-1
             overflow-x-hidden overflow-y-auto
             px-3 py-5
-          "
+          `}
           aria-label="Menu navigasi"
         >
           <div className="moku-sidebar-groups space-y-6">
@@ -441,12 +441,12 @@ export default function AppSidebar({
         {/* FOOTER */}
 
         <div
-          className="
+          className={`
             moku-sidebar-footer
             shrink-0 space-y-2
             border-t border-white/10
             p-3
-          "
+          `}
         >
           {/* PWA INSTALL PANEL */}
 
@@ -560,16 +560,7 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="
-                mt-2 flex h-9 w-full
-                items-center justify-center
-                rounded-lg !text-[#FDFDFD]/75
-                transition-all duration-200
-                hover:bg-[#520107]
-                hover:!text-[#FDFDFD]
-                active:scale-95
-                motion-reduce:transition-none
-              "
+              className="mt-2 flex h-9 w-full items-center justify-center rounded-lg !text-[#FDFDFD]/75 transition-all duration-200 hover:bg-[#520107] hover:!text-[#FDFDFD] active:scale-95 motion-reduce:transition-none"
               aria-label={
                 collapsed ? "Perluas sidebar" : "Perkecil sidebar"
               }
@@ -587,34 +578,22 @@ export default function AppSidebar({
         </div>
       </aside>
 
-      {/* ===================================================
-          SIDEBAR RESPONSIVE STYLES
-      =================================================== */}
+      {/* SIDEBAR RESPONSIVE STYLES */}
 
       <style jsx global>{`
-        /*
-          FIXED SIDEBAR
-        */
-
         .moku-sidebar {
           position: fixed !important;
           top: 0 !important;
           bottom: 0 !important;
           left: 0 !important;
-
           height: 100vh !important;
           height: 100dvh !important;
-
           min-height: 0 !important;
           max-height: 100vh !important;
           max-height: 100dvh !important;
-
-          display: none;
           flex-direction: column;
-
           overflow: hidden !important;
           box-sizing: border-box;
-
           isolation: isolate;
         }
 
@@ -624,20 +603,13 @@ export default function AppSidebar({
           }
         }
 
-        /*
-          INDEPENDENT NAVIGATION SCROLL
-        */
-
         .moku-sidebar-scroll {
           min-height: 0 !important;
           flex: 1 1 auto !important;
-
           overflow-x: hidden !important;
           overflow-y: auto !important;
-
           scrollbar-width: none !important;
           -ms-overflow-style: none !important;
-
           overscroll-behavior: contain;
           -webkit-overflow-scrolling: touch;
         }
@@ -647,10 +619,6 @@ export default function AppSidebar({
           width: 0 !important;
           height: 0 !important;
         }
-
-        /*
-          FOOTER STAYS AT BOTTOM
-        */
 
         .moku-sidebar-footer {
           flex: 0 0 auto !important;
@@ -664,23 +632,18 @@ export default function AppSidebar({
 
         /*
           MOBILE LANDSCAPE
-          Desktop structure with compact dimensions.
         */
 
         @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
           .moku-sidebar {
             display: flex !important;
-
             position: fixed !important;
             top: 0 !important;
             bottom: 0 !important;
             left: 0 !important;
-
             width: 190px !important;
-
             height: 100vh !important;
             height: 100dvh !important;
-
             max-height: none !important;
           }
 
