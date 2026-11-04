@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -6,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -33,6 +33,8 @@ interface AppLayoutContextValue {
   isReady: boolean;
 }
 
+type NavigationDirection = "forward" | "backward";
+
 const AppLayoutContext = createContext<AppLayoutContextValue>({
   mode: "mobile",
   isMobile: true,
@@ -44,6 +46,10 @@ const AppLayoutContext = createContext<AppLayoutContextValue>({
 export function useAppLayout() {
   return useContext(AppLayoutContext);
 }
+
+/* =========================================================
+   PAGE INFORMATION
+========================================================= */
 
 const pageInformation: Record<string, PageInformation> = {
   "/": {
@@ -112,6 +118,45 @@ function getPageInformation(pathname: string): PageInformation {
   };
 }
 
+/* =========================================================
+   NAVIGATION DIRECTION
+========================================================= */
+
+function getRouteDepth(pathname: string): number {
+  return pathname.split("/").filter(Boolean).length;
+}
+
+function getNavigationDirection(
+  previousPath: string,
+  currentPath: string
+): NavigationDirection {
+  const previousDepth = getRouteDepth(previousPath);
+  const currentDepth = getRouteDepth(currentPath);
+
+  // Navigasi dari halaman detail ke halaman induk.
+  if (
+    previousDepth > currentDepth &&
+    previousPath.startsWith(`${currentPath}/`)
+  ) {
+    return "backward";
+  }
+
+  // Navigasi menuju halaman detail.
+  if (
+    currentDepth > previousDepth &&
+    currentPath.startsWith(`${previousPath}/`)
+  ) {
+    return "forward";
+  }
+
+  // Navigasi antarhalaman dengan kedalaman yang sama.
+  return "forward";
+}
+
+/* =========================================================
+   DEVICE DETECTION
+========================================================= */
+
 function detectPWA(): boolean {
   const standalone =
     window.matchMedia("(display-mode: standalone)").matches;
@@ -168,8 +213,6 @@ function detectLayoutMode(): {
     };
   }
 
-  // PWA selalu menggunakan layout mobile,
-  // termasuk ketika perangkat berada dalam posisi landscape.
   if (isPWA) {
     return {
       mode: "mobile",
@@ -177,14 +220,15 @@ function detectLayoutMode(): {
     };
   }
 
-  // Browser HP:
-  // Portrait  = Mobile
-  // Landscape = Desktop
   return {
     mode: isLandscape ? "desktop" : "mobile",
     isPWA: false,
   };
 }
+
+/* =========================================================
+   APP SHELL
+========================================================= */
 
 export default function AppShell({
   children,
@@ -202,11 +246,24 @@ export default function AppShell({
       isReady: false,
     });
 
+  const [navigationDirection, setNavigationDirection] =
+    useState<NavigationDirection>("forward");
+
+  const previousPathRef = useRef(pathname);
+
   const currentPage = getPageInformation(pathname);
+
+  /* =======================================================
+     SIDEBAR
+  ======================================================= */
 
   const handleToggleSidebar = () => {
     setSidebarCollapsed((previous) => !previous);
   };
+
+  /* =======================================================
+     LAYOUT DETECTION
+  ======================================================= */
 
   const updateLayout = useCallback(() => {
     const detected = detectLayoutMode();
@@ -278,6 +335,29 @@ export default function AppShell({
     };
   }, [updateLayout]);
 
+  /* =======================================================
+     PAGE TRANSITION
+  ======================================================= */
+
+  useEffect(() => {
+    if (previousPathRef.current === pathname) {
+      return;
+    }
+
+    const direction = getNavigationDirection(
+      previousPathRef.current,
+      pathname
+    );
+
+    setNavigationDirection(direction);
+
+    previousPathRef.current = pathname;
+  }, [pathname]);
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <AppLayoutContext.Provider value={layoutState}>
       <div
@@ -286,56 +366,65 @@ export default function AppShell({
         data-pwa={layoutState.isPWA}
         className="
           flex min-h-screen w-full
+          overflow-x-hidden
           bg-background
           text-foreground
           transition-colors duration-200
         "
       >
         {/* DESKTOP SIDEBAR */}
+
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
         />
 
         {/* MAIN APPLICATION AREA */}
+
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
 
           {/* RESPONSIVE HEADER */}
+
           <AppHeader
             title={currentPage.title}
             description={currentPage.description}
           />
 
           {/* PAGE CONTENT */}
+
           <main
             id="main-content"
             className="
+              relative
               min-h-0
               w-full
+              min-w-0
               flex-1
+              overflow-x-hidden
               bg-background
-              px-4
-              py-5
-              pb-24
-              transition-colors
-              duration-200
-              sm:px-6
-              sm:py-6
-              sm:pb-24
-              lg:px-8
-              lg:py-7
-              lg:pb-7
             "
           >
-            <div className="w-full min-w-0">
+            <div
+              key={pathname}
+              data-page-transition={navigationDirection}
+              className={`
+                page-transition
+                page-transition-${navigationDirection}
+                min-h-full
+                w-full
+                min-w-0
+              `}
+            >
               {children}
             </div>
           </main>
 
           {/* DESKTOP FOOTER */}
+
           <footer
             className="
               hidden
+              shrink-0
               border-t
               border-border
               bg-surface
@@ -362,9 +451,68 @@ export default function AppShell({
         </div>
 
         {/* MOBILE BOTTOM NAVIGATION */}
+
         <BottomNavigation />
 
       </div>
+
+      {/* ===================================================
+          GLOBAL PAGE TRANSITION
+      =================================================== */}
+
+      <style jsx global>{`
+        .page-transition {
+          transform: translate3d(0, 0, 0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          will-change: transform, opacity;
+        }
+
+        /* FORWARD: PUSH FROM RIGHT */
+
+        .page-transition-forward {
+          animation: moku-push-forward 280ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* BACKWARD: PUSH FROM LEFT */
+
+        .page-transition-backward {
+          animation: moku-push-backward 280ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes moku-push-forward {
+          0% {
+            opacity: 0.82;
+            transform: translate3d(38px, 0, 0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes moku-push-backward {
+          0% {
+            opacity: 0.82;
+            transform: translate3d(-38px, 0, 0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .page-transition-forward,
+          .page-transition-backward {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </AppLayoutContext.Provider>
   );
 }
