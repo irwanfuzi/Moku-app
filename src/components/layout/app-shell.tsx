@@ -191,12 +191,9 @@ function detectPhysicalLandscape(): boolean {
 }
 
 function detectHandheldDevice(): boolean {
-  const screenWidth = window.screen.width;
-  const screenHeight = window.screen.height;
-
   const shortestScreenSide = Math.min(
-    screenWidth,
-    screenHeight
+    window.screen.width,
+    window.screen.height
   );
 
   const hasTouch =
@@ -288,57 +285,28 @@ export default function AppShell({
   useEffect(() => {
     updateLayout();
 
-    const handleResize = () => {
-      updateLayout();
-    };
-
-    const handleOrientationChange = () => {
-      updateLayout();
-    };
-
-    const handleDisplayModeChange = () => {
-      updateLayout();
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    window.addEventListener(
-      "orientationchange",
-      handleOrientationChange
-    );
+    window.addEventListener("resize", updateLayout);
+    window.addEventListener("orientationchange", updateLayout);
 
     const displayMode = window.matchMedia(
       "(display-mode: standalone)"
     );
 
-    displayMode.addEventListener(
-      "change",
-      handleDisplayModeChange
-    );
+    displayMode.addEventListener("change", updateLayout);
 
     const screenOrientation = window.screen.orientation;
 
-    screenOrientation?.addEventListener(
-      "change",
-      handleOrientationChange
-    );
+    screenOrientation?.addEventListener("change", updateLayout);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", updateLayout);
+      window.removeEventListener("orientationchange", updateLayout);
 
-      window.removeEventListener(
-        "orientationchange",
-        handleOrientationChange
-      );
-
-      displayMode.removeEventListener(
-        "change",
-        handleDisplayModeChange
-      );
+      displayMode.removeEventListener("change", updateLayout);
 
       screenOrientation?.removeEventListener(
         "change",
-        handleOrientationChange
+        updateLayout
       );
     };
   }, [updateLayout]);
@@ -352,12 +320,9 @@ export default function AppShell({
       return;
     }
 
-    const direction = getNavigationDirection(
-      previousPathRef.current,
-      pathname
+    setNavigationDirection(
+      getNavigationDirection(previousPathRef.current, pathname)
     );
-
-    setNavigationDirection(direction);
 
     previousPathRef.current = pathname;
   }, [pathname]);
@@ -375,7 +340,7 @@ export default function AppShell({
         data-sidebar-collapsed={sidebarCollapsed}
         className="moku-app-shell flex min-h-dvh w-full overflow-x-hidden bg-background text-foreground transition-colors duration-200"
       >
-        {/* DESKTOP SIDEBAR */}
+        {/* SIDEBAR */}
 
         <AppSidebar
           collapsed={sidebarCollapsed}
@@ -386,7 +351,7 @@ export default function AppShell({
 
         <div className="moku-main-layout flex min-h-dvh min-w-0 flex-1 flex-col">
 
-          {/* RESPONSIVE HEADER */}
+          {/* HEADER */}
 
           <AppHeader
             title={currentPage.title}
@@ -398,21 +363,11 @@ export default function AppShell({
           <main
             id="main-content"
             className={`
-              relative
-              min-h-0
-              w-full
-              min-w-0
-              flex-1
-              overflow-x-hidden
-              bg-background
-
+              relative min-h-0 w-full min-w-0 flex-1
+              overflow-x-hidden bg-background
               ${
                 layoutState.mode === "desktop"
-                  ? `
-                    px-4 py-5 pb-24
-                    sm:px-6 sm:py-6 sm:pb-24
-                    lg:px-8 lg:py-7 lg:pb-7
-                  `
+                  ? "px-4 py-5 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-7 lg:pb-7"
                   : "p-0"
               }
             `}
@@ -426,7 +381,7 @@ export default function AppShell({
             </div>
           </main>
 
-          {/* DESKTOP FOOTER */}
+          {/* FOOTER */}
 
           <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4 transition-colors duration-200 lg:block">
             <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
@@ -441,21 +396,18 @@ export default function AppShell({
           </footer>
         </div>
 
-        {/* MOBILE BOTTOM NAVIGATION */}
+        {/* MOBILE NAVIGATION */}
 
         <BottomNavigation />
       </div>
 
       {/* ===================================================
-          RESPONSIVE LAYOUT & PAGE TRANSITIONS
+          RESPONSIVE ADJUSTMENTS
       =================================================== */}
 
       <style jsx global>{`
         /*
-          ================================================
-          DESKTOP LAYOUT
-          Sidebar fixed: 240px / 72px
-          ================================================
+          DESKTOP
         */
 
         @media (min-width: 1024px) {
@@ -474,17 +426,17 @@ export default function AppShell({
         }
 
         /*
-          ================================================
           MOBILE LANDSCAPE
-          Desktop layout on handheld landscape browser.
-          Sidebar: 190px / 64px
-          ================================================
+          Desktop structure remains unchanged.
+          Only spacing and dimensions are optimized.
         */
 
         @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
           .moku-sidebar {
             display: flex !important;
             width: 190px !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
           }
 
           .moku-sidebar[data-collapsed="true"] {
@@ -505,20 +457,17 @@ export default function AppShell({
             width: calc(100% - 64px);
           }
 
-          .moku-desktop-footer {
-            display: none !important;
+          .moku-app-shell #main-content {
+            padding: 12px 16px 16px !important;
           }
 
-          .moku-app-shell #main-content {
-            padding: 14px 18px 18px !important;
+          .moku-desktop-footer {
+            display: none !important;
           }
         }
 
         /*
-          ================================================
           MOBILE PORTRAIT / PWA
-          Sidebar hidden, no content offset.
-          ================================================
         */
 
         @media (orientation: portrait) {
@@ -533,16 +482,12 @@ export default function AppShell({
         }
 
         /*
-          ================================================
-          PAGE TRANSITIONS
-          ================================================
+          DESKTOP TRANSITION
         */
 
         .page-transition {
           min-width: 0;
         }
-
-        /* Desktop fade + subtle lift */
 
         [data-layout-mode="desktop"] .page-transition {
           animation: moku-desktop-enter 260ms
@@ -561,14 +506,14 @@ export default function AppShell({
           }
         }
 
-        /* Mobile forward transition */
+        /*
+          MOBILE TRANSITION
+        */
 
         [data-layout-mode="mobile"] .page-transition[data-page-transition="forward"] {
           animation: moku-push-forward 340ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-
-        /* Mobile backward transition */
 
         [data-layout-mode="mobile"] .page-transition[data-page-transition="backward"] {
           animation: moku-push-backward 340ms
@@ -599,12 +544,6 @@ export default function AppShell({
           }
         }
 
-        /*
-          ================================================
-          REDUCED MOTION
-          ================================================
-        */
-
         @media (prefers-reduced-motion: reduce) {
           .page-transition {
             animation: none !important;
@@ -617,4 +556,4 @@ export default function AppShell({
       `}</style>
     </AppLayoutContext.Provider>
   );
-}
+          }
