@@ -1,5 +1,3 @@
-File: "src/components/layout/app-shell.tsx"
-
 "use client";
 
 import {
