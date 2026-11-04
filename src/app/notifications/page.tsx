@@ -41,13 +41,21 @@ const iconMap = {
 } satisfies Record<NotificationItem["type"], typeof Bell>;
 
 const iconColorMap = {
-  visit: "bg-primary/10 text-primary",
-  equipment: "bg-orange-50 text-orange-600",
-  customer: "bg-sky-50 text-sky-600",
-  user: "bg-violet-50 text-violet-600",
+  visit: "bg-[#730217]/[0.08] text-[#730217]",
+  equipment: "bg-[#F28C0F]/[0.10] text-[#C66A00]",
+  customer: "bg-sky-50 text-sky-700",
+  user: "bg-violet-50 text-violet-700",
   monitoring: "bg-amber-50 text-amber-700",
   general: "bg-[#F1F2F5] text-gray-600",
 } satisfies Record<NotificationItem["type"], string>;
+
+const visitTypeLabels: Record<string, string> = {
+  IND: "Driver Installation",
+  INS: "Installation",
+  DIS: "Dismantle",
+  PMC: "Preventive Maintenance",
+  UMC: "Unscheduled Maintenance",
+};
 
 /* =========================================================
    MOKU CHECKBOX
@@ -76,7 +84,7 @@ function MokuCheckbox({
       }}
       className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
         checked
-          ? "border-[#730217] bg-[#730217] text-white shadow-sm shadow-[#730217]/15"
+          ? "border-[#730217] bg-[#730217] text-white"
           : "border-[#D5D7DC] bg-white text-transparent hover:border-[#730217] hover:bg-[#730217]/[0.04]"
       } ${className}`}
     >
@@ -136,52 +144,192 @@ function formatNotificationDate(value: unknown, fallback?: string) {
 }
 
 /* =========================================================
-   NOTIFICATION SUBTITLE
+   NOTIFICATION DESCRIPTION
 ========================================================= */
 
-function getNotificationSubtitle(item: NotificationItem) {
+function getNotificationSubtitle(item: NotificationItem): string {
   const data = item.data;
 
-  if (data) {
-    const equipment = data.equipmentNumber;
-    const customer = data.customerName;
+  const equipment = data?.equipmentNumber
+    ? String(data.equipmentNumber)
+    : "";
 
-    if (equipment && customer) {
-      return `${equipment} · ${customer}`;
+  const customer = data?.customerName
+    ? String(data.customerName)
+    : "";
+
+  const title = item.title?.toLowerCase() ?? "";
+
+  const activityDescription = data?.activityDescription
+    ? String(data.activityDescription).trim()
+    : "";
+
+  const changeDescription = data?.changeDescription
+    ? String(data.changeDescription).trim()
+    : "";
+
+  const monitoringPeriod = data?.monitoringPeriod
+    ? String(data.monitoringPeriod).trim()
+    : "";
+
+  const appendEquipment = (description: string) => {
+    if (!equipment) return description;
+
+    if (description.toLowerCase().includes(equipment.toLowerCase())) {
+      return description;
+    }
+
+    return `${description} (${equipment})`;
+  };
+
+  // Deskripsi aktivitas yang memang disediakan oleh data.
+  if (activityDescription) {
+    return appendEquipment(activityDescription);
+  }
+
+  // Deskripsi perubahan yang memang disediakan oleh data.
+  if (changeDescription) {
+    return appendEquipment(changeDescription);
+  }
+
+  // Aktivitas kunjungan teknisi.
+  if (item.type === "visit") {
+    const visitType = data?.visitType
+      ? String(data.visitType).toUpperCase()
+      : "";
+
+    const visitLabel = visitTypeLabels[visitType];
+
+    if (visitLabel && equipment) {
+      return `${visitLabel} unit ${equipment} telah dicatat.`;
+    }
+
+    if (visitLabel) {
+      return `Aktivitas ${visitLabel} telah dicatat dalam sistem.`;
     }
 
     if (equipment) {
-      return String(equipment);
-    }
-
-    if (customer) {
-      return String(customer);
-    }
-
-    if (data.activityDescription) {
-      return String(data.activityDescription);
-    }
-
-    if (data.changeDescription) {
-      return String(data.changeDescription);
-    }
-
-    if (data.monitoringPeriod) {
-      return String(data.monitoringPeriod);
+      return `Aktivitas kunjungan unit ${equipment} telah dicatat.`;
     }
   }
 
+  // Aktivitas data unit.
+  if (item.type === "equipment" && equipment) {
+    if (
+      title.includes("ditambahkan") ||
+      title.includes("penambahan") ||
+      title.includes("berhasil didaftarkan")
+    ) {
+      return `Unit ${equipment} berhasil didaftarkan ke sistem monitoring.`;
+    }
+
+    if (
+      title.includes("diperbarui") ||
+      title.includes("perubahan") ||
+      title.includes("diubah")
+    ) {
+      return `Perubahan informasi unit ${equipment} berhasil disimpan.`;
+    }
+
+    if (title.includes("dinonaktifkan") || title.includes("nonaktif")) {
+      return `Status unit ${equipment} telah diubah menjadi nonaktif.`;
+    }
+
+    if (title.includes("dihapus")) {
+      return `Data unit ${equipment} telah dihapus dari sistem.`;
+    }
+
+    return `Informasi unit ${equipment} tersedia dalam sistem monitoring.`;
+  }
+
+  // Aktivitas data pelanggan.
+  if (item.type === "customer" && customer) {
+    if (
+      title.includes("ditambahkan") ||
+      title.includes("penambahan") ||
+      title.includes("didaftarkan")
+    ) {
+      return `Pelanggan ${customer} berhasil didaftarkan ke sistem.`;
+    }
+
+    if (
+      title.includes("diperbarui") ||
+      title.includes("perubahan") ||
+      title.includes("diubah")
+    ) {
+      return `Informasi pelanggan ${customer} berhasil diperbarui.`;
+    }
+
+    if (title.includes("dihapus")) {
+      return `Data pelanggan ${customer} telah dihapus dari sistem.`;
+    }
+
+    return `Informasi pelanggan ${customer} tercatat dalam sistem.`;
+  }
+
+  // Status monitoring kunjungan.
+  if (item.type === "monitoring") {
+    const status = data?.status
+      ? String(data.status).toLowerCase()
+      : "";
+
+    const isNotVisited =
+      status.includes("not visited") ||
+      status.includes("belum dikunjungi") ||
+      status.includes("belum dikunjungi");
+
+    if (isNotVisited && equipment && monitoringPeriod) {
+      return `Unit ${equipment} belum memiliki kunjungan pada periode ${monitoringPeriod}.`;
+    }
+
+    if (isNotVisited && equipment) {
+      return `Unit ${equipment} belum memiliki catatan kunjungan pada periode monitoring ini.`;
+    }
+
+    if (equipment && monitoringPeriod) {
+      return `Status monitoring unit ${equipment} diperbarui untuk periode ${monitoringPeriod}.`;
+    }
+
+    if (equipment) {
+      return `Status monitoring unit ${equipment} telah diperbarui.`;
+    }
+  }
+
+  // Informasi pengguna.
+  if (item.type === "user") {
+    if (title.includes("ditambahkan") || title.includes("didaftarkan")) {
+      return "Pengguna baru berhasil didaftarkan ke sistem MOKU.";
+    }
+
+    if (title.includes("diperbarui") || title.includes("diubah")) {
+      return "Informasi akun pengguna berhasil diperbarui.";
+    }
+  }
+
+  // Gunakan deskripsi asli jika masih tersedia dan tidak mengulang judul.
   const description = item.description?.trim();
 
-  if (!description) return "";
-
   if (
-    description.toLowerCase() === item.title.trim().toLowerCase()
+    description &&
+    description.toLowerCase() !== title.trim()
   ) {
-    return "";
+    return description;
   }
 
-  return description;
+  // Fallback berdasarkan data yang benar-benar tersedia.
+  if (equipment && customer) {
+    return `Informasi unit ${equipment} milik ${customer} tercatat dalam sistem.`;
+  }
+
+  if (equipment) {
+    return `Informasi unit ${equipment} tercatat dalam sistem monitoring.`;
+  }
+
+  if (customer) {
+    return `Informasi pelanggan ${customer} tercatat dalam sistem.`;
+  }
+
+  return "";
 }
 
 /* =========================================================
@@ -363,24 +511,14 @@ export default function NotificationsPage() {
   }, [snackbar]);
 
   /* =======================================================
-     COUNTS
+     SELECTION
   ======================================================= */
-
-  const totalCount = notifications.length;
-
-  const unreadCount = notifications.filter(
-    (item) => !item.isRead
-  ).length;
 
   const selectedCount = selectedIds.length;
 
   const allNotificationsSelected =
     notifications.length > 0 &&
     notifications.every((item) => selectedIds.includes(item.id));
-
-  /* =======================================================
-     SELECTION
-  ======================================================= */
 
   const toggleSelection = (id: string) => {
     const next = selectedIds.includes(id)
@@ -420,18 +558,20 @@ export default function NotificationsPage() {
      READ ACTION & UNDO
   ======================================================= */
 
-  const handleMarkAsRead = (id: string) => {
+  const handleMarkAsRead = (id: string, showSnackbar = false) => {
     const target = notifications.find((item) => item.id === id);
 
     if (!target || target.isRead) return;
 
     markNotificationAsRead(id);
 
-    setSnackbar({
-      message: "1 ditandai sudah dibaca",
-      deleted: [],
-      readUndo: [{ id, isRead: false }],
-    });
+    if (showSnackbar) {
+      setSnackbar({
+        message: "1 notifikasi ditandai sudah dibaca",
+        deleted: [],
+        readUndo: [{ id, isRead: false }],
+      });
+    }
   };
 
   const handleMarkSelectedAsRead = () => {
@@ -447,7 +587,7 @@ export default function NotificationsPage() {
     targets.forEach((item) => markNotificationAsRead(item.id));
 
     setSnackbar({
-      message: `${targets.length} ditandai sudah dibaca`,
+      message: `${targets.length} notifikasi ditandai sudah dibaca`,
       deleted: [],
       readUndo: targets.map((item) => ({
         id: item.id,
@@ -532,6 +672,7 @@ export default function NotificationsPage() {
     setSwipeOffsets({});
     swipeOffsetRef.current = {};
     setActiveSwipeId(null);
+    setExitingIds([]);
   };
 
   /* =======================================================
@@ -620,22 +761,13 @@ export default function NotificationsPage() {
       start.moved = true;
     }
 
+    // Hanya swipe horizontal ke kiri yang digunakan untuk menghapus.
     if (
       deltaX < 0 &&
       Math.abs(deltaX) > Math.abs(deltaY) * 1.15
     ) {
       start.horizontal = true;
       updateSwipeOffset(id, deltaX);
-    } else if (
-      deltaX > 10 &&
-      Math.abs(deltaX) > Math.abs(deltaY) * 1.15
-    ) {
-      updateSwipeOffset(
-        id,
-        (swipeOffsetRef.current[id] ?? 0) + deltaX
-      );
-
-      start.x = touch.clientX;
     }
   };
 
@@ -655,7 +787,7 @@ export default function NotificationsPage() {
     touchStartRef.current = null;
     setActiveSwipeId(null);
 
-    if (offset < -55) {
+    if (start.horizontal && offset < -55) {
       suppressClickRef.current = true;
 
       updateSwipeOffset(id, -88);
@@ -707,7 +839,8 @@ export default function NotificationsPage() {
       return;
     }
 
-    handleMarkAsRead(id);
+    // Klik detail menandai sudah dibaca tanpa snackbar.
+    handleMarkAsRead(id, false);
   };
 
   /* =======================================================
@@ -725,54 +858,23 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     EMPTY STATE
-  ======================================================= */
-
-  const isCompletelyEmpty = notifications.length === 0;
-
-  /* =======================================================
      RENDER
   ======================================================= */
 
   return (
     <main className="min-h-screen w-full bg-white">
-      <div className="page-enter mx-auto w-full max-w-6xl px-4 pb-36 pt-3 sm:px-6 sm:pt-5 md:pb-8 lg:px-8">
-
-        {/* NOTIFICATION SUMMARY */}
-
-        {!isCompletelyEmpty && (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#ECEDEF] pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">
-                {totalCount} notifikasi
-              </span>
-
-              <span className="text-[#D5D7DC]">·</span>
-
-              {unreadCount > 0 ? (
-                <span className="flex items-center gap-1.5 text-xs font-medium text-[#730217]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#730217]" />
-                  {unreadCount} belum dibaca
-                </span>
-              ) : (
-                <span className="text-xs font-medium text-muted-foreground">
-                  Semua sudah dibaca
-                </span>
-              )}
-            </div>
-
-            {isSelectionMode && (
-              <span className="text-xs font-medium text-[#730217] md:hidden">
-                {selectedCount} dipilih
-              </span>
-            )}
-          </div>
-        )}
+      <div className="page-enter w-full min-w-0 px-4 pb-36 pt-4 sm:px-6 sm:pt-5 md:pb-8 lg:px-8">
 
         {/* DESKTOP SELECTION TOOLBAR */}
 
-        {isSelectionMode && notifications.length > 0 && (
-          <div className="mb-3 hidden min-h-11 items-center justify-between rounded-lg border border-[#730217]/15 bg-[#730217]/[0.035] px-3 md:flex">
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out ${
+            isSelectionMode && notifications.length > 0
+              ? "mb-3 max-h-20 translate-y-0 opacity-100"
+              : "mb-0 max-h-0 -translate-y-1 opacity-0"
+          }`}
+        >
+          <div className="hidden min-h-11 items-center justify-between rounded-lg border border-[#730217]/15 bg-[#730217]/[0.035] px-3 md:flex">
             <div className="flex items-center gap-3">
               <MokuCheckbox
                 checked={allNotificationsSelected}
@@ -821,7 +923,7 @@ export default function NotificationsPage() {
               </button>
             </div>
           </div>
-        )}
+        </div>
 
         {/* MOBILE SELECTION INFO */}
 
@@ -838,15 +940,11 @@ export default function NotificationsPage() {
                 }
               />
 
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className="text-xs font-medium text-muted-foreground"
-              >
+              <span className="text-xs font-medium text-muted-foreground">
                 {allNotificationsSelected
                   ? "Batalkan pilih semua"
                   : "Pilih semua"}
-              </button>
+              </span>
             </div>
 
             <span className="text-xs text-muted-foreground">
@@ -875,14 +973,14 @@ export default function NotificationsPage() {
                 return (
                   <div
                     key={item.id}
-                    className={`relative overflow-hidden ${
+                    className={`notification-row relative overflow-hidden ${
                       isExiting ? "notification-exit" : ""
                     }`}
                   >
                     {/* DESKTOP ROW */}
 
                     <div
-                      className={`group relative hidden min-h-[76px] items-center gap-4 px-3 py-4 transition-colors duration-150 md:flex ${
+                      className={`group relative hidden min-h-[72px] items-center gap-3 px-2 py-3 transition-colors duration-150 md:flex ${
                         isSelected
                           ? "bg-[#730217]/[0.055]"
                           : !item.isRead
@@ -926,7 +1024,7 @@ export default function NotificationsPage() {
                         className="flex min-w-0 flex-1 items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
                             <span className="truncate text-sm font-semibold text-foreground">
                               {item.title}
                             </span>
@@ -940,13 +1038,13 @@ export default function NotificationsPage() {
                           </div>
 
                           {subtitle && (
-                            <p className="mt-1 line-clamp-1 text-[13px] leading-relaxed text-muted-foreground">
+                            <p className="mt-1 line-clamp-1 text-[13px] leading-[18px] text-muted-foreground">
                               {subtitle}
                             </p>
                           )}
                         </div>
 
-                        <span className="w-24 shrink-0 text-right text-xs font-medium text-muted-foreground">
+                        <span className="w-24 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
                           {displayDate}
                         </span>
                       </Link>
@@ -957,7 +1055,7 @@ export default function NotificationsPage() {
                         {!item.isRead && (
                           <button
                             type="button"
-                            onClick={() => handleMarkAsRead(item.id)}
+                            onClick={() => handleMarkAsRead(item.id, true)}
                             title="Tandai sudah dibaca"
                             aria-label={`Tandai ${item.title} sudah dibaca`}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
@@ -1019,7 +1117,7 @@ export default function NotificationsPage() {
                           handleTouchCancel(item.id)
                         }
                         onContextMenu={(event) => event.preventDefault()}
-                        className={`mobile-swipe-foreground relative z-10 flex min-h-[76px] w-full items-start gap-3 overflow-hidden px-2 py-4 ${
+                        className={`mobile-swipe-foreground relative z-10 flex min-h-[72px] w-full items-center gap-3 overflow-hidden px-2 py-3 ${
                           isSelected
                             ? "bg-[#F8F1F2]"
                             : !item.isRead
@@ -1031,7 +1129,7 @@ export default function NotificationsPage() {
                           transition:
                             activeSwipeId === item.id
                               ? "none"
-                              : "transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1)",
+                              : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
                           touchAction: "pan-y",
                           willChange:
                             swipeOffset !== 0 ? "transform" : "auto",
@@ -1040,7 +1138,7 @@ export default function NotificationsPage() {
                         {/* MOBILE ICON / CHECKBOX */}
 
                         {isSelectionMode ? (
-                          <div className="mt-1 flex h-10 w-10 shrink-0 animate-selection-in items-center justify-center">
+                          <div className="flex h-10 w-10 shrink-0 animate-selection-in items-center justify-center">
                             <MokuCheckbox
                               checked={isSelected}
                               onChange={() => toggleSelection(item.id)}
@@ -1063,11 +1161,11 @@ export default function NotificationsPage() {
                           onClick={(event) =>
                             handleDetailClick(event, item.id)
                           }
-                          className="flex min-w-0 flex-1 items-start justify-between gap-3 outline-none"
+                          className="flex min-w-0 flex-1 items-center justify-between gap-3 outline-none"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <p className="truncate text-sm font-semibold leading-snug text-foreground">
                                 {item.title}
                               </p>
 
@@ -1080,13 +1178,13 @@ export default function NotificationsPage() {
                             </div>
 
                             {subtitle && (
-                              <p className="mt-1 line-clamp-1 text-[13px] leading-relaxed text-muted-foreground">
+                              <p className="mt-1 line-clamp-1 text-[13px] leading-[18px] text-muted-foreground">
                                 {subtitle}
                               </p>
                             )}
                           </div>
 
-                          <span className="mt-0.5 w-[54px] shrink-0 text-right text-[11px] font-medium tabular-nums text-muted-foreground">
+                          <span className="w-[54px] shrink-0 text-right text-[11px] font-medium tabular-nums text-muted-foreground">
                             {displayDate}
                           </span>
                         </Link>
@@ -1144,8 +1242,14 @@ export default function NotificationsPage() {
 
       {/* MOBILE FLOATING ACTION BAR */}
 
-      {isSelectionMode && selectedCount > 0 && (
-        <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-md animate-toolbar-in items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg md:hidden">
+      <div
+        className={`fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto max-w-md transition-all duration-200 ease-out md:hidden ${
+          isSelectionMode && selectedCount > 0
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-4 opacity-0"
+        }`}
+      >
+        <div className="flex items-center justify-between rounded-xl border border-[#E8E9ED] bg-white px-3 py-2.5 shadow-lg">
           <span className="text-xs font-medium text-[#730217]">
             {selectedCount} dipilih
           </span>
@@ -1182,7 +1286,7 @@ export default function NotificationsPage() {
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* MOKU SIGNATURE SNACKBAR */}
 
@@ -1220,7 +1324,7 @@ export default function NotificationsPage() {
 
       <style jsx>{`
         .page-enter {
-          animation: notification-enter 220ms ease-out both;
+          animation: notification-enter 240ms ease-out both;
         }
 
         .snackbar-enter {
@@ -1235,12 +1339,9 @@ export default function NotificationsPage() {
           animation: selection-in 180ms ease-out both;
         }
 
-        .animate-toolbar-in {
-          animation: toolbar-in 180ms ease-out both;
-        }
-
         .mobile-swipe-foreground {
           box-sizing: border-box;
+          background-clip: padding-box;
           user-select: none;
           -webkit-user-select: none;
           -webkit-touch-callout: none;
@@ -1248,8 +1349,18 @@ export default function NotificationsPage() {
           -webkit-backface-visibility: hidden;
         }
 
+        .notification-row {
+          overflow: hidden;
+          transition:
+            opacity 220ms ease,
+            max-height 220ms ease,
+            margin 220ms ease;
+          max-height: 120px;
+        }
+
         .notification-exit {
           animation: notification-exit 220ms ease-in forwards;
+          pointer-events: none;
           overflow: hidden;
         }
 
@@ -1299,27 +1410,23 @@ export default function NotificationsPage() {
           }
         }
 
-        @keyframes toolbar-in {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         @keyframes notification-exit {
-          from {
+          0% {
             opacity: 1;
             max-height: 120px;
+            transform: translateX(0);
           }
 
-          to {
+          45% {
+            opacity: 0.35;
+            max-height: 120px;
+            transform: translateX(-12px);
+          }
+
+          100% {
             opacity: 0;
             max-height: 0;
+            transform: translateX(-20px);
           }
         }
 
@@ -1327,10 +1434,13 @@ export default function NotificationsPage() {
           .page-enter,
           .snackbar-enter,
           .animate-selection-in,
-          .animate-toolbar-in,
           .snackbar-progress,
           .notification-exit {
             animation: none;
+          }
+
+          .notification-row {
+            transition: none;
           }
         }
       `}</style>
