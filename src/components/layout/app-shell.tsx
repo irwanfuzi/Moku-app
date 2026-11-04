@@ -289,10 +289,12 @@ export default function AppShell({
   useEffect(() => {
     updateLayout();
 
-    let resizeTimer: ReturnType<typeof setTimeout>;
+    let resizeTimer: number | undefined;
 
     const handleResize = () => {
-      window.clearTimeout(resizeTimer);
+      if (resizeTimer !== undefined) {
+        window.clearTimeout(resizeTimer);
+      }
 
       resizeTimer = window.setTimeout(() => {
         updateLayout();
@@ -313,7 +315,9 @@ export default function AppShell({
     screenOrientation?.addEventListener("change", updateLayout);
 
     return () => {
-      window.clearTimeout(resizeTimer);
+      if (resizeTimer !== undefined) {
+        window.clearTimeout(resizeTimer);
+      }
 
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", updateLayout);
