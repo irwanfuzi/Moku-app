@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -36,8 +35,6 @@ interface AppLayoutContextValue {
   isPWA: boolean;
   isReady: boolean;
 }
-
-type NavigationDirection = "forward" | "backward";
 
 /* =========================================================
    APP LAYOUT CONTEXT
@@ -131,38 +128,6 @@ function getPageInformation(pathname: string): PageInformation {
 }
 
 /* =========================================================
-   NAVIGATION DIRECTION
-========================================================= */
-
-function getRouteDepth(pathname: string): number {
-  return pathname.split("/").filter(Boolean).length;
-}
-
-function getNavigationDirection(
-  previousPath: string,
-  currentPath: string
-): NavigationDirection {
-  const previousDepth = getRouteDepth(previousPath);
-  const currentDepth = getRouteDepth(currentPath);
-
-  if (
-    previousDepth > currentDepth &&
-    previousPath.startsWith(`${currentPath}/`)
-  ) {
-    return "backward";
-  }
-
-  if (
-    currentDepth > previousDepth &&
-    currentPath.startsWith(`${previousPath}/`)
-  ) {
-    return "forward";
-  }
-
-  return "forward";
-}
-
-/* =========================================================
    DEVICE DETECTION
 ========================================================= */
 
@@ -213,6 +178,8 @@ function detectLayoutMode(): {
 
   /*
     DESKTOP / LAPTOP
+
+    Menggunakan desktop layout.
   */
 
   if (!isHandheld) {
@@ -269,11 +236,6 @@ export default function AppShell({
       isPWA: false,
       isReady: false,
     });
-
-  const [navigationDirection, setNavigationDirection] =
-    useState<NavigationDirection>("forward");
-
-  const previousPathRef = useRef(pathname);
 
   const currentPage = getPageInformation(pathname);
 
@@ -361,22 +323,6 @@ export default function AppShell({
   }, [updateLayout]);
 
   /* =======================================================
-     PAGE TRANSITION DIRECTION
-  ======================================================= */
-
-  useEffect(() => {
-    if (previousPathRef.current === pathname) {
-      return;
-    }
-
-    setNavigationDirection(
-      getNavigationDirection(previousPathRef.current, pathname)
-    );
-
-    previousPathRef.current = pathname;
-  }, [pathname]);
-
-  /* =======================================================
      RENDER
   ======================================================= */
 
@@ -420,11 +366,7 @@ export default function AppShell({
               }
             `}
           >
-            <div
-              key={pathname}
-              data-page-transition={navigationDirection}
-              className="page-transition min-h-full w-full min-w-0"
-            >
+            <div className="min-h-full w-full min-w-0">
               {children}
             </div>
           </main>
@@ -571,81 +513,6 @@ export default function AppShell({
         .moku-app-shell[data-layout-mode="mobile"]
           .moku-mobile-navigation {
           display: block;
-        }
-
-        /*
-          PAGE TRANSITIONS
-        */
-
-        .page-transition {
-          min-width: 0;
-        }
-
-        [data-layout-mode="desktop"] .page-transition {
-          animation: moku-desktop-enter 260ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        @keyframes moku-desktop-enter {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 8px, 0);
-          }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        [data-layout-mode="mobile"]
-          .page-transition[data-page-transition="forward"] {
-          animation: moku-push-forward 340ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        [data-layout-mode="mobile"]
-          .page-transition[data-page-transition="backward"] {
-          animation: moku-push-backward 340ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        @keyframes moku-push-forward {
-          from {
-            opacity: 0.85;
-            transform: translate3d(42px, 0, 0);
-          }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        @keyframes moku-push-backward {
-          from {
-            opacity: 0.85;
-            transform: translate3d(-42px, 0, 0);
-          }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        /*
-          REDUCED MOTION
-        */
-
-        @media (prefers-reduced-motion: reduce) {
-          .page-transition {
-            animation: none !important;
-          }
-
-          .moku-main-layout {
-            transition: none !important;
-          }
         }
       `}</style>
     </AppLayoutContext.Provider>
