@@ -40,6 +40,10 @@ interface BeforeInstallPromptEvent extends Event {
 
 const INSTALL_STORAGE_KEY = "moku-pwa-installed";
 
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
 const navigationItems = [
   {
     label: "Dashboard",
@@ -326,7 +330,7 @@ export default function AppSidebar({
                   className="h-auto max-h-[58px] w-auto max-w-[180px] object-contain"
                 />
 
-                <span className="mt-1 text-center text-[12px] font-medium leading-[18px] text-white/90">
+                <span className="mt-1 text-center text-[12px] font-medium leading-[18px] !text-white">
                   Monitoring Operasional
                   <br />
                   Kunjungan Unit
@@ -362,15 +366,17 @@ export default function AppSidebar({
                     className={`
                       moku-sidebar-link
                       group relative flex h-[60px]
-                      items-center gap-4
+                      items-center justify-start gap-4
                       rounded-[14px]
                       px-4
+                      !text-white
+                      text-left
                       transition-all duration-200
                       motion-reduce:transition-none
                       ${
                         active
-                          ? "bg-[#BF0B2C] text-white shadow-[inset_3px_0_0_#F28C0F]"
-                          : "bg-transparent text-white hover:bg-white/10"
+                          ? "bg-[#BF0B2C] shadow-[inset_3px_0_0_#F28C0F]"
+                          : "bg-transparent hover:bg-white/10"
                       }
                       ${collapsed ? "justify-center px-0" : ""}
                     `}
@@ -378,17 +384,15 @@ export default function AppSidebar({
                     <Icon
                       size={29}
                       weight={active ? "fill" : "regular"}
-                      className={`
-                        shrink-0
-                        transition-transform duration-200
-                        ${active ? "scale-105" : "group-hover:scale-105"}
-                      `}
+                      className="shrink-0 !text-white transition-transform duration-200"
                     />
 
                     {!collapsed && (
                       <span
                         className={`
-                          min-w-0 truncate text-[15px]
+                          block min-w-0 flex-1
+                          truncate text-left text-[15px]
+                          !text-white
                           ${
                             active
                               ? "font-semibold"
@@ -429,7 +433,7 @@ export default function AppSidebar({
                 border-2 border-white/70
                 bg-white/[0.04]
                 px-3 py-3
-                text-left text-white
+                text-left !text-white
                 transition-all duration-200
                 ${
                   installPrompt
@@ -444,7 +448,7 @@ export default function AppSidebar({
                 <DownloadSimple
                   size={25}
                   weight="bold"
-                  className="shrink-0 text-[#F28C0F]"
+                  className="shrink-0 !text-[#F28C0F]"
                 />
               ) : (
                 <>
@@ -456,20 +460,21 @@ export default function AppSidebar({
                     className="h-[52px] w-[52px] shrink-0 object-contain"
                   />
 
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-semibold leading-6 text-white">
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block text-left text-[15px] font-semibold leading-6 !text-white">
                       Install MOKU
                     </span>
 
-                    <span className="block text-[12px] leading-5 text-white/85">
+                    <span className="block text-left text-[12px] leading-5 !text-white/85">
                       Web / Desktop
                     </span>
                   </span>
 
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#BF0B2C] text-white transition-colors group-hover:bg-[#F28C0F]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#BF0B2C]">
                     <DownloadSimple
                       size={23}
                       weight="bold"
+                      className="!text-white"
                     />
                   </span>
                 </>
@@ -483,15 +488,15 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className={`
+              className="
                 mx-auto mt-3 flex h-8 w-8
                 items-center justify-center
-                rounded-full text-white/75
+                rounded-full !text-white/75
                 transition-colors duration-200
-                hover:bg-white/10 hover:text-white
+                hover:bg-white/10 hover:!text-white
                 active:scale-95
                 motion-reduce:transition-none
-              `}
+              "
               aria-label={
                 collapsed ? "Perluas sidebar" : "Perkecil sidebar"
               }
@@ -614,6 +619,41 @@ export default function AppSidebar({
         }
 
         /*
+          FORCE WHITE SIDEBAR TEXT AND ICONS
+        */
+
+        .moku-sidebar .moku-sidebar-link,
+        .moku-sidebar .moku-sidebar-link span,
+        .moku-sidebar .moku-sidebar-link svg,
+        .moku-sidebar .moku-sidebar-brand span,
+        .moku-sidebar .moku-sidebar-footer,
+        .moku-sidebar .moku-sidebar-footer span,
+        .moku-sidebar .moku-sidebar-footer svg {
+          color: #ffffff !important;
+        }
+
+        .moku-sidebar .moku-sidebar-link {
+          text-align: left !important;
+          justify-content: flex-start;
+        }
+
+        .moku-sidebar .moku-sidebar-link span {
+          text-align: left !important;
+        }
+
+        .moku-sidebar .moku-sidebar-link svg {
+          stroke: #ffffff !important;
+        }
+
+        .moku-sidebar .moku-sidebar-footer button {
+          color: #ffffff !important;
+        }
+
+        .moku-sidebar .moku-sidebar-footer button:disabled {
+          color: #ffffff !important;
+        }
+
+        /*
           NAVIGATION LINKS
         */
 
@@ -650,6 +690,10 @@ export default function AppSidebar({
           padding-bottom: 20px;
         }
 
+        .moku-sidebar[data-collapsed="true"] .moku-sidebar-link {
+          justify-content: center !important;
+        }
+
         /*
           MOBILE PORTRAIT
         */
@@ -674,4 +718,4 @@ export default function AppSidebar({
       `}</style>
     </>
   );
-                  }
+}
