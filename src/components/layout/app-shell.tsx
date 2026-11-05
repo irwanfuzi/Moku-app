@@ -64,6 +64,10 @@ const pageInformation: Record<string, PageInformation> = {
     title: "Dashboard",
     description: "Ringkasan aktivitas dan monitoring kunjungan mesin.",
   },
+  "/dashboard": {
+    title: "Dashboard",
+    description: "Ringkasan aktivitas dan monitoring kunjungan mesin.",
+  },
   "/monitoring": {
     title: "Monitoring",
     description: "Pantau status kunjungan seluruh unit mesin.",
@@ -177,8 +181,10 @@ function detectPWA(): boolean {
 }
 
 function detectPhysicalLandscape(): boolean {
-  if (window.screen.orientation?.type) {
-    return window.screen.orientation.type.startsWith("landscape");
+  const orientationType = window.screen.orientation?.type;
+
+  if (orientationType) {
+    return orientationType.startsWith("landscape");
   }
 
   return window.innerWidth > window.innerHeight;
@@ -205,23 +211,42 @@ function detectLayoutMode(): {
   const isHandheld = detectHandheldDevice();
   const isLandscape = detectPhysicalLandscape();
 
-  if (isPWA) {
-    return {
-      mode: "mobile",
-      isPWA: true,
-    };
-  }
+  /*
+    DESKTOP / LAPTOP
+  */
 
   if (!isHandheld) {
     return {
       mode: "desktop",
-      isPWA: false,
+      isPWA,
     };
   }
 
+  /*
+    HP LANDSCAPE
+
+    Semua perangkat HP dalam posisi horizontal
+    menggunakan desktop layout.
+
+    Berlaku untuk browser maupun PWA.
+  */
+
+  if (isLandscape) {
+    return {
+      mode: "desktop",
+      isPWA,
+    };
+  }
+
+  /*
+    HP PORTRAIT
+
+    Menggunakan mobile layout.
+  */
+
   return {
-    mode: isLandscape ? "desktop" : "mobile",
-    isPWA: false,
+    mode: "mobile",
+    isPWA,
   };
 }
 
@@ -302,7 +327,7 @@ export default function AppShell({
     };
 
     window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", updateLayout);
+    window.addEventListener("orientationchange", handleResize);
 
     const displayMode = window.matchMedia(
       "(display-mode: standalone)"
@@ -312,7 +337,7 @@ export default function AppShell({
 
     const screenOrientation = window.screen.orientation;
 
-    screenOrientation?.addEventListener("change", updateLayout);
+    screenOrientation?.addEventListener("change", handleResize);
 
     return () => {
       if (resizeTimer !== undefined) {
@@ -320,13 +345,17 @@ export default function AppShell({
       }
 
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", updateLayout);
+
+      window.removeEventListener(
+        "orientationchange",
+        handleResize
+      );
 
       displayMode.removeEventListener("change", updateLayout);
 
       screenOrientation?.removeEventListener(
         "change",
-        updateLayout
+        handleResize
       );
     };
   }, [updateLayout]);
@@ -402,7 +431,7 @@ export default function AppShell({
 
           {/* FOOTER */}
 
-          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4 transition-colors duration-200 lg:block">
+          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4 transition-colors duration-200">
             <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
               <p className="text-[11px] text-muted">
                 © {new Date().getFullYear()} MOKU. All rights reserved.
@@ -417,11 +446,13 @@ export default function AppShell({
 
         {/* MOBILE NAVIGATION */}
 
-        <BottomNavigation />
+        <div className="moku-mobile-navigation">
+          <BottomNavigation />
+        </div>
       </div>
 
       {/* ===================================================
-          RESPONSIVE LAYOUT
+          RESPONSIVE MASTER LAYOUT
       =================================================== */}
 
       <style jsx global>{`
@@ -445,92 +476,101 @@ export default function AppShell({
         }
 
         /*
-          DESKTOP
+          DESKTOP + HP LANDSCAPE
+
+          Satu standar layout desktop.
+          Tidak ada ukuran compact khusus landscape.
         */
 
-        @media (min-width: 1024px) {
-          .moku-main-layout {
-            width: calc(100% - 240px);
-            margin-left: 240px;
-            flex: 0 0 calc(100% - 240px);
-            transition:
-              margin-left 250ms ease,
-              width 250ms ease,
-              flex-basis 250ms ease;
-          }
+        .moku-app-shell[data-layout-mode="desktop"] {
+          min-height: 100dvh;
+        }
 
-          .moku-app-shell[data-sidebar-collapsed="true"]
-            .moku-main-layout {
-            width: calc(100% - 72px);
-            margin-left: 72px;
-            flex-basis: calc(100% - 72px);
+        .moku-app-shell[data-layout-mode="desktop"] .moku-sidebar {
+          display: flex !important;
+          position: fixed !important;
+          top: 0 !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          width: 240px !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: none !important;
+          overflow: hidden;
+          z-index: 50;
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"] .moku-main-layout {
+          width: calc(100% - 240px);
+          margin-left: 240px;
+          flex: 0 0 calc(100% - 240px);
+          min-height: 100dvh;
+          transition:
+            margin-left 250ms ease,
+            width 250ms ease,
+            flex-basis 250ms ease;
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
+          .moku-sidebar {
+          width: 72px !important;
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
+          .moku-main-layout {
+          width: calc(100% - 72px);
+          margin-left: 72px;
+          flex-basis: calc(100% - 72px);
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"] .moku-desktop-footer {
+          display: block !important;
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"]
+          .moku-mobile-navigation {
+          display: none !important;
+        }
+
+        .moku-app-shell[data-layout-mode="desktop"] #main-content {
+          padding: 28px 24px 28px !important;
+        }
+
+        /*
+          DESKTOP LARGE SCREEN
+        */
+
+        @media (min-width: 1440px) {
+          .moku-app-shell[data-layout-mode="desktop"] #main-content {
+            padding: 32px !important;
           }
         }
 
         /*
-          MOBILE LANDSCAPE
-          Desktop structure, compact dimensions.
+          MOBILE PORTRAIT
+
+          Mobile layout hanya aktif ketika
+          perangkat handheld dalam posisi portrait.
         */
 
-        @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-          .moku-sidebar {
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            width: 190px !important;
-            height: 100vh !important;
-            height: 100dvh !important;
-            max-height: none !important;
-          }
-
-          .moku-sidebar[data-collapsed="true"] {
-            width: 64px !important;
-          }
-
-          .moku-main-layout {
-            width: calc(100% - 190px) !important;
-            margin-left: 190px !important;
-            flex: 0 0 calc(100% - 190px) !important;
-            min-height: 100vh;
-            min-height: 100dvh;
-          }
-
-          .moku-app-shell[data-sidebar-collapsed="true"]
-            .moku-main-layout {
-            width: calc(100% - 64px) !important;
-            margin-left: 64px !important;
-            flex-basis: calc(100% - 64px) !important;
-          }
-
-          .moku-app-shell #main-content {
-            padding: 12px 16px 16px !important;
-          }
-
-          .moku-desktop-footer {
-            display: none !important;
-          }
-
-          .moku-app-shell [data-mobile-navigation] {
-            display: none !important;
-          }
+        .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
+          display: none !important;
         }
 
-        /*
-          MOBILE PORTRAIT / PWA
-        */
+        .moku-app-shell[data-layout-mode="mobile"] .moku-main-layout {
+          width: 100% !important;
+          margin-left: 0 !important;
+          flex-basis: 100% !important;
+          min-height: 100dvh;
+        }
 
-        @media (orientation: portrait) {
-          .moku-sidebar {
-            display: none !important;
-          }
+        .moku-app-shell[data-layout-mode="mobile"] .moku-desktop-footer {
+          display: none !important;
+        }
 
-          .moku-main-layout {
-            width: 100% !important;
-            margin-left: 0 !important;
-            flex-basis: 100% !important;
-          }
+        .moku-app-shell[data-layout-mode="mobile"]
+          .moku-mobile-navigation {
+          display: block;
         }
 
         /*
@@ -593,6 +633,10 @@ export default function AppShell({
             transform: translate3d(0, 0, 0);
           }
         }
+
+        /*
+          REDUCED MOTION
+        */
 
         @media (prefers-reduced-motion: reduce) {
           .page-transition {
