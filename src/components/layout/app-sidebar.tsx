@@ -488,7 +488,7 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="
+              className={`
                 mx-auto mt-3 flex h-8 w-8
                 items-center justify-center
                 rounded-full !text-white/75
@@ -496,7 +496,7 @@ export default function AppSidebar({
                 hover:bg-white/10 hover:!text-white
                 active:scale-95
                 motion-reduce:transition-none
-              "
+              `}
               aria-label={
                 collapsed ? "Perluas sidebar" : "Perkecil sidebar"
               }
