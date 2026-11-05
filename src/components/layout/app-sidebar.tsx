@@ -8,15 +8,10 @@ import { usePathname } from "next/navigation";
 import {
   House,
   Monitor,
+  Stack,
   ClipboardText,
-  Desktop,
-  Buildings,
-  ClockCounterClockwise,
-  Users,
   ChartBar,
-  Bell,
   Gear,
-  UserCircle,
   CaretLeft,
   CaretRight,
   DownloadSimple,
@@ -45,44 +40,36 @@ interface BeforeInstallPromptEvent extends Event {
 
 const INSTALL_STORAGE_KEY = "moku-pwa-installed";
 
-/* =========================================================
-   NAVIGATION
-========================================================= */
-
-const navigationGroups = [
+const navigationItems = [
   {
-    title: "Ringkasan",
-    items: [
-      { label: "Dashboard", href: "/", icon: House },
-      { label: "Monitoring", href: "/monitoring", icon: Monitor },
-    ],
+    label: "Dashboard",
+    href: "/",
+    icon: House,
   },
   {
-    title: "Operasional",
-    items: [
-      { label: "Kunjungan", href: "/visits", icon: ClipboardText },
-      { label: "Data Mesin", href: "/equipment", icon: Desktop },
-      { label: "Pelanggan", href: "/customers", icon: Buildings },
-      {
-        label: "Riwayat Kunjungan",
-        href: "/visit-history",
-        icon: ClockCounterClockwise,
-      },
-    ],
+    label: "Monitoring",
+    href: "/monitoring",
+    icon: Monitor,
   },
   {
-    title: "Analisis",
-    items: [
-      { label: "Laporan", href: "/reports", icon: ChartBar },
-    ],
+    label: "Data Mesin",
+    href: "/equipment",
+    icon: Stack,
   },
   {
-    title: "Preferensi",
-    items: [
-      { label: "Pengguna", href: "/users", icon: Users },
-      { label: "Notifikasi", href: "/notifications", icon: Bell },
-      { label: "Pengaturan", href: "/settings", icon: Gear },
-    ],
+    label: "Riwayat Kunjungan",
+    href: "/visit-history",
+    icon: ClipboardText,
+  },
+  {
+    label: "Laporan",
+    href: "/reports",
+    icon: ChartBar,
+  },
+  {
+    label: "Pengaturan",
+    href: "/settings",
+    icon: Gear,
   },
 ];
 
@@ -111,8 +98,9 @@ export default function AppSidebar({
   const checkStandalone = useCallback(() => {
     return (
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as Navigator & { standalone?: boolean })
-        .standalone === true
+      (window.navigator as Navigator & {
+        standalone?: boolean;
+      }).standalone === true
     );
   }, []);
 
@@ -220,11 +208,7 @@ export default function AppSidebar({
         handleBeforeInstall
       );
 
-      window.removeEventListener(
-        "appinstalled",
-        handleInstalled
-      );
-
+      window.removeEventListener("appinstalled", handleInstalled);
       window.removeEventListener("storage", handleStorage);
 
       document.removeEventListener(
@@ -286,8 +270,7 @@ export default function AppSidebar({
           hidden h-screen h-dvh
           min-h-0 shrink-0
           flex-col overflow-hidden
-          border-r border-white/10
-          bg-[#6F010E]
+          bg-[#730217]
           transition-[width] duration-300 ease-in-out
           motion-reduce:transition-none
           lg:flex
@@ -296,39 +279,59 @@ export default function AppSidebar({
         aria-label="Navigasi utama"
         data-collapsed={collapsed}
       >
+        {/* BACKGROUND DECORATION */}
+
+        <div
+          className="moku-sidebar-decoration"
+          aria-hidden="true"
+        >
+          <div className="moku-wave moku-wave-one" />
+          <div className="moku-wave moku-wave-two" />
+          <div className="moku-wave moku-wave-three" />
+        </div>
+
         {/* BRAND */}
 
         <div
           className={`
             moku-sidebar-brand
-            flex h-[76px] shrink-0 items-center
+            relative z-10 flex h-[132px] shrink-0
+            flex-col items-center justify-center
             border-b border-white/10
-            ${collapsed ? "justify-center px-2" : "px-4"}
+            ${collapsed ? "px-2" : "px-4"}
           `}
         >
           <Link
             href="/"
-            className="flex min-w-0 items-center justify-center"
+            className="flex flex-col items-center justify-center"
             aria-label="MOKU Dashboard"
           >
             {collapsed ? (
               <Image
                 src="/images/moku/brand/app-icon.png"
                 alt="MOKU"
-                width={43}
-                height={43}
+                width={46}
+                height={46}
                 priority
-                className="h-[43px] w-[43px] object-contain transition-transform duration-200 hover:scale-105"
+                className="h-[46px] w-[46px] object-contain"
               />
             ) : (
-              <Image
-                src="/images/moku/brand/logo-dark.png"
-                alt="MOKU"
-                width={180}
-                height={56}
-                priority
-                className="h-auto max-h-12 w-auto max-w-[180px] object-contain object-left transition-transform duration-200 hover:scale-[1.02]"
-              />
+              <>
+                <Image
+                  src="/images/moku/brand/logo-dark.png"
+                  alt="MOKU"
+                  width={180}
+                  height={58}
+                  priority
+                  className="h-auto max-h-[58px] w-auto max-w-[180px] object-contain"
+                />
+
+                <span className="mt-1 text-center text-[12px] font-medium leading-[18px] text-white/90">
+                  Monitoring Operasional
+                  <br />
+                  Kunjungan Unit
+                </span>
+              </>
             )}
           </Link>
         </div>
@@ -336,120 +339,76 @@ export default function AppSidebar({
         {/* NAVIGATION */}
 
         <nav
-          className={`
-            moku-sidebar-scroll
-            min-h-0 flex-1
-            overflow-x-hidden overflow-y-auto
-            px-3 py-5
-          `}
+          className="moku-sidebar-scroll relative z-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
           aria-label="Menu navigasi"
         >
-          <div className="moku-sidebar-groups space-y-6">
-            {navigationGroups.map((group) => (
-              <div key={group.title}>
-                {!collapsed && (
-                  <p className="moku-sidebar-group-title mb-2 px-3 text-[11px] font-semibold tracking-[0.06em] text-[#FDFDFD]/70">
-                    {group.title}
-                  </p>
-                )}
+          <div
+            className={`
+              moku-sidebar-navigation
+              ${collapsed ? "px-2 py-5" : "px-[18px] py-6"}
+            `}
+          >
+            <div className="space-y-2">
+              {navigationItems.map((item) => {
+                const active = isActive(item.href);
+                const Icon = item.icon;
 
-                <div className="moku-sidebar-items space-y-1">
-                  {group.items.map((item) => {
-                    const active = isActive(item.href);
-                    const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    aria-current={active ? "page" : undefined}
+                    className={`
+                      moku-sidebar-link
+                      group relative flex h-[60px]
+                      items-center gap-4
+                      rounded-[14px]
+                      px-4
+                      transition-all duration-200
+                      motion-reduce:transition-none
+                      ${
+                        active
+                          ? "bg-[#BF0B2C] text-white shadow-[inset_3px_0_0_#F28C0F]"
+                          : "bg-transparent text-white hover:bg-white/10"
+                      }
+                      ${collapsed ? "justify-center px-0" : ""}
+                    `}
+                  >
+                    <Icon
+                      size={29}
+                      weight={active ? "fill" : "regular"}
+                      className={`
+                        shrink-0
+                        transition-transform duration-200
+                        ${active ? "scale-105" : "group-hover:scale-105"}
+                      `}
+                    />
 
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        title={collapsed ? item.label : undefined}
-                        aria-current={active ? "page" : undefined}
+                    {!collapsed && (
+                      <span
                         className={`
-                          group relative flex h-11 items-center gap-3
-                          rounded-xl px-3
-                          !text-[#FDFDFD]
-                          transition-all duration-200 ease-out
-                          motion-reduce:transition-none
+                          min-w-0 truncate text-[15px]
                           ${
                             active
-                              ? "mr-[-12px] rounded-r-none bg-[#B10618] pr-6"
-                              : "bg-transparent hover:bg-[#520107]"
+                              ? "font-semibold"
+                              : "font-medium"
                           }
-                          ${collapsed ? "justify-center px-0" : ""}
                         `}
                       >
-                        {/* ACTIVE INDICATOR */}
-
-                        <span
-                          className={`
-                            absolute bottom-2 left-0 top-2
-                            w-[3px] rounded-r-full
-                            bg-[#FEAF27]
-                            transition-all duration-200
-                            ${
-                              active
-                                ? "translate-x-0 opacity-100"
-                                : "-translate-x-1 opacity-0"
-                            }
-                          `}
-                        />
-
-                        {/* ICON */}
-
-                        <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-                          <Icon
-                            size={20}
-                            weight={active ? "fill" : "regular"}
-                            className={`
-                              absolute !text-[#FDFDFD]
-                              transition-all duration-200
-                              ${
-                                active
-                                  ? "scale-100 opacity-100"
-                                  : "scale-100 opacity-90 group-hover:opacity-100"
-                              }
-                            `}
-                          />
-                        </span>
-
-                        {/* LABEL */}
-
-                        {!collapsed && (
-                          <span
-                            className={`
-                              truncate text-[13px]
-                              !text-[#FDFDFD]
-                              ${
-                                active
-                                  ? "font-semibold"
-                                  : "font-medium"
-                              }
-                            `}
-                          >
-                            {item.label}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+                        {item.label}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </nav>
 
-        {/* FOOTER */}
+        {/* FOOTER / INSTALL */}
 
-        <div
-          className={`
-            moku-sidebar-footer
-            shrink-0 space-y-2
-            border-t border-white/10
-            p-3
-          `}
-        >
-          {/* PWA INSTALL PANEL */}
-
+        <div className="moku-sidebar-footer relative z-10 shrink-0 p-[18px]">
           {showInstallButton && (
             <button
               type="button"
@@ -464,95 +423,59 @@ export default function AppSidebar({
               }
               aria-label="Install MOKU"
               className={`
-                group relative flex min-h-[58px] w-full
+                group flex min-h-[76px] w-full
                 items-center gap-3
-                rounded-xl border border-[#B10618]/70
-                bg-[#520107] px-3 py-2
-                text-left !text-[#FDFDFD]
+                rounded-[17px]
+                border-2 border-white/70
+                bg-white/[0.04]
+                px-3 py-3
+                text-left text-white
                 transition-all duration-200
                 ${
                   installPrompt
-                    ? "cursor-pointer hover:border-[#FEAF27]/50 hover:bg-[#3E0204] active:scale-[0.98]"
-                    : "cursor-default opacity-90"
+                    ? "cursor-pointer hover:border-[#F28C0F] hover:bg-white/10 active:scale-[0.98]"
+                    : "cursor-default"
                 }
                 motion-reduce:transition-none
-                ${collapsed ? "min-h-[50px] justify-center px-0 py-2" : ""}
+                ${collapsed ? "min-h-[60px] justify-center px-1" : ""}
               `}
             >
               {collapsed ? (
                 <DownloadSimple
-                  size={23}
+                  size={25}
                   weight="bold"
-                  className="!text-[#FEAF27]"
+                  className="shrink-0 text-[#F28C0F]"
                 />
               ) : (
                 <>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center">
-                    <Image
-                      src="/images/moku/brand/app-icon.png"
-                      alt=""
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 object-contain"
-                    />
-                  </span>
+                  <Image
+                    src="/images/moku/brand/app-icon.png"
+                    alt="Maskot MOKU"
+                    width={52}
+                    height={52}
+                    className="h-[52px] w-[52px] shrink-0 object-contain"
+                  />
 
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-semibold leading-5 !text-[#FDFDFD]">
+                    <span className="block text-[15px] font-semibold leading-6 text-white">
                       Install MOKU
                     </span>
 
-                    <span className="block text-[11px] leading-4 !text-[#FDFDFD]/65">
-                      Aplikasi Web / Desktop
+                    <span className="block text-[12px] leading-5 text-white/85">
+                      Web / Desktop
                     </span>
                   </span>
 
-                  <DownloadSimple
-                    size={21}
-                    weight="bold"
-                    className={`
-                      shrink-0 !text-[#FEAF27]
-                      transition-transform duration-200
-                      ${installPrompt ? "group-hover:translate-y-0.5" : ""}
-                    `}
-                  />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#BF0B2C] text-white transition-colors group-hover:bg-[#F28C0F]">
+                    <DownloadSimple
+                      size={23}
+                      weight="bold"
+                    />
+                  </span>
                 </>
               )}
             </button>
           )}
-
-          {/* PROFILE */}
-
-          <Link
-            href="/profile"
-            title={collapsed ? "Profil Saya" : undefined}
-            className={`
-              flex h-11 items-center gap-3
-              rounded-xl px-3
-              !text-[#FDFDFD]
-              transition-colors duration-200
-              hover:bg-[#520107]
-              ${collapsed ? "justify-center px-0" : ""}
-            `}
-          >
-            <UserCircle
-              size={21}
-              weight="regular"
-              className="shrink-0 !text-[#FDFDFD]"
-            />
-
-            {!collapsed && (
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12px] font-semibold !text-[#FDFDFD]">
-                  Akun Pengguna
-                </span>
-
-                <span className="block text-[10px] !text-[#FDFDFD]/70">
-                  Profil Saya
-                </span>
-              </span>
-            )}
-          </Link>
 
           {/* COLLAPSE BUTTON */}
 
@@ -560,7 +483,15 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="mt-2 flex h-9 w-full items-center justify-center rounded-lg !text-[#FDFDFD]/75 transition-all duration-200 hover:bg-[#520107] hover:!text-[#FDFDFD] active:scale-95 motion-reduce:transition-none"
+              className={`
+                mx-auto mt-3 flex h-8 w-8
+                items-center justify-center
+                rounded-full text-white/75
+                transition-colors duration-200
+                hover:bg-white/10 hover:text-white
+                active:scale-95
+                motion-reduce:transition-none
+              `}
               aria-label={
                 collapsed ? "Perluas sidebar" : "Perkecil sidebar"
               }
@@ -569,16 +500,18 @@ export default function AppSidebar({
               }
             >
               {collapsed ? (
-                <CaretRight size={19} weight="bold" />
+                <CaretRight size={20} weight="bold" />
               ) : (
-                <CaretLeft size={19} weight="bold" />
+                <CaretLeft size={20} weight="bold" />
               )}
             </button>
           )}
         </div>
       </aside>
 
-      {/* SIDEBAR RESPONSIVE STYLES */}
+      {/* ===================================================
+          SIDEBAR STYLES
+      =================================================== */}
 
       <style jsx global>{`
         .moku-sidebar {
@@ -586,12 +519,17 @@ export default function AppSidebar({
           top: 0 !important;
           bottom: 0 !important;
           left: 0 !important;
+
           height: 100vh !important;
           height: 100dvh !important;
+
           min-height: 0 !important;
           max-height: 100vh !important;
           max-height: 100dvh !important;
+
+          display: none;
           flex-direction: column;
+
           overflow: hidden !important;
           box-sizing: border-box;
           isolation: isolate;
@@ -603,13 +541,68 @@ export default function AppSidebar({
           }
         }
 
+        /*
+          BACKGROUND WAVES
+        */
+
+        .moku-sidebar-decoration {
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .moku-wave {
+          position: absolute;
+          left: -25%;
+          width: 150%;
+          border-radius: 50%;
+          transform: rotate(-8deg);
+        }
+
+        .moku-wave-one {
+          bottom: -90px;
+          height: 290px;
+          background: rgba(191, 11, 44, 0.32);
+        }
+
+        .moku-wave-two {
+          bottom: -145px;
+          height: 260px;
+          background: rgba(235, 85, 19, 0.13);
+          transform: rotate(8deg);
+        }
+
+        .moku-wave-three {
+          bottom: -195px;
+          height: 270px;
+          background: rgba(85, 0, 18, 0.32);
+          transform: rotate(-5deg);
+        }
+
+        /*
+          BRAND
+        */
+
+        .moku-sidebar-brand {
+          flex: 0 0 auto !important;
+        }
+
+        /*
+          NAVIGATION SCROLL
+        */
+
         .moku-sidebar-scroll {
           min-height: 0 !important;
           flex: 1 1 auto !important;
+
           overflow-x: hidden !important;
           overflow-y: auto !important;
+
           scrollbar-width: none !important;
           -ms-overflow-style: none !important;
+
           overscroll-behavior: contain;
           -webkit-overflow-scrolling: touch;
         }
@@ -620,99 +613,45 @@ export default function AppSidebar({
           height: 0 !important;
         }
 
-        .moku-sidebar-footer {
-          flex: 0 0 auto !important;
-          position: relative;
-          z-index: 2;
-        }
-
-        .moku-sidebar-brand {
-          flex: 0 0 auto !important;
-        }
-
         /*
-          MOBILE LANDSCAPE
+          NAVIGATION LINKS
         */
 
-        @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
-          .moku-sidebar {
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            width: 190px !important;
-            height: 100vh !important;
-            height: 100dvh !important;
-            max-height: none !important;
-          }
+        .moku-sidebar-link {
+          text-decoration: none !important;
+          outline-offset: 3px;
+        }
 
-          .moku-sidebar[data-collapsed="true"] {
-            width: 64px !important;
-          }
-
-          .moku-sidebar-brand {
-            height: 54px !important;
-            padding-left: 12px;
-            padding-right: 12px;
-          }
-
-          .moku-sidebar-brand img {
-            max-height: 36px !important;
-            max-width: 145px !important;
-          }
-
-          .moku-sidebar-scroll {
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
-          }
-
-          .moku-sidebar-groups {
-            gap: 12px !important;
-          }
-
-          .moku-sidebar-group-title {
-            margin-bottom: 4px !important;
-            font-size: 9px !important;
-          }
-
-          .moku-sidebar-items {
-            gap: 2px !important;
-          }
-
-          .moku-sidebar-items a {
-            height: 34px !important;
-            border-radius: 8px;
-          }
-
-          .moku-sidebar-items a span:last-child {
-            font-size: 11px !important;
-          }
-
-          .moku-sidebar-footer {
-            padding: 8px !important;
-            gap: 5px !important;
-          }
-
-          .moku-sidebar-footer > button:first-child {
-            min-height: 42px !important;
-            padding-top: 6px !important;
-            padding-bottom: 6px !important;
-            border-radius: 10px !important;
-          }
-
-          .moku-sidebar-footer > a {
-            height: 36px !important;
-          }
-
-          .moku-sidebar-footer > button:last-child {
-            height: 28px !important;
-            margin-top: 2px !important;
-          }
+        .moku-sidebar-link:focus-visible {
+          outline: 2px solid #F28C0F;
         }
 
         /*
-          MOBILE PORTRAIT / PWA
+          FOOTER
+        */
+
+        .moku-sidebar-footer {
+          position: relative;
+          z-index: 2;
+          flex: 0 0 auto !important;
+          padding-bottom: max(18px, env(safe-area-inset-bottom));
+        }
+
+        /*
+          COLLAPSED SIDEBAR
+        */
+
+        .moku-sidebar[data-collapsed="true"] .moku-sidebar-brand {
+          height: 100px !important;
+        }
+
+        .moku-sidebar[data-collapsed="true"] .moku-sidebar-navigation {
+          padding-top: 20px;
+          padding-bottom: 20px;
+        }
+
+        /*
+          MOBILE PORTRAIT
         */
 
         @media (orientation: portrait) {
@@ -720,7 +659,19 @@ export default function AppSidebar({
             display: none !important;
           }
         }
+
+        /*
+          REDUCED MOTION
+        */
+
+        @media (prefers-reduced-motion: reduce) {
+          .moku-sidebar,
+          .moku-sidebar * {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+          }
+        }
       `}</style>
     </>
   );
-}
+                  }
