@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -132,9 +131,6 @@ function getPageInformation(pathname: string): PageInformation {
    DEVICE DETECTION
 ========================================================= */
 
-/**
- * Detect installed PWA.
- */
 function detectPWA(): boolean {
   const standalone = window.matchMedia(
     "(display-mode: standalone)"
@@ -149,31 +145,12 @@ function detectPWA(): boolean {
   return standalone || iosStandalone;
 }
 
-/**
- * Detect mobile browser/device user agent.
- *
- * Mobile Web normal:
- * - Android
- * - iPhone
- * - iPad
- * - iPod
- * - Mobile browser
- *
- * Browser Desktop Site biasanya menggunakan
- * desktop user agent sehingga tidak masuk kategori mobile.
- */
 function detectMobileUserAgent(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(
     navigator.userAgent
   );
 }
 
-/**
- * Detect physical handheld viewport.
- *
- * Tidak menggunakan orientasi layar.
- * Karena portrait dan landscape HP harus tetap mobile.
- */
 function detectHandheldDevice(): boolean {
   const shortestScreenSide = Math.min(
     window.screen.width,
@@ -186,22 +163,6 @@ function detectHandheldDevice(): boolean {
   );
 }
 
-/**
- * Determine application layout.
- *
- * MOBILE:
- * - Mobile Web portrait
- * - Mobile Web landscape
- * - PWA portrait
- * - PWA landscape
- * - Mobile Simulator portrait
- * - Mobile Simulator landscape
- *
- * DESKTOP:
- * - Desktop Site
- * - Desktop
- * - Laptop
- */
 function detectLayoutMode(): {
   mode: AppLayoutMode;
   isPWA: boolean;
@@ -346,18 +307,14 @@ export default function AppShell({
         data-sidebar-collapsed={sidebarCollapsed}
         className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground"
       >
-        {/* SIDEBAR */}
-
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
         />
 
-        {/* MAIN APPLICATION AREA */}
-
         <div className="moku-main-layout flex min-h-dvh min-w-0 flex-col">
 
-          {/* DESKTOP HEADER ONLY */}
+          {/* DESKTOP HEADER */}
 
           {layoutState.isReady && layoutState.isDesktop && (
             <AppHeader
@@ -380,7 +337,10 @@ export default function AppShell({
               }
             `}
           >
-            <div className="min-h-full w-full min-w-0">
+            <div
+              key={pathname}
+              className="moku-page-transition min-h-full w-full min-w-0"
+            >
               {children}
             </div>
           </main>
@@ -412,6 +372,31 @@ export default function AppShell({
       =================================================== */}
 
       <style jsx global>{`
+        /* PAGE TRANSITION */
+
+        @keyframes moku-page-enter {
+          from {
+            opacity: 0.72;
+            transform: translateY(4px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .moku-page-transition {
+          animation: moku-page-enter 200ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .moku-page-transition {
+            animation: none !important;
+          }
+        }
+
         /* BASE LAYOUT */
 
         .moku-app-shell {
@@ -429,9 +414,7 @@ export default function AppShell({
           box-sizing: border-box;
         }
 
-        /* ===============================================
-           DESKTOP / LAPTOP / DESKTOP SITE
-        =============================================== */
+        /* DESKTOP */
 
         .moku-app-shell[data-layout-mode="desktop"] {
           min-height: 100dvh;
@@ -483,18 +466,13 @@ export default function AppShell({
           padding: 28px 24px 28px !important;
         }
 
-        /* DESKTOP LARGE SCREEN */
-
         @media (min-width: 1440px) {
           .moku-app-shell[data-layout-mode="desktop"] #main-content {
             padding: 32px !important;
           }
         }
 
-        /* ===============================================
-           MOBILE WEB / PWA / MOBILE SIMULATOR
-           PORTRAIT AND LANDSCAPE
-        =============================================== */
+        /* MOBILE */
 
         .moku-app-shell[data-layout-mode="mobile"] {
           width: 100%;
