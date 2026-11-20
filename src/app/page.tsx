@@ -1,6 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -13,15 +15,9 @@ import {
   ChevronRight,
   Clock3,
   Download,
-  FileBarChart,
-  Layers3,
-  Monitor,
   Plus,
-  Printer,
-  UserRound,
   X,
   TrendingUp,
-  ClipboardCheck,
 } from "lucide-react";
 
 import { useAppLayout } from "@/components/layout/app-shell";
@@ -107,7 +103,7 @@ export default function DashboardPage() {
   const { isMobile, isReady } = useAppLayout();
 
   const [selectedMonth, setSelectedMonth] =
-    useState("Oktober 2026");
+    useState("November 2026");
 
   const [showMonthPicker, setShowMonthPicker] =
     useState(false);
@@ -146,31 +142,14 @@ export default function DashboardPage() {
                 aria-label="MOKU Dashboard"
                 className="flex items-center"
               >
-                <div className="flex items-center gap-0.5">
-
-                  <span className="text-[38px] font-extrabold tracking-[-3px]">
-                    M
-                  </span>
-
-                  {/* TEMPORARY MASCOT PLACEHOLDER */}
-
-                  <span className="relative flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-[#F28C0F] bg-[#BF0B2C]">
-
-                    <span className="absolute top-0.5 text-[10px] font-bold text-white">
-                      M
-                    </span>
-
-                    <span className="absolute bottom-1 h-4 w-6 rounded-full bg-[#360107]" />
-
-                    <span className="absolute bottom-[9px] h-1.5 w-3 rounded-full bg-white" />
-
-                  </span>
-
-                  <span className="text-[38px] font-extrabold tracking-[-3px]">
-                    KU
-                  </span>
-
-                </div>
+                <Image
+                  src="/images/moku/brand/moku-logo.png"
+                  alt="MOKU"
+                  width={180}
+                  height={64}
+                  priority
+                  className="h-auto w-[150px] object-contain object-left"
+                />
               </Link>
 
               {/* NOTIFICATION */}
@@ -250,7 +229,7 @@ export default function DashboardPage() {
 
             {/* GREETING */}
 
-            <div className="mt-7">
+            <div className="relative z-10 mt-7 max-w-[72%]">
 
               <p className="text-[26px] font-bold leading-tight tracking-tight">
                 Halo, Budi Santoso
@@ -264,7 +243,7 @@ export default function DashboardPage() {
 
             {/* PERIOD SELECTOR */}
 
-            <div className="relative mt-4 w-fit">
+            <div className="relative z-20 mt-4 w-fit">
 
               <button
                 type="button"
@@ -319,10 +298,18 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* COPIER ILLUSTRATION PLACEHOLDER */}
+            {/* OFFICIAL COPIER ILLUSTRATION */}
 
-            <div className="pointer-events-none absolute bottom-[-5px] right-0 hidden text-white/75 sm:block">
-              <Printer size={115} strokeWidth={1.2} />
+            <div className="pointer-events-none absolute bottom-[-8px] right-[-10px] z-0 flex h-[142px] w-[142px] items-end justify-end sm:right-0 sm:h-[170px] sm:w-[170px]">
+              <Image
+                src="/images/moku/illustrations/dashboard-printer.png"
+                alt=""
+                width={340}
+                height={340}
+                priority
+                className="h-full w-full object-contain object-bottom"
+                sizes="(max-width: 640px) 142px, 170px"
+              />
             </div>
 
           </div>
@@ -475,11 +462,11 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* GROWTH */}
+            {/* GROWTH + OFFICIAL ACTIVITY ILLUSTRATION */}
 
             <div className="relative flex min-w-0 items-center justify-between gap-1">
 
-              <div className="min-w-0">
+              <div className="min-w-0 shrink-0">
 
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#DDF9E5] px-3 py-1 text-[15px] font-bold text-[#168B3E]">
                   <TrendingUp size={17} />
@@ -494,11 +481,14 @@ export default function DashboardPage() {
 
               </div>
 
-              <div className="hidden h-[95px] w-[100px] items-center justify-center rounded-2xl bg-[#FFF2F4] sm:flex">
-                <ClipboardCheck
-                  size={65}
-                  strokeWidth={1.5}
-                  className="text-[#BF0B2C]"
+              <div className="flex h-[100px] min-w-0 flex-1 items-center justify-end">
+                <Image
+                  src="/images/moku/illustrations/dashboard-activity.png"
+                  alt=""
+                  width={220}
+                  height={220}
+                  className="h-full w-full max-w-[112px] object-contain object-right"
+                  sizes="112px"
                 />
               </div>
 
@@ -567,7 +557,23 @@ export default function DashboardPage() {
               className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[17px] bg-[#FCECEF] px-1 py-3 text-center"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#BF0B2C] text-white">
-                <Printer size={25} />
+                <span className="text-[25px]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="25"
+                    height="25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 8V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3" />
+                    <rect x="3" y="8" width="18" height="9" rx="2" />
+                    <path d="M7 17v4h10v-4M7 12h.01M17 12h.01" />
+                  </svg>
+                </span>
               </span>
 
               <span className="text-[12px] font-medium leading-tight text-[#171717]">
@@ -631,7 +637,7 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-1 text-[12px] leading-snug text-[#51474E]">
-              4 mesin belum dikunjungi pada Oktober 2025 dan memerlukan tindak lanjut.
+              4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
             </p>
 
           </div>
