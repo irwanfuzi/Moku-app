@@ -13,7 +13,6 @@ export default function ServiceWorkerRegister() {
     let registration: ServiceWorkerRegistration | null = null;
     let refreshing = false;
 
-    // Periksa apakah tab sudah dikontrol Service Worker sebelumnya
     const hadController = Boolean(
       navigator.serviceWorker.controller
     );
@@ -46,7 +45,9 @@ export default function ServiceWorkerRegister() {
       try {
         await registration.update();
 
-        console.info("MOKU: Service Worker update checked.");
+        console.info(
+          "MOKU: Service Worker update checked."
+        );
       } catch (error) {
         console.error(
           "MOKU: Service Worker update check failed.",
@@ -55,6 +56,7 @@ export default function ServiceWorkerRegister() {
       }
     };
 
+    // Registrasi Service Worker
     const registerServiceWorker = async () => {
       try {
         registration = await navigator.serviceWorker.register(
@@ -73,13 +75,12 @@ export default function ServiceWorkerRegister() {
         await updateServiceWorker();
       } catch (error) {
         console.error(
-          "MOKU Service Worker registration failed.",
+          "MOKU Service Worker registration failed:",
           error
         );
       }
     };
 
-    // Registrasi setelah halaman selesai dimuat
     if (document.readyState === "complete") {
       void registerServiceWorker();
     } else {
@@ -90,13 +91,14 @@ export default function ServiceWorkerRegister() {
       );
     }
 
-    // Periksa update saat pengguna kembali membuka aplikasi
+    // Periksa update saat aplikasi kembali aktif
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         void updateServiceWorker();
       }
     };
 
+    // Periksa update saat koneksi internet kembali
     const handleOnline = () => {
       void updateServiceWorker();
     };
@@ -108,7 +110,7 @@ export default function ServiceWorkerRegister() {
 
     window.addEventListener("online", handleOnline);
 
-    // Periksa update secara berkala selama tab aktif
+    // Pemeriksaan berkala setiap 60 detik
     const updateInterval = window.setInterval(() => {
       void updateServiceWorker();
     }, 60 * 1000);
@@ -124,7 +126,10 @@ export default function ServiceWorkerRegister() {
         handleVisibilityChange
       );
 
-      window.removeEventListener("online", handleOnline);
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
 
       navigator.serviceWorker.removeEventListener(
         "controllerchange",
