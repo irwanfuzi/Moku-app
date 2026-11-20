@@ -50,12 +50,12 @@ export default function BottomNavigation() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-[#EEEEEE] bg-white"
+      className="fixed inset-x-0 bottom-0 z-50 w-full border-t border-[#EEEEEE] bg-white"
       style={{
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto grid h-[76px] w-full max-w-[600px] grid-cols-5">
+      <div className="mx-auto grid h-[72px] w-full max-w-[600px] grid-cols-5">
         {navigationItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -70,17 +70,18 @@ export default function BottomNavigation() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className="flex min-w-0 flex-col items-center justify-center gap-[5px] px-1"
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-[3px] overflow-hidden px-0"
             >
               <Icon
-                size={30}
+                size={26}
                 weight={isActive ? "fill" : "regular"}
                 color={isActive ? "#BF0B2C" : "#85858D"}
                 aria-hidden="true"
+                className="shrink-0"
               />
 
               <span
-                className={`whitespace-nowrap text-[12px] leading-[16px] ${
+                className={`w-full truncate text-center text-[11px] leading-[15px] ${
                   isActive
                     ? "font-semibold text-[#BF0B2C]"
                     : "font-normal text-[#85858D]"
