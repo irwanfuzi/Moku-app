@@ -6,11 +6,9 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
-  useRef,
   useState,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import AppSidebar from "@/components/layout/app-sidebar";
 import AppHeader from "@/components/layout/app-header";
@@ -37,12 +35,6 @@ interface AppLayoutContextValue {
   isDesktop: boolean;
   isPWA: boolean;
   isReady: boolean;
-}
-
-interface PendingNavigation {
-  pathname: string;
-  resolve: () => void;
-  timeout: ReturnType<typeof setTimeout>;
 }
 
 /* =========================================================
@@ -193,7 +185,6 @@ export default function AppShell({
   children,
 }: Readonly<AppShellProps>) {
   const pathname = usePathname();
-  const router = useRouter();
 
   const [sidebarCollapsed, setSidebarCollapsed] =
     useState(false);
@@ -206,11 +197,6 @@ export default function AppShell({
       isPWA: false,
       isReady: false,
     });
-
-  const pendingNavigationRef =
-    useRef<PendingNavigation | null>(null);
-
-  const navigationInProgressRef = useRef(false);
 
   const currentPage = getPageInformation(pathname);
 
@@ -256,7 +242,11 @@ export default function AppShell({
     };
 
     window.addEventListener("resize", handleViewportChange);
-    window.addEventListener("orientationchange", handleViewportChange);
+
+    window.addEventListener(
+      "orientationchange",
+      handleViewportChange
+    );
 
     window.visualViewport?.addEventListener(
       "resize",
@@ -273,8 +263,15 @@ export default function AppShell({
     );
 
     return () => {
-      window.removeEventListener("resize", handleViewportChange);
-      window.removeEventListener("orientationchange", handleViewportChange);
+      window.removeEventListener(
+        "resize",
+        handleViewportChange
+      );
+
+      window.removeEventListener(
+        "orientationchange",
+        handleViewportChange
+      );
 
       window.visualViewport?.removeEventListener(
         "resize",
@@ -287,193 +284,6 @@ export default function AppShell({
       );
     };
   }, [updateLayout]);
-
-  /* =======================================================
-     COMPLETE PENDING NAVIGATION
-  ======================================================= */
-
-  useLayoutEffect(() => {
-    const pending = pendingNavigationRef.current;
-
-    if (!pending || pending.pathname !== pathname) {
-      return;
-    }
-
-    clearTimeout(pending.timeout);
-
-    pendingNavigationRef.current = null;
-    navigationInProgressRef.current = false;
-
-    pending.resolve();
-  }, [pathname]);
-
-  /* =======================================================
-     NATIVE VIEW TRANSITION NAVIGATION
-  ======================================================= */
-
-  useEffect(() => {
-    const handleNavigation = (event: MouseEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-
-      const target = event.target;
-
-      if (!(target instanceof Element)) {
-        return;
-      }
-
-      const anchor = target.closest("a[href]") as
-        | HTMLAnchorElement
-        | null;
-
-      if (!anchor) return;
-
-      if (
-        anchor.target ||
-        anchor.hasAttribute("download") ||
-        anchor.getAttribute("rel") === "external"
-      ) {
-        return;
-      }
-
-      let destination: URL;
-
-      try {
-        destination = new URL(
-          anchor.href,
-          window.location.href
-        );
-      } catch {
-        return;
-      }
-
-      if (destination.origin !== window.location.origin) {
-        return;
-      }
-
-      if (
-        destination.pathname === pathname &&
-        destination.search === window.location.search &&
-        destination.hash === window.location.hash
-      ) {
-        return;
-      }
-
-      if (navigationInProgressRef.current) {
-        event.preventDefault();
-        return;
-      }
-
-      if (
-        typeof document.startViewTransition !== "function" ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-
-      navigationInProgressRef.current = true;
-
-      const destinationHref =
-        destination.pathname +
-        destination.search +
-        destination.hash;
-
-      try {
-        document.startViewTransition(async () => {
-          let resolveNavigation!: () => void;
-
-          const navigationPromise = new Promise<void>((resolve) => {
-            resolveNavigation = resolve;
-          });
-
-          const timeout = setTimeout(() => {
-            const pending = pendingNavigationRef.current;
-
-            if (pending?.resolve === resolveNavigation) {
-              pendingNavigationRef.current = null;
-              navigationInProgressRef.current = false;
-            }
-
-            resolveNavigation();
-          }, 3000);
-
-          pendingNavigationRef.current = {
-            pathname: destination.pathname,
-            resolve: resolveNavigation,
-            timeout,
-          };
-
-          try {
-            router.push(destinationHref);
-          } catch (error) {
-            clearTimeout(timeout);
-            pendingNavigationRef.current = null;
-            navigationInProgressRef.current = false;
-
-            resolveNavigation();
-
-            console.error(
-              "MOKU navigation failed:",
-              error
-            );
-          }
-
-          await navigationPromise;
-        });
-      } catch (error) {
-        navigationInProgressRef.current = false;
-
-        const pending = pendingNavigationRef.current;
-
-        if (pending) {
-          clearTimeout(pending.timeout);
-          pendingNavigationRef.current = null;
-          pending.resolve();
-        }
-
-        console.error(
-          "MOKU View Transition failed:",
-          error
-        );
-
-        router.push(destinationHref);
-      }
-    };
-
-    document.addEventListener(
-      "click",
-      handleNavigation,
-      true
-    );
-
-    return () => {
-      document.removeEventListener(
-        "click",
-        handleNavigation,
-        true
-      );
-
-      const pending = pendingNavigationRef.current;
-
-      if (pending) {
-        clearTimeout(pending.timeout);
-        pending.resolve();
-        pendingNavigationRef.current = null;
-      }
-
-      navigationInProgressRef.current = false;
-    };
-  }, [pathname, router]);
 
   /* =======================================================
      RENDER
