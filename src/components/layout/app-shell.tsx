@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -131,6 +132,9 @@ function getPageInformation(pathname: string): PageInformation {
    DEVICE DETECTION
 ========================================================= */
 
+/**
+ * Detect installed PWA.
+ */
 function detectPWA(): boolean {
   const standalone = window.matchMedia(
     "(display-mode: standalone)"
@@ -145,67 +149,75 @@ function detectPWA(): boolean {
   return standalone || iosStandalone;
 }
 
-function detectPhysicalLandscape(): boolean {
-  const orientationType = window.screen.orientation?.type;
-
-  if (orientationType) {
-    return orientationType.startsWith("landscape");
-  }
-
-  return window.innerWidth > window.innerHeight;
+/**
+ * Detect mobile browser/device user agent.
+ *
+ * Mobile Web normal:
+ * - Android
+ * - iPhone
+ * - iPad
+ * - iPod
+ * - Mobile browser
+ *
+ * Browser Desktop Site biasanya menggunakan
+ * desktop user agent sehingga tidak masuk kategori mobile.
+ */
+function detectMobileUserAgent(): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(
+    navigator.userAgent
+  );
 }
 
+/**
+ * Detect physical handheld viewport.
+ *
+ * Tidak menggunakan orientasi layar.
+ * Karena portrait dan landscape HP harus tetap mobile.
+ */
 function detectHandheldDevice(): boolean {
   const shortestScreenSide = Math.min(
     window.screen.width,
     window.screen.height
   );
 
-  const hasTouch =
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches;
-
-  return hasTouch && shortestScreenSide <= 600;
+  return (
+    detectMobileUserAgent() &&
+    shortestScreenSide <= 600
+  );
 }
 
+/**
+ * Determine application layout.
+ *
+ * MOBILE:
+ * - Mobile Web portrait
+ * - Mobile Web landscape
+ * - PWA portrait
+ * - PWA landscape
+ * - Mobile Simulator portrait
+ * - Mobile Simulator landscape
+ *
+ * DESKTOP:
+ * - Desktop Site
+ * - Desktop
+ * - Laptop
+ */
 function detectLayoutMode(): {
   mode: AppLayoutMode;
   isPWA: boolean;
 } {
   const isPWA = detectPWA();
   const isHandheld = detectHandheldDevice();
-  const isLandscape = detectPhysicalLandscape();
 
-  /*
-    DESKTOP / LAPTOP
-  */
-
-  if (!isHandheld) {
+  if (isHandheld) {
     return {
-      mode: "desktop",
+      mode: "mobile",
       isPWA,
     };
   }
-
-  /*
-    HP LANDSCAPE
-    Menggunakan desktop layout.
-  */
-
-  if (isLandscape) {
-    return {
-      mode: "desktop",
-      isPWA,
-    };
-  }
-
-  /*
-    HP PORTRAIT
-    Menggunakan mobile layout.
-  */
 
   return {
-    mode: "mobile",
+    mode: "desktop",
     isPWA,
   };
 }
@@ -219,7 +231,8 @@ export default function AppShell({
 }: Readonly<AppShellProps>) {
   const pathname = usePathname();
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] =
+    useState(false);
 
   const [layoutState, setLayoutState] =
     useState<AppLayoutContextValue>({
@@ -269,48 +282,53 @@ export default function AppShell({
   useEffect(() => {
     updateLayout();
 
-    let resizeTimer: number | undefined;
-
-    const handleResize = () => {
-      if (resizeTimer !== undefined) {
-        window.clearTimeout(resizeTimer);
-      }
-
-      resizeTimer = window.setTimeout(() => {
-        updateLayout();
-      }, 100);
+    const handleViewportChange = () => {
+      updateLayout();
     };
 
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
+    window.addEventListener(
+      "resize",
+      handleViewportChange
+    );
+
+    window.addEventListener(
+      "orientationchange",
+      handleViewportChange
+    );
+
+    window.visualViewport?.addEventListener(
+      "resize",
+      handleViewportChange
+    );
 
     const displayMode = window.matchMedia(
       "(display-mode: standalone)"
     );
 
-    displayMode.addEventListener("change", updateLayout);
-
-    const screenOrientation = window.screen.orientation;
-
-    screenOrientation?.addEventListener("change", handleResize);
+    displayMode.addEventListener(
+      "change",
+      handleViewportChange
+    );
 
     return () => {
-      if (resizeTimer !== undefined) {
-        window.clearTimeout(resizeTimer);
-      }
-
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener(
+        "resize",
+        handleViewportChange
+      );
 
       window.removeEventListener(
         "orientationchange",
-        handleResize
+        handleViewportChange
       );
 
-      displayMode.removeEventListener("change", updateLayout);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        handleViewportChange
+      );
 
-      screenOrientation?.removeEventListener(
+      displayMode.removeEventListener(
         "change",
-        handleResize
+        handleViewportChange
       );
     };
   }, [updateLayout]);
@@ -394,9 +412,7 @@ export default function AppShell({
       =================================================== */}
 
       <style jsx global>{`
-        /*
-          BASE LAYOUT
-        */
+        /* BASE LAYOUT */
 
         .moku-app-shell {
           position: relative;
@@ -413,9 +429,9 @@ export default function AppShell({
           box-sizing: border-box;
         }
 
-        /*
-          DESKTOP + HP LANDSCAPE
-        */
+        /* ===============================================
+           DESKTOP / LAPTOP / DESKTOP SITE
+        =============================================== */
 
         .moku-app-shell[data-layout-mode="desktop"] {
           min-height: 100dvh;
@@ -467,9 +483,7 @@ export default function AppShell({
           padding: 28px 24px 28px !important;
         }
 
-        /*
-          DESKTOP LARGE SCREEN
-        */
+        /* DESKTOP LARGE SCREEN */
 
         @media (min-width: 1440px) {
           .moku-app-shell[data-layout-mode="desktop"] #main-content {
@@ -477,9 +491,16 @@ export default function AppShell({
           }
         }
 
-        /*
-          MOBILE PORTRAIT
-        */
+        /* ===============================================
+           MOBILE WEB / PWA / MOBILE SIMULATOR
+           PORTRAIT AND LANDSCAPE
+        =============================================== */
+
+        .moku-app-shell[data-layout-mode="mobile"] {
+          width: 100%;
+          min-height: 100dvh;
+          overflow-x: clip;
+        }
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
           display: none !important;
@@ -499,6 +520,34 @@ export default function AppShell({
         .moku-app-shell[data-layout-mode="mobile"]
           .moku-mobile-navigation {
           display: block;
+        }
+
+        .moku-app-shell[data-layout-mode="mobile"] #main-content {
+          width: 100%;
+          min-width: 0;
+          padding: 0 !important;
+          overflow-x: clip;
+        }
+
+        /* MOBILE LANDSCAPE */
+
+        @media (orientation: landscape) {
+          .moku-app-shell[data-layout-mode="mobile"] {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .moku-app-shell[data-layout-mode="mobile"] .moku-main-layout {
+            width: 100% !important;
+            margin-left: 0 !important;
+            flex-basis: 100% !important;
+          }
+
+          .moku-app-shell[data-layout-mode="mobile"] #main-content {
+            width: 100%;
+            min-width: 0;
+            padding: 0 !important;
+          }
         }
       `}</style>
     </AppLayoutContext.Provider>
