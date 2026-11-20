@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Bell,
   CalendarDays,
+  ChartNoAxesColumn,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -13,16 +14,20 @@ import {
   Clock3,
   Download,
   FileBarChart,
+  Layers3,
   Monitor,
   Plus,
   Printer,
+  UserRound,
   X,
+  TrendingUp,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { useAppLayout } from "@/components/layout/app-shell";
 
 /* =========================================================
-   DASHBOARD PREVIEW DATA
+   DUMMY DATA
 ========================================================= */
 
 const monitoringData = [
@@ -85,10 +90,10 @@ const months = [
 function SectionTitle({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <h2 className="text-[17px] font-bold tracking-tight text-[#29232A]">
+    <h2 className="text-[19px] font-bold tracking-tight text-[#171717]">
       {children}
     </h2>
   );
@@ -116,24 +121,23 @@ export default function DashboardPage() {
     <main className="min-h-dvh w-full overflow-x-hidden bg-[#F7F7F7] pb-5">
 
       {/* ===================================================
-          MOBILE HEADER
-          MOBILE WEB & PWA ONLY
+          MOBILE / PWA HEADER
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative overflow-visible bg-[#730217] px-5 pb-7 pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate overflow-visible bg-[#730217] px-5 pb-8 pt-[max(22px,env(safe-area-inset-top))] text-white">
 
-          {/* BACKGROUND DECORATION */}
+          {/* HEADER DECORATION */}
 
-          <div className="pointer-events-none absolute -right-16 top-28 h-48 w-48 rounded-full bg-[#BF0B2C]/40" />
+          <div className="pointer-events-none absolute -right-16 top-24 h-56 w-56 rounded-full bg-[#BF0B2C]/45" />
 
-          <div className="pointer-events-none absolute -left-20 top-52 h-48 w-72 rounded-full bg-[#BF0B2C]/30" />
+          <div className="pointer-events-none absolute -left-24 top-48 h-52 w-64 rounded-full bg-[#BF0B2C]/30" />
 
-          <div className="pointer-events-none absolute -right-10 bottom-0 h-32 w-64 rounded-full bg-[#BF0B2C]/30" />
+          <div className="pointer-events-none absolute -right-12 bottom-0 h-36 w-56 rounded-full bg-[#BF0B2C]/35" />
 
           <div className="relative z-10">
 
-            {/* BRAND HEADER */}
+            {/* BRAND */}
 
             <div className="flex items-center justify-between">
 
@@ -142,23 +146,27 @@ export default function DashboardPage() {
                 aria-label="MOKU Dashboard"
                 className="flex items-center"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
 
-                  <span className="text-[35px] font-extrabold tracking-[-2px] text-white">
+                  <span className="text-[38px] font-extrabold tracking-[-3px]">
                     M
                   </span>
 
-                  <span className="relative flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-[#F28C0F] bg-[#BF0B2C]">
-                    <span className="text-[17px] font-extrabold text-white">
+                  {/* TEMPORARY MASCOT PLACEHOLDER */}
+
+                  <span className="relative flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-[#F28C0F] bg-[#BF0B2C]">
+
+                    <span className="absolute top-0.5 text-[10px] font-bold text-white">
                       M
                     </span>
 
-                    <span className="absolute bottom-1 h-3 w-5 rounded-full bg-[#360107]" />
+                    <span className="absolute bottom-1 h-4 w-6 rounded-full bg-[#360107]" />
 
-                    <span className="absolute bottom-[9px] h-1 w-2 rounded-full bg-white" />
+                    <span className="absolute bottom-[9px] h-1.5 w-3 rounded-full bg-white" />
+
                   </span>
 
-                  <span className="text-[35px] font-extrabold tracking-[-2px] text-white">
+                  <span className="text-[38px] font-extrabold tracking-[-3px]">
                     KU
                   </span>
 
@@ -178,7 +186,7 @@ export default function DashboardPage() {
                   aria-expanded={showNotifications}
                   className="relative flex h-11 w-11 items-center justify-center rounded-full text-white"
                 >
-                  <Bell size={25} strokeWidth={1.8} />
+                  <Bell size={26} strokeWidth={1.8} />
 
                   <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-[#730217] bg-[#F28C0F]" />
                 </button>
@@ -207,7 +215,7 @@ export default function DashboardPage() {
                     <div className="flex gap-3 border-t border-[#F0E9ED] py-3">
 
                       <AlertTriangle
-                        size={19}
+                        size={20}
                         className="shrink-0 text-[#F28C0F]"
                       />
 
@@ -244,11 +252,11 @@ export default function DashboardPage() {
 
             <div className="mt-7">
 
-              <p className="text-[25px] font-bold leading-tight tracking-tight">
-                Halo, Pengguna
+              <p className="text-[26px] font-bold leading-tight tracking-tight">
+                Halo, Budi Santoso
               </p>
 
-              <p className="mt-2 text-[14px] leading-relaxed text-white/85">
+              <p className="mt-1 text-[14px] leading-relaxed text-white/90">
                 Berikut ringkasan operasional kunjungan unit.
               </p>
 
@@ -264,24 +272,21 @@ export default function DashboardPage() {
                   setShowMonthPicker(!showMonthPicker)
                 }
                 aria-expanded={showMonthPicker}
-                className="flex h-12 min-w-[220px] items-center gap-3 rounded-full bg-white px-4 text-[#171717]"
+                className="flex h-[50px] min-w-[235px] items-center gap-3 rounded-full bg-white px-4 text-[#171717]"
               >
 
-                <CalendarDays
-                  size={21}
-                  strokeWidth={2.2}
-                />
+                <CalendarDays size={23} />
 
                 <span className="flex-1 text-left text-[15px] font-bold">
                   {selectedMonth}
                 </span>
 
-                <ChevronDown size={19} />
+                <ChevronDown size={20} />
 
               </button>
 
               {showMonthPicker && (
-                <div className="absolute left-0 top-[54px] z-50 w-[240px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-2 text-[#29232A] shadow-lg">
+                <div className="absolute left-0 top-[56px] z-50 w-[245px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-2 text-[#29232A] shadow-lg">
 
                   <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
                     Pilih Periode
@@ -301,13 +306,11 @@ export default function DashboardPage() {
                           : "text-[#51474E]"
                       }`}
                     >
-
                       {month}
 
                       {selectedMonth === month && (
                         <Check size={17} />
                       )}
-
                     </button>
                   ))}
 
@@ -316,16 +319,10 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* HEADER ILLUSTRATION */}
+            {/* COPIER ILLUSTRATION PLACEHOLDER */}
 
-            <div className="pointer-events-none absolute bottom-[-2px] right-0 hidden opacity-90 sm:block">
-
-              <Printer
-                size={112}
-                strokeWidth={1.2}
-                className="text-white/75"
-              />
-
+            <div className="pointer-events-none absolute bottom-[-5px] right-0 hidden text-white/75 sm:block">
+              <Printer size={115} strokeWidth={1.2} />
             </div>
 
           </div>
@@ -333,12 +330,24 @@ export default function DashboardPage() {
       )}
 
       {/* ===================================================
+          PINK HEADER TRANSITION
+      =================================================== */}
+
+      {showMobileHeader && (
+        <div className="pointer-events-none relative -mt-1 h-7 overflow-hidden">
+
+          <div className="absolute -left-10 -top-10 h-24 w-[120%] rounded-[50%] bg-[#E9A0AC]" />
+
+        </div>
+      )}
+
+      {/* ===================================================
           DASHBOARD CONTENT
       =================================================== */}
 
       <div
-        className={`relative z-10 space-y-3 px-4 ${
-          showMobileHeader ? "-mt-1" : "pt-4"
+        className={`relative z-10 mx-auto w-full max-w-[760px] space-y-3 px-4 ${
+          showMobileHeader ? "-mt-5" : "pt-4"
         }`}
       >
 
@@ -346,13 +355,13 @@ export default function DashboardPage() {
             STATUS MONITORING MESIN
         ================================================= */}
 
-        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <section className="rounded-[23px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
           <SectionTitle>
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-3 grid grid-cols-[0.85fr_1.15fr] items-center gap-3 rounded-[17px] border border-[#F0F0F0] px-3 py-4">
+          <div className="mt-3 grid grid-cols-[0.85fr_1.15fr] items-center gap-3 rounded-[19px] border border-[#F0F0F0] px-3 py-4">
 
             {/* DONUT */}
 
@@ -366,13 +375,13 @@ export default function DashboardPage() {
                 }}
               >
 
-                <div className="flex h-[104px] w-[104px] flex-col items-center justify-center rounded-full bg-white">
+                <div className="flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full bg-white">
 
-                  <span className="text-[37px] font-extrabold leading-none text-[#111111]">
+                  <span className="text-[39px] font-extrabold leading-none text-[#111111]">
                     48
                   </span>
 
-                  <span className="mt-1 text-[14px] text-[#29232A]">
+                  <span className="mt-1 text-[15px] text-[#29232A]">
                     Mesin
                   </span>
 
@@ -436,63 +445,90 @@ export default function DashboardPage() {
             KUNJUNGAN BULAN INI
         ================================================= */}
 
-        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <section className="rounded-[23px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2">
 
             <SectionTitle>
               Kunjungan Bulan Ini
             </SectionTitle>
 
-            <Link
-              href="/visit-history"
-              className="flex items-center gap-1 text-xs font-semibold text-[#BF0B2C]"
-            >
-              Lihat Detail
-              <ChevronRight size={15} />
-            </Link>
+            <span className="whitespace-nowrap text-[12px] font-medium text-[#29232A]">
+              Target: 40 Kunjungan
+            </span>
 
           </div>
 
-          <div className="mt-4 rounded-[17px] bg-[#FFF7F8] p-4">
+          <div className="mt-4 grid grid-cols-[0.9fr_1.1fr] items-center gap-3">
 
-            <div className="flex items-end justify-between gap-3">
+            {/* TOTAL */}
 
-              <div>
-                <p className="text-[12px] font-medium text-[#817780]">
-                  Total Kunjungan
+            <div className="border-r border-[#EEEEEE] pr-3">
+
+              <p className="text-[48px] font-extrabold leading-none tracking-tight text-[#111111]">
+                32
+              </p>
+
+              <p className="mt-1 text-[15px] text-[#29232A]">
+                Total Kunjungan
+              </p>
+
+            </div>
+
+            {/* GROWTH */}
+
+            <div className="relative flex min-w-0 items-center justify-between gap-1">
+
+              <div className="min-w-0">
+
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#DDF9E5] px-3 py-1 text-[15px] font-bold text-[#168B3E]">
+                  <TrendingUp size={17} />
+                  +14%
+                </span>
+
+                <p className="mt-2 text-[12px] leading-snug text-[#29232A]">
+                  Dibanding bulan lalu
+                  <br />
+                  (28 kunjungan)
                 </p>
 
-                <p className="mt-1 text-[32px] font-extrabold leading-none text-[#29232A]">
-                  32
-                  <span className="ml-1 text-sm font-medium text-[#817780]">
-                    / 40
-                  </span>
-                </p>
               </div>
 
-              <div className="text-right">
-                <p className="text-[11px] text-[#817780]">
-                  Pencapaian
-                </p>
-
-                <p className="mt-1 text-[22px] font-extrabold text-[#BF0B2C]">
-                  80%
-                </p>
+              <div className="hidden h-[95px] w-[100px] items-center justify-center rounded-2xl bg-[#FFF2F4] sm:flex">
+                <ClipboardCheck
+                  size={65}
+                  strokeWidth={1.5}
+                  className="text-[#BF0B2C]"
+                />
               </div>
 
             </div>
 
-            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#F0DDE1]">
+          </div>
+
+          {/* PROGRESS */}
+
+          <div className="mt-5">
+
+            <div className="mb-2 flex items-center justify-between">
+
+              <p className="text-[14px] font-bold text-[#29232A]">
+                Pencapaian Target
+              </p>
+
+              <p className="text-[14px] font-extrabold text-[#111111]">
+                80%
+              </p>
+
+            </div>
+
+            <div className="h-[11px] overflow-hidden rounded-full bg-[#E8E8E8]">
+
               <div
                 className="h-full rounded-full bg-[#BF0B2C]"
                 style={{ width: "80%" }}
               />
-            </div>
 
-            <div className="mt-3 flex items-center justify-between text-[11px] text-[#817780]">
-              <span>32 kunjungan selesai</span>
-              <span>Target 40 kunjungan</span>
             </div>
 
           </div>
@@ -503,67 +539,71 @@ export default function DashboardPage() {
             AKSI CEPAT
         ================================================= */}
 
-        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <section className="rounded-[23px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
-          <div className="flex items-center justify-between">
-
-            <SectionTitle>
-              Aksi Cepat
-            </SectionTitle>
-
-          </div>
+          <SectionTitle>
+            Aksi Cepat
+          </SectionTitle>
 
           <div className="mt-4 grid grid-cols-4 gap-2">
 
             <Link
               href="/visits"
-              className="flex min-w-0 flex-col items-center gap-2 text-center"
+              className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[17px] bg-[#FCECEF] px-1 py-3 text-center"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FCECEF] text-[#BF0B2C]">
-                <Plus size={23} />
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#BF0B2C] text-white">
+                <Plus size={29} />
               </span>
 
-              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
-                Buat Kunjungan
+              <span className="text-[12px] font-medium leading-tight text-[#171717]">
+                Buat
+                <br />
+                Kunjungan
               </span>
             </Link>
 
             <Link
               href="/equipment"
-              className="flex min-w-0 flex-col items-center gap-2 text-center"
+              className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[17px] bg-[#FCECEF] px-1 py-3 text-center"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF3E7] text-[#EB5513]">
-                <Monitor size={23} />
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#BF0B2C] text-white">
+                <Printer size={25} />
               </span>
 
-              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
-                Tambah Mesin
+              <span className="text-[12px] font-medium leading-tight text-[#171717]">
+                Tambah
+                <br />
+                Mesin
               </span>
             </Link>
 
             <Link
               href="/reports"
-              className="flex min-w-0 flex-col items-center gap-2 text-center"
+              className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[17px] bg-[#FCECEF] px-1 py-3 text-center"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0F2F5] text-[#51474E]">
-                <FileBarChart size={23} />
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#BF0B2C] text-white">
+                <ChartNoAxesColumn size={25} />
               </span>
 
-              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
-                Lihat Laporan
+              <span className="text-[12px] font-medium leading-tight text-[#171717]">
+                Lihat
+                <br />
+                Laporan
               </span>
             </Link>
 
             <Link
               href="/reports/export"
-              className="flex min-w-0 flex-col items-center gap-2 text-center"
+              className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[17px] bg-[#FCECEF] px-1 py-3 text-center"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF5E5] text-[#F28C0F]">
-                <Download size={23} />
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#BF0B2C] text-white">
+                <Download size={25} />
               </span>
 
-              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
-                Ekspor PDF
+              <span className="text-[12px] font-medium leading-tight text-[#171717]">
+                Ekspor
+                <br />
+                PDF
               </span>
             </Link>
 
@@ -575,47 +615,39 @@ export default function DashboardPage() {
             MESIN PERLU PERHATIAN
         ================================================= */}
 
-        <section className="overflow-hidden rounded-[22px] border border-[#F5DCC3] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <Link
+          href="/monitoring"
+          className="flex items-center gap-3 rounded-[21px] border border-[#F7E4DE] bg-[#FFF2EE] p-4"
+        >
 
-          <div className="flex items-center gap-3 bg-[#FFF7EF] p-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
+            <AlertTriangle size={34} strokeWidth={1.8} />
+          </div>
 
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F28C0F]/15 text-[#EB5513]">
-              <AlertTriangle size={23} />
-            </div>
+          <div className="min-w-0 flex-1">
 
-            <div className="min-w-0 flex-1">
+            <p className="text-[16px] font-extrabold text-[#171717]">
+              Mesin Perlu Perhatian
+            </p>
 
-              <p className="text-[14px] font-bold text-[#29232A]">
-                Mesin Perlu Perhatian
-              </p>
-
-              <p className="mt-1 text-[11px] text-[#817780]">
-                Terdapat 4 mesin yang memerlukan tindak lanjut.
-              </p>
-
-            </div>
-
-            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#F28C0F] px-2 text-sm font-bold text-white">
-              4
-            </span>
+            <p className="mt-1 text-[12px] leading-snug text-[#51474E]">
+              4 mesin belum dikunjungi pada Oktober 2025 dan memerlukan tindak lanjut.
+            </p>
 
           </div>
 
-          <Link
-            href="/monitoring"
-            className="flex items-center justify-between px-4 py-3 text-xs font-semibold text-[#BF0B2C]"
-          >
-            Lihat Mesin Bermasalah
-            <ChevronRight size={17} />
-          </Link>
+          <ChevronRight
+            size={27}
+            className="shrink-0 text-[#BF0B2C]"
+          />
 
-        </section>
+        </Link>
 
         {/* =================================================
             AKTIVITAS TERBARU
         ================================================= */}
 
-        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <section className="rounded-[23px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
           <div className="flex items-center justify-between gap-2">
 
@@ -625,49 +657,51 @@ export default function DashboardPage() {
 
             <Link
               href="/visit-history"
-              className="flex items-center gap-1 text-xs font-semibold text-[#BF0B2C]"
+              className="flex items-center gap-1 whitespace-nowrap text-[13px] font-bold text-[#BF0B2C]"
             >
               Lihat Semua
-              <ChevronRight size={15} />
+              <ChevronRight size={17} />
             </Link>
 
           </div>
 
-          <div className="mt-3 divide-y divide-[#F0F0F0]">
+          <div className="mt-3 divide-y divide-[#EEEEEE]">
 
             {recentActivities.map((activity, index) => (
               <div
                 key={`${activity.machine}-${index}`}
-                className="flex items-start gap-3 py-3"
+                className="flex items-center gap-3 py-3"
               >
 
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
                     activity.status === "success"
-                      ? "bg-[#EAF7EF] text-[#249653]"
-                      : "bg-[#FFF3E7] text-[#EB5513]"
+                      ? "bg-[#DDF8E7] text-[#249653]"
+                      : "bg-[#FCE7E8] text-[#D83B45]"
                   }`}
                 >
+
                   {activity.status === "success" ? (
-                    <CheckCircle2 size={20} />
+                    <CheckCircle2 size={27} strokeWidth={2} />
                   ) : (
-                    <Clock3 size={20} />
+                    <Clock3 size={27} strokeWidth={2} />
                   )}
+
                 </div>
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="text-[13px] font-bold text-[#29232A]">
+                  <p className="text-[14px] font-bold text-[#171717]">
                     {activity.title}
                   </p>
 
-                  <p className="mt-1 text-[11px] text-[#817780]">
+                  <p className="mt-1 truncate text-[12px] text-[#817780]">
                     {activity.machine} · {activity.customer}
                   </p>
 
                 </div>
 
-                <span className="whitespace-nowrap pt-1 text-[10px] text-[#817780]">
+                <span className="whitespace-nowrap text-[11px] text-[#817780]">
                   {activity.time}
                 </span>
 
@@ -678,11 +712,9 @@ export default function DashboardPage() {
 
         </section>
 
-        {/* =================================================
-            FOOTER DASHBOARD
-        ================================================= */}
+        {/* FOOTER */}
 
-        <div className="px-1 pb-3 pt-1 text-center">
+        <div className="pb-3 pt-1 text-center">
 
           <p className="text-[10px] text-[#A39AA0]">
             MOKU — Monitoring Operasional Kunjungan Unit
