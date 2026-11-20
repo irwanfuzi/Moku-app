@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,11 +14,31 @@ import {
 import { useAppLayout } from "@/components/layout/app-shell";
 
 const navigationItems = [
-  { label: "Dashboard", href: "/", icon: House },
-  { label: "Monitoring", href: "/monitoring", icon: Monitor },
-  { label: "Data Mesin", href: "/equipment", icon: Stack },
-  { label: "Riwayat", href: "/visit-history", icon: CalendarDots },
-  { label: "Profil", href: "/profile", icon: User },
+  {
+    label: "Dashboard",
+    href: "/",
+    icon: House,
+  },
+  {
+    label: "Monitoring",
+    href: "/monitoring",
+    icon: Monitor,
+  },
+  {
+    label: "Data Mesin",
+    href: "/equipment",
+    icon: Stack,
+  },
+  {
+    label: "Riwayat",
+    href: "/visit-history",
+    icon: CalendarDots,
+  },
+  {
+    label: "Profil",
+    href: "/profile",
+    icon: User,
+  },
 ];
 
 export default function BottomNavigation() {
@@ -34,7 +55,7 @@ export default function BottomNavigation() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="grid h-[64px] w-full grid-cols-5">
+      <div className="mx-auto grid h-[72px] w-full max-w-[600px] grid-cols-5">
         {navigationItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -49,19 +70,18 @@ export default function BottomNavigation() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className="flex h-full w-full min-w-0 flex-col items-center justify-center gap-[2px] px-0"
+              className="flex h-full min-w-0 flex-col items-center justify-center gap-[3px] overflow-hidden px-0"
             >
-              <span className="flex h-[24px] w-[24px] shrink-0 items-center justify-center">
-                <Icon
-                  size={24}
-                  weight={isActive ? "fill" : "regular"}
-                  color={isActive ? "#BF0B2C" : "#85858D"}
-                  aria-hidden="true"
-                />
-              </span>
+              <Icon
+                size={26}
+                weight={isActive ? "fill" : "regular"}
+                color={isActive ? "#BF0B2C" : "#85858D"}
+                aria-hidden="true"
+                className="shrink-0"
+              />
 
               <span
-                className={`w-full truncate text-center text-[11px] leading-[14px] ${
+                className={`w-full truncate text-center text-[11px] leading-[15px] ${
                   isActive
                     ? "font-semibold text-[#BF0B2C]"
                     : "font-normal text-[#85858D]"
