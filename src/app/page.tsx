@@ -258,9 +258,9 @@ export default function DashboardPage() {
 
             <div className="relative mt-5 min-h-[170px]">
 
-              <div className="relative z-10 w-[min(100%,calc(100%-100px))]">
+              <div className="relative z-10 w-[min(100%,calc(100%-88px))]">
 
-                <h1 className="whitespace-nowrap text-[clamp(19px,6vw,27px)] font-bold leading-tight tracking-tight text-white">
+                <h1 className="text-[clamp(19px,5.8vw,27px)] font-bold leading-tight tracking-tight text-white">
                   Halo, Budi Santoso
                 </h1>
 
@@ -384,14 +384,14 @@ export default function DashboardPage() {
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] items-center gap-[clamp(7px,2.5vw,14px)] rounded-[19px] border border-[#F0F0F0] px-[clamp(8px,2.5vw,14px)] py-[clamp(13px,4vw,18px)]">
+          <div className="mt-3 grid min-w-0 grid-cols-[minmax(104px,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(7px,2vw,12px)] rounded-[19px] border border-[#F0F0F0] px-[clamp(7px,2vw,12px)] py-[clamp(13px,4vw,18px)]">
 
             {/* DONUT */}
 
             <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2vw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[150px] rounded-full"
+                className="relative aspect-square w-full max-w-[140px] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
@@ -415,31 +415,32 @@ export default function DashboardPage() {
 
             {/* MONITORING LEGEND */}
 
-            <div className="min-w-0 space-y-[clamp(12px,3.8vw,18px)]">
+            <div className="min-w-0 space-y-[clamp(10px,3vw,15px)]">
 
               {monitoringData.map((item) => (
                 <div
                   key={item.label}
-                  className="grid min-w-0 grid-cols-[10px_minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.5vw,9px)]"
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.2vw,7px)]"
                 >
 
-                  <span
-                    className="h-[clamp(10px,3.4vw,14px)] w-[clamp(10px,3.4vw,14px)] rounded-[4px]"
-                    style={{
-                      backgroundColor: item.color,
-                    }}
-                  />
-
-                  <span className="min-w-0 text-[clamp(9px,3.1vw,13px)] font-bold leading-[1.2] text-[#29232A]">
-                    {item.label}
+                  <span className="flex min-w-0 items-center gap-[6px]">
+                    <span
+                      className="h-[clamp(10px,3vw,13px)] w-[clamp(10px,3vw,13px)] shrink-0 rounded-[4px]"
+                      style={{
+                        backgroundColor: item.color,
+                      }}
+                    />
+                    <span className="min-w-0 text-[clamp(10px,2.9vw,12px)] font-bold leading-[1.18] text-[#29232A]">
+                      {item.label}
+                    </span>
                   </span>
 
-                  <span className="whitespace-nowrap text-[clamp(9px,2.9vw,13px)] text-[#51474E]">
+                  <span className="whitespace-nowrap text-[clamp(9px,2.65vw,11px)] text-[#51474E]">
                     {item.value} Mesin
                   </span>
 
                   <span
-                    className={`min-w-[clamp(34px,10vw,45px)] rounded-full px-[clamp(5px,1.8vw,9px)] py-[5px] text-center text-[clamp(9px,2.9vw,13px)] font-bold ${item.badge}`}
+                    className={`min-w-[clamp(32px,9vw,40px)] rounded-full px-[clamp(4px,1.3vw,7px)] py-[5px] text-center text-[clamp(9px,2.65vw,11px)] font-bold ${item.badge}`}
                   >
                     {item.percentage}%
                   </span>
@@ -459,13 +460,13 @@ export default function DashboardPage() {
 
           {/* TITLE + TARGET */}
 
-          <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
 
-            <h2 className="min-w-0 whitespace-nowrap text-[clamp(14px,4.3vw,20px)] font-bold leading-tight tracking-tight text-[#29232A]">
+            <h2 className="min-w-0 whitespace-nowrap text-[clamp(15px,4.2vw,19px)] font-bold leading-tight tracking-tight text-[#29232A]">
               Kunjungan Bulan Ini
             </h2>
 
-            <span className="shrink-0 whitespace-nowrap text-[clamp(9px,3vw,13px)] font-medium text-[#29232A]">
+            <span className="shrink-0 whitespace-nowrap text-[clamp(9px,2.7vw,12px)] font-medium text-[#29232A]">
               Target: 40 Kunjungan
             </span>
 
