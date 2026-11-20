@@ -436,4 +436,266 @@ export default function DashboardPage() {
             KUNJUNGAN BULAN INI
         ================================================= */}
 
-        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2
+        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+
+          <div className="flex items-center justify-between gap-3">
+
+            <SectionTitle>
+              Kunjungan Bulan Ini
+            </SectionTitle>
+
+            <Link
+              href="/visit-history"
+              className="flex items-center gap-1 text-xs font-semibold text-[#BF0B2C]"
+            >
+              Lihat Detail
+              <ChevronRight size={15} />
+            </Link>
+
+          </div>
+
+          <div className="mt-4 rounded-[17px] bg-[#FFF7F8] p-4">
+
+            <div className="flex items-end justify-between gap-3">
+
+              <div>
+                <p className="text-[12px] font-medium text-[#817780]">
+                  Total Kunjungan
+                </p>
+
+                <p className="mt-1 text-[32px] font-extrabold leading-none text-[#29232A]">
+                  32
+                  <span className="ml-1 text-sm font-medium text-[#817780]">
+                    / 40
+                  </span>
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[11px] text-[#817780]">
+                  Pencapaian
+                </p>
+
+                <p className="mt-1 text-[22px] font-extrabold text-[#BF0B2C]">
+                  80%
+                </p>
+              </div>
+
+            </div>
+
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#F0DDE1]">
+              <div
+                className="h-full rounded-full bg-[#BF0B2C]"
+                style={{ width: "80%" }}
+              />
+            </div>
+
+            <div className="mt-3 flex items-center justify-between text-[11px] text-[#817780]">
+              <span>32 kunjungan selesai</span>
+              <span>Target 40 kunjungan</span>
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =================================================
+            AKSI CEPAT
+        ================================================= */}
+
+        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+
+          <div className="flex items-center justify-between">
+
+            <SectionTitle>
+              Aksi Cepat
+            </SectionTitle>
+
+          </div>
+
+          <div className="mt-4 grid grid-cols-4 gap-2">
+
+            <Link
+              href="/visits"
+              className="flex min-w-0 flex-col items-center gap-2 text-center"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FCECEF] text-[#BF0B2C]">
+                <Plus size={23} />
+              </span>
+
+              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
+                Buat Kunjungan
+              </span>
+            </Link>
+
+            <Link
+              href="/equipment"
+              className="flex min-w-0 flex-col items-center gap-2 text-center"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF3E7] text-[#EB5513]">
+                <Monitor size={23} />
+              </span>
+
+              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
+                Tambah Mesin
+              </span>
+            </Link>
+
+            <Link
+              href="/reports"
+              className="flex min-w-0 flex-col items-center gap-2 text-center"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0F2F5] text-[#51474E]">
+                <FileBarChart size={23} />
+              </span>
+
+              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
+                Lihat Laporan
+              </span>
+            </Link>
+
+            <Link
+              href="/reports/export"
+              className="flex min-w-0 flex-col items-center gap-2 text-center"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF5E5] text-[#F28C0F]">
+                <Download size={23} />
+              </span>
+
+              <span className="text-[10px] font-semibold leading-tight text-[#51474E] sm:text-xs">
+                Ekspor PDF
+              </span>
+            </Link>
+
+          </div>
+
+        </section>
+
+        {/* =================================================
+            MESIN PERLU PERHATIAN
+        ================================================= */}
+
+        <section className="overflow-hidden rounded-[22px] border border-[#F5DCC3] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+
+          <div className="flex items-center gap-3 bg-[#FFF7EF] p-4">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F28C0F]/15 text-[#EB5513]">
+              <AlertTriangle size={23} />
+            </div>
+
+            <div className="min-w-0 flex-1">
+
+              <p className="text-[14px] font-bold text-[#29232A]">
+                Mesin Perlu Perhatian
+              </p>
+
+              <p className="mt-1 text-[11px] text-[#817780]">
+                Terdapat 4 mesin yang memerlukan tindak lanjut.
+              </p>
+
+            </div>
+
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#F28C0F] px-2 text-sm font-bold text-white">
+              4
+            </span>
+
+          </div>
+
+          <Link
+            href="/monitoring"
+            className="flex items-center justify-between px-4 py-3 text-xs font-semibold text-[#BF0B2C]"
+          >
+            Lihat Mesin Bermasalah
+            <ChevronRight size={17} />
+          </Link>
+
+        </section>
+
+        {/* =================================================
+            AKTIVITAS TERBARU
+        ================================================= */}
+
+        <section className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+
+          <div className="flex items-center justify-between gap-2">
+
+            <SectionTitle>
+              Aktivitas Terbaru
+            </SectionTitle>
+
+            <Link
+              href="/visit-history"
+              className="flex items-center gap-1 text-xs font-semibold text-[#BF0B2C]"
+            >
+              Lihat Semua
+              <ChevronRight size={15} />
+            </Link>
+
+          </div>
+
+          <div className="mt-3 divide-y divide-[#F0F0F0]">
+
+            {recentActivities.map((activity, index) => (
+              <div
+                key={`${activity.machine}-${index}`}
+                className="flex items-start gap-3 py-3"
+              >
+
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                    activity.status === "success"
+                      ? "bg-[#EAF7EF] text-[#249653]"
+                      : "bg-[#FFF3E7] text-[#EB5513]"
+                  }`}
+                >
+                  {activity.status === "success" ? (
+                    <CheckCircle2 size={20} />
+                  ) : (
+                    <Clock3 size={20} />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <p className="text-[13px] font-bold text-[#29232A]">
+                    {activity.title}
+                  </p>
+
+                  <p className="mt-1 text-[11px] text-[#817780]">
+                    {activity.machine} · {activity.customer}
+                  </p>
+
+                </div>
+
+                <span className="whitespace-nowrap pt-1 text-[10px] text-[#817780]">
+                  {activity.time}
+                </span>
+
+              </div>
+            ))}
+
+          </div>
+
+        </section>
+
+        {/* =================================================
+            FOOTER DASHBOARD
+        ================================================= */}
+
+        <div className="px-1 pb-3 pt-1 text-center">
+
+          <p className="text-[10px] text-[#A39AA0]">
+            MOKU — Monitoring Operasional Kunjungan Unit
+          </p>
+
+          <p className="mt-1 text-[10px] text-[#B3ABB0]">
+            Track Precisely, Deliver Quality
+          </p>
+
+        </div>
+
+      </div>
+
+    </main>
+  );
+}
