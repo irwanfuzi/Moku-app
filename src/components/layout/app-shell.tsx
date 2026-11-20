@@ -178,8 +178,6 @@ function detectLayoutMode(): {
 
   /*
     DESKTOP / LAPTOP
-
-    Menggunakan desktop layout.
   */
 
   if (!isHandheld) {
@@ -191,11 +189,7 @@ function detectLayoutMode(): {
 
   /*
     HP LANDSCAPE
-
-    Semua perangkat HP dalam posisi horizontal
-    menggunakan desktop layout.
-
-    Berlaku untuk browser maupun PWA.
+    Menggunakan desktop layout.
   */
 
   if (isLandscape) {
@@ -207,7 +201,6 @@ function detectLayoutMode(): {
 
   /*
     HP PORTRAIT
-
     Menggunakan mobile layout.
   */
 
@@ -333,7 +326,7 @@ export default function AppShell({
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
-        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground transition-colors duration-200"
+        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground"
       >
         {/* SIDEBAR */}
 
@@ -345,12 +338,15 @@ export default function AppShell({
         {/* MAIN APPLICATION AREA */}
 
         <div className="moku-main-layout flex min-h-dvh min-w-0 flex-col">
-          {/* HEADER */}
 
-          <AppHeader
-            title={currentPage.title}
-            description={currentPage.description}
-          />
+          {/* DESKTOP HEADER ONLY */}
+
+          {layoutState.isReady && layoutState.isDesktop && (
+            <AppHeader
+              title={currentPage.title}
+              description={currentPage.description}
+            />
+          )}
 
           {/* PAGE CONTENT */}
 
@@ -371,9 +367,9 @@ export default function AppShell({
             </div>
           </main>
 
-          {/* FOOTER */}
+          {/* DESKTOP FOOTER */}
 
-          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4 transition-colors duration-200">
+          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4">
             <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
               <p className="text-[11px] text-muted">
                 © {new Date().getFullYear()} MOKU. All rights reserved.
@@ -419,9 +415,6 @@ export default function AppShell({
 
         /*
           DESKTOP + HP LANDSCAPE
-
-          Satu standar layout desktop.
-          Tidak ada ukuran compact khusus landscape.
         */
 
         .moku-app-shell[data-layout-mode="desktop"] {
@@ -447,10 +440,6 @@ export default function AppShell({
           margin-left: 240px;
           flex: 0 0 calc(100% - 240px);
           min-height: 100dvh;
-          transition:
-            margin-left 250ms ease,
-            width 250ms ease,
-            flex-basis 250ms ease;
         }
 
         .moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
@@ -490,9 +479,6 @@ export default function AppShell({
 
         /*
           MOBILE PORTRAIT
-
-          Mobile layout hanya aktif ketika
-          perangkat handheld dalam posisi portrait.
         */
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
