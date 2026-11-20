@@ -31,7 +31,10 @@ self.addEventListener("activate", (event) => {
         cacheNames
           .filter(
             (name) =>
-              name.startsWith("moku-static-") &&
+              (
+                name.startsWith("moku-static-") ||
+                name === "moku-cache-v1"
+              ) &&
               name !== CACHE_NAME
           )
           .map((name) => caches.delete(name))
@@ -66,7 +69,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Halaman selalu mengambil versi terbaru dari server
+  // Navigasi halaman selalu mengambil versi terbaru
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request, {
@@ -88,7 +91,6 @@ self.addEventListener("fetch", (event) => {
 
           if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
-
             await cache.put(request, response.clone());
           }
 
