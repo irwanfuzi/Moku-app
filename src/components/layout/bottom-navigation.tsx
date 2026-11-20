@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,10 +9,14 @@ import { useAppLayout } from "@/components/layout/app-shell";
 import {
   House,
   Monitor,
-  ClipboardText,
-  ChartBar,
+  HardDrives,
+  ClockCounterClockwise,
   UserCircle,
 } from "@phosphor-icons/react";
+
+/* =========================================================
+   NAVIGATION ITEMS
+========================================================= */
 
 const navigationItems = [
   {
@@ -25,14 +30,14 @@ const navigationItems = [
     Icon: Monitor,
   },
   {
-    label: "Kunjungan",
-    href: "/visits",
-    Icon: ClipboardText,
+    label: "Data Mesin",
+    href: "/equipment",
+    Icon: HardDrives,
   },
   {
-    label: "Laporan",
-    href: "/reports",
-    Icon: ChartBar,
+    label: "Riwayat",
+    href: "/visit-history",
+    Icon: ClockCounterClockwise,
   },
   {
     label: "Profil",
@@ -40,6 +45,10 @@ const navigationItems = [
     Icon: UserCircle,
   },
 ];
+
+/* =========================================================
+   BOTTOM NAVIGATION
+========================================================= */
 
 export default function BottomNavigation() {
   const pathname = usePathname();
@@ -50,10 +59,12 @@ export default function BottomNavigation() {
       return pathname === "/";
     }
 
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
   };
 
-  // Bottom navigation hanya tampil pada mode mobile.
   if (!isReady || !isMobile) {
     return null;
   }
@@ -63,13 +74,22 @@ export default function BottomNavigation() {
       aria-label="Navigasi utama"
       className="
         fixed bottom-0 left-0 right-0 z-50
-        border-t border-[#EEE7EB]
-        bg-white/95
+        w-full
+        border-t border-[#EEEEEE]
+        bg-white
         pb-[env(safe-area-inset-bottom)]
-        backdrop-blur-md
       "
     >
-      <div className="mx-auto grid h-[68px] max-w-screen-sm grid-cols-5">
+      <div
+        className="
+          mx-auto grid
+          h-[68px]
+          w-full
+          max-w-[600px]
+          grid-cols-5
+          items-center
+        "
+      >
         {navigationItems.map(({ label, href, Icon }) => {
           const active = isActive(href);
 
@@ -79,68 +99,30 @@ export default function BottomNavigation() {
               href={href}
               aria-current={active ? "page" : undefined}
               className="
-                group relative flex flex-col
-                items-center justify-center gap-1
-                transition-transform duration-200
-                active:scale-95
-                motion-reduce:transition-none
+                flex h-full min-w-0
+                flex-col items-center justify-center
+                gap-1
+                outline-none
               "
             >
-              {/* ACTIVE INDICATOR */}
-              <span
-                className={`
-                  absolute top-0 h-[3px] w-8
-                  rounded-b-full bg-[#7C0041]
-                  transition-all duration-300 ease-out
-                  motion-reduce:transition-none
-                  ${
-                    active
-                      ? "translate-y-0 opacity-100"
-                      : "-translate-y-1 opacity-0"
-                  }
-                `}
+              {/* NAVIGATION ICON */}
+
+              <Icon
+                size={25}
+                weight={active ? "fill" : "regular"}
+                color={active ? "#BF0B2C" : "#817780"}
               />
 
-              {/* ANIMATED ICON */}
-              <span className="relative flex h-7 w-7 items-center justify-center">
-                <Icon
-                  size={24}
-                  weight="regular"
-                  className={`
-                    absolute transition-all duration-300 ease-out
-                    motion-reduce:transition-none
-                    ${
-                      active
-                        ? "scale-75 rotate-[-8deg] opacity-0"
-                        : "scale-100 rotate-0 opacity-100"
-                    }
-                  `}
-                />
-
-                <Icon
-                  size={24}
-                  weight="fill"
-                  className={`
-                    absolute text-[#7C0041]
-                    transition-all duration-300 ease-out
-                    motion-reduce:transition-none
-                    ${
-                      active
-                        ? "scale-100 rotate-0 opacity-100"
-                        : "scale-125 rotate-[8deg] opacity-0"
-                    }
-                  `}
-                />
-              </span>
-
               {/* NAVIGATION LABEL */}
+
               <span
                 className={`
-                  text-[10px] transition-all duration-200
-                  motion-reduce:transition-none
+                  whitespace-nowrap
+                  text-[10px]
+                  leading-tight
                   ${
                     active
-                      ? "font-semibold text-[#7C0041]"
+                      ? "font-bold text-[#BF0B2C]"
                       : "font-medium text-[#817780]"
                   }
                 `}
