@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -42,17 +43,6 @@ interface PendingNavigation {
   pathname: string;
   resolve: () => void;
   timeout: ReturnType<typeof setTimeout>;
-}
-
-interface ViewTransitionDocument extends Document {
-  startViewTransition?: (
-    callback: () => void | Promise<void>
-  ) => {
-    finished: Promise<void>;
-    ready: Promise<void>;
-    updateCallbackDone: Promise<void>;
-    skipTransition: () => void;
-  };
 }
 
 /* =========================================================
@@ -302,7 +292,7 @@ export default function AppShell({
      COMPLETE PENDING NAVIGATION
   ======================================================= */
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const pending = pendingNavigationRef.current;
 
     if (!pending || pending.pathname !== pathname) {
@@ -354,16 +344,13 @@ export default function AppShell({
         return;
       }
 
-      const rawHref = anchor.getAttribute("href");
-
-      if (!rawHref || rawHref.startsWith("#")) {
-        return;
-      }
-
       let destination: URL;
 
       try {
-        destination = new URL(rawHref, window.location.href);
+        destination = new URL(
+          anchor.href,
+          window.location.href
+        );
       } catch {
         return;
       }
@@ -372,7 +359,11 @@ export default function AppShell({
         return;
       }
 
-      if (destination.pathname === pathname) {
+      if (
+        destination.pathname === pathname &&
+        destination.search === window.location.search &&
+        destination.hash === window.location.hash
+      ) {
         return;
       }
 
@@ -381,15 +372,8 @@ export default function AppShell({
         return;
       }
 
-      const transitionDocument =
-        document as ViewTransitionDocument;
-
-      const startViewTransition =
-        transitionDocument.startViewTransition;
-
-      // Fallback for browsers without View Transitions API.
       if (
-        !startViewTransition ||
+        typeof document.startViewTransition !== "function" ||
         window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ) {
         return;
@@ -405,7 +389,7 @@ export default function AppShell({
         destination.hash;
 
       try {
-        startViewTransition(async () => {
+        document.startViewTransition(async () => {
           let resolveNavigation!: () => void;
 
           const navigationPromise = new Promise<void>((resolve) => {
@@ -435,6 +419,7 @@ export default function AppShell({
             clearTimeout(timeout);
             pendingNavigationRef.current = null;
             navigationInProgressRef.current = false;
+
             resolveNavigation();
 
             console.error(
