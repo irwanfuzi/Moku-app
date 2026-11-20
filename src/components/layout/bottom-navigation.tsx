@@ -55,7 +55,7 @@ export default function BottomNavigation() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto grid h-[72px] w-full max-w-[600px] grid-cols-5">
+      <div className="grid h-[72px] w-full grid-cols-5">
         {navigationItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -70,15 +70,16 @@ export default function BottomNavigation() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className="flex h-full min-w-0 flex-col items-center justify-center gap-[3px] overflow-hidden px-0"
+              className="flex h-full w-full min-w-0 flex-col items-center justify-center gap-[3px] px-0"
             >
-              <Icon
-                size={26}
-                weight={isActive ? "fill" : "regular"}
-                color={isActive ? "#BF0B2C" : "#85858D"}
-                aria-hidden="true"
-                className="shrink-0"
-              />
+              <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center">
+                <Icon
+                  size={26}
+                  weight={isActive ? "fill" : "regular"}
+                  color={isActive ? "#BF0B2C" : "#85858D"}
+                  aria-hidden="true"
+                />
+              </span>
 
               <span
                 className={`w-full truncate text-center text-[11px] leading-[15px] ${
