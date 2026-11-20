@@ -12,6 +12,7 @@
 ========================================================= */
 
 @theme inline {
+  /* Brand */
   --color-primary: var(--moku-primary);
   --color-primary-hover: var(--moku-primary-hover);
   --color-primary-light: var(--moku-primary-light);
@@ -22,23 +23,29 @@
   --color-accent: var(--moku-accent);
   --color-highlight: var(--moku-highlight);
 
+  /* Background */
   --color-background: var(--moku-background);
   --color-surface: var(--moku-surface);
   --color-surface-secondary: var(--moku-surface-secondary);
 
+  /* Typography */
   --color-foreground: var(--moku-text);
   --color-muted: var(--moku-text-secondary);
 
+  /* Borders */
   --color-border: var(--moku-border);
   --color-input: var(--moku-input);
 
+  /* Status */
   --color-success: var(--moku-success);
   --color-warning: var(--moku-warning);
   --color-danger: var(--moku-danger);
   --color-info: var(--moku-info);
 
+  /* Typography */
   --font-sans: var(--font-inter);
 
+  /* Radius */
   --radius-card: 16px;
   --radius-control: 10px;
   --radius-panel: 20px;
@@ -51,6 +58,7 @@
 :root {
   color-scheme: light;
 
+  /* Official Brand Palette */
   --moku-primary: #730217;
   --moku-primary-hover: #5c0112;
   --moku-primary-light: #f5e6e9;
@@ -61,25 +69,31 @@
   --moku-accent: #f28c0f;
   --moku-highlight: #eb5513;
 
+  /* Background */
   --moku-background: #f2f2f2;
   --moku-surface: #ffffff;
   --moku-surface-secondary: #f7f7f7;
 
+  /* Typography */
   --moku-text: #29232a;
   --moku-text-secondary: #716a70;
   --moku-text-muted: #999399;
 
+  /* Borders */
   --moku-border: #e6e3e4;
   --moku-input: #dcd7d9;
 
+  /* Status */
   --moku-success: #23966b;
   --moku-warning: #c98219;
   --moku-danger: #dc4c55;
   --moku-info: #4285b8;
 
+  /* Additional Colors */
   --moku-white: #ffffff;
   --moku-light-gray: #f2f2f2;
 
+  /* Shadows */
   --moku-shadow-sm:
     0 1px 2px rgba(41, 35, 42, 0.04);
 
@@ -89,6 +103,7 @@
   --moku-shadow-lg:
     0 12px 32px rgba(41, 35, 42, 0.08);
 
+  /* Layout */
   --moku-sidebar-width: 260px;
   --moku-header-height: 72px;
 }
@@ -101,6 +116,7 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
+  /* Brand */
   --moku-primary: #bf0b2c;
   --moku-primary-hover: #d51b3e;
   --moku-primary-light: #451b25;
@@ -111,25 +127,31 @@
   --moku-accent: #f5a33d;
   --moku-highlight: #f07843;
 
+  /* Background */
   --moku-background: #181517;
   --moku-surface: #231e20;
   --moku-surface-secondary: #2d2629;
 
+  /* Typography */
   --moku-text: #f5f1f2;
   --moku-text-secondary: #c0b6ba;
   --moku-text-muted: #91858a;
 
+  /* Borders */
   --moku-border: #40373b;
   --moku-input: #51454a;
 
+  /* Status */
   --moku-success: #50bd91;
   --moku-warning: #efb94e;
   --moku-danger: #f17a80;
   --moku-info: #70b4e0;
 
+  /* Additional Colors */
   --moku-white: #ffffff;
   --moku-light-gray: #302b2d;
 
+  /* Shadows */
   --moku-shadow-sm:
     0 1px 2px rgba(0, 0, 0, 0.16);
 
@@ -245,12 +267,14 @@ body::-webkit-scrollbar,
   background: transparent !important;
 }
 
+/* Horizontal overflow prevention */
+
 html,
 body {
   overflow-x: clip;
 }
 
-/* Maintain natural touch scrolling */
+/* Natural touch scrolling */
 
 body,
 main,
@@ -483,10 +507,12 @@ select:disabled {
    11. ANIMATION UTILITIES
 ========================================================= */
 
+/* PAGE FADE IN */
+
 @keyframes moku-fade-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
 
   to {
@@ -495,24 +521,41 @@ select:disabled {
   }
 }
 
-@keyframes moku-pulse {
-  0%,
-  100% {
-    opacity: 1;
+/* SKELETON SHIMMER */
+
+@keyframes moku-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
   }
 
-  50% {
-    opacity: 0.45;
+  100% {
+    background-position: -100% 0;
   }
 }
+
+/* PAGE ANIMATION */
 
 .moku-fade-in {
-  animation: moku-fade-in 220ms ease-out both;
+  animation: moku-fade-in 180ms ease-out both;
 }
 
+/* SKELETON COMPONENT */
+
 .moku-skeleton {
-  background: var(--moku-surface-secondary);
+  background: linear-gradient(
+    90deg,
+    var(--moku-surface-secondary) 25%,
+    var(--moku-border) 50%,
+    var(--moku-surface-secondary) 75%
+  );
+
+  background-size: 200% 100%;
+  background-position: 100% 0;
+
   border-radius: 8px;
+
+  animation:
+    moku-skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
 /* =========================================================
