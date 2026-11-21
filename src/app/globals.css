@@ -43,7 +43,7 @@
   --color-info: var(--moku-info);
 
   /* Typography */
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plus-jakarta);
 
   /* Radius */
   --radius-card: 16px;
@@ -193,7 +193,7 @@ body {
   color: var(--moku-text);
 
   font-family:
-    var(--font-inter),
+    var(--font-plus-jakarta),
     Arial,
     Helvetica,
     sans-serif;

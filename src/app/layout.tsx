@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
 import AppShell from "@/components/layout/app-shell";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 import "./globals.css";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-plus-jakarta",
   preload: true,
 });
 
@@ -83,7 +83,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   viewportFit: "cover",
-  themeColor: "#6F010E",
+  themeColor: "#730217",
 };
 
 interface RootLayoutProps {
@@ -96,7 +96,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={inter.variable}
+      className={plusJakartaSans.variable}
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased">

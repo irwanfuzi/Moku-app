@@ -179,7 +179,7 @@ function DesktopDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1600px] min-w-0 space-y-5 text-[#171923]">
       {/* DESKTOP DASHBOARD HEADER */}
-      <header className="flex min-h-[76px] flex-wrap items-center justify-between gap-4">
+      <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-[45px] font-bold leading-tight tracking-tight text-[#730217]">Dashboard</h1>
           <p className="mt-1 text-[19px] leading-snug text-[#4F4B53]">Ringkasan aktivitas dan monitoring kunjungan mesin.</p>
@@ -201,7 +201,7 @@ function DesktopDashboard() {
           <span className="h-[43px] w-px bg-[#E5E5E8]" />
           <Link href="/profile" className="flex items-center gap-3 text-left">
             <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">B</span>
-            <span><strong className="block text-[13px] leading-tight">Budi Santoso</strong><small className="text-[11px] text-[#77727A]">Teknisi</small></span>
+            <span><strong className="block text-[16px] leading-tight">Budi Santoso</strong><small className="text-[15px] text-[#77727A]">Teknisi</small></span>
             <ChevronDown size={16} />
           </Link>
         </div>
@@ -291,8 +291,8 @@ function DesktopDashboard() {
       </section>
 
       {/* MACHINE TABLE */}
-      <section className="min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-4 shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
-        <h2 className="text-[19px] font-bold tracking-tight text-[#171923]">Daftar Mesin</h2>
+      <section className="min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-[21px] shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
+        <h2 className="text-[25px] font-bold tracking-tight text-[#171923]">Daftar Mesin</h2>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="flex h-[40px] min-w-[484px] flex-1 items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 text-[#34333A] shadow-sm">
             <Search size={18} className="shrink-0 text-[#34333A]" />
