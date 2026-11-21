@@ -112,7 +112,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex h-[clamp(62px,17.7cqw,69px)] min-h-[clamp(62px,17.7cqw,69px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
+      className="flex h-[clamp(72px,20cqw,82px)] min-h-[clamp(72px,20cqw,82px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
     >
       <span className="flex h-[clamp(23px,6.4cqw,25px)] w-[clamp(23px,6.4cqw,25px)] shrink-0 items-center justify-center rounded-[clamp(7px,2cqw,9px)] bg-[#BF0B2C] text-white">
         {children}
@@ -454,7 +454,7 @@ export default function DashboardPage() {
                   width={190}
                   height={70}
                   priority
-                  className="h-auto w-[clamp(82px,23.1cqw,90px)] object-contain object-left"
+                  className="h-auto w-[clamp(96px,25cqw,110px)] object-contain object-left"
                 />
               </Link>
 
@@ -538,14 +538,14 @@ export default function DashboardPage() {
                   Halo, Budi Santoso
                 </h1>
 
-                <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-[72%] text-[clamp(10px,3.05cqw,12px)] leading-[1.25] text-white/95">
+                <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-full whitespace-nowrap text-[clamp(10px,3.05cqw,12px)] leading-[1.25] text-white/95">
                   Berikut ringkasan operasional kunjungan unit.
                 </p>
 
               </div>
 
               {/* PRINTER ILLUSTRATION — original asset with soft brand backdrop */}
-              <div className="pointer-events-none absolute right-[-2px] top-[clamp(12px,3.8cqw,18px)] z-0 flex h-[clamp(68px,20cqw,78px)] w-[clamp(68px,20cqw,78px)] items-center justify-center">
+              <div className="pointer-events-none absolute right-[-2px] top-[clamp(2px,1.2cqw,6px)] z-0 flex h-[clamp(88px,25cqw,104px)] w-[clamp(88px,25cqw,104px)] items-center justify-center">
                 <span className="absolute inset-[-8%] rounded-full bg-[#BF0B2C]/25 blur-[2px]" />
                 <Image
                   src="/images/moku/illustrations/dashboard-printer.png"
@@ -568,7 +568,7 @@ export default function DashboardPage() {
                     setShowMonthPicker((value) => !value)
                   }
                   aria-expanded={showMonthPicker}
-                  className="flex h-[clamp(30px,8.2cqw,34px)] w-[clamp(132px,36cqw,150px)] max-w-full items-center gap-[10px] rounded-full bg-white px-[clamp(9px,2.5cqw,11px)] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                  className="flex h-[clamp(34px,9cqw,38px)] w-[clamp(170px,46cqw,190px)] max-w-full items-center gap-[10px] rounded-full bg-white px-[clamp(11px,2.8cqw,13px)] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                 >
 
                   <CalendarDays
@@ -654,14 +654,14 @@ export default function DashboardPage() {
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[clamp(7px,2.3cqw,10px)] grid h-[clamp(98px,27.2cqw,106px)] min-w-0 grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
+          <div className="mt-[clamp(7px,2.3cqw,10px)] grid h-[clamp(112px,30cqw,120px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
             <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2cqw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[clamp(82px,24.1cqw,94px)] rounded-full"
+                className="relative aspect-square w-full max-w-[clamp(96px,28cqw,110px)] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
