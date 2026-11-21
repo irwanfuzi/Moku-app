@@ -44,20 +44,10 @@ const COLORS = {
   border: "#ECECF0",
 };
 
-/* =========================================================
-   RESPONSIVE STYLE
-
-   No container queries.
-   No cqw.
-   No cqh.
-========================================================= */
-
-const MOBILE_STYLES = {
-  pagePadding: "clamp(12px, 3.5vw, 17px)",
-  sectionGap: "clamp(14px, 3.8vw, 18px)",
-  cardRadius: "clamp(17px, 4.5vw, 21px)",
-  sectionTitle: "clamp(16px, 4.35vw, 19px)",
-  bodyText: "clamp(12px, 3.4vw, 14px)",
+const MOBILE = {
+  padding: "17px",
+  gap: "17px",
+  radius: "20px",
 };
 
 /* =========================================================
@@ -162,7 +152,7 @@ const desktopVisitChart = [
 ];
 
 /* =========================================================
-   SECTION TITLE
+   SHARED COMPONENTS
 ========================================================= */
 
 function SectionTitle({
@@ -171,20 +161,11 @@ function SectionTitle({
   children: ReactNode;
 }) {
   return (
-    <h2
-      className="min-w-0 font-bold leading-[1.2] tracking-[-0.045em] text-[#171717]"
-      style={{
-        fontSize: MOBILE_STYLES.sectionTitle,
-      }}
-    >
+    <h2 className="min-w-0 text-[19px] font-bold leading-[1.2] tracking-[-0.045em] text-[#171717]">
       {children}
     </h2>
   );
 }
-
-/* =========================================================
-   CARD
-========================================================= */
 
 function MobileCard({
   children,
@@ -195,19 +176,15 @@ function MobileCard({
 }) {
   return (
     <div
-      className={`border border-[#ECECF0] bg-white shadow-[0_2px_9px_rgba(25,20,30,0.07)] ${className}`}
+      className={`border border-[#ECECF0] bg-white shadow-[0_2px_9px_rgba(25,20,30,0.065)] ${className}`}
       style={{
-        borderRadius: MOBILE_STYLES.cardRadius,
+        borderRadius: MOBILE.radius,
       }}
     >
       {children}
     </div>
   );
 }
-
-/* =========================================================
-   QUICK ACTION
-========================================================= */
 
 function QuickAction({
   href,
@@ -227,11 +204,11 @@ function QuickAction({
         separated ? "border-l border-[#E5E5E8]" : ""
       }`}
     >
-      <span className="flex h-[clamp(40px,10.5vw,46px)] w-[clamp(40px,10.5vw,46px)] shrink-0 items-center justify-center rounded-[12px] bg-[#BF0B2C] text-white">
+      <span className="flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-[12px] bg-[#BF0B2C] text-white shadow-sm">
         {children}
       </span>
 
-      <span className="min-h-[2.2em] text-[clamp(12px,3.4vw,15px)] font-medium leading-[1.2] tracking-[-0.025em] text-[#29232A]">
+      <span className="min-h-[36px] text-[14px] font-medium leading-[1.15] tracking-[-0.025em] text-[#29232A]">
         {label}
       </span>
     </Link>
@@ -244,16 +221,12 @@ function QuickAction({
 
 function DesktopDashboard() {
   const [search, setSearch] = useState("");
-
   const [statusFilter, setStatusFilter] =
     useState("Semua Status");
-
   const [customerFilter, setCustomerFilter] =
     useState("Semua Pelanggan");
-
   const [openAction, setOpenAction] =
     useState<string | null>(null);
-
   const [desktopMonth, setDesktopMonth] =
     useState("Oktober 2025");
 
@@ -455,8 +428,6 @@ function DesktopDashboard() {
             </div>
           </div>
         </article>
-
-        {/* VISIT CHART */}
 
         <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
 
@@ -677,7 +648,6 @@ function DesktopDashboard() {
                         <Link
                           href={`/equipment/${row.code}`}
                           className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
-
                           onClick={() => setOpenAction(null)}
                         >
                           Lihat Detail
@@ -686,7 +656,6 @@ function DesktopDashboard() {
                         <Link
                           href={`/visits/new?equipment=${row.code}`}
                           className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
-
                           onClick={() => setOpenAction(null)}
                         >
                           Buat Kunjungan
@@ -748,19 +717,26 @@ export default function DashboardPage() {
             HEADER
         ================================================= */}
 
-        <header className="relative h-[290px] overflow-hidden bg-gradient-to-br from-[#85001F] via-[#A9002B] to-[#730217] px-5 pt-5 text-white sm:h-[310px]">
+        <header
+          className="relative overflow-hidden bg-[#A9002B] text-white"
+          style={{
+            height: "clamp(205px, 53vw, 245px)",
+          }}
+        >
 
           {/* Background decoration */}
 
-          <div className="pointer-events-none absolute -right-[17%] -top-[30%] h-[260px] w-[260px] rounded-full bg-[#E20D43]/30" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#85001F] via-[#A9002B] to-[#730217]" />
 
-          <div className="pointer-events-none absolute -left-[22%] top-[34%] h-[190px] w-[190px] rounded-full bg-[#BF0B2C]/35 blur-[2px]" />
+          <div className="pointer-events-none absolute -right-[17%] -top-[30%] h-[260px] w-[260px] rounded-full bg-[#E20D43]/25" />
 
-          <div className="pointer-events-none absolute right-[-10%] top-[38%] h-[130px] w-[130px] rounded-full bg-[#E20D43]/25" />
+          <div className="pointer-events-none absolute -left-[25%] top-[35%] h-[190px] w-[190px] rounded-full bg-[#BF0B2C]/30" />
 
-          {/* Logo and notification */}
+          <div className="pointer-events-none absolute right-[-15%] top-[48%] h-[140px] w-[140px] rounded-full bg-[#E20D43]/20" />
 
-          <div className="relative z-20 flex items-center justify-between">
+          {/* Logo */}
+
+          <div className="absolute left-[22px] right-[20px] top-[20px] z-20 flex items-center justify-between">
 
             <Image
               src="/images/moku/brand/moku-logo.png"
@@ -768,7 +744,7 @@ export default function DashboardPage() {
               width={160}
               height={60}
               priority
-              className="h-[43px] w-auto object-contain object-left"
+              className="h-[42px] w-auto object-contain object-left"
             />
 
             <div className="relative">
@@ -780,11 +756,11 @@ export default function DashboardPage() {
                 onClick={() =>
                   setShowNotifications((previous) => !previous)
                 }
-                className="relative flex h-11 w-11 items-center justify-center rounded-full text-white"
+                className="relative flex h-[42px] w-[42px] items-center justify-center rounded-full text-white"
               >
                 <Bell size={26} strokeWidth={1.8} />
 
-                <span className="absolute right-[8px] top-[6px] h-[11px] w-[11px] rounded-full border border-[#A9002B] bg-[#FF233D]" />
+                <span className="absolute right-[7px] top-[5px] h-[11px] w-[11px] rounded-full border border-[#A9002B] bg-[#FF233D]" />
               </button>
 
               {showNotifications && (
@@ -818,21 +794,21 @@ export default function DashboardPage() {
 
           {/* Welcome */}
 
-          <div className="relative z-10 mt-[27px] max-w-[75%]">
+          <div className="absolute left-[22px] top-[95px] z-20 max-w-[65%]">
 
-            <h1 className="text-[23px] font-bold leading-[1.2] tracking-[-0.045em] text-white">
+            <h1 className="text-[24px] font-bold leading-[1.15] tracking-[-0.045em] text-white">
               Halo, Budi Santoso
             </h1>
 
-            <p className="mt-2 max-w-[260px] text-[15px] font-medium leading-[1.35] text-white/90">
+            <p className="mt-[5px] max-w-[255px] text-[15px] font-medium leading-[1.35] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
 
           </div>
 
-          {/* Printer illustration */}
+          {/* Printer */}
 
-          <div className="pointer-events-none absolute bottom-[8px] right-[8px] z-10 flex h-[175px] w-[190px] items-end justify-center">
+          <div className="pointer-events-none absolute bottom-[9px] right-[9px] z-10 flex h-[155px] w-[160px] items-end justify-center">
 
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
@@ -841,7 +817,7 @@ export default function DashboardPage() {
               height={420}
               priority
               className="h-full w-full object-contain object-bottom"
-              sizes="190px"
+              sizes="160px"
             />
 
           </div>
@@ -849,7 +825,7 @@ export default function DashboardPage() {
           {/* Wave */}
 
           <svg
-            className="absolute bottom-[-1px] left-0 z-[11] h-[48px] w-full"
+            className="absolute bottom-[-1px] left-0 z-[11] h-[35px] w-full"
             viewBox="0 0 390 60"
             preserveAspectRatio="none"
             aria-hidden="true"
@@ -867,11 +843,11 @@ export default function DashboardPage() {
         ================================================= */}
 
         <div
-          className="relative z-20 -mt-[5px] flex flex-col"
+          className="relative z-20 -mt-[2px] flex flex-col"
           style={{
-            gap: MOBILE_STYLES.sectionGap,
-            paddingLeft: MOBILE_STYLES.pagePadding,
-            paddingRight: MOBILE_STYLES.pagePadding,
+            gap: MOBILE.gap,
+            paddingLeft: MOBILE.padding,
+            paddingRight: MOBILE.padding,
           }}
         >
 
@@ -881,17 +857,17 @@ export default function DashboardPage() {
 
           <section className="min-w-0">
 
-            <div className="flex min-w-0 items-center justify-between gap-2 px-[9px]">
+            <div className="flex min-h-[34px] min-w-0 items-center justify-between gap-2 px-[9px]">
 
               <SectionTitle>
                 Status Monitoring Mesin
               </SectionTitle>
 
-              <label className="flex h-[40px] shrink-0 items-center gap-[7px] rounded-full border border-[#E8E8ED] bg-white px-[10px] shadow-sm">
+              <label className="flex h-[39px] shrink-0 items-center gap-[6px] rounded-full border border-[#E8E8ED] bg-white px-[11px] shadow-sm">
 
                 <CalendarDays
-                  size={18}
-                  className="shrink-0"
+                  size={17}
+                  className="shrink-0 text-[#171717]"
                 />
 
                 <select
@@ -899,7 +875,7 @@ export default function DashboardPage() {
                   onChange={(event) =>
                     setSelectedMonth(event.target.value)
                   }
-                  className="max-w-[105px] bg-transparent text-[13px] font-bold outline-none"
+                  className="max-w-[105px] bg-transparent text-[13px] font-bold text-[#171717] outline-none"
                 >
                   <option>September 2025</option>
                   <option>Oktober 2025</option>
@@ -908,22 +884,25 @@ export default function DashboardPage() {
                   <option>Januari 2026</option>
                 </select>
 
-                <ChevronDown size={15} />
+                <ChevronDown
+                  size={15}
+                  className="shrink-0"
+                />
 
               </label>
 
             </div>
 
-            <MobileCard className="mt-[12px] px-[12px] py-[13px]">
+            <MobileCard className="mt-[11px] px-[12px] py-[13px]">
 
-              <div className="grid grid-cols-[minmax(112px,0.8fr)_minmax(0,1.2fr)] items-center gap-[12px]">
+              <div className="grid grid-cols-[minmax(125px,0.78fr)_minmax(0,1.22fr)] items-center gap-[11px]">
 
-                {/* Donut chart */}
+                {/* Donut */}
 
                 <div className="flex items-center justify-center">
 
                   <div
-                    className="relative h-[clamp(112px,32vw,145px)] w-[clamp(112px,32vw,145px)] shrink-0 rounded-full"
+                    className="relative h-[145px] w-[145px] shrink-0 rounded-full"
                     style={{
                       background:
                         "conic-gradient(from -90deg, #F28C0F 0deg 32.4deg, #BF0B2C 32.4deg 270deg, #D9D9D9 270deg 360deg)",
@@ -932,13 +911,13 @@ export default function DashboardPage() {
                     aria-label="48 mesin"
                   >
 
-                    <div className="absolute inset-[17%] flex flex-col items-center justify-center rounded-full bg-white">
+                    <div className="absolute inset-[20px] flex flex-col items-center justify-center rounded-full bg-white">
 
-                      <span className="text-[clamp(34px,9.5vw,44px)] font-extrabold leading-none tracking-[-0.055em] text-[#111111]">
+                      <span className="text-[43px] font-extrabold leading-none tracking-[-0.055em] text-[#111111]">
                         48
                       </span>
 
-                      <span className="mt-1 text-[14px] font-medium text-[#29232A]">
+                      <span className="mt-[3px] text-[15px] font-medium text-[#29232A]">
                         Mesin
                       </span>
 
@@ -950,32 +929,32 @@ export default function DashboardPage() {
 
                 {/* Legend */}
 
-                <div className="min-w-0 space-y-[13px] border-l border-[#E5E5E8] pl-[12px]">
+                <div className="min-w-0 space-y-[14px] border-l border-[#E5E5E8] pl-[11px]">
 
                   {monitoringData.map((item) => (
 
                     <div
                       key={item.label}
-                      className="grid min-w-0 grid-cols-[13px_minmax(0,1fr)_auto_auto] items-center gap-[7px]"
+                      className="grid min-w-0 grid-cols-[12px_minmax(0,1fr)_auto_auto] items-center gap-[6px]"
                     >
 
                       <span
-                        className="h-[13px] w-[13px] rounded-[4px]"
+                        className="h-[12px] w-[12px] rounded-[4px]"
                         style={{
                           background: item.color,
                         }}
                       />
 
-                      <span className="min-w-0 truncate text-[clamp(10px,3.1vw,13px)] font-semibold tracking-[-0.035em] text-[#171717]">
+                      <span className="min-w-0 truncate text-[12px] font-semibold tracking-[-0.035em] text-[#171717]">
                         {item.label}
                       </span>
 
-                      <span className="whitespace-nowrap text-[clamp(10px,2.9vw,13px)] text-[#29232A]">
+                      <span className="whitespace-nowrap text-[12px] text-[#29232A]">
                         {item.value} Mesin
                       </span>
 
                       <span
-                        className={`min-w-[39px] rounded-full px-[7px] py-[4px] text-center text-[12px] font-bold ${item.badge}`}
+                        className={`min-w-[39px] rounded-full px-[6px] py-[4px] text-center text-[12px] font-bold ${item.badge}`}
                       >
                         {item.percentage}%
                       </span>
@@ -998,13 +977,13 @@ export default function DashboardPage() {
 
           <section className="min-w-0">
 
-            <div className="flex min-w-0 items-center justify-between gap-2 px-[9px]">
+            <div className="flex min-h-[30px] min-w-0 items-center justify-between gap-2 px-[9px]">
 
               <SectionTitle>
                 Kunjungan Bulan Ini
               </SectionTitle>
 
-              <div className="flex shrink-0 items-center gap-[6px]">
+              <div className="flex shrink-0 items-center gap-[5px]">
 
                 <Target
                   size={22}
@@ -1020,19 +999,19 @@ export default function DashboardPage() {
 
             </div>
 
-            <MobileCard className="mt-[12px] p-[16px]">
+            <MobileCard className="mt-[10px] px-[16px] py-[15px]">
 
-              <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[12px]">
+              <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] items-center gap-[10px]">
 
-                {/* Total visit */}
+                {/* Total */}
 
-                <div className="min-w-0 border-r border-[#E5E5E8] pr-[10px]">
+                <div className="min-w-0 border-r border-[#E5E5E8] pr-[9px]">
 
-                  <p className="text-[clamp(40px,11vw,50px)] font-extrabold leading-[0.95] tracking-[-0.06em] text-[#111111]">
+                  <p className="text-[52px] font-extrabold leading-[0.95] tracking-[-0.065em] text-[#111111]">
                     32
                   </p>
 
-                  <p className="mt-1 whitespace-nowrap text-[14px] leading-tight text-[#29232A]">
+                  <p className="mt-[3px] whitespace-nowrap text-[15px] leading-tight text-[#29232A]">
                     Total Kunjungan
                   </p>
 
@@ -1040,19 +1019,22 @@ export default function DashboardPage() {
 
                 {/* Growth */}
 
-                <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[5px]">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[3px]">
 
                   <div className="min-w-0">
 
-                    <span className="inline-flex items-center gap-[5px] rounded-full bg-[#E4F8E8] px-[10px] py-[5px] text-[16px] font-bold text-[#168B3E]">
+                    <span className="inline-flex items-center gap-[5px] rounded-full bg-[#E4F8E8] px-[10px] py-[5px] text-[17px] font-bold text-[#168B3E]">
 
-                      <TrendingUp size={18} strokeWidth={2.5} />
+                      <TrendingUp
+                        size={18}
+                        strokeWidth={2.5}
+                      />
 
                       +14%
 
                     </span>
 
-                    <p className="mt-[8px] text-[13px] leading-[1.35] tracking-[-0.025em] text-[#29232A]">
+                    <p className="mt-[7px] text-[14px] leading-[1.3] tracking-[-0.025em] text-[#29232A]">
                       Dibanding bulan lalu
                       <br />
                       (28 kunjungan)
@@ -1068,7 +1050,7 @@ export default function DashboardPage() {
                       width={240}
                       height={240}
                       className="h-full w-full object-contain"
-                      sizes="140px"
+                      sizes="130px"
                     />
 
                   </div>
@@ -1079,15 +1061,15 @@ export default function DashboardPage() {
 
               {/* Progress */}
 
-              <div className="mt-[14px]">
+              <div className="mt-[15px]">
 
                 <div className="mb-[6px] flex items-center justify-between">
 
-                  <p className="text-[14px] font-bold text-[#171717]">
+                  <p className="text-[15px] font-bold text-[#171717]">
                     Pencapaian Target
                   </p>
 
-                  <p className="text-[14px] font-extrabold text-[#111111]">
+                  <p className="text-[15px] font-extrabold text-[#111111]">
                     80%
                   </p>
 
@@ -1124,7 +1106,7 @@ export default function DashboardPage() {
 
             </div>
 
-            <MobileCard className="mt-[12px] px-[12px] py-[12px]">
+            <MobileCard className="mt-[11px] px-[12px] py-[13px]">
 
               <div className="grid grid-cols-4">
 
@@ -1138,7 +1120,7 @@ export default function DashboardPage() {
                     </>
                   }
                 >
-                  <Plus size={29} strokeWidth={2.5} />
+                  <Plus size={30} strokeWidth={2.5} />
                 </QuickAction>
 
                 <QuickAction
@@ -1177,7 +1159,7 @@ export default function DashboardPage() {
                     </>
                   }
                 >
-                  <Download size={26} strokeWidth={2.2} />
+                  <Download size={27} strokeWidth={2.2} />
                 </QuickAction>
 
               </div>
@@ -1192,10 +1174,10 @@ export default function DashboardPage() {
 
           <Link
             href="/monitoring"
-            className="relative flex min-h-[84px] min-w-0 items-center gap-[12px] overflow-hidden rounded-[18px] border border-[#F4E4DF] bg-[#FFF2EE] px-[14px] py-[10px] pl-[20px] shadow-[0_2px_7px_rgba(25,20,30,0.035)] before:absolute before:inset-y-0 before:left-0 before:w-[5px] before:bg-[#F28C0F]"
+            className="relative flex min-h-[82px] min-w-0 items-center gap-[11px] overflow-hidden rounded-[18px] border border-[#F4E4DF] bg-[#FFF2EE] px-[13px] py-[10px] pl-[18px] shadow-[0_2px_7px_rgba(25,20,30,0.035)] before:absolute before:inset-y-0 before:left-0 before:w-[5px] before:bg-[#F28C0F]"
           >
 
-            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center text-[#F28C0F]">
+            <div className="flex h-[49px] w-[49px] shrink-0 items-center justify-center text-[#F28C0F]">
 
               <AlertTriangle
                 size={40}
@@ -1251,7 +1233,7 @@ export default function DashboardPage() {
 
             </div>
 
-            <MobileCard className="mt-[12px] divide-y divide-[#EEEEEE] px-[13px]">
+            <MobileCard className="mt-[11px] divide-y divide-[#EEEEEE] px-[13px]">
 
               {recentActivities.map((activity, index) => (
 
@@ -1326,4 +1308,4 @@ export default function DashboardPage() {
 
     </main>
   );
-                                      }
+                }
