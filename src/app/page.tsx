@@ -272,7 +272,6 @@ function DesktopDashboard() {
               <strong className="block text-[16px] leading-tight">
                 Budi Santoso
               </strong>
-
               <small className="text-[15px] text-[#77727A]">
                 Teknisi
               </small>
@@ -322,16 +321,14 @@ function DesktopDashboard() {
               className="relative h-[203px] w-[203px] shrink-0 rounded-full"
               style={{
                 background:
-                  "conic-gradient(#9A0A2B 0deg 240deg, #D7D7DC 240deg 330deg, #E5E5E8 330deg 360deg)",
+                  "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
                 transform: "rotate(-90deg)",
               }}
-              aria-label="Donut chart status mesin"
             >
               <div className="absolute inset-[34px] flex rotate-90 flex-col items-center justify-center rounded-full bg-white">
                 <strong className="text-[46px] font-bold leading-none">
                   48
                 </strong>
-
                 <span className="mt-1 text-[17px] text-[#55545C]">
                   Total Mesin
                 </span>
@@ -343,17 +340,17 @@ function DesktopDashboard() {
                 {
                   label: "Sudah Dikunjungi",
                   value: 32,
-                  color: "#9A0A2B",
+                  color: "#BF0B2C",
                 },
                 {
                   label: "Belum Dikunjungi",
                   value: 12,
-                  color: "#D7D7DC",
+                  color: "#D9D9D9",
                 },
                 {
                   label: "Perlu Perhatian",
                   value: 4,
-                  color: "#E5E5E8",
+                  color: "#F28C0F",
                 },
               ].map((item) => (
                 <div
@@ -364,11 +361,9 @@ function DesktopDashboard() {
                     className="h-4 w-4 shrink-0 rounded-[4px]"
                     style={{ background: item.color }}
                   />
-
                   <span className="min-w-0 flex-1 truncate text-[#24232A]">
                     {item.label}
                   </span>
-
                   <strong className="text-[20px] font-bold">
                     {item.value}
                   </strong>
@@ -386,7 +381,7 @@ function DesktopDashboard() {
 
             <div className="flex shrink-0 items-center gap-4 text-[12px] text-[#33323A]">
               <span className="flex items-center gap-2">
-                <i className="h-3 w-3 rounded-[3px] bg-[#970A2A]" />
+                <i className="h-3 w-3 rounded-[3px] bg-[#BF0B2C]" />
                 Kunjungan
               </span>
 
@@ -418,7 +413,7 @@ function DesktopDashboard() {
                 >
                   <div className="flex h-[calc(100%-24px)] w-full items-end justify-center gap-[3px]">
                     <span
-                      className="w-[42%] rounded-t-[4px] bg-[#970A2A]"
+                      className="w-[42%] rounded-t-[4px] bg-[#BF0B2C]"
                       style={{
                         height: `${(item.visits / 20) * 100}%`,
                       }}
@@ -451,7 +446,7 @@ function DesktopDashboard() {
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="flex h-[40px] min-w-[484px] flex-1 items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 text-[#34333A] shadow-sm">
-            <Search size={18} className="shrink-0 text-[#34333A]" />
+            <Search size={18} className="shrink-0" />
 
             <input
               value={search}
@@ -494,7 +489,7 @@ function DesktopDashboard() {
 
           <Link
             href="/equipment"
-            className="inline-flex h-[40px] min-w-[141px] shrink-0 items-center gap-2 rounded-full bg-[#8D0827] px-5 text-[17px] font-semibold text-white shadow-sm"
+            className="inline-flex h-[40px] min-w-[141px] shrink-0 items-center gap-2 rounded-full bg-[#730217] px-5 text-[17px] font-semibold text-white shadow-sm"
           >
             <Plus size={19} />
             Tambah
@@ -540,21 +535,14 @@ function DesktopDashboard() {
                   key={row.code}
                   className="border-b border-[#E7E7EA] text-[16px] text-[#202027] last:border-0"
                 >
-                  <td className="px-[16px] py-[10px]">
-                    {row.no}
-                  </td>
+                  <td className="px-[16px] py-[10px]">{row.no}</td>
 
                   <td className="px-[16px] py-[10px] font-medium">
                     {row.code}
                   </td>
 
-                  <td className="px-[16px] py-[10px]">
-                    {row.model}
-                  </td>
-
-                  <td className="px-[16px] py-[10px]">
-                    {row.customer}
-                  </td>
+                  <td className="px-[16px] py-[10px]">{row.model}</td>
+                  <td className="px-[16px] py-[10px]">{row.customer}</td>
 
                   <td className="px-[16px] py-[10px]">
                     <span
@@ -562,7 +550,7 @@ function DesktopDashboard() {
                         row.status === "Sudah Dikunjungi"
                           ? "bg-[#F9E8EC] text-[#850B29]"
                           : row.status === "Perlu Perhatian"
-                            ? "bg-[#F9E8EC] text-[#850B29]"
+                            ? "bg-[#FFF0E5] text-[#EB5513]"
                             : "bg-[#F0F0F2] text-[#4C4B52]"
                       }`}
                     >
@@ -666,30 +654,35 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="[container-type:inline-size] w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(64px+env(safe-area-inset-bottom)+12px)]">
+    <main className="relative [container-type:inline-size] w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(64px+env(safe-area-inset-bottom)+12px)]">
 
       {/* ===================================================
-          MOBILE HEADER — ORGANIC BURGUNDY CANVAS
+          MOBILE HEADER
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate h-[clamp(210px,72cqw,286px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate h-[clamp(174px,45cqw,286px)] min-h-[clamp(174px,45cqw,286px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-0 pt-[max(18px,env(safe-area-inset-top))] text-white">
 
-          {/* BACKGROUND DECORATION */}
+          {/* =================================================
+              ORIGINAL WAVE IMAGE
+          ================================================= */}
 
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(75px,30cqw,125px)] overflow-hidden">
 
-            <div className="absolute -right-[22%] top-[38%] h-[85%] w-[75%] rounded-full bg-[#BF0B2C]/55" />
-
-            <div className="absolute -left-[30%] bottom-[-48%] h-[90%] w-[75%] rounded-full bg-[#BF0B2C]/30" />
-
-            <div className="absolute right-[-25%] bottom-[-50%] h-[95%] w-[85%] rounded-full bg-[#BF0B2C]/35" />
+            <Image
+              src="/images/moku/illustrations/header-wave.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-fill mix-blend-screen"
+            />
 
           </div>
 
           {/* BRAND ROW */}
 
-          <div className="relative z-10 flex h-[clamp(34px,8.7cqw,40px)] items-center justify-between">
+          <div className="relative z-20 flex h-[clamp(34px,8.7cqw,40px)] min-h-[clamp(34px,8.7cqw,40px)] items-center justify-between">
 
             <Link
               href="/"
@@ -709,7 +702,6 @@ export default function DashboardPage() {
             {/* NOTIFICATION */}
 
             <div className="relative shrink-0">
-
               <button
                 type="button"
                 onClick={() =>
@@ -717,9 +709,13 @@ export default function DashboardPage() {
                 }
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full text-white"
+                className="relative flex h-[clamp(30px,6.2cqw,34px)] w-[clamp(30px,6.2cqw,34px)] items-center justify-center rounded-full text-white"
               >
-                <Bell size={26} strokeWidth={1.8} />
+                <Bell
+                  size={26}
+                  className="h-[clamp(22px,6.2cqw,26px)] w-[clamp(22px,6.2cqw,26px)]"
+                  strokeWidth={1.8}
+                />
 
                 <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-[#730217] bg-[#F28C0F]" />
               </button>
@@ -772,22 +768,20 @@ export default function DashboardPage() {
 
                 </div>
               )}
-
             </div>
-
           </div>
 
           {/* GREETING */}
 
-          <div className="relative z-10 mt-[clamp(10px,3cqw,15px)]">
+          <div className="relative z-20 mt-[clamp(8px,2.6cqw,11px)]">
 
-            <div className="relative z-10 max-w-[78%]">
+            <div className="relative z-20 w-full max-w-[42rem] pr-[clamp(78px,20cqw,128px)]">
 
               <h1 className="text-[clamp(20px,5.7cqw,23px)] font-bold leading-[1.12] tracking-tight text-white">
                 Halo, Budi Santoso
               </h1>
 
-              <p className="mt-1 text-[clamp(12px,3.5cqw,14px)] leading-[1.3] text-white/95">
+              <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-[min(78%,420px)] text-[clamp(12px,3.3cqw,14px)] leading-[1.25] text-white/95">
                 Berikut ringkasan operasional kunjungan unit.
               </p>
 
@@ -795,7 +789,7 @@ export default function DashboardPage() {
 
             {/* PRINTER ILLUSTRATION */}
 
-            <div className="pointer-events-none absolute right-[-5px] top-[clamp(4px,2cqw,12px)] z-0 h-[clamp(100px,30cqw,135px)] w-[clamp(100px,30cqw,135px)]">
+            <div className="pointer-events-none absolute right-[-2px] top-[clamp(2px,1.2cqw,6px)] z-10 flex h-[clamp(100px,28cqw,116px)] w-[clamp(100px,28cqw,116px)] items-center justify-center">
 
               <Image
                 src="/images/moku/illustrations/dashboard-printer.png"
@@ -804,49 +798,34 @@ export default function DashboardPage() {
                 height={340}
                 priority
                 className="h-full w-full object-contain"
-                sizes="(max-width: 390px) 116px, 140px"
+                sizes="(max-width: 390px) 112px, (max-width: 600px) 140px, 160px"
               />
 
             </div>
 
           </div>
-
-          {/* ORGANIC WHITE CANVAS EDGE */}
-
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 400 70"
-            preserveAspectRatio="none"
-            className="pointer-events-none absolute bottom-0 left-0 z-[5] h-[clamp(38px,11cqw,58px)] w-full"
-          >
-            <path
-              d="
-                M0 27
-                C20 31 31 49 62 48
-                C100 47 119 12 163 12
-                C205 12 222 40 260 48
-                C304 58 345 25 400 20
-                L400 70
-                L0 70
-                Z
-              "
-              fill="#F7F7F7"
-            />
-          </svg>
-
         </header>
       )}
 
       {/* ===================================================
-          DASHBOARD CONTENT — WHITE CANVAS OVERLAP
+          WHITE CANVAS — OVERLAPPING HEADER
       =================================================== */}
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(9px,2.5cqw,12px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
-          showMobileHeader
-            ? "-mt-[clamp(28px,8cqw,42px)]"
-            : "pt-4"
-        }`}
+        className={`
+          relative z-20 mx-auto w-full max-w-[760px]
+          ${
+            showMobileHeader
+              ? "-mt-[12px]"
+              : "pt-4"
+          }
+          rounded-t-[20px]
+          bg-[#F7F7F7]
+          px-[clamp(9px,2.6cqw,12px)]
+          pt-[16px]
+          pb-[clamp(12px,3.2cqw,18px)]
+          space-y-[clamp(9px,2.5cqw,12px)]
+        `}
       >
 
         {/* =================================================
@@ -873,7 +852,6 @@ export default function DashboardPage() {
                 aria-expanded={showMonthPicker}
                 className="flex h-[clamp(32px,8.5cqw,38px)] w-[clamp(132px,38cqw,190px)] max-w-full items-center gap-[7px] rounded-full border border-[#EEEEEE] bg-white px-[clamp(8px,2.2cqw,12px)] text-[#171717] shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
               >
-
                 <CalendarDays size={18} className="shrink-0" />
 
                 <span className="min-w-0 flex-1 whitespace-nowrap text-left text-[clamp(10px,2.8cqw,12px)] font-semibold tracking-[-0.015em]">
@@ -881,7 +859,6 @@ export default function DashboardPage() {
                 </span>
 
                 <ChevronDown size={15} className="shrink-0" />
-
               </button>
 
               {showMonthPicker && (
@@ -910,7 +887,6 @@ export default function DashboardPage() {
                       {selectedMonth === month && (
                         <Check size={17} />
                       )}
-
                     </button>
                   ))}
 
@@ -918,50 +894,46 @@ export default function DashboardPage() {
               )}
 
             </div>
-
           </div>
 
           {/* DONUT + LEGEND */}
 
-          <div className="mt-[clamp(7px,2cqw,10px)] grid h-[clamp(100px,27cqw,112px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(6px,1.8cqw,9px)] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
+          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(92px,24.5cqw,100px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
-            <div className="flex h-full min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2cqw,12px)]">
+            <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2cqw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[clamp(88px,25cqw,106px)] rounded-full"
+                className="relative aspect-square w-full max-w-[clamp(88px,24cqw,98px)] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
                 }}
-                aria-label="48 mesin: 32 sudah dikunjungi, 12 belum dikunjungi, 4 perlu perhatian"
               >
 
                 <div className="absolute inset-[14%] flex flex-col items-center justify-center rounded-full bg-white">
 
-                  <span className="text-[clamp(24px,7.1cqw,30px)] font-extrabold leading-none text-[#111111]">
+                  <span className="text-[clamp(24px,7.1cqw,28px)] font-extrabold leading-none text-[#111111]">
                     48
                   </span>
 
-                  <span className="mt-1 text-[clamp(11px,3cqw,13px)] font-medium text-[#29232A]">
+                  <span className="mt-1 text-[clamp(11px,3cqw,12px)] text-[#29232A]">
                     Mesin
                   </span>
 
                 </div>
-
               </div>
-
             </div>
 
             {/* LEGEND */}
 
-            <div className="min-w-0 space-y-[clamp(7px,2cqw,10px)]">
+            <div className="min-w-0 space-y-[clamp(6px,1.7cqw,7px)]">
 
               {monitoringData.map((item) => (
                 <div
                   key={item.label}
-                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.2cqw,8px)]"
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.2cqw,10px)]"
                 >
 
                   <span className="flex min-w-0 items-center gap-[6px]">
@@ -973,18 +945,18 @@ export default function DashboardPage() {
                       }}
                     />
 
-                    <span className="min-w-0 whitespace-nowrap text-[clamp(10px,3.1cqw,13px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+                    <span className="min-w-0 whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
                       {item.label}
                     </span>
 
                   </span>
 
-                  <span className="whitespace-nowrap text-[clamp(10px,3cqw,13px)] font-medium text-[#51474E]">
+                  <span className="whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] text-[#51474E]">
                     {item.value} Mesin
                   </span>
 
                   <span
-                    className={`min-w-[clamp(29px,7.4cqw,35px)] rounded-full px-[clamp(6px,1.6cqw,10px)] py-[clamp(3px,0.9cqw,5px)] text-center text-[clamp(10px,3cqw,13px)] font-bold ${item.badge}`}
+                    className={`min-w-[clamp(29px,7.4cqw,33px)] rounded-full px-[clamp(6px,1.6cqw,12px)] py-[clamp(3px,0.9cqw,4px)] text-center text-[clamp(11px,3cqw,12px)] font-bold ${item.badge}`}
                   >
                     {item.percentage}%
                   </span>
@@ -993,9 +965,7 @@ export default function DashboardPage() {
               ))}
 
             </div>
-
           </div>
-
         </section>
 
         {/* =================================================
@@ -1006,7 +976,7 @@ export default function DashboardPage() {
 
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
 
-            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1cqw,19px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
+            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1cqw,18px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
               Kunjungan Bulan Ini
             </h2>
 
@@ -1018,13 +988,11 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[clamp(7px,2cqw,10px)] grid min-h-[clamp(65px,17cqw,76px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
-
-            {/* TOTAL VISIT */}
+          <div className="mt-[clamp(5px,1.6cqw,7px)] grid min-h-[clamp(54px,15.5cqw,62px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
 
             <div className="min-w-0 border-r border-[#EEEEEE] pr-2">
 
-              <p className="text-[clamp(32px,9.5cqw,42px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
+              <p className="text-[clamp(30px,9cqw,37px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
                 32
               </p>
 
@@ -1034,13 +1002,11 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* COMPARISON + ILLUSTRATION */}
-
-            <div className="grid min-w-0 grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] items-center gap-[clamp(3px,1cqw,6px)]">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] items-center gap-[clamp(2px,0.7cqw,4px)]">
 
               <div className="min-w-0">
 
-                <span className="inline-flex max-w-full items-center gap-[clamp(4px,1cqw,7px)] rounded-full bg-[#DDF9E5] px-[clamp(8px,2.2cqw,14px)] py-[clamp(4px,1cqw,6px)] text-[clamp(11px,3cqw,13px)] font-bold text-[#168B3E]">
+                <span className="inline-flex max-w-full items-center gap-[clamp(4px,1cqw,7px)] rounded-full bg-[#DDF9E5] px-[clamp(8px,2.2cqw,14px)] py-[clamp(3px,0.8cqw,5px)] text-[clamp(10px,2.9cqw,12px)] font-bold text-[#168B3E]">
 
                   <TrendingUp
                     size={16}
@@ -1051,7 +1017,7 @@ export default function DashboardPage() {
 
                 </span>
 
-                <p className="mt-[clamp(4px,1cqw,6px)] max-w-full text-[clamp(11px,3.1cqw,14px)] leading-[1.24] tracking-[-0.01em] text-[#29232A]">
+                <p className="mt-[clamp(3px,0.9cqw,4px)] max-w-full text-[clamp(11px,3.1cqw,13px)] leading-[1.24] tracking-[-0.01em] text-[#29232A]">
                   Dibanding bulan lalu
                   <br />
                   (28 kunjungan)
@@ -1061,7 +1027,7 @@ export default function DashboardPage() {
 
               {/* ACTIVITY ILLUSTRATION */}
 
-              <div className="relative flex h-[clamp(62px,18cqw,76px)] w-full min-w-0 items-center justify-center">
+              <div className="relative flex h-[clamp(54px,15.5cqw,62px)] w-full min-w-0 items-center justify-center">
 
                 <span className="absolute left-[2%] top-[15%] h-[72%] w-[96%] rounded-[48%] bg-[#FDE9ED]" />
 
@@ -1081,26 +1047,25 @@ export default function DashboardPage() {
               </div>
 
             </div>
-
           </div>
 
           {/* TARGET PROGRESS */}
 
-          <div className="mt-[clamp(8px,2.2cqw,11px)]">
+          <div className="mt-[clamp(5px,1.5cqw,8px)]">
 
-            <div className="mb-[6px] flex items-center justify-between gap-2">
+            <div className="mb-1 flex items-center justify-between gap-2">
 
-              <p className="text-[clamp(12px,3.2cqw,14px)] font-bold text-[#171717]">
+              <p className="text-[clamp(11px,3.1cqw,13px)] font-bold text-[#171717]">
                 Pencapaian Target
               </p>
 
-              <p className="text-[clamp(12px,3.2cqw,14px)] font-extrabold text-[#111111]">
+              <p className="text-[clamp(11px,3.1cqw,13px)] font-extrabold text-[#111111]">
                 80%
               </p>
 
             </div>
 
-            <div className="h-[clamp(8px,2.2cqw,9px)] overflow-hidden rounded-full bg-[#E8E8E8]">
+            <div className="h-[clamp(7px,2cqw,8px)] overflow-hidden rounded-full bg-[#E8E8E8]">
 
               <div
                 className="h-full rounded-full bg-[#BF0B2C]"
@@ -1110,7 +1075,6 @@ export default function DashboardPage() {
             </div>
 
           </div>
-
         </section>
 
         {/* =================================================
@@ -1155,7 +1119,6 @@ export default function DashboardPage() {
             </QuickAction>
 
           </div>
-
         </section>
 
         {/* =================================================
@@ -1164,7 +1127,7 @@ export default function DashboardPage() {
 
         <Link
           href="/monitoring"
-          className="relative flex min-h-[clamp(62px,16cqw,72px)] min-w-0 items-center gap-[9px] overflow-hidden rounded-[clamp(12px,3.6cqw,14px)] border border-[#F7E4DE] bg-[#FFF2EE] px-[clamp(10px,3cqw,14px)] py-[8px] pl-[clamp(15px,4cqw,20px)] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-[#F28C0F]"
+          className="relative flex min-h-[clamp(58px,15cqw,68px)] min-w-0 items-center gap-[9px] overflow-hidden rounded-[clamp(12px,3.6cqw,14px)] border border-[#F7E4DE] bg-[#FFF2EE] px-[clamp(10px,3cqw,14px)] py-[7px] pl-[clamp(15px,4cqw,20px)] before:absolute before:inset-y-0 before:left-0 before:w-[4px] before:bg-[#F28C0F]"
         >
 
           <div className="flex h-[clamp(38px,10cqw,46px)] w-[clamp(38px,10cqw,46px)] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
@@ -1173,7 +1136,7 @@ export default function DashboardPage() {
 
           <div className="min-w-0 flex-1">
 
-            <p className="text-[clamp(12px,3.6cqw,15px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+            <p className="text-[clamp(12px,3.6cqw,14px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#171717]">
               Mesin Perlu Perhatian
             </p>
 
@@ -1198,9 +1161,7 @@ export default function DashboardPage() {
 
           <div className="flex min-w-0 items-center justify-between gap-2 px-[clamp(2px,1cqw,5px)]">
 
-            <SectionTitle>
-              Aktivitas Terbaru
-            </SectionTitle>
+            <SectionTitle>Aktivitas Terbaru</SectionTitle>
 
             <Link
               href="/visit-history"
@@ -1266,11 +1227,9 @@ export default function DashboardPage() {
             ))}
 
           </div>
-
         </section>
 
       </div>
-
     </main>
   );
 }
