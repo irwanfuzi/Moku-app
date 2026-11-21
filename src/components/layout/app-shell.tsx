@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -6,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -36,6 +36,8 @@ interface AppLayoutContextValue {
   isPWA: boolean;
   isReady: boolean;
 }
+
+type NavigationDirection = "forward" | "backward";
 
 /* =========================================================
    APP LAYOUT CONTEXT
@@ -129,6 +131,38 @@ function getPageInformation(pathname: string): PageInformation {
 }
 
 /* =========================================================
+   NAVIGATION DIRECTION
+========================================================= */
+
+function getRouteDepth(pathname: string): number {
+  return pathname.split("/").filter(Boolean).length;
+}
+
+function getNavigationDirection(
+  previousPath: string,
+  currentPath: string
+): NavigationDirection {
+  const previousDepth = getRouteDepth(previousPath);
+  const currentDepth = getRouteDepth(currentPath);
+
+  if (
+    previousDepth > currentDepth &&
+    previousPath.startsWith(`${currentPath}/`)
+  ) {
+    return "backward";
+  }
+
+  if (
+    currentDepth > previousDepth &&
+    currentPath.startsWith(`${previousPath}/`)
+  ) {
+    return "forward";
+  }
+
+  return "forward";
+}
+
+/* =========================================================
    DEVICE DETECTION
 ========================================================= */
 
@@ -146,37 +180,104 @@ function detectPWA(): boolean {
   return standalone || iosStandalone;
 }
 
-function detectMobileUserAgent(): boolean {
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(
-    navigator.userAgent
-  );
-}
+/**
+ * Layout selection priority:
+ * 1. URL override (?moku-layout=mobile|desktop) for deterministic QA.
+ * 2. localStorage override (moku-layout-override) for manual testing.
+ * 3. Browser device-mode signal for normal runtime behavior.
+ * Orientation and viewport width never switch a phone's layout.
+ */
+/**
+ * userAgentData.mobile is preferred where supported because browsers that
+ * enable "Desktop site" generally report mobile=false.
+ * The classic user-agent fallback covers iOS and older browsers.
+ */
+function detectMobileBrowserMode(): boolean {
+  const userAgentData = (
+    navigator as Navigator & {
+      userAgentData?: { mobile?: boolean };
+    }
+  ).userAgentData;
 
-function detectHandheldDevice(): boolean {
-  const shortestScreenSide = Math.min(
-    window.screen.width,
-    window.screen.height
-  );
+  if (typeof userAgentData?.mobile === "boolean") {
+    return userAgentData.mobile;
+  }
 
-  return (
-    detectMobileUserAgent() &&
-    shortestScreenSide <= 600
+  const userAgent = navigator.userAgent;
+
+  return /iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini|Mobile/i.test(
+    userAgent
   );
 }
 
 function detectLayoutMode(): {
   mode: AppLayoutMode;
   isPWA: boolean;
+  source: "query-override" | "storage-override" | "device";
 } {
   const isPWA = detectPWA();
-  const isHandheld = detectHandheldDevice();
+
+  const params = new URLSearchParams(window.location.search);
+  const queryOverride = params.get("moku-layout");
+
+  if (queryOverride === "mobile" || queryOverride === "desktop") {
+    return {
+      mode: queryOverride,
+      isPWA,
+      source: "query-override",
+    };
+  }
+
+  try {
+    const storedOverride = window.localStorage.getItem(
+      "moku-layout-override"
+    );
+
+    if (storedOverride === "mobile" || storedOverride === "desktop") {
+      return {
+        mode: storedOverride,
+        isPWA,
+        source: "storage-override",
+      };
+    }
+  } catch {
+    // Continue with browser device-mode detection.
+  }
 
   return {
-    mode: isHandheld ? "mobile" : "desktop",
+    mode: detectMobileBrowserMode() ? "mobile" : "desktop",
     isPWA,
+    source: "device",
   };
 }
 
+/**
+ * QA helper:
+ * window.setMokuLayoutOverride("desktop")
+ * window.setMokuLayoutOverride("mobile")
+ * window.setMokuLayoutOverride(null) // return to automatic detection
+ */
+declare global {
+  interface Window {
+    setMokuLayoutOverride?: (mode: AppLayoutMode | null) => void;
+  }
+}
+
+function installLayoutOverrideHelper() {
+  window.setMokuLayoutOverride = (mode) => {
+    try {
+      if (mode === null) {
+        window.localStorage.removeItem("moku-layout-override");
+      } else {
+        window.localStorage.setItem("moku-layout-override", mode);
+      }
+    } catch {
+      // Query-string override remains available if storage is restricted.
+    }
+
+    window.location.reload();
+  };
+}
 /* =========================================================
    APP SHELL
 ========================================================= */
@@ -186,8 +287,7 @@ export default function AppShell({
 }: Readonly<AppShellProps>) {
   const pathname = usePathname();
 
-  const [sidebarCollapsed, setSidebarCollapsed] =
-    useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [layoutState, setLayoutState] =
     useState<AppLayoutContextValue>({
@@ -197,6 +297,11 @@ export default function AppShell({
       isPWA: false,
       isReady: false,
     });
+
+  const [navigationDirection, setNavigationDirection] =
+    useState<NavigationDirection>("forward");
+
+  const previousPathRef = useRef(pathname);
 
   const currentPage = getPageInformation(pathname);
 
@@ -235,55 +340,70 @@ export default function AppShell({
   }, []);
 
   useEffect(() => {
+    installLayoutOverrideHelper();
     updateLayout();
 
-    const handleViewportChange = () => {
-      updateLayout();
+    let resizeTimer: number | undefined;
+
+    const handleResize = () => {
+      if (resizeTimer !== undefined) {
+        window.clearTimeout(resizeTimer);
+      }
+
+      resizeTimer = window.setTimeout(() => {
+        updateLayout();
+      }, 100);
     };
 
-    window.addEventListener("resize", handleViewportChange);
-
-    window.addEventListener(
-      "orientationchange",
-      handleViewportChange
-    );
-
-    window.visualViewport?.addEventListener(
-      "resize",
-      handleViewportChange
-    );
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
 
     const displayMode = window.matchMedia(
       "(display-mode: standalone)"
     );
 
-    displayMode.addEventListener(
-      "change",
-      handleViewportChange
-    );
+    displayMode.addEventListener("change", updateLayout);
+
+    const screenOrientation = window.screen.orientation;
+
+    screenOrientation?.addEventListener("change", handleResize);
 
     return () => {
-      window.removeEventListener(
-        "resize",
-        handleViewportChange
-      );
+      if (resizeTimer !== undefined) {
+        window.clearTimeout(resizeTimer);
+      }
+
+      window.removeEventListener("resize", handleResize);
 
       window.removeEventListener(
         "orientationchange",
-        handleViewportChange
+        handleResize
       );
 
-      window.visualViewport?.removeEventListener(
-        "resize",
-        handleViewportChange
-      );
+      displayMode.removeEventListener("change", updateLayout);
 
-      displayMode.removeEventListener(
+      screenOrientation?.removeEventListener(
         "change",
-        handleViewportChange
+        handleResize
       );
     };
   }, [updateLayout]);
+
+  /* =======================================================
+     PAGE TRANSITION DIRECTION
+  ======================================================= */
+
+  useEffect(() => {
+    if (previousPathRef.current === pathname) {
+      return;
+    }
+
+    setNavigationDirection(
+      getNavigationDirection(previousPathRef.current, pathname)
+    );
+
+    previousPathRef.current = pathname;
+  }, [pathname]);
 
   /* =======================================================
      RENDER
@@ -296,23 +416,24 @@ export default function AppShell({
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
-        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground"
+        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground transition-colors duration-200"
       >
+        {/* SIDEBAR */}
+
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
         />
 
+        {/* MAIN APPLICATION AREA */}
+
         <div className="moku-main-layout flex min-h-dvh min-w-0 flex-col">
+          {/* HEADER */}
 
-          {/* DESKTOP HEADER */}
-
-          {layoutState.isReady && layoutState.isDesktop && (
-            <AppHeader
-              title={currentPage.title}
-              description={currentPage.description}
-            />
-          )}
+          <AppHeader
+            title={currentPage.title}
+            description={currentPage.description}
+          />
 
           {/* PAGE CONTENT */}
 
@@ -323,19 +444,23 @@ export default function AppShell({
               overflow-x-clip bg-background
               ${
                 layoutState.mode === "desktop"
-                  ? "px-4 py-5 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-7 lg:pb-7"
+                  ? "px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
                   : "p-0"
               }
             `}
           >
-            <div className="min-h-full w-full min-w-0">
+            <div
+              key={pathname}
+              data-page-transition={navigationDirection}
+              className="page-transition min-h-full w-full min-w-0"
+            >
               {children}
             </div>
           </main>
 
-          {/* DESKTOP FOOTER */}
+          {/* FOOTER */}
 
-          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4">
+          <footer className="moku-desktop-footer hidden shrink-0 border-t border-border bg-surface px-6 py-4 transition-colors duration-200">
             <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3">
               <p className="text-[11px] text-muted">
                 © {new Date().getFullYear()} MOKU. All rights reserved.
@@ -360,7 +485,9 @@ export default function AppShell({
       =================================================== */}
 
       <style jsx global>{`
-        /* BASE LAYOUT */
+        /*
+          BASE LAYOUT
+        */
 
         .moku-app-shell {
           position: relative;
@@ -377,7 +504,12 @@ export default function AppShell({
           box-sizing: border-box;
         }
 
-        /* DESKTOP */
+        /*
+          DESKTOP SITE + TABLET + LAPTOP + DESKTOP PC
+
+          Satu standar layout desktop.
+          Tidak ada ukuran compact khusus landscape.
+        */
 
         .moku-app-shell[data-layout-mode="desktop"] {
           min-height: 100dvh;
@@ -389,7 +521,7 @@ export default function AppShell({
           top: 0 !important;
           bottom: 0 !important;
           left: 0 !important;
-          width: 240px !important;
+          width: 280px !important;
           height: 100vh !important;
           height: 100dvh !important;
           max-height: none !important;
@@ -398,10 +530,14 @@ export default function AppShell({
         }
 
         .moku-app-shell[data-layout-mode="desktop"] .moku-main-layout {
-          width: calc(100% - 240px);
-          margin-left: 240px;
-          flex: 0 0 calc(100% - 240px);
+          width: calc(100% - 280px);
+          margin-left: 280px;
+          flex: 0 0 calc(100% - 280px);
           min-height: 100dvh;
+          transition:
+            margin-left 250ms ease,
+            width 250ms ease,
+            flex-basis 250ms ease;
         }
 
         .moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
@@ -429,19 +565,22 @@ export default function AppShell({
           padding: 28px 24px 28px !important;
         }
 
+        /*
+          DESKTOP LARGE SCREEN
+        */
+
         @media (min-width: 1440px) {
           .moku-app-shell[data-layout-mode="desktop"] #main-content {
             padding: 32px !important;
           }
         }
 
-        /* MOBILE */
+        /*
+          MOBILE WEB / PWA
 
-        .moku-app-shell[data-layout-mode="mobile"] {
-          width: 100%;
-          min-height: 100dvh;
-          overflow-x: clip;
-        }
+          Portrait dan landscape tetap menggunakan satu
+          komposisi mobile yang sama.
+        */
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
           display: none !important;
@@ -463,31 +602,78 @@ export default function AppShell({
           display: block;
         }
 
-        .moku-app-shell[data-layout-mode="mobile"] #main-content {
-          width: 100%;
+        /*
+          PAGE TRANSITIONS
+        */
+
+        .page-transition {
           min-width: 0;
-          padding: 0 !important;
-          overflow-x: clip;
         }
 
-        /* MOBILE LANDSCAPE */
+        [data-layout-mode="desktop"] .page-transition {
+          animation: moku-desktop-enter 260ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
 
-        @media (orientation: landscape) {
-          .moku-app-shell[data-layout-mode="mobile"] {
-            width: 100%;
-            min-width: 0;
+        @keyframes moku-desktop-enter {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 8px, 0);
           }
 
-          .moku-app-shell[data-layout-mode="mobile"] .moku-main-layout {
-            width: 100% !important;
-            margin-left: 0 !important;
-            flex-basis: 100% !important;
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        [data-layout-mode="mobile"]
+          .page-transition[data-page-transition="forward"] {
+          animation: moku-push-forward 340ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        [data-layout-mode="mobile"]
+          .page-transition[data-page-transition="backward"] {
+          animation: moku-push-backward 340ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes moku-push-forward {
+          from {
+            opacity: 0.85;
+            transform: translate3d(42px, 0, 0);
           }
 
-          .moku-app-shell[data-layout-mode="mobile"] #main-content {
-            width: 100%;
-            min-width: 0;
-            padding: 0 !important;
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes moku-push-backward {
+          from {
+            opacity: 0.85;
+            transform: translate3d(-42px, 0, 0);
+          }
+
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        /*
+          REDUCED MOTION
+        */
+
+        @media (prefers-reduced-motion: reduce) {
+          .page-transition {
+            animation: none !important;
+          }
+
+          .moku-main-layout {
+            transition: none !important;
           }
         }
       `}</style>
