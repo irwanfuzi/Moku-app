@@ -271,7 +271,7 @@ export default function DashboardPage() {
 
             <div className="relative mt-[clamp(22px,6vw,34px)] pb-[clamp(22px,6vw,34px)]">
 
-              <div className="relative z-10 w-full max-w-[42rem]">
+              <div className="relative z-10 w-[min(100%,calc(100%-clamp(92px,27vw,150px)))] max-w-[42rem]">
 
                 <h1 className="text-[clamp(23px,6.2vw,32px)] font-bold leading-[1.12] tracking-tight !text-white">
                   Halo, Budi Santoso
@@ -281,6 +281,19 @@ export default function DashboardPage() {
                   Berikut ringkasan operasional kunjungan unit.
                 </p>
 
+              </div>
+
+              {/* PRINTER ILLUSTRATION — tetap dipertahankan dari desain asli */}
+              <div className="pointer-events-none absolute right-[-4px] top-[-8px] z-0 flex h-[clamp(112px,34vw,160px)] w-[clamp(112px,34vw,160px)] items-center justify-center">
+                <Image
+                  src="/images/moku/illustrations/dashboard-printer.png"
+                  alt=""
+                  width={340}
+                  height={340}
+                  priority
+                  className="h-full w-full object-contain"
+                  sizes="(max-width: 390px) 112px, (max-width: 600px) 140px, 160px"
+                />
               </div>
 
               {/* PERIOD SELECTOR */}
@@ -487,19 +500,32 @@ export default function DashboardPage() {
 
             </div>
 
-            {/* GROWTH SUMMARY */}
+            {/* GROWTH SUMMARY + ACTIVITY ILLUSTRATION */}
 
-            <div className="min-w-0">
-              <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[#DDF9E5] px-[clamp(10px,3vw,18px)] py-[clamp(7px,1.8vw,11px)] text-[clamp(15px,4vw,22px)] font-bold text-[#168B3E]">
-                <TrendingUp size={19} className="shrink-0" />
-                +14%
-              </span>
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_clamp(64px,20vw,116px)] items-center gap-[clamp(4px,1.5vw,12px)]">
+              <div className="min-w-0">
+                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#DDF9E5] px-[clamp(9px,2.5vw,16px)] py-[clamp(7px,1.8vw,11px)] text-[clamp(14px,3.8vw,21px)] font-bold text-[#168B3E]">
+                  <TrendingUp size={19} className="shrink-0" />
+                  +14%
+                </span>
 
-              <p className="mt-3 text-[clamp(13px,3.4vw,18px)] leading-snug text-[#29232A]">
-                Dibanding bulan lalu
-                <br />
-                (28 kunjungan)
-              </p>
+                <p className="mt-3 text-[clamp(12px,3.2vw,17px)] leading-snug text-[#29232A]">
+                  Dibanding bulan lalu
+                  <br />
+                  (28 kunjungan)
+                </p>
+              </div>
+
+              <div className="flex h-[clamp(68px,21vw,116px)] min-w-0 items-center justify-center">
+                <Image
+                  src="/images/moku/illustrations/dashboard-activity.png"
+                  alt=""
+                  width={240}
+                  height={240}
+                  className="h-full w-full object-contain object-center"
+                  sizes="(max-width: 390px) 68px, (max-width: 600px) 90px, 116px"
+                />
+              </div>
             </div>
           </div>
 
