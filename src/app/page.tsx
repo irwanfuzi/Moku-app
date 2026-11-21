@@ -85,7 +85,7 @@ function SectionTitle({
   children: ReactNode;
 }) {
   return (
-    <h2 className="min-w-0 text-[clamp(16px,4.1vw,18px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
+    <h2 className="min-w-0 text-[clamp(16px,4.1vw,19px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
       {children}
     </h2>
   );
@@ -107,13 +107,13 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex min-w-0 flex-col items-center justify-center gap-[5px] rounded-[15px] bg-[#FCECEF] px-1 py-[8px] text-center"
+      className="flex min-w-0 flex-col items-center justify-center gap-[clamp(6px,1.8vw,8px)] rounded-[16px] bg-[#FCECEF] px-1 py-[clamp(10px,2.8vw,13px)] text-center"
     >
-      <span className="flex h-[clamp(30px,8vw,34px)] w-[clamp(30px,8vw,34px)] shrink-0 items-center justify-center rounded-[10px] bg-[#BF0B2C] text-white">
+      <span className="flex h-[clamp(34px,9.5vw,40px)] w-[clamp(34px,9.5vw,40px)] shrink-0 items-center justify-center rounded-[11px] bg-[#BF0B2C] text-white">
         {children}
       </span>
 
-      <span className="min-h-[2.2em] text-[clamp(11px,3vw,12px)] font-medium leading-[1.15] text-[#171717]">
+      <span className="min-h-[2.2em] text-[clamp(10px,2.7vw,12px)] font-medium leading-[1.12] text-[#171717]">
         {label}
       </span>
     </Link>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate overflow-hidden bg-[#730217] px-[10px] pb-[8px] pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate overflow-hidden bg-[#730217] px-[clamp(16px,4.8vw,22px)] pb-[clamp(9px,2.4vw,12px)] pt-[max(14px,env(safe-area-inset-top))] text-white">
 
           {/* HEADER DECORATION */}
 
@@ -168,7 +168,7 @@ export default function DashboardPage() {
 
             {/* BRAND ROW */}
 
-            <div className="flex h-[40px] min-h-[40px] items-center justify-between">
+            <div className="flex h-[clamp(38px,10vw,44px)] min-h-[clamp(38px,10vw,44px)] items-center justify-between">
 
               <Link
                 href="/"
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                   width={190}
                   height={70}
                   priority
-                  className="h-auto w-[clamp(100px,24vw,108px)] object-contain object-left"
+                  className="h-auto w-[clamp(112px,29vw,128px)] object-contain object-left"
                 />
               </Link>
 
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                   }
                   aria-label="Notifikasi"
                   aria-expanded={showNotifications}
-                  className="relative flex h-[38px] w-[38px] items-center justify-center rounded-full text-white"
+                  className="relative flex h-[44px] w-[44px] items-center justify-center rounded-full text-white"
                 >
                   <Bell size={26} strokeWidth={1.8} />
 
@@ -257,22 +257,22 @@ export default function DashboardPage() {
 
             {/* GREETING + PRINTER */}
 
-            <div className="relative mt-[7px] pb-0">
+            <div className="relative mt-[clamp(7px,1.8vw,9px)] pb-0">
 
-              <div className="relative z-10 w-[min(100%,calc(100%-100px))] max-w-[42rem]">
+              <div className="relative z-10 w-[min(100%,calc(100%-clamp(104px,27vw,116px)))] max-w-[42rem]">
 
-                <h1 className="text-[clamp(20px,5.1vw,22px)] font-bold leading-[1.12] tracking-tight !text-white">
+                <h1 className="text-[clamp(20px,5.5vw,24px)] font-bold leading-[1.12] tracking-tight !text-white">
                   Halo, Budi Santoso
                 </h1>
 
-                <p className="mt-[2px] max-w-[42rem] text-[clamp(12px,3.2vw,13px)] leading-[1.3] text-white/90">
+                <p className="mt-[2px] max-w-[42rem] text-[clamp(12px,3.35vw,14px)] leading-[1.3] text-white/90">
                   Berikut ringkasan operasional kunjungan unit.
                 </p>
 
               </div>
 
               {/* PRINTER ILLUSTRATION — tetap dipertahankan dari desain asli */}
-              <div className="pointer-events-none absolute right-[-2px] top-[2px] z-0 flex h-[clamp(100px,27vw,116px)] w-[clamp(100px,27vw,116px)] items-center justify-center">
+              <div className="pointer-events-none absolute right-[-2px] top-[2px] z-0 flex h-[clamp(82px,22vw,96px)] w-[clamp(82px,22vw,96px)] items-center justify-center">
                 <Image
                   src="/images/moku/illustrations/dashboard-printer.png"
                   alt=""
@@ -286,7 +286,7 @@ export default function DashboardPage() {
 
               {/* PERIOD SELECTOR */}
 
-              <div className="relative z-20 mt-[8px] w-fit max-w-full">
+              <div className="relative z-20 mt-[clamp(12px,3.1vw,15px)] w-fit max-w-full">
 
                 <button
                   type="button"
@@ -294,15 +294,15 @@ export default function DashboardPage() {
                     setShowMonthPicker((value) => !value)
                   }
                   aria-expanded={showMonthPicker}
-                  className="flex h-[32px] w-[151px] items-center gap-[9px] rounded-full bg-white px-[11px] text-[#171717]"
+                  className="flex h-[clamp(38px,9.5vw,42px)] w-[min(100%,clamp(148px,39vw,174px))] items-center gap-[clamp(10px,2.8vw,14px)] rounded-full bg-white px-[clamp(13px,3.5vw,17px)] text-[#171717]"
                 >
 
                   <CalendarDays
-                    size={19}
+                    size={21}
                     className="shrink-0"
                   />
 
-                  <span className="min-w-0 flex-1 truncate text-left text-[12px] font-bold">
+                  <span className="min-w-0 flex-1 truncate text-left text-[clamp(12px,3.2vw,14px)] font-bold">
                     {selectedMonth}
                   </span>
 
@@ -357,8 +357,8 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-1 h-[18px] overflow-hidden">
-          <div className="absolute -left-[8%] -top-[26px] h-[56px] w-[116%] rounded-[50%] bg-[#E9A0AC]" />
+        <div className="pointer-events-none relative -mt-1 h-[clamp(18px,4.5vw,24px)] overflow-hidden">
+          <div className="absolute -left-[8%] -top-[34px] h-[70px] w-[116%] rounded-[50%] bg-[#E9A0AC]" />
         </div>
       )}
 
@@ -367,8 +367,8 @@ export default function DashboardPage() {
       =================================================== */}
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[920px] space-y-[8px] px-[10px] ${
-          showMobileHeader ? "-mt-[8px]" : "pt-4"
+        className={`relative z-10 mx-auto w-full max-w-[920px] space-y-[clamp(9px,2.4vw,12px)] px-[clamp(10px,2.8vw,12px)] ${
+          showMobileHeader ? "-mt-[clamp(8px,2vw,12px)]" : "pt-4"
         }`}
       >
 
@@ -376,20 +376,20 @@ export default function DashboardPage() {
             STATUS MONITORING MESIN
         ================================================= */}
 
-        <section className="min-w-0 rounded-[20px] border border-[#EEEEEE] bg-white p-[10px] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(18px,4.5vw,22px)] border border-[#EEEEEE] bg-white p-[clamp(12px,3.4vw,16px)] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
 
           <SectionTitle>
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[8px] grid min-w-0 grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] items-center gap-[8px] rounded-[18px] border border-[#F0F0F0] px-[8px] py-[7px]">
+          <div className="mt-[clamp(10px,2.8vw,14px)] grid min-w-0 grid-cols-[minmax(0,0.32fr)_minmax(0,0.68fr)] items-center gap-[clamp(8px,2.2vw,12px)] rounded-[18px] border border-[#F0F0F0] px-[clamp(8px,2.2vw,12px)] py-[clamp(10px,2.8vw,14px)]">
 
             {/* DONUT */}
 
             <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2vw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[100px] rounded-full"
+                className="relative aspect-square w-full max-w-[clamp(82px,24vw,102px)] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
@@ -398,11 +398,11 @@ export default function DashboardPage() {
 
                 <div className="absolute inset-[14%] flex flex-col items-center justify-center rounded-full bg-white">
 
-                  <span className="text-[27px] font-extrabold leading-none text-[#111111]">
+                  <span className="text-[clamp(28px,8vw,34px)] font-extrabold leading-none text-[#111111]">
                     48
                   </span>
 
-                  <span className="mt-1 text-[12px] text-[#29232A]">
+                  <span className="mt-1 text-[clamp(12px,3.3vw,14px)] text-[#29232A]">
                     Mesin
                   </span>
 
@@ -413,12 +413,12 @@ export default function DashboardPage() {
 
             {/* MONITORING LEGEND */}
 
-            <div className="min-w-0 space-y-[10px]">
+            <div className="min-w-0 space-y-[clamp(10px,2.8vw,14px)]">
 
               {monitoringData.map((item) => (
                 <div
                   key={item.label}
-                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[6px]"
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.4vw,7px)]"
                 >
 
                   <span className="flex min-w-0 items-center gap-[6px]">
@@ -428,17 +428,17 @@ export default function DashboardPage() {
                         backgroundColor: item.color,
                       }}
                     />
-                    <span className="min-w-0 text-[clamp(10px,3vw,12px)] font-bold leading-[1.2] text-[#29232A]">
+                    <span className="min-w-0 whitespace-nowrap text-[clamp(9px,2.5vw,11px)] font-bold leading-[1.12] text-[#29232A]">
                       {item.label}
                     </span>
                   </span>
 
-                  <span className="whitespace-nowrap text-[clamp(10px,2.8vw,12px)] text-[#51474E]">
+                  <span className="whitespace-nowrap text-[clamp(8px,2.35vw,10px)] text-[#51474E]">
                     {item.value} Mesin
                   </span>
 
                   <span
-                    className={`min-w-[38px] rounded-full px-[7px] py-[3px] text-center text-[clamp(10px,2.8vw,12px)] font-bold ${item.badge}`}
+                    className={`min-w-[32px] rounded-full px-[5px] py-[3px] text-center text-[clamp(9px,2.4vw,11px)] font-bold ${item.badge}`}
                   >
                     {item.percentage}%
                   </span>
@@ -454,17 +454,17 @@ export default function DashboardPage() {
             KUNJUNGAN BULAN INI
         ================================================= */}
 
-        <section className="min-w-0 rounded-[20px] border border-[#EEEEEE] bg-white p-[10px] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(18px,4.5vw,22px)] border border-[#EEEEEE] bg-white p-[clamp(12px,3.4vw,16px)] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
 
           {/* TITLE + TARGET */}
 
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
 
-            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1vw,18px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
+            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1vw,19px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
               Kunjungan Bulan Ini
             </h2>
 
-            <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-[#29232A]">
+            <span className="shrink-0 whitespace-nowrap text-[clamp(11px,2.9vw,13px)] font-medium text-[#29232A]">
               Target: 40 Kunjungan
             </span>
 
@@ -472,17 +472,17 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[12px] grid min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[8px]">
+          <div className="mt-[clamp(10px,2.8vw,13px)] grid min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(8px,2.2vw,12px)]">
 
             {/* TOTAL VISITS */}
 
             <div className="min-w-0 border-r border-[#EEEEEE] pr-2">
 
-              <p className="text-[38px] font-extrabold leading-none tracking-tight text-[#111111]">
+              <p className="text-[clamp(38px,10vw,46px)] font-extrabold leading-none tracking-tight text-[#111111]">
                 32
               </p>
 
-              <p className="mt-1 whitespace-nowrap text-[13px] text-[#29232A]">
+              <p className="mt-1 whitespace-nowrap text-[clamp(12px,3.1vw,14px)] text-[#29232A]">
                 Total Kunjungan
               </p>
 
@@ -490,21 +490,21 @@ export default function DashboardPage() {
 
             {/* GROWTH SUMMARY + ACTIVITY ILLUSTRATION */}
 
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_clamp(82px,27vw,112px)] items-center gap-[4px]">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_clamp(68px,20vw,88px)] items-center gap-[4px]">
               <div className="min-w-0">
-                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#DDF9E5] px-[clamp(9px,2.5vw,16px)] py-[4px] text-[13px] font-bold text-[#168B3E]">
+                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#DDF9E5] px-[clamp(9px,2.5vw,16px)] py-[6px] text-[clamp(12px,3.1vw,14px)] font-bold text-[#168B3E]">
                   <TrendingUp size={19} className="shrink-0" />
                   +14%
                 </span>
 
-                <p className="mt-[5px] text-[12px] leading-snug text-[#29232A]">
+                <p className="mt-[7px] text-[clamp(11px,2.9vw,13px)] leading-[1.3] text-[#29232A]">
                   Dibanding bulan lalu
                   <br />
                   (28 kunjungan)
                 </p>
               </div>
 
-              <div className="flex h-[68px] min-w-0 items-center justify-center">
+              <div className="flex h-[clamp(68px,18vw,82px)] min-w-0 items-center justify-center">
                 <Image
                   src="/images/moku/illustrations/dashboard-activity.png"
                   alt=""
@@ -523,17 +523,17 @@ export default function DashboardPage() {
 
             <div className="mb-2 flex items-center justify-between gap-2">
 
-              <p className="text-[12px] font-bold text-[#29232A]">
+              <p className="text-[clamp(12px,3.1vw,14px)] font-bold text-[#29232A]">
                 Pencapaian Target
               </p>
 
-              <p className="text-[12px] font-extrabold text-[#111111]">
+              <p className="text-[clamp(12px,3.1vw,14px)] font-extrabold text-[#111111]">
                 80%
               </p>
 
             </div>
 
-            <div className="h-[11px] overflow-hidden rounded-full bg-[#E8E8E8]">
+            <div className="h-[clamp(10px,2.8vw,12px)] overflow-hidden rounded-full bg-[#E8E8E8]">
 
               <div
                 className="h-full rounded-full bg-[#BF0B2C]"
@@ -548,13 +548,13 @@ export default function DashboardPage() {
             AKSI CEPAT
         ================================================= */}
 
-        <section className="min-w-0 rounded-[20px] border border-[#EEEEEE] bg-white p-[10px] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(18px,4.5vw,22px)] border border-[#EEEEEE] bg-white p-[clamp(12px,3.4vw,16px)] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
 
           <SectionTitle>
             Aksi Cepat
           </SectionTitle>
 
-          <div className="mt-[10px] grid grid-cols-4 gap-[8px]">
+          <div className="mt-[clamp(10px,2.8vw,14px)] grid grid-cols-4 gap-[clamp(5px,1.4vw,7px)]">
 
             <QuickAction
               href="/visits"
@@ -617,13 +617,13 @@ export default function DashboardPage() {
 
         <Link
           href="/monitoring"
-          className="flex min-w-0 items-center gap-3 rounded-[15px] border border-[#F7E4DE] bg-[#FFF2EE] p-[9px]"
+          className="flex min-w-0 items-center gap-3 rounded-[18px] border border-[#F7E4DE] bg-[#FFF2EE] p-[clamp(10px,2.7vw,12px)]"
         >
 
-          <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
+          <div className="flex h-[clamp(44px,12vw,50px)] w-[clamp(44px,12vw,50px)] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
 
             <AlertTriangle
-              size={27}
+              size={29}
               strokeWidth={1.8}
             />
 
@@ -631,11 +631,11 @@ export default function DashboardPage() {
 
           <div className="min-w-0 flex-1">
 
-            <p className="text-[15px] font-extrabold leading-tight text-[#171717]">
+            <p className="text-[clamp(13px,3.5vw,15px)] font-extrabold leading-tight text-[#171717]">
               Mesin Perlu Perhatian
             </p>
 
-            <p className="mt-1 text-[12px] leading-snug text-[#51474E]">
+            <p className="mt-1 text-[clamp(11px,2.9vw,13px)] leading-[1.3] text-[#51474E]">
               4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
             </p>
 
@@ -652,7 +652,7 @@ export default function DashboardPage() {
             AKTIVITAS TERBARU
         ================================================= */}
 
-        <section className="min-w-0 rounded-[20px] border border-[#EEEEEE] bg-white p-[10px] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(18px,4.5vw,22px)] border border-[#EEEEEE] bg-white p-[clamp(12px,3.4vw,16px)] shadow-[0_2px_7px_rgba(0,0,0,0.055)]">
 
           <div className="flex min-w-0 items-center justify-between gap-2">
 
@@ -662,7 +662,7 @@ export default function DashboardPage() {
 
             <Link
               href="/visit-history"
-              className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(11px,3.5vw,14px)] font-bold text-[#BF0B2C]"
+              className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(10px,3vw,12px)] font-bold text-[#BF0B2C]"
             >
               Lihat Semua
               <ChevronRight size={17} />
@@ -670,16 +670,16 @@ export default function DashboardPage() {
 
           </div>
 
-          <div className="mt-[7px] divide-y divide-[#EEEEEE]">
+          <div className="mt-[10px] divide-y divide-[#EEEEEE]">
 
             {recentActivities.map((activity, index) => (
               <div
                 key={`${activity.machine}-${index}`}
-                className="flex min-w-0 items-center gap-[10px] py-[4px]"
+                className="flex min-w-0 items-center gap-[10px] py-[7px]"
               >
 
                 <div
-                  className={`flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full ${
+                  className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full ${
                     activity.status === "success"
                       ? "bg-[#DDF8E7] text-[#249653]"
                       : "bg-[#FCE7E8] text-[#D83B45]"
@@ -696,11 +696,11 @@ export default function DashboardPage() {
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="truncate text-[12px] font-bold text-[#171717]">
+                  <p className="truncate text-[clamp(11px,2.9vw,13px)] font-bold text-[#171717]">
                     {activity.title}
                   </p>
 
-                  <p className="mt-0 truncate text-[12px] text-[#817780]">
+                  <p className="mt-0 truncate text-[clamp(10px,2.7vw,12px)] text-[#817780]">
                     {activity.machine} · {activity.customer}
                   </p>
 
