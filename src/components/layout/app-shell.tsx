@@ -496,6 +496,11 @@ export default function AppShell({
           width: 100%;
         }
 
+        /* Jangan tampilkan layout default sebelum deteksi perangkat selesai. */
+        .moku-app-shell[data-layout-ready="false"] {
+          visibility: hidden;
+        }
+
         .moku-main-layout {
           position: relative;
           min-width: 0;
@@ -535,10 +540,9 @@ export default function AppShell({
           margin-left: 280px;
           flex: 0 0 calc(100% - 280px);
           min-height: 100dvh;
-          transition:
-            margin-left 250ms ease,
-            width 250ms ease,
-            flex-basis 250ms ease;
+          /* Perubahan geometri layout harus langsung, bukan dianimasikan.
+             Ini mencegah canvas bergeser saat hard refresh. */
+          transition: none !important;
         }
 
         .moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
@@ -551,6 +555,7 @@ export default function AppShell({
           width: calc(100% - 72px);
           margin-left: 72px;
           flex-basis: calc(100% - 72px);
+          transition: none !important;
         }
 
         .moku-app-shell[data-layout-mode="desktop"] .moku-desktop-footer {
