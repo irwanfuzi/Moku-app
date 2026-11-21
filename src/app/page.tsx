@@ -45,7 +45,7 @@ const monitoringData = [
     value: 12,
     percentage: 25,
     color: "#D9D9D9",
-    badge: "bg-[#F1F1F1] text-[#777777]",
+    badge: "bg-[#F1F1F1] text-[#666666]",
   },
   {
     label: "Perlu Perhatian",
@@ -653,7 +653,7 @@ export default function DashboardPage() {
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(92px,24.5cqw,100px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
+          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(92px,24.5cqw,100px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
@@ -673,7 +673,7 @@ export default function DashboardPage() {
                     48
                   </span>
 
-                  <span className="mt-1 text-[clamp(9px,2.9cqw,11px)] text-[#29232A]">
+                  <span className="mt-1 text-[clamp(11px,3cqw,12px)] text-[#29232A]">
                     Mesin
                   </span>
 
@@ -699,17 +699,17 @@ export default function DashboardPage() {
                         backgroundColor: item.color,
                       }}
                     />
-                    <span className="min-w-0 whitespace-nowrap text-[clamp(9px,2.85cqw,11px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+                    <span className="min-w-0 whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
                       {item.label}
                     </span>
                   </span>
 
-                  <span className="whitespace-nowrap text-[clamp(9px,2.9cqw,12px)] text-[#51474E]">
+                  <span className="whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] text-[#51474E]">
                     {item.value} Mesin
                   </span>
 
                   <span
-                    className={`min-w-[clamp(29px,7.4cqw,33px)] rounded-full px-[clamp(6px,1.6cqw,12px)] py-[clamp(3px,0.9cqw,4px)] text-center text-[clamp(9px,2.8cqw,11px)] font-bold ${item.badge}`}
+                    className={`min-w-[clamp(29px,7.4cqw,33px)] rounded-full px-[clamp(6px,1.6cqw,12px)] py-[clamp(3px,0.9cqw,4px)] text-center text-[clamp(11px,3cqw,12px)] font-bold ${item.badge}`}
                   >
                     {item.percentage}%
                   </span>
@@ -735,7 +735,7 @@ export default function DashboardPage() {
               Kunjungan Bulan Ini
             </h2>
 
-            <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-[#29232A]">
+            <span className="shrink-0 whitespace-nowrap text-[clamp(12px,3.3cqw,14px)] font-medium text-[#29232A]">
               Target: 40 Kunjungan
             </span>
 
@@ -753,7 +753,7 @@ export default function DashboardPage() {
                 32
               </p>
 
-              <p className="mt-1 whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] leading-tight text-[#29232A]">
+              <p className="mt-1 whitespace-nowrap text-[clamp(12px,3.2cqw,14px)] leading-tight text-[#29232A]">
                 Total Kunjungan
               </p>
 
@@ -768,7 +768,7 @@ export default function DashboardPage() {
                   +14%
                 </span>
 
-                <p className="mt-[clamp(3px,0.9cqw,4px)] max-w-full text-[clamp(10px,2.9cqw,12px)] leading-[1.24] tracking-[-0.01em] text-[#29232A]">
+                <p className="mt-[clamp(3px,0.9cqw,4px)] max-w-full text-[clamp(11px,3.1cqw,13px)] leading-[1.24] tracking-[-0.01em] text-[#29232A]">
                   Dibanding bulan lalu
                   <br />
                   (28 kunjungan)
@@ -797,11 +797,11 @@ export default function DashboardPage() {
 
             <div className="mb-1 flex items-center justify-between gap-2">
 
-              <p className="text-[clamp(10px,2.9cqw,12px)] font-bold text-[#171717]">
+              <p className="text-[clamp(11px,3.1cqw,13px)] font-bold text-[#171717]">
                 Pencapaian Target
               </p>
 
-              <p className="text-[clamp(10px,2.9cqw,12px)] font-extrabold text-[#111111]">
+              <p className="text-[clamp(11px,3.1cqw,13px)] font-extrabold text-[#111111]">
                 80%
               </p>
 
@@ -909,7 +909,7 @@ export default function DashboardPage() {
               Mesin Perlu Perhatian
             </p>
 
-            <p className="mt-1 text-[clamp(10px,2.9cqw,12px)] leading-[1.28] text-[#51474E]">
+            <p className="mt-1 text-[clamp(11px,3.1cqw,13px)] leading-[1.28] text-[#51474E]">
               4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
             </p>
 
@@ -970,17 +970,17 @@ export default function DashboardPage() {
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="truncate text-[clamp(10px,2.9cqw,11px)] font-semibold text-[#171717]">
+                  <p className="truncate text-[clamp(11px,3cqw,13px)] font-semibold text-[#171717]">
                     {activity.title}
                   </p>
 
-                  <p className="mt-0 truncate text-[clamp(10px,2.9cqw,12px)] text-[#817780]">
+                  <p className="mt-0 truncate text-[clamp(11px,3cqw,13px)] text-[#756B73]">
                     {activity.machine} · {activity.customer}
                   </p>
 
                 </div>
 
-                <span className="shrink-0 whitespace-nowrap text-[clamp(10px,2.8cqw,12px)] text-[#817780]">
+                <span className="shrink-0 whitespace-nowrap text-[clamp(11px,3cqw,13px)] text-[#756B73]">
                   {activity.time}
                 </span>
 
