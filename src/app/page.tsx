@@ -90,7 +90,7 @@ function SectionTitle({
   children: ReactNode;
 }) {
   return (
-    <h2 className="min-w-0 text-[clamp(16px,4.15vw,19px)] font-bold leading-[1.16] tracking-[-0.025em] text-[#171717]">
+    <h2 className="min-w-0 text-[clamp(15px,4.1cqw,18px)] font-bold leading-[1.16] tracking-[-0.025em] text-[#171717]">
       {children}
     </h2>
   );
@@ -112,13 +112,13 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-[6px] rounded-[15px] bg-[#FCECEF] px-1 py-[10px] text-center"
+      className="flex h-[clamp(62px,17.7cqw,69px)] min-h-[clamp(62px,17.7cqw,69px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
     >
-      <span className="flex h-[clamp(30px,8vw,34px)] w-[clamp(30px,8vw,34px)] shrink-0 items-center justify-center rounded-[10px] bg-[#BF0B2C] text-white">
+      <span className="flex h-[clamp(23px,6.4cqw,25px)] w-[clamp(23px,6.4cqw,25px)] shrink-0 items-center justify-center rounded-[clamp(7px,2cqw,9px)] bg-[#BF0B2C] text-white">
         {children}
       </span>
 
-      <span className="min-h-[2.3em] text-[clamp(11px,3vw,12.5px)] font-medium leading-[1.12] text-[#171717]">
+      <span className="min-h-[2.3em] text-[clamp(10px,3.0cqw,12px)] font-medium leading-[1.12] text-[#171717]">
         {label}
       </span>
     </Link>
@@ -181,26 +181,26 @@ function DesktopDashboard() {
       {/* DESKTOP DASHBOARD HEADER */}
       <header className="flex min-h-[76px] flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-[#730217]">Dashboard</h1>
-          <p className="mt-1 text-[14px] leading-snug text-[#4F4B53]">Ringkasan aktivitas dan monitoring kunjungan mesin.</p>
+          <h1 className="text-[45px] font-bold leading-tight tracking-tight text-[#730217]">Dashboard</h1>
+          <p className="mt-1 text-[19px] leading-snug text-[#4F4B53]">Ringkasan aktivitas dan monitoring kunjungan mesin.</p>
         </div>
         <div className="flex shrink-0 items-center gap-4">
-          <label className="flex h-[46px] min-w-[210px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
-            <CalendarDays size={20} className="shrink-0" />
-            <select value={desktopMonth} onChange={(event) => setDesktopMonth(event.target.value)} className="w-full bg-transparent text-[14px] font-semibold outline-none">
+          <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
+            <CalendarDays size={24} className="shrink-0" />
+            <select value={desktopMonth} onChange={(event) => setDesktopMonth(event.target.value)} className="w-full bg-transparent text-[19px] font-semibold outline-none">
               <option>Oktober 2025</option>
               <option>November 2025</option>
               <option>Desember 2025</option>
               <option>Januari 2026</option>
             </select>
           </label>
-          <Link href="/notifications" aria-label="Notifikasi" className="relative flex h-10 w-10 items-center justify-center text-[#29232A]">
-            <Bell size={24} strokeWidth={1.8} />
+          <Link href="/notifications" aria-label="Notifikasi" className="relative flex h-12 w-12 items-center justify-center text-[#29232A]">
+            <Bell size={29} strokeWidth={1.8} />
             <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#BF0B2C]" />
           </Link>
-          <span className="h-10 w-px bg-[#E5E5E8]" />
+          <span className="h-[43px] w-px bg-[#E5E5E8]" />
           <Link href="/profile" className="flex items-center gap-3 text-left">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">B</span>
+            <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">B</span>
             <span><strong className="block text-[13px] leading-tight">Budi Santoso</strong><small className="text-[11px] text-[#77727A]">Teknisi</small></span>
             <ChevronDown size={16} />
           </Link>
@@ -212,26 +212,26 @@ function DesktopDashboard() {
         {kpis.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="flex min-h-[104px] min-w-0 items-center gap-3 rounded-[14px] border border-[#E5E5E8] bg-white px-5 py-4 shadow-[0_1px_3px_rgba(17,24,39,0.05)]"
+            className="flex min-h-[123px] min-w-0 items-center gap-[21px] rounded-[15px] border border-[#E5E5E8] bg-white px-5 py-4 shadow-[0_1px_3px_rgba(17,24,39,0.05)]"
           >
-            <span className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[13px] bg-[#8D0827] text-white">
-              <Icon size={28} strokeWidth={2} />
+            <span className="flex h-[61px] w-[65px] shrink-0 items-center justify-center rounded-[13px] bg-[#8D0827] text-white">
+              <Icon size={37} strokeWidth={2} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[13px] font-semibold leading-snug text-[#171923]">{label}</span>
-              <span className="mt-1 block text-[34px] font-bold leading-none tracking-tight text-[#171923]">{value}</span>
+              <span className="block text-[19px] font-semibold leading-snug text-[#171923]">{label}</span>
+              <span className="mt-1 block text-[45px] font-bold leading-none tracking-tight text-[#171923]">{value}</span>
             </span>
           </div>
         ))}
       </section>
 
       {/* CHARTS */}
-      <section className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <article className="h-[282px] min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-4 shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
-          <h2 className="text-[18px] font-bold tracking-tight text-[#171923]">Status Monitoring Mesin</h2>
+      <section className="grid min-w-0 grid-cols-2 gap-[20px]">
+        <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
+          <h2 className="text-[25px] font-bold tracking-tight text-[#171923]">Status Monitoring Mesin</h2>
           <div className="mt-5 flex min-w-0 items-center justify-center gap-6">
             <div
-              className="relative h-[176px] w-[176px] shrink-0 rounded-full"
+              className="relative h-[203px] w-[203px] shrink-0 rounded-full"
               style={{
                 background:
                   "conic-gradient(#9A0A2B 0deg 240deg, #D7D7DC 240deg 330deg, #E5E5E8 330deg 360deg)",
@@ -239,37 +239,37 @@ function DesktopDashboard() {
               }}
               aria-label="Donut chart status mesin"
             >
-              <div className="absolute inset-[29px] flex rotate-90 flex-col items-center justify-center rounded-full bg-white">
-                <strong className="text-[36px] font-bold leading-none">48</strong>
-                <span className="mt-1 text-[14px] text-[#55545C]">Total Mesin</span>
+              <div className="absolute inset-[34px] flex rotate-90 flex-col items-center justify-center rounded-full bg-white">
+                <strong className="text-[46px] font-bold leading-none">48</strong>
+                <span className="mt-1 text-[17px] text-[#55545C]">Total Mesin</span>
               </div>
             </div>
-            <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0 flex-1 space-y-[48px]">
               {[
                 { label: "Sudah Dikunjungi", value: 32, color: "#9A0A2B" },
                 { label: "Belum Dikunjungi", value: 12, color: "#D7D7DC" },
                 { label: "Perlu Perhatian", value: 4, color: "#E5E5E8" },
               ].map((item) => (
-                <div key={item.label} className="flex min-w-0 items-center gap-3 text-[14px]">
+                <div key={item.label} className="flex min-w-0 items-center gap-3 text-[17px]">
                   <span className="h-4 w-4 shrink-0 rounded-[4px]" style={{ background: item.color }} />
                   <span className="min-w-0 flex-1 truncate text-[#24232A]">{item.label}</span>
-                  <strong className="text-[18px] font-bold">{item.value}</strong>
+                  <strong className="text-[20px] font-bold">{item.value}</strong>
                 </div>
               ))}
             </div>
           </div>
         </article>
 
-        <article className="h-[282px] min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-4 shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
+        <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-[18px] font-bold tracking-tight text-[#171923]">Kunjungan Bulan Ini</h2>
+            <h2 className="text-[25px] font-bold tracking-tight text-[#171923]">Kunjungan Bulan Ini</h2>
             <div className="flex shrink-0 items-center gap-4 text-[12px] text-[#33323A]">
               <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-[3px] bg-[#970A2A]" />Kunjungan</span>
               <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-[3px] bg-[#D7D7DC]" />Target</span>
             </div>
           </div>
-          <div className="mt-4 grid h-[178px] grid-cols-[28px_1fr] gap-2">
-            <div className="flex flex-col justify-between pb-6 text-right text-[12px] text-[#55545C]">
+          <div className="mt-4 grid h-[170px] grid-cols-[32px_1fr] gap-2">
+            <div className="flex flex-col justify-between pb-6 text-right text-[15px] text-[#55545C]">
               {[20, 16, 12, 8, 4, 0].map((n) => <span key={n}>{n}</span>)}
             </div>
             <div className="relative grid grid-cols-7 items-end gap-3 border-b border-[#DCDCE1] pb-0">
@@ -282,7 +282,7 @@ function DesktopDashboard() {
                     <span className="w-[42%] rounded-t-[4px] bg-[#970A2A]" style={{ height: `${(item.visits / 20) * 100}%` }} />
                     <span className="w-[42%] rounded-t-[4px] bg-[#D7D7DC]" style={{ height: `${(item.target / 20) * 100}%` }} />
                   </div>
-                  <span className="mt-2 text-[12px] text-[#24232A]">{item.day}</span>
+                  <span className="mt-2 text-[15px] text-[#24232A]">{item.day}</span>
                 </div>
               ))}
             </div>
@@ -294,25 +294,25 @@ function DesktopDashboard() {
       <section className="min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-4 shadow-[0_1px_3px_rgba(17,24,39,0.04)]">
         <h2 className="text-[19px] font-bold tracking-tight text-[#171923]">Daftar Mesin</h2>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <label className="flex h-[36px] min-w-[220px] flex-1 items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 text-[#34333A] shadow-sm">
+          <label className="flex h-[40px] min-w-[484px] flex-1 items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 text-[#34333A] shadow-sm">
             <Search size={18} className="shrink-0 text-[#34333A]" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Cari nama mesin, pelanggan, atau lokasi..."
-              className="w-full min-w-0 bg-transparent text-[13px] outline-none placeholder:text-[#777780]"
+              className="w-full min-w-0 bg-transparent text-[16px] outline-none placeholder:text-[#777780]"
             />
           </label>
-          <label className="flex h-[36px] min-w-[170px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
+          <label className="flex h-[40px] min-w-[216px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
             <Filter size={18} className="shrink-0" />
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full bg-transparent text-[13px] outline-none">
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full bg-transparent text-[16px] outline-none">
               <option>Semua Status</option>
               <option>Sudah Dikunjungi</option>
               <option>Belum Dikunjungi</option>
               <option>Perlu Perhatian</option>
             </select>
           </label>
-          <label className="flex h-[36px] min-w-[180px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
+          <label className="flex h-[40px] min-w-[218px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
             <Users size={17} className="shrink-0" />
             <select value={customerFilter} onChange={(event) => setCustomerFilter(event.target.value)} className="w-full bg-transparent text-[13px] outline-none">
               <option>Semua Pelanggan</option>
@@ -322,29 +322,38 @@ function DesktopDashboard() {
               <option>PT. Citra Jaya</option>
             </select>
           </label>
-          <Link href="/equipment" className="inline-flex h-[36px] shrink-0 items-center gap-2 rounded-full bg-[#8D0827] px-5 text-[14px] font-semibold text-white shadow-sm">
+          <Link href="/equipment" className="inline-flex h-[40px] min-w-[141px] shrink-0 items-center gap-2 rounded-full bg-[#8D0827] px-5 text-[17px] font-semibold text-white shadow-sm">
             <Plus size={19} /> Tambah
           </Link>
         </div>
 
         <div className="mt-4 w-full overflow-x-auto">
-          <table className="w-full min-w-[860px] border-collapse text-left">
+          <table className="w-full min-w-[1151px] border-collapse text-left">
+            <colgroup>
+              <col style={{ width: "70px" }} />
+              <col style={{ width: "153px" }} />
+              <col style={{ width: "189px" }} />
+              <col style={{ width: "209px" }} />
+              <col style={{ width: "229px" }} />
+              <col style={{ width: "246px" }} />
+              <col style={{ width: "55px" }} />
+            </colgroup>
             <thead>
-              <tr className="bg-[#F0F0F2] text-[12px] font-bold text-[#171923]">
+              <tr className="bg-[#F0F0F2] text-[16px] font-bold text-[#171923]">
                 {["No.", "Kode Mesin", "Nama Mesin", "Pelanggan", "Status Monitoring", "Kunjungan Terakhir", "Aksi"].map((heading) => (
-                  <th key={heading} className="whitespace-nowrap px-3 py-[10px] first:rounded-l-[8px] last:rounded-r-[8px]">{heading}</th>
+                  <th key={heading} className="whitespace-nowrap px-3 py-[11px] first:rounded-l-[8px] last:rounded-r-[8px]">{heading}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((row) => (
-                <tr key={row.code} className="border-b border-[#E7E7EA] text-[13px] text-[#202027] last:border-0">
-                  <td className="px-3 py-[9px]">{row.no}</td>
-                  <td className="px-3 py-[9px] font-medium">{row.code}</td>
-                  <td className="px-3 py-[9px]">{row.model}</td>
-                  <td className="px-3 py-[9px]">{row.customer}</td>
-                  <td className="px-3 py-[9px]">
-                    <span className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-[12px] font-medium ${
+                <tr key={row.code} className="border-b border-[#E7E7EA] text-[16px] text-[#202027] last:border-0">
+                  <td className="px-[16px] py-[10px]">{row.no}</td>
+                  <td className="px-[16px] py-[10px] font-medium">{row.code}</td>
+                  <td className="px-[16px] py-[10px]">{row.model}</td>
+                  <td className="px-[16px] py-[10px]">{row.customer}</td>
+                  <td className="px-[16px] py-[10px]">
+                    <span className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-[14px] font-medium ${
                       row.status === "Sudah Dikunjungi"
                         ? "bg-[#F9E8EC] text-[#850B29]"
                         : row.status === "Perlu Perhatian"
@@ -355,8 +364,8 @@ function DesktopDashboard() {
                       {row.status}
                     </span>
                   </td>
-                  <td className="px-3 py-[9px] whitespace-nowrap">{row.lastVisit}</td>
-                  <td className="relative px-3 py-[9px]">
+                  <td className="px-[16px] py-[10px] whitespace-nowrap">{row.lastVisit}</td>
+                  <td className="relative px-[16px] py-[10px]">
                     <button type="button" aria-label={`Aksi ${row.code}`} onClick={() => setOpenAction(openAction === row.code ? null : row.code)} className="rounded-md p-1 hover:bg-[#F3F3F5]">
                       <MoreVertical size={18} />
                     </button>
@@ -411,28 +420,28 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(88px+env(safe-area-inset-bottom))]">
+    <main className="[container-type:inline-size] w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(clamp(72px,20cqw,88px)+env(safe-area-inset-bottom)+clamp(10px,3cqw,16px))]">
 
       {/* ===================================================
           MOBILE HEADER
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate min-h-[190px] overflow-hidden bg-[#730217] px-[clamp(12px,4.8vw,20px)] pb-[10px] pt-[max(16px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate h-[clamp(148px,42.3cqw,184px)] min-h-[clamp(148px,42.3cqw,184px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
 
           {/* HEADER DECORATION */}
 
-          <div className="pointer-events-none absolute -right-[72px] top-[104px] h-[210px] w-[210px] rounded-full bg-[#BF0B2C]/55" />
+          <div className="pointer-events-none absolute -right-[clamp(76px,16cqw,140px)] top-[clamp(112px,27cqw,230px)] h-[clamp(190px,48cqw,390px)] w-[clamp(190px,48cqw,390px)] rounded-full bg-[#BF0B2C]/55" />
 
-          <div className="pointer-events-none absolute -left-[118px] bottom-[-112px] h-[220px] w-[300px] rounded-full bg-[#BF0B2C]/28" />
+          <div className="pointer-events-none absolute -left-[clamp(90px,19cqw,170px)] bottom-[-112px] h-[clamp(190px,48cqw,380px)] w-[clamp(260px,62cqw,500px)] rounded-full bg-[#BF0B2C]/28" />
 
-          <div className="pointer-events-none absolute -right-[92px] bottom-[-116px] h-[230px] w-[260px] rounded-full bg-[#BF0B2C]/38" />
+          <div className="pointer-events-none absolute -right-[clamp(90px,20cqw,180px)] bottom-[-130px] h-[clamp(210px,52cqw,420px)] w-[clamp(230px,58cqw,470px)] rounded-full bg-[#BF0B2C]/38" />
 
           <div className="relative z-10">
 
             {/* BRAND ROW */}
 
-            <div className="flex h-[42px] min-h-[42px] items-center justify-between">
+            <div className="flex h-[clamp(32px,8.2cqw,38px)] min-h-[clamp(32px,8.2cqw,38px)] items-center justify-between">
 
               <Link
                 href="/"
@@ -445,7 +454,7 @@ export default function DashboardPage() {
                   width={190}
                   height={70}
                   priority
-                  className="h-auto w-[clamp(104px,25vw,116px)] object-contain object-left"
+                  className="h-auto w-[clamp(82px,23.1cqw,90px)] object-contain object-left"
                 />
               </Link>
 
@@ -460,15 +469,15 @@ export default function DashboardPage() {
                   }
                   aria-label="Notifikasi"
                   aria-expanded={showNotifications}
-                  className="relative flex h-[38px] w-[38px] items-center justify-center rounded-full text-white"
+                  className="relative flex h-[clamp(30px,6.2cqw,34px)] w-[clamp(30px,6.2cqw,34px)] items-center justify-center rounded-full text-white"
                 >
-                  <Bell size={26} strokeWidth={1.8} />
+                  <Bell size={26} className="h-[clamp(22px,6.2cqw,26px)] w-[clamp(22px,6.2cqw,26px)]" strokeWidth={1.8} />
 
                   <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-[#730217] bg-[#F28C0F]" />
                 </button>
 
                 {showNotifications && (
-                  <div className="absolute right-0 top-12 z-50 w-[min(270px,calc(100vw-40px))] rounded-xl border border-[#EEE7EB] bg-white p-4 text-[#29232A] shadow-lg">
+                  <div className="absolute right-0 top-12 z-50 w-[min(270px,calc(100cqw-40px))] rounded-xl border border-[#EEE7EB] bg-white p-4 text-[#29232A] shadow-lg">
 
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-bold">
@@ -521,23 +530,23 @@ export default function DashboardPage() {
 
             {/* GREETING + PRINTER */}
 
-            <div className="relative mt-[8px] pb-0">
+            <div className="relative mt-[clamp(8px,2.6cqw,11px)] pb-0">
 
-              <div className="relative z-10 w-full max-w-[42rem] pr-[4px]">
+              <div className="relative z-10 w-full max-w-[42rem] pr-[clamp(84px,24cqw,150px)]">
 
-                <h1 className="text-[clamp(20px,5.1vw,22px)] font-bold leading-[1.12] tracking-tight !text-white">
+                <h1 className="text-[clamp(18px,5.5cqw,22px)] font-bold leading-[1.12] tracking-tight !text-white">
                   Halo, Budi Santoso
                 </h1>
 
-                <p className="mt-[2px] max-w-[min(100%,520px)] whitespace-nowrap text-[clamp(11px,2.9vw,13px)] leading-[1.22] text-white/95">
+                <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-[72%] text-[clamp(10px,3.05cqw,12px)] leading-[1.25] text-white/95">
                   Berikut ringkasan operasional kunjungan unit.
                 </p>
 
               </div>
 
               {/* PRINTER ILLUSTRATION — original asset with soft brand backdrop */}
-              <div className="pointer-events-none absolute right-[-5px] top-[5px] z-0 flex h-[clamp(108px,29vw,128px)] w-[clamp(108px,29vw,128px)] items-center justify-center">
-                <span className="absolute inset-[5%] rounded-full bg-[#BF0B2C]/20 blur-[1px]" />
+              <div className="pointer-events-none absolute right-[-2px] top-[clamp(12px,3.8cqw,18px)] z-0 flex h-[clamp(68px,20cqw,78px)] w-[clamp(68px,20cqw,78px)] items-center justify-center">
+                <span className="absolute inset-[-8%] rounded-full bg-[#BF0B2C]/25 blur-[2px]" />
                 <Image
                   src="/images/moku/illustrations/dashboard-printer.png"
                   alt=""
@@ -551,7 +560,7 @@ export default function DashboardPage() {
 
               {/* PERIOD SELECTOR */}
 
-              <div className="relative z-20 mt-[8px] w-fit max-w-full">
+              <div className="relative z-20 mt-[clamp(7px,2.1cqw,9px)] w-fit max-w-full">
 
                 <button
                   type="button"
@@ -559,15 +568,15 @@ export default function DashboardPage() {
                     setShowMonthPicker((value) => !value)
                   }
                   aria-expanded={showMonthPicker}
-                  className="flex h-[36px] w-[clamp(174px,42vw,190px)] max-w-full items-center gap-[9px] rounded-full bg-white px-[12px] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                  className="flex h-[clamp(30px,8.2cqw,34px)] w-[clamp(132px,36cqw,150px)] max-w-full items-center gap-[10px] rounded-full bg-white px-[clamp(9px,2.5cqw,11px)] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                 >
 
                   <CalendarDays
-                    size={20}
+                    size={22}
                     className="shrink-0"
                   />
 
-                  <span className="min-w-0 flex-1 whitespace-nowrap text-left text-[12.5px] font-bold tracking-[-0.015em]">
+                  <span className="min-w-0 flex-1 overflow-visible whitespace-nowrap text-left text-[clamp(11px,3.6cqw,14px)] font-semibold tracking-[-0.015em]">
                     {selectedMonth}
                   </span>
 
@@ -579,7 +588,7 @@ export default function DashboardPage() {
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute left-0 top-[calc(100%+7px)] z-50 w-[min(260px,calc(100vw-40px))] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-2 text-[#29232A] shadow-lg">
+                  <div className="absolute left-0 top-[calc(100%+7px)] z-50 w-[min(260px,calc(100cqw-40px))] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-2 text-[#29232A] shadow-lg">
 
                     <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
                       Pilih Periode
@@ -622,10 +631,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[24px] overflow-hidden bg-[#E9A0AC]">
-          <div className="absolute -left-[12%] -top-[24px] h-[42px] w-[124%] rounded-[50%] bg-[#730217]" />
-          <div className="absolute -left-[18%] top-[-19px] h-[36px] w-[135%] rounded-[50%] bg-[#E9A0AC]" />
-        </div>
+        <div className="pointer-events-none relative -mt-[1px] h-[clamp(20px,5.2cqw,24px)] overflow-hidden bg-[#E9A0AC]" />
       )}
 
       {/* ===================================================
@@ -633,8 +639,8 @@ export default function DashboardPage() {
       =================================================== */}
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[920px] space-y-[9px] px-[clamp(10px,4.5vw,18px)] ${
-          showMobileHeader ? "-mt-[12px]" : "pt-4"
+        className={`relative z-10 mx-auto w-full max-w-[480px] space-y-[clamp(8px,2.6cqw,12px)] px-[clamp(16px,4.6cqw,20px)] pb-[clamp(12px,3.2cqw,18px)] ${
+          showMobileHeader ? "-mt-[clamp(14px,4.6cqw,18px)]" : "pt-4"
         }`}
       >
 
@@ -642,20 +648,20 @@ export default function DashboardPage() {
             STATUS MONITORING MESIN
         ================================================= */}
 
-        <section className="min-w-0 rounded-[22px] border border-[#EEEEEE] bg-white p-[clamp(11px,3.3vw,15px)] shadow-[0_2px_8px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,13px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
 
           <SectionTitle>
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[10px] grid min-w-0 grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] items-center gap-[7px] rounded-[20px] border border-[#F0F0F0] px-[8px] py-[8px]">
+          <div className="mt-[clamp(7px,2.3cqw,10px)] grid h-[clamp(98px,27.2cqw,106px)] min-w-0 grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
-            <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2vw,12px)]">
+            <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2cqw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[clamp(100px,27vw,118px)] rounded-full"
+                className="relative aspect-square w-full max-w-[clamp(82px,24.1cqw,94px)] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
@@ -664,11 +670,11 @@ export default function DashboardPage() {
 
                 <div className="absolute inset-[14%] flex flex-col items-center justify-center rounded-full bg-white">
 
-                  <span className="text-[clamp(28px,7.5vw,34px)] font-extrabold leading-none text-[#111111]">
+                  <span className="text-[clamp(24px,7.1cqw,28px)] font-extrabold leading-none text-[#111111]">
                     48
                   </span>
 
-                  <span className="mt-1 text-[clamp(11px,3vw,13px)] text-[#29232A]">
+                  <span className="mt-1 text-[clamp(9px,2.9cqw,11px)] text-[#29232A]">
                     Mesin
                   </span>
 
@@ -679,32 +685,32 @@ export default function DashboardPage() {
 
             {/* MONITORING LEGEND */}
 
-            <div className="min-w-0 space-y-[11px]">
+            <div className="min-w-0 space-y-[clamp(6px,2.05cqw,8px)]">
 
               {monitoringData.map((item) => (
                 <div
                   key={item.label}
-                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[4px]"
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.2cqw,10px)]"
                 >
 
                   <span className="flex min-w-0 items-center gap-[6px]">
                     <span
-                      className="h-[clamp(10px,3vw,13px)] w-[clamp(10px,3vw,13px)] shrink-0 rounded-[4px]"
+                      className="h-[clamp(10px,3cqw,13px)] w-[clamp(10px,3cqw,13px)] shrink-0 rounded-[4px]"
                       style={{
                         backgroundColor: item.color,
                       }}
                     />
-                    <span className="min-w-0 whitespace-nowrap text-[clamp(9.5px,2.55vw,11.5px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+                    <span className="min-w-0 whitespace-nowrap text-[clamp(9px,3.0cqw,12px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
                       {item.label}
                     </span>
                   </span>
 
-                  <span className="whitespace-nowrap text-[clamp(9.5px,2.5vw,11.5px)] text-[#51474E]">
+                  <span className="whitespace-nowrap text-[clamp(9px,2.9cqw,12px)] text-[#51474E]">
                     {item.value} Mesin
                   </span>
 
                   <span
-                    className={`min-w-[36px] rounded-full px-[6px] py-[4px] text-center text-[clamp(10px,2.6vw,12px)] font-bold ${item.badge}`}
+                    className={`min-w-[clamp(29px,7.4cqw,33px)] rounded-full px-[clamp(6px,1.6cqw,12px)] py-[clamp(3px,0.9cqw,4px)] text-center text-[clamp(9px,2.8cqw,11px)] font-bold ${item.badge}`}
                   >
                     {item.percentage}%
                   </span>
@@ -720,13 +726,13 @@ export default function DashboardPage() {
             KUNJUNGAN BULAN INI
         ================================================= */}
 
-        <section className="min-w-0 rounded-[22px] border border-[#EEEEEE] bg-white p-[clamp(11px,3.3vw,15px)] shadow-[0_2px_8px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,12px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
 
           {/* TITLE + TARGET */}
 
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
 
-            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1vw,18px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
+            <h2 className="min-w-0 whitespace-nowrap text-[clamp(16px,4.1cqw,18px)] font-bold leading-[1.15] tracking-tight text-[#29232A]">
               Kunjungan Bulan Ini
             </h2>
 
@@ -738,17 +744,17 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[14px] grid min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[9px]">
+          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(68px,21cqw,82px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
 
             {/* TOTAL VISITS */}
 
             <div className="min-w-0 border-r border-[#EEEEEE] pr-2">
 
-              <p className="text-[clamp(40px,10vw,46px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
+              <p className="text-[clamp(30px,9.5cqw,38px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
                 32
               </p>
 
-              <p className="mt-1 whitespace-nowrap text-[clamp(12px,3.2vw,14px)] leading-tight text-[#29232A]">
+              <p className="mt-1 whitespace-nowrap text-[clamp(11px,3.1cqw,13px)] leading-tight text-[#29232A]">
                 Total Kunjungan
               </p>
 
@@ -756,31 +762,31 @@ export default function DashboardPage() {
 
             {/* GROWTH SUMMARY + ACTIVITY ILLUSTRATION */}
 
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_clamp(82px,27vw,112px)] items-center gap-[4px]">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] items-center gap-[clamp(2px,0.7cqw,4px)]">
               <div className="min-w-0">
-                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#DDF9E5] px-[clamp(9px,2.5vw,16px)] py-[5px] text-[clamp(13px,3.4vw,15px)] font-bold text-[#168B3E]">
-                  <TrendingUp size={19} className="shrink-0" />
+                <span className="inline-flex max-w-full items-center gap-[clamp(4px,1cqw,7px)] rounded-full bg-[#DDF9E5] px-[clamp(8px,2.2cqw,14px)] py-[clamp(3px,0.8cqw,5px)] text-[clamp(10px,2.9cqw,12px)] font-bold text-[#168B3E]">
+                  <TrendingUp size={16} className="h-[1em] w-[1em] shrink-0" />
                   +14%
                 </span>
 
-                <p className="mt-[6px] text-[clamp(12px,3.2vw,14px)] leading-[1.28] text-[#29232A]">
+                <p className="mt-[clamp(3px,0.9cqw,4px)] max-w-full text-[clamp(10px,2.9cqw,12px)] leading-[1.24] tracking-[-0.01em] text-[#29232A]">
                   Dibanding bulan lalu
                   <br />
                   (28 kunjungan)
                 </p>
               </div>
 
-              <div className="relative flex h-[clamp(72px,19vw,88px)] min-w-0 items-center justify-center">
-                <span className="absolute left-[8%] top-[20%] h-[58%] w-[58%] rounded-full bg-[#FDE9ED]" />
-                <span className="absolute right-[7%] top-[12%] h-[66%] w-[58%] rounded-full bg-[#FDE9ED]/90" />
-                <span className="absolute bottom-[8%] left-[22%] h-[48%] w-[62%] rounded-full bg-[#FDE9ED]/85" />
+              <div className="relative flex aspect-[1.25/1] w-full min-w-0 items-center justify-center">
+                <span className="absolute left-[2%] top-[15%] h-[72%] w-[96%] rounded-[48%] bg-[#FDE9ED]" />
+                <span className="absolute left-[18%] top-[3%] h-[82%] w-[64%] rounded-full bg-[#FDE9ED]/95" />
+                <span className="absolute bottom-[4%] left-[10%] h-[46%] w-[82%] rounded-full bg-[#FDE9ED]/85" />
                 <Image
                   src="/images/moku/illustrations/dashboard-activity.png"
                   alt=""
                   width={240}
                   height={240}
                   className="relative z-[1] h-full w-full object-contain object-center"
-                  sizes="(max-width: 390px) 68px, (max-width: 600px) 90px, 116px"
+                  sizes="(max-width: 480px) 34vw, 140px"
                 />
               </div>
             </div>
@@ -788,21 +794,21 @@ export default function DashboardPage() {
 
           {/* TARGET PROGRESS */}
 
-          <div className="mt-[14px]">
+          <div className="mt-[clamp(7px,2.1cqw,9px)]">
 
             <div className="mb-2 flex items-center justify-between gap-2">
 
-              <p className="text-[clamp(12px,3.1vw,13.5px)] font-bold text-[#171717]">
+              <p className="text-[clamp(10px,2.9cqw,12px)] font-bold text-[#171717]">
                 Pencapaian Target
               </p>
 
-              <p className="text-[clamp(12px,3.1vw,13.5px)] font-extrabold text-[#111111]">
+              <p className="text-[clamp(10px,2.9cqw,12px)] font-extrabold text-[#111111]">
                 80%
               </p>
 
             </div>
 
-            <div className="h-[12px] overflow-hidden rounded-full bg-[#E8E8E8]">
+            <div className="h-[clamp(7px,2.3cqw,9px)] overflow-hidden rounded-full bg-[#E8E8E8]">
 
               <div
                 className="h-full rounded-full bg-[#BF0B2C]"
@@ -817,13 +823,13 @@ export default function DashboardPage() {
             AKSI CEPAT
         ================================================= */}
 
-        <section className="min-w-0 rounded-[22px] border border-[#EEEEEE] bg-white p-[clamp(11px,3.3vw,15px)] shadow-[0_2px_8px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,14px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
 
           <SectionTitle>
             Aksi Cepat
           </SectionTitle>
 
-          <div className="mt-[10px] grid grid-cols-4 gap-[8px]">
+          <div className="mt-[clamp(7px,2.1cqw,9px)] grid grid-cols-4 gap-[clamp(7px,2cqw,8px)]">
 
             <QuickAction
               href="/visits"
@@ -835,7 +841,7 @@ export default function DashboardPage() {
                 </>
               }
             >
-              <Plus size={24} strokeWidth={2.4} />
+              <Plus size={24} className="h-[clamp(18px,5cqw,21px)] w-[clamp(18px,5cqw,21px)]" strokeWidth={2.4} />
             </QuickAction>
 
             <QuickAction
@@ -848,7 +854,7 @@ export default function DashboardPage() {
                 </>
               }
             >
-              <Printer size={23} strokeWidth={2} />
+              <Printer size={23} className="h-[clamp(18px,4.8cqw,20px)] w-[clamp(18px,4.8cqw,20px)]" strokeWidth={2} />
             </QuickAction>
 
             <QuickAction
@@ -861,7 +867,7 @@ export default function DashboardPage() {
                 </>
               }
             >
-              <ChartNoAxesColumn size={23} />
+              <ChartNoAxesColumn size={23} className="h-[clamp(18px,4.8cqw,20px)] w-[clamp(18px,4.8cqw,20px)]" />
             </QuickAction>
 
             <QuickAction
@@ -874,7 +880,7 @@ export default function DashboardPage() {
                 </>
               }
             >
-              <Download size={23} />
+              <Download size={23} className="h-[clamp(18px,4.8cqw,20px)] w-[clamp(18px,4.8cqw,20px)]" />
             </QuickAction>
 
           </div>
@@ -886,10 +892,10 @@ export default function DashboardPage() {
 
         <Link
           href="/monitoring"
-          className="flex min-w-0 items-center gap-3 rounded-[17px] border border-[#F7E4DE] bg-[#FFF2EE] p-[10px]"
+          className="flex h-[clamp(46px,12.6cqw,49px)] min-w-0 items-center gap-[8px] rounded-[clamp(12px,3.6cqw,14px)] border border-[#F7E4DE] bg-[#FFF2EE] px-[10px] py-[4px]"
         >
 
-          <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
+          <div className="flex h-[clamp(30px,9.8cqw,38px)] w-[clamp(30px,9.8cqw,38px)] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
 
             <AlertTriangle
               size={27}
@@ -900,11 +906,11 @@ export default function DashboardPage() {
 
           <div className="min-w-0 flex-1">
 
-            <p className="text-[clamp(14px,3.8vw,16px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+            <p className="text-[clamp(12px,3.6cqw,14px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#171717]">
               Mesin Perlu Perhatian
             </p>
 
-            <p className="mt-1 text-[clamp(11px,3vw,12.5px)] leading-[1.25] text-[#51474E]">
+            <p className="mt-1 text-[clamp(10px,2.9cqw,12px)] leading-[1.28] text-[#51474E]">
               4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
             </p>
 
@@ -921,7 +927,7 @@ export default function DashboardPage() {
             AKTIVITAS TERBARU
         ================================================= */}
 
-        <section className="min-w-0 rounded-[22px] border border-[#EEEEEE] bg-white p-[clamp(11px,3.3vw,15px)] shadow-[0_2px_8px_rgba(0,0,0,0.055)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,14px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
 
           <div className="flex min-w-0 items-center justify-between gap-2">
 
@@ -931,24 +937,24 @@ export default function DashboardPage() {
 
             <Link
               href="/visit-history"
-              className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(12px,3.6vw,15px)] font-bold text-[#D10A20]"
+              className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(11px,3cqw,13px)] font-bold text-[#BF0B2C]"
             >
               Lihat Semua
-              <ChevronRight size={17} />
+              <ChevronRight size={17} className="h-[clamp(13px,3.8cqw,16px)] w-[clamp(13px,3.8cqw,16px)]" />
             </Link>
 
           </div>
 
-          <div className="mt-[7px] divide-y divide-[#EEEEEE]">
+          <div className="mt-[clamp(5px,1.5cqw,6px)] divide-y divide-[#EEEEEE]">
 
             {recentActivities.map((activity, index) => (
               <div
                 key={`${activity.machine}-${index}`}
-                className="flex min-w-0 items-center gap-[10px] py-[4px]"
+                className="flex min-h-[clamp(34px,9.5cqw,37px)] min-w-0 items-center gap-[clamp(8px,2.6cqw,10px)] py-[2px]"
               >
 
                 <div
-                  className={`flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full ${
+                  className={`flex h-[clamp(26px,7.7cqw,30px)] w-[clamp(26px,7.7cqw,30px)] shrink-0 items-center justify-center rounded-full ${
                     activity.status === "success"
                       ? "bg-[#DDF8E7] text-[#249653]"
                       : "bg-[#FCE7E8] text-[#D83B45]"
@@ -956,26 +962,26 @@ export default function DashboardPage() {
                 >
 
                   {activity.status === "success" ? (
-                    <CheckCircle2 size={26} />
+                    <CheckCircle2 size={26} className="h-[clamp(17px,4.8cqw,19px)] w-[clamp(17px,4.8cqw,19px)]" />
                   ) : (
-                    <Clock3 size={26} />
+                    <Clock3 size={26} className="h-[clamp(17px,4.8cqw,19px)] w-[clamp(17px,4.8cqw,19px)]" />
                   )}
 
                 </div>
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="truncate text-[12px] font-bold text-[#171717]">
+                  <p className="truncate text-[clamp(10px,3.0cqw,12px)] font-semibold text-[#171717]">
                     {activity.title}
                   </p>
 
-                  <p className="mt-0 truncate text-[12px] text-[#817780]">
+                  <p className="mt-0 truncate text-[clamp(10px,2.9cqw,12px)] text-[#817780]">
                     {activity.machine} · {activity.customer}
                   </p>
 
                 </div>
 
-                <span className="shrink-0 whitespace-nowrap text-[clamp(11px,2.8vw,14px)] text-[#817780]">
+                <span className="shrink-0 whitespace-nowrap text-[clamp(10px,2.8cqw,12px)] text-[#817780]">
                   {activity.time}
                 </span>
 
