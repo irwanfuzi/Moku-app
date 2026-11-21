@@ -632,10 +632,17 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[clamp(30px,8cqw,38px)] overflow-hidden bg-[#730217]">
-          {/* White canvas curves upward through the middle, leaving the burgundy
-              header visibly lower at both outer sides, like the approved reference. */}
-          <div className="absolute -top-[clamp(25px,7cqw,34px)] left-[-15%] h-[clamp(66px,18cqw,82px)] w-[130%] rounded-[50%] bg-[#F7F7F7]" />
+        <div className="pointer-events-none relative -mt-[1px] h-[clamp(34px,9cqw,44px)] overflow-hidden bg-[#730217]">
+          {/* True concave cut-out: white rises in the center and falls at both sides.
+              The burgundy canvas therefore extends lower on the left and right. */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 100 44"
+            preserveAspectRatio="none"
+            className="absolute inset-0 h-full w-full"
+          >
+            <path d="M0 27 Q50 -17 100 27 L100 44 L0 44 Z" fill="#F7F7F7" />
+          </svg>
         </div>
       )}
 
