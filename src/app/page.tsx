@@ -112,7 +112,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex h-[clamp(72px,20cqw,82px)] min-h-[clamp(72px,20cqw,82px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
+      className="flex h-[clamp(68px,18.5cqw,74px)] min-h-[clamp(68px,18.5cqw,74px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
     >
       <span className="flex h-[clamp(23px,6.4cqw,25px)] w-[clamp(23px,6.4cqw,25px)] shrink-0 items-center justify-center rounded-[clamp(7px,2cqw,9px)] bg-[#BF0B2C] text-white">
         {children}
@@ -188,6 +188,7 @@ function DesktopDashboard() {
           <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
             <CalendarDays size={24} className="shrink-0" />
             <select value={desktopMonth} onChange={(event) => setDesktopMonth(event.target.value)} className="w-full bg-transparent text-[19px] font-semibold outline-none">
+              <option>September 2025</option>
               <option>Oktober 2025</option>
               <option>November 2025</option>
               <option>Desember 2025</option>
@@ -397,14 +398,14 @@ export default function DashboardPage() {
   const { isMobile, isReady } = useAppLayout();
 
   const [selectedMonth, setSelectedMonth] =
-    useState("November 2026");
+    useState("Oktober 2025");
 
   const months = [
-    "September 2026",
-    "Oktober 2026",
-    "November 2026",
-    "Desember 2026",
-    "Januari 2027",
+    "September 2025",
+    "Oktober 2025",
+    "November 2025",
+    "Desember 2025",
+    "Januari 2026",
   ];
 
   const [showMonthPicker, setShowMonthPicker] =
@@ -427,7 +428,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate h-[clamp(132px,35.5cqw,156px)] min-h-[clamp(132px,35.5cqw,156px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate h-[clamp(154px,42cqw,170px)] min-h-[clamp(154px,42cqw,170px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
 
           {/* HEADER DECORATION */}
 
@@ -441,7 +442,7 @@ export default function DashboardPage() {
 
             {/* BRAND ROW */}
 
-            <div className="flex h-[clamp(32px,8.2cqw,38px)] min-h-[clamp(32px,8.2cqw,38px)] items-center justify-between">
+            <div className="flex h-[clamp(34px,8.7cqw,40px)] min-h-[clamp(34px,8.7cqw,40px)] items-center justify-between">
 
               <Link
                 href="/"
@@ -454,7 +455,7 @@ export default function DashboardPage() {
                   width={190}
                   height={70}
                   priority
-                  className="h-auto w-[clamp(96px,25cqw,110px)] object-contain object-left"
+                  className="h-auto w-[clamp(100px,26cqw,116px)] object-contain object-left"
                 />
               </Link>
 
@@ -534,18 +535,18 @@ export default function DashboardPage() {
 
               <div className="relative z-10 w-full max-w-[42rem] pr-[clamp(84px,24cqw,150px)]">
 
-                <h1 className="text-[clamp(18px,5.5cqw,22px)] font-bold leading-[1.12] tracking-tight !text-white">
+                <h1 className="text-[clamp(20px,5.7cqw,23px)] font-bold leading-[1.12] tracking-tight !text-white">
                   Halo, Budi Santoso
                 </h1>
 
-                <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-full whitespace-nowrap text-[clamp(10px,3.05cqw,12px)] leading-[1.25] text-white/95">
+                <p className="mt-[clamp(4px,1.3cqw,6px)] max-w-full whitespace-nowrap text-[clamp(11px,3.2cqw,13px)] leading-[1.25] text-white/95">
                   Berikut ringkasan operasional kunjungan unit.
                 </p>
 
               </div>
 
               {/* PRINTER ILLUSTRATION — original asset with soft brand backdrop */}
-              <div className="pointer-events-none absolute right-[-2px] top-[clamp(2px,1.2cqw,6px)] z-0 flex h-[clamp(88px,25cqw,104px)] w-[clamp(88px,25cqw,104px)] items-center justify-center">
+              <div className="pointer-events-none absolute right-[-2px] top-[clamp(2px,1.2cqw,6px)] z-0 flex h-[clamp(100px,28cqw,116px)] w-[clamp(100px,28cqw,116px)] items-center justify-center">
                 <span className="absolute inset-[-8%] rounded-full bg-[#BF0B2C]/25 blur-[2px]" />
                 <Image
                   src="/images/moku/illustrations/dashboard-printer.png"
@@ -568,7 +569,7 @@ export default function DashboardPage() {
                     setShowMonthPicker((value) => !value)
                   }
                   aria-expanded={showMonthPicker}
-                  className="flex h-[clamp(34px,9cqw,38px)] w-[clamp(170px,46cqw,190px)] max-w-full items-center gap-[10px] rounded-full bg-white px-[clamp(11px,2.8cqw,13px)] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                  className="flex h-[clamp(36px,9.3cqw,40px)] w-[clamp(178px,47cqw,200px)] max-w-full items-center gap-[10px] rounded-full bg-white px-[clamp(11px,2.8cqw,13px)] text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                 >
 
                   <CalendarDays
@@ -631,7 +632,9 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[clamp(20px,5.2cqw,24px)] overflow-hidden bg-[#E9A0AC]" />
+        <div className="pointer-events-none relative -mt-[1px] h-[clamp(20px,5.2cqw,24px)] overflow-hidden bg-[#E9A0AC]">
+          <div className="absolute -top-[30px] left-[-8%] h-[52px] w-[116%] rounded-[50%] bg-[#730217]" />
+        </div>
       )}
 
       {/* ===================================================
@@ -639,7 +642,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(8px,2.6cqw,12px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
+        className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(7px,2.2cqw,10px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
           showMobileHeader ? "-mt-[clamp(14px,4.6cqw,18px)]" : "pt-4"
         }`}
       >
@@ -648,20 +651,20 @@ export default function DashboardPage() {
             STATUS MONITORING MESIN
         ================================================= */}
 
-        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,13px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,2.8cqw,12px)] shadow-[0_2px_9px_rgba(0,0,0,0.055)]">
 
           <SectionTitle>
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[clamp(7px,2.3cqw,10px)] grid h-[clamp(112px,30cqw,120px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
+          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(96px,25.5cqw,104px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
             <div className="flex min-w-0 items-center justify-center border-r border-[#EEEEEE] pr-[clamp(6px,2cqw,12px)]">
 
               <div
-                className="relative aspect-square w-full max-w-[clamp(96px,28cqw,110px)] rounded-full"
+                className="relative aspect-square w-full max-w-[clamp(88px,24cqw,98px)] rounded-full"
                 style={{
                   background:
                     "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
@@ -685,7 +688,7 @@ export default function DashboardPage() {
 
             {/* MONITORING LEGEND */}
 
-            <div className="min-w-0 space-y-[clamp(6px,2.05cqw,8px)]">
+            <div className="min-w-0 space-y-[clamp(6px,1.7cqw,7px)]">
 
               {monitoringData.map((item) => (
                 <div
@@ -700,7 +703,7 @@ export default function DashboardPage() {
                         backgroundColor: item.color,
                       }}
                     />
-                    <span className="min-w-0 whitespace-nowrap text-[clamp(9px,3.0cqw,12px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
+                    <span className="min-w-0 whitespace-nowrap text-[clamp(9px,2.85cqw,11px)] font-semibold leading-[1.15] tracking-[-0.02em] text-[#171717]">
                       {item.label}
                     </span>
                   </span>
@@ -726,7 +729,7 @@ export default function DashboardPage() {
             KUNJUNGAN BULAN INI
         ================================================= */}
 
-        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,12px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,16px)] border border-[#EEEEEE] bg-white p-[clamp(10px,2.8cqw,12px)] shadow-[0_2px_9px_rgba(0,0,0,0.055)]">
 
           {/* TITLE + TARGET */}
 
@@ -744,13 +747,13 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(68px,21cqw,82px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
+          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(62px,18cqw,72px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
 
             {/* TOTAL VISITS */}
 
             <div className="min-w-0 border-r border-[#EEEEEE] pr-2">
 
-              <p className="text-[clamp(30px,9.5cqw,38px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
+              <p className="text-[clamp(32px,9.7cqw,40px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
                 32
               </p>
 
@@ -776,7 +779,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="relative flex aspect-[1.25/1] w-full min-w-0 items-center justify-center">
+              <div className="relative flex aspect-[1.18/1] w-full min-w-0 items-center justify-center">
                 <span className="absolute left-[2%] top-[15%] h-[72%] w-[96%] rounded-[48%] bg-[#FDE9ED]" />
                 <span className="absolute left-[18%] top-[3%] h-[82%] w-[64%] rounded-full bg-[#FDE9ED]/95" />
                 <span className="absolute bottom-[4%] left-[10%] h-[46%] w-[82%] rounded-full bg-[#FDE9ED]/85" />
@@ -808,7 +811,7 @@ export default function DashboardPage() {
 
             </div>
 
-            <div className="h-[clamp(7px,2.3cqw,9px)] overflow-hidden rounded-full bg-[#E8E8E8]">
+            <div className="h-[clamp(7px,2cqw,8px)] overflow-hidden rounded-full bg-[#E8E8E8]">
 
               <div
                 className="h-full rounded-full bg-[#BF0B2C]"
@@ -823,13 +826,13 @@ export default function DashboardPage() {
             AKSI CEPAT
         ================================================= */}
 
-        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,14px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,2.8cqw,12px)] shadow-[0_2px_9px_rgba(0,0,0,0.055)]">
 
           <SectionTitle>
             Aksi Cepat
           </SectionTitle>
 
-          <div className="mt-[clamp(7px,2.1cqw,9px)] grid grid-cols-4 gap-[clamp(7px,2cqw,8px)]">
+          <div className="mt-[clamp(6px,1.8cqw,8px)] grid grid-cols-4 gap-[clamp(7px,2cqw,8px)]">
 
             <QuickAction
               href="/visits"
@@ -892,7 +895,7 @@ export default function DashboardPage() {
 
         <Link
           href="/monitoring"
-          className="flex h-[clamp(46px,12.6cqw,49px)] min-w-0 items-center gap-[8px] rounded-[clamp(12px,3.6cqw,14px)] border border-[#F7E4DE] bg-[#FFF2EE] px-[10px] py-[4px]"
+          className="flex h-[clamp(48px,13cqw,52px)] min-w-0 items-center gap-[8px] rounded-[clamp(12px,3.6cqw,14px)] border border-[#F7E4DE] bg-[#FFF2EE] px-[10px] py-[4px]"
         >
 
           <div className="flex h-[clamp(30px,9.8cqw,38px)] w-[clamp(30px,9.8cqw,38px)] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
@@ -927,7 +930,7 @@ export default function DashboardPage() {
             AKTIVITAS TERBARU
         ================================================= */}
 
-        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,3.1cqw,14px)] shadow-[0_3px_12px_rgba(0,0,0,0.06)]">
+        <section className="min-w-0 rounded-[clamp(14px,4cqw,18px)] border border-[#EEEEEE] bg-white p-[clamp(10px,2.8cqw,12px)] shadow-[0_2px_9px_rgba(0,0,0,0.055)]">
 
           <div className="flex min-w-0 items-center justify-between gap-2">
 
@@ -950,7 +953,7 @@ export default function DashboardPage() {
             {recentActivities.map((activity, index) => (
               <div
                 key={`${activity.machine}-${index}`}
-                className="flex min-h-[clamp(34px,9.5cqw,37px)] min-w-0 items-center gap-[clamp(8px,2.6cqw,10px)] py-[2px]"
+                className="flex min-h-[clamp(32px,8.7cqw,35px)] min-w-0 items-center gap-[clamp(8px,2.6cqw,10px)] py-[2px]"
               >
 
                 <div
@@ -971,7 +974,7 @@ export default function DashboardPage() {
 
                 <div className="min-w-0 flex-1">
 
-                  <p className="truncate text-[clamp(10px,3.0cqw,12px)] font-semibold text-[#171717]">
+                  <p className="truncate text-[clamp(10px,2.9cqw,11px)] font-semibold text-[#171717]">
                     {activity.title}
                   </p>
 
