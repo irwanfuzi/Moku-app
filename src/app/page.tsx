@@ -632,8 +632,9 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[clamp(20px,5.2cqw,24px)] overflow-hidden bg-[#E9A0AC]">
-          <div className="absolute -top-[30px] left-[-8%] h-[52px] w-[116%] rounded-[50%] bg-[#730217]" />
+        <div className="pointer-events-none relative -mt-[1px] h-[clamp(26px,6.8cqw,32px)] overflow-hidden bg-[#E9A0AC]">
+          {/* Burgundy wave: the header now ends in a visible, smooth curved edge. */}
+          <div className="absolute -top-[48px] left-[-12%] h-[76px] w-[124%] rounded-[50%] bg-[#730217]" />
         </div>
       )}
 
@@ -643,7 +644,7 @@ export default function DashboardPage() {
 
       <div
         className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(7px,2.2cqw,10px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
-          showMobileHeader ? "-mt-[clamp(14px,4.6cqw,18px)]" : "pt-4"
+          showMobileHeader ? "-mt-[clamp(22px,6cqw,28px)]" : "pt-4"
         }`}
       >
 
@@ -747,13 +748,13 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(58px,16.8cqw,68px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
+          <div className="mt-[clamp(5px,1.6cqw,7px)] grid min-h-[clamp(54px,15.5cqw,62px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
 
             {/* TOTAL VISITS */}
 
             <div className="min-w-0 border-r border-[#EEEEEE] pr-2">
 
-              <p className="text-[clamp(32px,9.7cqw,40px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
+              <p className="text-[clamp(30px,9cqw,37px)] font-extrabold leading-[0.95] tracking-[-0.045em] text-[#111111]">
                 32
               </p>
 
@@ -779,7 +780,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="relative flex aspect-[1.18/1] w-full min-w-0 items-center justify-center">
+              <div className="relative flex h-[clamp(54px,15.5cqw,62px)] w-full min-w-0 items-center justify-center">
                 <span className="absolute left-[2%] top-[15%] h-[72%] w-[96%] rounded-[48%] bg-[#FDE9ED]" />
                 <span className="absolute left-[18%] top-[3%] h-[82%] w-[64%] rounded-full bg-[#FDE9ED]/95" />
                 <span className="absolute bottom-[4%] left-[10%] h-[46%] w-[82%] rounded-full bg-[#FDE9ED]/85" />
@@ -797,9 +798,9 @@ export default function DashboardPage() {
 
           {/* TARGET PROGRESS */}
 
-          <div className="mt-[clamp(6px,1.7cqw,8px)]">
+          <div className="mt-[clamp(3px,1cqw,5px)]">
 
-            <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="mb-1 flex items-center justify-between gap-2">
 
               <p className="text-[clamp(10px,2.9cqw,12px)] font-bold text-[#171717]">
                 Pencapaian Target
@@ -998,4 +999,3 @@ export default function DashboardPage() {
     </main>
   );
 }
- 
