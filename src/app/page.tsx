@@ -9,7 +9,6 @@ import {
   CalendarDays,
   ChartNoAxesColumn,
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -209,11 +208,15 @@ function DesktopDashboard() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] min-w-0 space-y-5 text-[#171923]">
+
+      {/* DESKTOP HEADER */}
+
       <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-tight text-[#730217]">
             Dashboard
           </h1>
+
           <p className="mt-1 text-[1rem] leading-snug text-[#4F4B53]">
             Ringkasan aktivitas dan monitoring kunjungan mesin.
           </p>
@@ -222,6 +225,7 @@ function DesktopDashboard() {
         <div className="flex shrink-0 items-center gap-4">
           <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
             <CalendarDays size={24} className="shrink-0" />
+
             <select
               value={desktopMonth}
               onChange={(event) => setDesktopMonth(event.target.value)}
@@ -250,16 +254,23 @@ function DesktopDashboard() {
             <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">
               B
             </span>
+
             <span>
               <strong className="block text-[16px] leading-tight">
                 Budi Santoso
               </strong>
-              <small className="text-[15px] text-[#77727A]">Teknisi</small>
+
+              <small className="text-[15px] text-[#77727A]">
+                Teknisi
+              </small>
             </span>
+
             <ChevronDown size={16} />
           </Link>
         </div>
       </header>
+
+      {/* DESKTOP KPI */}
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {kpis.map(({ label, value, icon: Icon }) => (
@@ -275,6 +286,7 @@ function DesktopDashboard() {
               <span className="block text-[19px] font-semibold leading-snug text-[#171923]">
                 {label}
               </span>
+
               <span className="mt-1 block text-[45px] font-bold leading-none tracking-tight text-[#171923]">
                 {value}
               </span>
@@ -283,7 +295,12 @@ function DesktopDashboard() {
         ))}
       </section>
 
+      {/* DESKTOP CHARTS */}
+
       <section className="grid min-w-0 grid-cols-2 gap-[20px]">
+
+        {/* MONITORING */}
+
         <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
           <h2 className="text-[1.25rem] font-bold tracking-tight text-[#171923]">
             Status Monitoring Mesin
@@ -294,7 +311,7 @@ function DesktopDashboard() {
               className="relative h-[203px] w-[203px] shrink-0 rounded-full"
               style={{
                 background:
-                  "conic-gradient(#BF0B2C 0deg 240deg, #D7D7DC 240deg 330deg, #F28C0F 330deg 360deg)",
+                  "conic-gradient(#BF0B2C 0deg 237.6deg, #D7D7DC 237.6deg 327.6deg, #F28C0F 327.6deg 360deg)",
                 transform: "rotate(-90deg)",
               }}
               aria-label="Donut chart status mesin"
@@ -303,6 +320,7 @@ function DesktopDashboard() {
                 <strong className="text-[46px] font-bold leading-none">
                   48
                 </strong>
+
                 <span className="mt-1 text-[17px] text-[#55545C]">
                   Mesin
                 </span>
@@ -319,12 +337,15 @@ function DesktopDashboard() {
                     className="h-4 w-4 shrink-0 rounded-[4px]"
                     style={{ background: item.color }}
                   />
+
                   <span className="min-w-0 flex-1 truncate text-[#24232A]">
                     {item.label}
                   </span>
+
                   <span className="whitespace-nowrap text-[#55545C]">
                     {item.value} Mesin
                   </span>
+
                   <strong
                     className={`rounded-full px-3 py-1 text-sm ${item.badge}`}
                   >
@@ -336,11 +357,14 @@ function DesktopDashboard() {
           </div>
         </article>
 
+        {/* VISIT STATISTICS */}
+
         <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[1.25rem] font-bold tracking-tight text-[#171923]">
               Statistik Kunjungan
             </h2>
+
             <span className="text-sm font-medium text-[#77727A]">
               7 Hari Terakhir
             </span>
@@ -358,12 +382,14 @@ function DesktopDashboard() {
                     style={{ height: `${(item.visits / 20) * 100}%` }}
                     title={`${item.visits} kunjungan`}
                   />
+
                   <div
                     className="w-[38%] rounded-t-[5px] bg-[#F2A0AE]"
                     style={{ height: `${(item.target / 20) * 100}%` }}
                     title={`${item.target} target`}
                   />
                 </div>
+
                 <span className="text-xs font-medium text-[#77727A]">
                   {item.day}
                 </span>
@@ -373,12 +399,15 @@ function DesktopDashboard() {
         </article>
       </section>
 
+      {/* DESKTOP MACHINE TABLE */}
+
       <section className="min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#171923]">
               Daftar Mesin
             </h2>
+
             <p className="mt-1 text-sm text-[#77727A]">
               Ringkasan status kunjungan mesin.
             </p>
@@ -393,9 +422,12 @@ function DesktopDashboard() {
           </Link>
         </div>
 
+        {/* FILTERS */}
+
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <label className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Search size={18} className="shrink-0 text-[#77727A]" />
+
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -406,6 +438,7 @@ function DesktopDashboard() {
 
           <label className="flex h-11 min-w-[160px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Filter size={17} className="shrink-0 text-[#77727A]" />
+
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
@@ -420,6 +453,7 @@ function DesktopDashboard() {
 
           <label className="flex h-11 min-w-[180px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Users size={17} className="shrink-0 text-[#77727A]" />
+
             <select
               value={customerFilter}
               onChange={(event) => setCustomerFilter(event.target.value)}
@@ -433,6 +467,8 @@ function DesktopDashboard() {
             </select>
           </label>
         </div>
+
+        {/* TABLE */}
 
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[780px] border-collapse text-left">
@@ -454,12 +490,18 @@ function DesktopDashboard() {
                   key={row.code}
                   className="border-b border-[#EEEEF0] text-sm text-[#29232A] transition hover:bg-[#FCFAFB]"
                 >
-                  <td className="px-4 py-4 text-[#77727A]">{row.no}</td>
+                  <td className="px-4 py-4 text-[#77727A]">
+                    {row.no}
+                  </td>
+
                   <td className="px-4 py-4 font-bold text-[#730217]">
                     {row.code}
                   </td>
+
                   <td className="px-4 py-4">{row.model}</td>
+
                   <td className="px-4 py-4">{row.customer}</td>
+
                   <td className="px-4 py-4">
                     <span
                       className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
@@ -473,7 +515,9 @@ function DesktopDashboard() {
                       {row.status}
                     </span>
                   </td>
+
                   <td className="px-4 py-4">{row.lastVisit}</td>
+
                   <td className="relative px-4 py-4 text-center">
                     <button
                       type="button"
@@ -497,6 +541,7 @@ function DesktopDashboard() {
                         >
                           Lihat Detail
                         </Link>
+
                         <Link
                           href={`/visits/new?equipment=${row.code}`}
                           className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
@@ -544,6 +589,7 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen min-w-0 overflow-x-hidden bg-[#F8F8FA] pb-[calc(80px+env(safe-area-inset-bottom))]">
+
       <div className="relative isolate mx-auto w-full max-w-[480px] [container-type:inline-size]">
 
         {/* =================================================
@@ -552,7 +598,7 @@ export default function DashboardPage() {
 
         <header className="relative min-h-[clamp(270px,72cqw,310px)] overflow-hidden bg-gradient-to-br from-[#85001F] via-[#A9002B] to-[#730217] px-[clamp(20px,5.5cqw,26px)] pb-[clamp(45px,12cqw,55px)] pt-[clamp(20px,5cqw,25px)] text-white">
 
-          {/* Background decoration */}
+          {/* BACKGROUND DECORATION */}
 
           <div className="pointer-events-none absolute -right-[17%] -top-[30%] h-[260px] w-[260px] rounded-full bg-[#E20D43]/30" />
 
@@ -560,7 +606,7 @@ export default function DashboardPage() {
 
           <div className="pointer-events-none absolute right-[-10%] top-[38%] h-[130px] w-[130px] rounded-full bg-[#E20D43]/25 blur-[1px]" />
 
-          {/* Logo and notification */}
+          {/* LOGO & NOTIFICATION */}
 
           <div className="relative z-20 flex items-center justify-between gap-3">
             <Image
@@ -610,7 +656,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Welcome text */}
+          {/* WELCOME */}
 
           <div className="relative z-10 mt-[clamp(22px,6cqw,30px)] max-w-[75%]">
             <h1 className="text-[clamp(21px,6cqw,27px)] font-bold leading-[1.2] tracking-[-0.04em] text-white">
@@ -622,7 +668,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Printer illustration */}
+          {/* PRINTER ILLUSTRATION */}
 
           <div className="pointer-events-none absolute bottom-[clamp(5px,2cqw,10px)] right-[clamp(5px,2cqw,12px)] z-10 flex h-[clamp(150px,43cqw,190px)] w-[clamp(155px,45cqw,205px)] items-end justify-center">
             <Image
@@ -636,7 +682,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Decorative wave */}
+          {/* HEADER WAVE */}
 
           <svg
             className="absolute bottom-[-1px] left-0 z-[11] h-[clamp(38px,11cqw,52px)] w-full"
@@ -658,15 +704,24 @@ export default function DashboardPage() {
         <div className="relative z-20 -mt-[clamp(5px,1.5cqw,8px)] space-y-[clamp(14px,3.8cqw,18px)] px-[clamp(12px,3.5cqw,17px)]">
 
           {/* =================================================
-              STATUS MONITORING
+              STATUS MONITORING MESIN
+              REVISED: TITLE OUTSIDE CARD
           ================================================= */}
 
-          <section className="min-w-0 rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white p-[clamp(13px,3.5cqw,17px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
+          <section className="min-w-0">
 
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <SectionTitle>Status Monitoring Mesin</SectionTitle>
+            {/* SECTION HEADER */}
 
-              <label className="flex h-[clamp(34px,9cqw,42px)] shrink-0 items-center gap-[5px] rounded-full border border-[#E8E8ED] bg-[#FCFCFD] px-[clamp(8px,2.4cqw,12px)] shadow-sm">
+            <div className="flex min-w-0 items-center justify-between gap-2 px-[clamp(8px,2.5cqw,14px)]">
+
+              <SectionTitle>
+                Status Monitoring Mesin
+              </SectionTitle>
+
+              {/* MONTH SELECTOR */}
+
+              <label className="flex h-[clamp(34px,9cqw,42px)] shrink-0 items-center gap-[5px] rounded-full border border-[#E8E8ED] bg-white px-[clamp(8px,2.4cqw,12px)] shadow-sm">
+
                 <CalendarDays
                   size={17}
                   className="shrink-0 text-[#171717]"
@@ -690,22 +745,27 @@ export default function DashboardPage() {
                   size={15}
                   className="shrink-0 text-[#171717]"
                 />
+
               </label>
             </div>
 
-            <div className="mt-[clamp(11px,3cqw,15px)] flex min-w-0 items-center gap-[clamp(12px,3.5cqw,17px)] rounded-[clamp(14px,4cqw,19px)] border border-[#F0F0F2] bg-white px-[clamp(10px,2.7cqw,14px)] py-[clamp(10px,2.7cqw,14px)]">
+            {/* MONITORING CARD */}
 
-              {/* Donut */}
+            <div className="mt-[clamp(11px,3cqw,15px)] flex min-w-0 items-center gap-[clamp(12px,3.5cqw,17px)] rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white px-[clamp(10px,2.7cqw,14px)] py-[clamp(10px,2.7cqw,14px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
+
+              {/* DONUT CHART */}
 
               <div
                 className="relative h-[clamp(112px,31cqw,145px)] w-[clamp(112px,31cqw,145px)] shrink-0 rounded-full"
                 style={{
                   background:
-                    "conic-gradient(from -90deg, #F28C0F 0deg 32.4deg, #BF0B2C 32.4deg 270deg, #D9D9D9 270deg 360deg)",
+                    "conic-gradient(from -90deg, #BF0B2C 0deg 237.6deg, #D9D9D9 237.6deg 327.6deg, #F28C0F 327.6deg 360deg)",
                 }}
                 aria-label="Diagram status monitoring mesin"
               >
+
                 <div className="absolute inset-[clamp(17px,5cqw,23px)] flex flex-col items-center justify-center rounded-full bg-white">
+
                   <span className="text-[clamp(31px,9cqw,43px)] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
                     48
                   </span>
@@ -713,10 +773,11 @@ export default function DashboardPage() {
                   <span className="mt-1 text-[clamp(11px,3.2cqw,14px)] font-medium text-[#29232A]">
                     Mesin
                   </span>
+
                 </div>
               </div>
 
-              {/* Legend */}
+              {/* CHART LEGEND */}
 
               <div className="min-w-0 flex-1 space-y-[clamp(11px,3.2cqw,15px)] border-l border-[#E5E5E8] pl-[clamp(11px,3cqw,15px)]">
 
@@ -725,7 +786,9 @@ export default function DashboardPage() {
                     key={item.label}
                     className="flex min-w-0 items-center justify-between gap-[5px]"
                   >
+
                     <span className="flex min-w-0 items-center gap-[clamp(5px,1.7cqw,8px)]">
+
                       <span
                         className="h-[clamp(10px,2.9cqw,13px)] w-[clamp(10px,2.9cqw,13px)] shrink-0 rounded-[4px]"
                         style={{ background: item.color }}
@@ -734,6 +797,7 @@ export default function DashboardPage() {
                       <span className="truncate text-[clamp(10px,3.1cqw,13px)] font-semibold tracking-[-0.03em] text-[#171717]">
                         {item.label}
                       </span>
+
                     </span>
 
                     <span className="shrink-0 whitespace-nowrap text-[clamp(10px,3cqw,13px)] text-[#29232A]">
@@ -745,6 +809,7 @@ export default function DashboardPage() {
                     >
                       {item.percentage}%
                     </span>
+
                   </div>
                 ))}
 
@@ -758,10 +823,16 @@ export default function DashboardPage() {
 
           <section className="min-w-0">
 
+            {/* SECTION HEADER */}
+
             <div className="flex min-w-0 items-center justify-between gap-2 px-[clamp(8px,2.5cqw,14px)]">
-              <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
+
+              <SectionTitle>
+                Kunjungan Bulan Ini
+              </SectionTitle>
 
               <div className="flex shrink-0 items-center gap-[6px]">
+
                 <Target
                   size={21}
                   className="shrink-0 text-[#BF0B2C]"
@@ -771,16 +842,20 @@ export default function DashboardPage() {
                 <span className="whitespace-nowrap text-[clamp(11px,3.3cqw,14px)] font-medium text-[#29232A]">
                   Target: 40 Kunjungan
                 </span>
+
               </div>
             </div>
+
+            {/* VISIT CARD */}
 
             <div className="mt-[clamp(9px,2.7cqw,13px)] rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white p-[clamp(13px,3.5cqw,17px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
 
               <div className="grid min-w-0 grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[clamp(8px,2.5cqw,13px)]">
 
-                {/* Total visits */}
+                {/* TOTAL VISITS */}
 
                 <div className="min-w-0 border-r border-[#E5E5E8] pr-[clamp(7px,2cqw,11px)]">
+
                   <p className="text-[clamp(39px,11cqw,52px)] font-extrabold leading-[0.95] tracking-[-0.055em] text-[#111111]">
                     32
                   </p>
@@ -788,16 +863,21 @@ export default function DashboardPage() {
                   <p className="mt-1 whitespace-nowrap text-[clamp(12px,3.6cqw,15px)] leading-tight text-[#29232A]">
                     Total Kunjungan
                   </p>
+
                 </div>
 
-                {/* Growth and illustration */}
+                {/* GROWTH AND ILLUSTRATION */}
 
                 <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-1">
 
                   <div className="min-w-0">
+
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#E4F8E8] px-[clamp(8px,2.3cqw,12px)] py-[clamp(4px,1.2cqw,6px)] text-[clamp(13px,3.8cqw,17px)] font-bold text-[#168B3E]">
+
                       <TrendingUp size={17} strokeWidth={2.4} />
+
                       +14%
+
                     </span>
 
                     <p className="mt-2 text-[clamp(11px,3.4cqw,14px)] leading-[1.35] tracking-[-0.02em] text-[#29232A]">
@@ -805,9 +885,11 @@ export default function DashboardPage() {
                       <br />
                       (28 kunjungan)
                     </p>
+
                   </div>
 
                   <div className="relative flex h-[clamp(70px,20cqw,91px)] w-full min-w-0 items-center justify-center">
+
                     <Image
                       src="/images/moku/illustrations/dashboard-activity.png"
                       alt="Ilustrasi checklist kunjungan"
@@ -816,14 +898,17 @@ export default function DashboardPage() {
                       className="relative z-10 h-full w-full object-contain object-center"
                       sizes="(max-width: 480px) 30vw, 145px"
                     />
+
                   </div>
                 </div>
               </div>
 
-              {/* Target progress */}
+              {/* TARGET PROGRESS */}
 
               <div className="mt-[clamp(9px,2.7cqw,13px)]">
+
                 <div className="mb-[6px] flex items-center justify-between gap-2">
+
                   <p className="text-[clamp(12px,3.5cqw,15px)] font-bold text-[#171717]">
                     Pencapaian Target
                   </p>
@@ -831,13 +916,16 @@ export default function DashboardPage() {
                   <p className="text-[clamp(12px,3.5cqw,15px)] font-extrabold text-[#111111]">
                     80%
                   </p>
+
                 </div>
 
                 <div className="h-[clamp(8px,2.3cqw,10px)] overflow-hidden rounded-full bg-[#E8E8E8]">
+
                   <div
                     className="h-full rounded-full bg-[#BF0B2C]"
                     style={{ width: "80%" }}
                   />
+
                 </div>
               </div>
             </div>
@@ -845,38 +933,75 @@ export default function DashboardPage() {
 
           {/* =================================================
               AKSI CEPAT
+              REVISED: TITLE OUTSIDE CARD
           ================================================= */}
 
-          <section className="min-w-0 rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white p-[clamp(13px,3.5cqw,17px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
+          <section className="min-w-0">
 
-            <SectionTitle>Aksi Cepat</SectionTitle>
+            {/* SECTION TITLE */}
 
-            <div className="mt-[clamp(9px,2.7cqw,13px)] grid grid-cols-4">
+            <div className="px-[clamp(8px,2.5cqw,14px)]">
+              <SectionTitle>
+                Aksi Cepat
+              </SectionTitle>
+            </div>
 
-              <QuickAction href="/visits" label={<>Kunjungan<br />Baru</>}>
-                <Plus size={29} strokeWidth={2.4} />
-              </QuickAction>
+            {/* QUICK ACTION CARD */}
 
-              <QuickAction
-                href="/equipment"
-                label={<>Tambah<br />Mesin</>}
-                separated
-              >
-                <Printer size={25} strokeWidth={2} />
-              </QuickAction>
+            <div className="mt-[clamp(9px,2.7cqw,13px)] rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white p-[clamp(13px,3.5cqw,17px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
 
-              <QuickAction href="/reports" label="Laporan" separated>
-                <ChartNoAxesColumn size={26} strokeWidth={2.2} />
-              </QuickAction>
+              <div className="grid grid-cols-4">
 
-              <QuickAction
-                href="/reports/export"
-                label={<>Unduh<br />Laporan</>}
-                separated
-              >
-                <Download size={26} strokeWidth={2.2} />
-              </QuickAction>
+                <QuickAction
+                  href="/visits"
+                  label={
+                    <>
+                      Kunjungan
+                      <br />
+                      Baru
+                    </>
+                  }
+                >
+                  <Plus size={29} strokeWidth={2.4} />
+                </QuickAction>
 
+                <QuickAction
+                  href="/equipment"
+                  label={
+                    <>
+                      Tambah
+                      <br />
+                      Mesin
+                    </>
+                  }
+                  separated
+                >
+                  <Printer size={25} strokeWidth={2} />
+                </QuickAction>
+
+                <QuickAction
+                  href="/reports"
+                  label="Laporan"
+                  separated
+                >
+                  <ChartNoAxesColumn size={26} strokeWidth={2.2} />
+                </QuickAction>
+
+                <QuickAction
+                  href="/reports/export"
+                  label={
+                    <>
+                      Unduh
+                      <br />
+                      Laporan
+                    </>
+                  }
+                  separated
+                >
+                  <Download size={26} strokeWidth={2.2} />
+                </QuickAction>
+
+              </div>
             </div>
           </section>
 
@@ -890,13 +1015,16 @@ export default function DashboardPage() {
           >
 
             <div className="flex h-[clamp(43px,12cqw,55px)] w-[clamp(43px,12cqw,55px)] shrink-0 items-center justify-center rounded-full bg-[#FFE7D8] text-[#F28C0F]">
+
               <AlertTriangle
                 size={34}
                 strokeWidth={1.9}
               />
+
             </div>
 
             <div className="min-w-0 flex-1">
+
               <p className="text-[clamp(13px,3.8cqw,16px)] font-bold leading-[1.2] tracking-[-0.025em] text-[#171717]">
                 Mesin Perlu Perhatian
               </p>
@@ -904,6 +1032,7 @@ export default function DashboardPage() {
               <p className="mt-1 text-[clamp(11px,3.3cqw,14px)] leading-[1.3] tracking-[-0.02em] text-[#51474E]">
                 4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
               </p>
+
             </div>
 
             <ChevronRight
@@ -911,6 +1040,7 @@ export default function DashboardPage() {
               strokeWidth={2.5}
               className="shrink-0 text-[#BF0B2C]"
             />
+
           </Link>
 
           {/* =================================================
@@ -919,27 +1049,40 @@ export default function DashboardPage() {
 
           <section className="min-w-0">
 
+            {/* SECTION HEADER */}
+
             <div className="flex min-w-0 items-center justify-between gap-2 px-[clamp(8px,2.5cqw,14px)]">
-              <SectionTitle>Aktivitas Terbaru</SectionTitle>
+
+              <SectionTitle>
+                Aktivitas Terbaru
+              </SectionTitle>
 
               <Link
                 href="/visit-history"
                 className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(12px,3.5cqw,15px)] font-bold text-[#BF0B2C]"
               >
                 Lihat Semua
-                <ChevronRight size={21} strokeWidth={2.5} />
+
+                <ChevronRight
+                  size={21}
+                  strokeWidth={2.5}
+                />
+
               </Link>
             </div>
+
+            {/* ACTIVITY CARD */}
 
             <div className="mt-[clamp(9px,2.7cqw,13px)] min-w-0 divide-y divide-[#EEEEEE] rounded-[clamp(17px,4.5cqw,21px)] border border-[#ECECF0] bg-white px-[clamp(11px,3cqw,15px)] shadow-[0_3px_12px_rgba(25,20,30,0.07)]">
 
               {recentActivities.map((activity, index) => (
+
                 <div
                   key={`${activity.machine}-${index}`}
                   className="flex min-h-[clamp(61px,16.5cqw,76px)] min-w-0 items-center gap-[clamp(9px,2.8cqw,14px)] py-[clamp(7px,2cqw,10px)]"
                 >
 
-                  {/* Activity icon */}
+                  {/* ACTIVITY ICON */}
 
                   <div
                     className={`flex h-[clamp(39px,10.8cqw,49px)] w-[clamp(39px,10.8cqw,49px)] shrink-0 items-center justify-center rounded-full ${
@@ -948,6 +1091,7 @@ export default function DashboardPage() {
                         : "bg-[#FCE8EB] text-[#D82032]"
                     }`}
                   >
+
                     {activity.status === "success" ? (
                       <Check
                         size={29}
@@ -959,11 +1103,13 @@ export default function DashboardPage() {
                         strokeWidth={2.2}
                       />
                     )}
+
                   </div>
 
-                  {/* Activity detail */}
+                  {/* ACTIVITY DETAIL */}
 
                   <div className="min-w-0 flex-1">
+
                     <p className="truncate text-[clamp(12px,3.6cqw,15px)] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
                       {activity.title}
                     </p>
@@ -971,9 +1117,10 @@ export default function DashboardPage() {
                     <p className="mt-1 truncate text-[clamp(11px,3.3cqw,14px)] leading-tight text-[#66616A]">
                       {activity.machine} · {activity.customer}
                     </p>
+
                   </div>
 
-                  {/* Activity time */}
+                  {/* ACTIVITY TIME */}
 
                   <span
                     className={`shrink-0 whitespace-nowrap rounded-full px-[clamp(10px,2.8cqw,15px)] py-[clamp(5px,1.5cqw,7px)] text-[clamp(11px,3.2cqw,14px)] font-medium ${
@@ -988,6 +1135,7 @@ export default function DashboardPage() {
                   </span>
 
                 </div>
+
               ))}
 
             </div>
