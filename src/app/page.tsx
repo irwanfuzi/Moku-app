@@ -420,14 +420,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="[container-type:inline-size] w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(clamp(72px,20cqw,88px)+env(safe-area-inset-bottom)+clamp(10px,3cqw,16px))]">
+    <main className="[container-type:inline-size] w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(64px+env(safe-area-inset-bottom)+12px)]">
 
       {/* ===================================================
           MOBILE HEADER
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate h-[clamp(148px,42.3cqw,184px)] min-h-[clamp(148px,42.3cqw,184px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate h-[clamp(132px,35.5cqw,156px)] min-h-[clamp(132px,35.5cqw,156px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
 
           {/* HEADER DECORATION */}
 
@@ -639,7 +639,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[480px] space-y-[clamp(8px,2.6cqw,12px)] px-[clamp(16px,4.6cqw,20px)] pb-[clamp(12px,3.2cqw,18px)] ${
+        className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(8px,2.6cqw,12px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
           showMobileHeader ? "-mt-[clamp(14px,4.6cqw,18px)]" : "pt-4"
         }`}
       >
