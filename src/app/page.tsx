@@ -631,20 +631,7 @@ export default function DashboardPage() {
           HEADER LOWER DECORATION
       =================================================== */}
 
-      {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[clamp(34px,9cqw,44px)] overflow-hidden bg-[#730217]">
-          {/* True concave cut-out: white rises in the center and falls at both sides.
-              The burgundy canvas therefore extends lower on the left and right. */}
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 100 44"
-            preserveAspectRatio="none"
-            className="absolute inset-0 h-full w-full"
-          >
-            <path d="M0 27 Q50 -17 100 27 L100 44 L0 44 Z" fill="#F7F7F7" />
-          </svg>
-        </div>
-      )}
+      {/* Header ends cleanly; the first white card overlaps it. Its rounded top corners reveal the burgundy shoulders. */}
 
       {/* ===================================================
           DASHBOARD CONTENT
@@ -652,7 +639,7 @@ export default function DashboardPage() {
 
       <div
         className={`relative z-10 mx-auto w-full max-w-[760px] space-y-[clamp(7px,2.2cqw,10px)] px-[clamp(9px,2.6cqw,12px)] pb-[clamp(12px,3.2cqw,18px)] ${
-          showMobileHeader ? "-mt-[clamp(22px,6cqw,28px)]" : "pt-4"
+          showMobileHeader ? "-mt-[clamp(18px,5cqw,22px)]" : "pt-4"
         }`}
       >
 
