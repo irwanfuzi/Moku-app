@@ -3,14 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-
 import {
   AlertTriangle,
   Bell,
   CalendarDays,
   ChartNoAxesColumn,
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -26,13 +24,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-
 import { useAppLayout } from "@/components/layout/app-shell";
 
 /* =========================================================
    DESIGN SYSTEM
 ========================================================= */
-
 const COLORS = {
   burgundy: "#730217",
   crimson: "#BF0B2C",
@@ -56,28 +52,27 @@ const MONTHS = [
 /* =========================================================
    DASHBOARD DATA
 ========================================================= */
-
 const monitoringData = [
   {
     label: "Sudah Dikunjungi",
     value: 32,
     percentage: 66,
-    color: "#BF0B2C",
-    badge: "bg-[#FCECEF] text-[#BF0B2C]",
+    color: "#8E001C",
+    badge: "bg-[#FCECEF] text-[#B81432]",
   },
   {
     label: "Belum Dikunjungi",
     value: 12,
     percentage: 25,
-    color: "#D9D9D9",
-    badge: "bg-[#F1F1F1] text-[#777777]",
+    color: "#E2E2E5",
+    badge: "bg-[#F2F2F4] text-[#66636A]",
   },
   {
     label: "Perlu Perhatian",
     value: 4,
     percentage: 9,
     color: "#F28C0F",
-    badge: "bg-[#FFF0E5] text-[#EB5513]",
+    badge: "bg-[#FFF1E6] text-[#E06D10]",
   },
 ];
 
@@ -108,7 +103,6 @@ const recentActivities = [
 /* =========================================================
    DESKTOP DATA
 ========================================================= */
-
 const desktopMachineRows = [
   {
     no: 1,
@@ -157,14 +151,9 @@ const desktopVisitChart = [
 /* =========================================================
    SHARED COMPONENTS
 ========================================================= */
-
-function SectionTitle({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="min-w-0 text-[19px] font-bold leading-[1.2] tracking-[-0.045em] text-[#171717]">
+    <h2 className="min-w-0 text-[19px] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
       {children}
     </h2>
   );
@@ -200,15 +189,14 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex min-w-0 flex-col items-center justify-center gap-[7px] px-1 text-center ${
-        separated ? "border-l border-[#E5E5E8]" : ""
+      className={`flex min-w-0 flex-col items-center justify-start gap-[8px] px-1 text-center ${
+        separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-[12px] bg-[#BF0B2C] text-white">
+      <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[13px] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
         {children}
       </span>
-
-      <span className="min-h-[36px] text-[13px] font-medium leading-[1.15] tracking-[-0.025em] text-[#29232A]">
+      <span className="text-[12.5px] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
         {label}
       </span>
     </Link>
@@ -218,51 +206,33 @@ function QuickAction({
 /* =========================================================
    DESKTOP DASHBOARD
 ========================================================= */
-
 function DesktopDashboard() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState("Semua Status");
-  const [customerFilter, setCustomerFilter] =
-    useState("Semua Pelanggan");
-  const [openAction, setOpenAction] =
-    useState<string | null>(null);
-  const [desktopMonth, setDesktopMonth] =
-    useState("Oktober 2025");
+  const [statusFilter, setStatusFilter] = useState("Semua Status");
+  const [customerFilter, setCustomerFilter] = useState("Semua Pelanggan");
+  const [openAction, setOpenAction] = useState<string | null>(null);
+  const [desktopMonth, setDesktopMonth] = useState("Oktober 2025");
 
   const filteredRows = desktopMachineRows.filter((row) => {
     const query = search.trim().toLowerCase();
-
     const matchesSearch =
       !query ||
-      [row.code, row.model, row.customer, row.status].some(
-        (value) => value.toLowerCase().includes(query)
+      [row.code, row.model, row.customer, row.status].some((value) =>
+        value.toLowerCase().includes(query)
       );
-
     const matchesStatus =
-      statusFilter === "Semua Status" ||
-      row.status === statusFilter;
-
+      statusFilter === "Semua Status" || row.status === statusFilter;
     const matchesCustomer =
-      customerFilter === "Semua Pelanggan" ||
-      row.customer === customerFilter;
+      customerFilter === "Semua Pelanggan" || row.customer === customerFilter;
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesCustomer
-    );
+    return matchesSearch && matchesStatus && matchesCustomer;
   });
 
   const kpis = [
     { label: "Total Mesin", value: "48", icon: Printer },
     { label: "Sudah Dikunjungi", value: "32", icon: Check },
     { label: "Belum Dikunjungi", value: "12", icon: Hourglass },
-    {
-      label: "Perlu Perhatian",
-      value: "4",
-      icon: AlertTriangle,
-    },
+    { label: "Perlu Perhatian", value: "4", icon: AlertTriangle },
   ];
 
   return (
@@ -272,7 +242,6 @@ function DesktopDashboard() {
           <h1 className="text-[clamp(28px,3vw,40px)] font-bold text-[#730217]">
             Dashboard
           </h1>
-
           <p className="mt-1 text-base text-[#4F4B53]">
             Ringkasan aktivitas dan monitoring kunjungan mesin.
           </p>
@@ -281,12 +250,9 @@ function DesktopDashboard() {
         <div className="flex items-center gap-4">
           <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
             <CalendarDays size={24} />
-
             <select
               value={desktopMonth}
-              onChange={(event) =>
-                setDesktopMonth(event.target.value)
-              }
+              onChange={(event) => setDesktopMonth(event.target.value)}
               className="w-full bg-transparent text-[15px] font-semibold outline-none"
             >
               <option>September 2025</option>
@@ -303,30 +269,19 @@ function DesktopDashboard() {
             className="relative flex h-12 w-12 items-center justify-center rounded-full"
           >
             <Bell size={29} />
-
             <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#BF0B2C]" />
           </Link>
 
           <span className="h-[43px] w-px bg-[#E5E5E8]" />
 
-          <Link
-            href="/profile"
-            className="flex items-center gap-3"
-          >
+          <Link href="/profile" className="flex items-center gap-3">
             <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">
               B
             </span>
-
             <span>
-              <strong className="block text-base">
-                Budi Santoso
-              </strong>
-
-              <small className="text-[15px] text-[#77727A]">
-                Teknisi
-              </small>
+              <strong className="block text-base">Budi Santoso</strong>
+              <small className="text-[15px] text-[#77727A]">Teknisi</small>
             </span>
-
             <ChevronDown size={16} />
           </Link>
         </div>
@@ -341,12 +296,8 @@ function DesktopDashboard() {
             <span className="flex h-[61px] w-[65px] shrink-0 items-center justify-center rounded-[13px] bg-[#730217] text-white">
               <Icon size={37} />
             </span>
-
             <span>
-              <span className="block text-[19px] font-semibold">
-                {label}
-              </span>
-
+              <span className="block text-[19px] font-semibold">{label}</span>
               <span className="mt-1 block text-[45px] font-bold leading-none">
                 {value}
               </span>
@@ -357,10 +308,7 @@ function DesktopDashboard() {
 
       <section className="grid grid-cols-2 gap-5">
         <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
-          <h2 className="text-xl font-bold">
-            Status Monitoring Mesin
-          </h2>
-
+          <h2 className="text-xl font-bold">Status Monitoring Mesin</h2>
           <div className="mt-5 flex items-center justify-center gap-6">
             <div
               className="relative h-[203px] w-[203px] shrink-0 rounded-full"
@@ -373,10 +321,7 @@ function DesktopDashboard() {
                 <strong className="text-[46px] font-bold leading-none">
                   48
                 </strong>
-
-                <span className="mt-1 text-[17px]">
-                  Mesin
-                </span>
+                <span className="mt-1 text-[17px]">Mesin</span>
               </div>
             </div>
 
@@ -390,15 +335,8 @@ function DesktopDashboard() {
                     className="h-4 w-4 shrink-0 rounded-[4px]"
                     style={{ background: item.color }}
                   />
-
-                  <span className="min-w-0 flex-1">
-                    {item.label}
-                  </span>
-
-                  <span className="whitespace-nowrap">
-                    {item.value} Mesin
-                  </span>
-
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  <span className="whitespace-nowrap">{item.value} Mesin</span>
                   <strong
                     className={`rounded-full px-3 py-1 text-sm ${item.badge}`}
                   >
@@ -412,13 +350,8 @@ function DesktopDashboard() {
 
         <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">
-              Statistik Kunjungan
-            </h2>
-
-            <span className="text-sm text-[#77727A]">
-              7 Hari Terakhir
-            </span>
+            <h2 className="text-xl font-bold">Statistik Kunjungan</h2>
+            <span className="text-sm text-[#77727A]">7 Hari Terakhir</span>
           </div>
 
           <div className="mt-7 flex h-[190px] items-end justify-between gap-3 border-b border-l border-[#E9E9EC] px-3 pb-2">
@@ -430,22 +363,14 @@ function DesktopDashboard() {
                 <div className="flex h-full w-full items-end justify-center gap-1">
                   <div
                     className="w-[38%] rounded-t-[5px] bg-[#BF0B2C]"
-                    style={{
-                      height: `${(item.visits / 20) * 100}%`,
-                    }}
+                    style={{ height: `${(item.visits / 20) * 100}%` }}
                   />
-
                   <div
                     className="w-[38%] rounded-t-[5px] bg-[#F2A0AE]"
-                    style={{
-                      height: `${(item.target / 20) * 100}%`,
-                    }}
+                    style={{ height: `${(item.target / 20) * 100}%` }}
                   />
                 </div>
-
-                <span className="text-xs text-[#77727A]">
-                  {item.day}
-                </span>
+                <span className="text-xs text-[#77727A]">{item.day}</span>
               </div>
             ))}
           </div>
@@ -455,10 +380,7 @@ function DesktopDashboard() {
       <section className="rounded-[15px] border border-[#E4E4E8] bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold">
-              Daftar Mesin
-            </h2>
-
+            <h2 className="text-xl font-bold">Daftar Mesin</h2>
             <p className="mt-1 text-sm text-[#77727A]">
               Ringkasan status kunjungan mesin.
             </p>
@@ -468,20 +390,16 @@ function DesktopDashboard() {
             href="/equipment"
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#730217] px-4 text-sm font-semibold text-white"
           >
-            <Plus size={17} />
-            Tambah Mesin
+            <Plus size={17} /> Tambah Mesin
           </Link>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <label className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Search size={18} />
-
             <input
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Cari mesin atau pelanggan..."
               className="w-full bg-transparent text-sm outline-none"
             />
@@ -489,12 +407,9 @@ function DesktopDashboard() {
 
           <label className="flex h-11 min-w-[160px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Filter size={17} />
-
             <select
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value)
-              }
+              onChange={(event) => setStatusFilter(event.target.value)}
               className="w-full bg-transparent text-sm outline-none"
             >
               <option>Semua Status</option>
@@ -506,12 +421,9 @@ function DesktopDashboard() {
 
           <label className="flex h-11 min-w-[180px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
             <Users size={17} />
-
             <select
               value={customerFilter}
-              onChange={(event) =>
-                setCustomerFilter(event.target.value)
-              }
+              onChange={(event) => setCustomerFilter(event.target.value)}
               className="w-full bg-transparent text-sm outline-none"
             >
               <option>Semua Pelanggan</option>
@@ -536,57 +448,38 @@ function DesktopDashboard() {
                 <th className="px-4 py-4 text-center">Aksi</th>
               </tr>
             </thead>
-
             <tbody>
               {filteredRows.map((row) => (
                 <tr
                   key={row.code}
                   className="border-b border-[#EEEEF0] text-sm hover:bg-[#FCFAFB]"
                 >
-                  <td className="px-4 py-4 text-[#77727A]">
-                    {row.no}
-                  </td>
-
+                  <td className="px-4 py-4 text-[#77727A]">{row.no}</td>
                   <td className="px-4 py-4 font-bold text-[#730217]">
                     {row.code}
                   </td>
-
-                  <td className="px-4 py-4">
-                    {row.model}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    {row.customer}
-                  </td>
-
+                  <td className="px-4 py-4">{row.model}</td>
+                  <td className="px-4 py-4">{row.customer}</td>
                   <td className="px-4 py-4">
                     <span
                       className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
                         row.status === "Sudah Dikunjungi"
                           ? "bg-[#E6F6EA] text-[#238447]"
                           : row.status === "Perlu Perhatian"
-                            ? "bg-[#FFF0E5] text-[#D66A13]"
-                            : "bg-[#F1F1F3] text-[#66636A]"
+                          ? "bg-[#FFF0E5] text-[#D66A13]"
+                          : "bg-[#F1F1F3] text-[#66636A]"
                       }`}
                     >
                       {row.status}
                     </span>
                   </td>
-
-                  <td className="px-4 py-4">
-                    {row.lastVisit}
-                  </td>
-
+                  <td className="px-4 py-4">{row.lastVisit}</td>
                   <td className="relative px-4 py-4 text-center">
                     <button
                       type="button"
                       aria-label={`Aksi ${row.code}`}
                       onClick={() =>
-                        setOpenAction(
-                          openAction === row.code
-                            ? null
-                            : row.code
-                        )
+                        setOpenAction(openAction === row.code ? null : row.code)
                       }
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#77727A] hover:bg-[#F3ECEF]"
                     >
@@ -602,7 +495,6 @@ function DesktopDashboard() {
                         >
                           Lihat Detail
                         </Link>
-
                         <Link
                           href={`/visits/new?equipment=${row.code}`}
                           className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
@@ -637,56 +529,36 @@ function DesktopDashboard() {
 /* =========================================================
    MOBILE DASHBOARD
 ========================================================= */
-
 function MobileDashboard() {
-  const [showNotifications, setShowNotifications] =
-    useState(false);
-
-  const [selectedMonth, setSelectedMonth] =
-    useState("Oktober 2025");
-
-  const [showMonthPicker, setShowMonthPicker] =
-    useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   return (
-    <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(76px+env(safe-area-inset-bottom))]">
+    <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
-
         {/* =================================================
             HEADER
         ================================================= */}
-
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(250px, 71.8vw, 294px)",
+            height: "clamp(245px, 68vw, 285px)",
           }}
         >
-          {/* Header background */}
-
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#730217] via-[#85001F] to-[#730217]" />
-
-          <div className="pointer-events-none absolute -right-[85px] top-[100px] h-[260px] w-[260px] rounded-full bg-[#BF0B2C]/50" />
-
-          <div className="pointer-events-none absolute -left-[100px] top-[175px] h-[190px] w-[190px] rounded-full bg-[#BF0B2C]/35" />
-
-          <div className="pointer-events-none absolute right-[-100px] top-[195px] h-[180px] w-[180px] rounded-full bg-[#BF0B2C]/40" />
+          {/* Gradient & subtle glow */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_35%,#A80524_0%,#7A0118_55%,#5C0011_100%)]" />
 
           {/* Logo and notification */}
-
-          <div className="absolute left-[20px] right-[20px] top-[max(48px,calc(env(safe-area-inset-top)+12px))] z-30 flex items-center justify-between">
-            <Link
-              href="/"
-              aria-label="MOKU Dashboard"
-              className="flex items-center"
-            >
+          <div className="absolute left-[20px] right-[20px] top-[max(44px,calc(env(safe-area-inset-top)+10px))] z-30 flex items-center justify-between">
+            <Link href="/" aria-label="MOKU Dashboard" className="flex items-center">
               <Image
                 src="/images/moku/brand/moku-logo.png"
                 alt="MOKU"
                 width={180}
                 height={65}
                 priority
-                className="h-[43px] w-auto object-contain object-left"
+                className="h-[40px] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -696,23 +568,17 @@ function MobileDashboard() {
                 type="button"
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
-                onClick={() =>
-                  setShowNotifications((previous) => !previous)
-                }
-                className="relative flex h-[44px] w-[44px] items-center justify-center rounded-full text-white"
+                onClick={() => setShowNotifications((previous) => !previous)}
+                className="relative flex h-[42px] w-[42px] items-center justify-center rounded-full text-white"
               >
-                <Bell size={28} strokeWidth={1.8} />
-
-                <span className="absolute right-[7px] top-[5px] h-[11px] w-[11px] rounded-full border border-[#730217] bg-[#F28C0F]" />
+                <Bell size={26} strokeWidth={1.8} />
+                <span className="absolute right-[7px] top-[6px] h-[10px] w-[10px] rounded-full bg-[#FF3B30]" />
               </button>
 
               {showNotifications && (
                 <div className="absolute right-0 top-12 z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold">
-                      Notifikasi
-                    </p>
-
+                    <p className="text-sm font-bold">Notifikasi</p>
                     <button
                       type="button"
                       aria-label="Tutup notifikasi"
@@ -721,7 +587,6 @@ function MobileDashboard() {
                       <X size={17} />
                     </button>
                   </div>
-
                   <p className="mt-3 text-xs text-[#77727A]">
                     Belum ada notifikasi baru.
                   </p>
@@ -731,20 +596,17 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-
-          <div className="absolute left-[20px] top-[max(105px,calc(env(safe-area-inset-top)+69px))] z-20 w-[calc(100%-40px)]">
-            <h1 className="whitespace-nowrap text-[clamp(22px,6.2vw,26px)] font-bold leading-[1.15] tracking-[-0.045em] text-white">
+          <div className="absolute left-[20px] top-[max(98px,calc(env(safe-area-inset-top)+62px))] z-20 w-[calc(100%-40px)]">
+            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-
-            <p className="mt-[5px] max-w-[275px] text-[14px] font-medium leading-[1.35] text-white/90">
+            <p className="mt-[6px] max-w-[235px] text-[13.5px] font-normal leading-[1.35] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
           {/* Printer illustration */}
-
-          <div className="pointer-events-none absolute bottom-[0px] right-[4px] z-10 flex h-[155px] w-[155px] items-end justify-center sm:h-[170px] sm:w-[170px]">
+          <div className="pointer-events-none absolute bottom-[12px] right-[12px] z-10 flex h-[142px] w-[142px] items-end justify-center sm:h-[160px] sm:w-[160px]">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -752,20 +614,24 @@ function MobileDashboard() {
               height={420}
               priority
               className="h-full w-full object-contain object-bottom"
-              sizes="170px"
+              sizes="160px"
             />
           </div>
 
-          {/* Decorative wave */}
-
+          {/* Decorative waves */}
           <svg
-            className="pointer-events-none absolute bottom-[-1px] left-0 z-[11] h-[34px] w-full"
-            viewBox="0 0 390 60"
+            className="pointer-events-none absolute bottom-[-1px] left-0 z-[11] h-[44px] w-full"
+            viewBox="0 0 390 70"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <path
-              d="M0 37C40 37 48 15 90 19C132 22 137 46 177 39C220 31 224 9 263 14C304 19 314 39 349 32C367 29 379 22 390 16V60H0V37Z"
+              d="M0 24C55 24 72 48 135 44C198 40 218 12 275 18C332 24 352 44 390 36V70H0V24Z"
+              fill="#C81032"
+              fillOpacity="0.65"
+            />
+            <path
+              d="M0 36C48 22 86 48 145 48C204 48 232 26 292 32C342 37 368 46 390 42V70H0V36Z"
               fill="#F7F7F7"
             />
           </svg>
@@ -774,53 +640,34 @@ function MobileDashboard() {
         {/* =================================================
             DASHBOARD CONTENT
         ================================================= */}
-
-        <div className="relative z-20 -mt-[1px] flex flex-col gap-[15px] px-[17px]">
-
+        <div className="relative z-20 mt-[4px] flex flex-col gap-[18px] px-[16px]">
           {/* =================================================
               STATUS MONITORING
           ================================================= */}
-
-          <MobileCard className="p-[13px]">
-            <div className="flex min-w-0 items-center justify-between gap-2 px-[3px]">
-              <div className="min-w-0 flex-1">
-                <SectionTitle>
-                  Status Monitoring Mesin
-                </SectionTitle>
-              </div>
+          <section className="min-w-0">
+            <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
+              <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
               {/* Period selector */}
-
               <div className="relative shrink-0">
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowMonthPicker((previous) => !previous)
-                  }
+                  onClick={() => setShowMonthPicker((previous) => !previous)}
                   aria-expanded={showMonthPicker}
-                  className="flex h-[39px] items-center gap-[7px] rounded-full border border-[#E8E8ED] bg-white px-[10px] shadow-sm"
+                  className="flex h-[36px] items-center gap-[6px] rounded-full border border-[#E6E6EA] bg-white px-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                 >
-                  <CalendarDays
-                    size={19}
-                    className="shrink-0 text-[#171717]"
-                  />
-
+                  <CalendarDays size={16} className="shrink-0 text-[#171717]" />
                   <span className="whitespace-nowrap text-[12px] font-bold text-[#171717]">
                     {selectedMonth}
                   </span>
-
-                  <ChevronDown
-                    size={16}
-                    className="shrink-0 text-[#171717]"
-                  />
+                  <ChevronDown size={15} className="shrink-0 text-[#171717]" />
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute right-0 top-[46px] z-50 w-[220px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-2 text-[#29232A] shadow-xl">
+                  <div className="absolute right-0 top-[42px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
                     <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
                       Pilih Periode
                     </p>
-
                     {MONTHS.map((month) => (
                       <button
                         key={month}
@@ -829,17 +676,14 @@ function MobileDashboard() {
                           setSelectedMonth(month);
                           setShowMonthPicker(false);
                         }}
-                        className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm ${
+                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${
                           selectedMonth === month
-                            ? "bg-[#FCECEF] font-bold text-[#BF0B2C]"
+                            ? "bg-[#FCECEF] font-bold text-[#8E001C]"
                             : "text-[#51474E]"
                         }`}
                       >
                         {month}
-
-                        {selectedMonth === month && (
-                          <Check size={17} />
-                        )}
+                        {selectedMonth === month && <Check size={16} />}
                       </button>
                     ))}
                   </div>
@@ -848,28 +692,24 @@ function MobileDashboard() {
             </div>
 
             {/* Monitoring chart panel */}
-
-            <div className="mt-[11px] rounded-[19px] border border-[#EEEEEE] px-[10px] py-[11px]">
-              <div className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-center gap-[9px]">
-
+            <MobileCard className="mt-[10px] px-[14px] py-[14px]">
+              <div className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-center gap-[12px]">
                 {/* Donut */}
-
-                <div className="flex items-center justify-center border-r border-[#E5E5E8] pr-[8px]">
+                <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[12px]">
                   <div
-                    className="relative aspect-square w-full max-w-[150px] rounded-full"
+                    className="relative aspect-square w-full max-w-[136px] rounded-full"
                     style={{
                       background:
-                        "conic-gradient(from -90deg, #BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
+                        "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
                     }}
                     role="img"
                     aria-label="48 mesin"
                   >
-                    <div className="absolute inset-[14%] flex flex-col items-center justify-center rounded-full bg-white">
-                      <span className="text-[clamp(30px,6vw,43px)] font-extrabold leading-none tracking-[-0.055em] text-[#111111]">
+                    <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
+                      <span className="text-[clamp(28px,5.8vw,38px)] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
                         48
                       </span>
-
-                      <span className="mt-[3px] text-[14px] text-[#29232A]">
+                      <span className="mt-[3px] text-[13px] font-medium text-[#51474E]">
                         Mesin
                       </span>
                     </div>
@@ -877,30 +717,24 @@ function MobileDashboard() {
                 </div>
 
                 {/* Legend */}
-
                 <div className="min-w-0 space-y-[12px]">
                   {monitoringData.map((item) => (
                     <div
                       key={item.label}
-                      className="grid min-w-0 grid-cols-[12px_minmax(0,1fr)_auto_auto] items-center gap-[5px]"
+                      className="grid min-w-0 grid-cols-[12px_minmax(0,1fr)_auto_auto] items-center gap-[6px]"
                     >
                       <span
-                        className="h-[12px] w-[12px] rounded-[4px]"
-                        style={{
-                          backgroundColor: item.color,
-                        }}
+                        className="h-[12px] w-[12px] rounded-[3.5px]"
+                        style={{ backgroundColor: item.color }}
                       />
-
-                      <span className="min-w-0 truncate text-[clamp(10px,1.9vw,14px)] font-semibold tracking-[-0.035em] text-[#171717]">
+                      <span className="min-w-0 truncate text-[clamp(11px,2.8vw,13px)] font-bold tracking-[-0.02em] text-[#171717]">
                         {item.label}
                       </span>
-
-                      <span className="whitespace-nowrap text-[clamp(10px,1.8vw,13px)] text-[#51474E]">
+                      <span className="whitespace-nowrap text-[clamp(11px,2.6vw,12.5px)] text-[#51474E]">
                         {item.value} Mesin
                       </span>
-
                       <span
-                        className={`min-w-[37px] rounded-full px-[5px] py-[5px] text-center text-[11px] font-bold ${item.badge}`}
+                        className={`min-w-[38px] rounded-full px-[6px] py-[3px] text-center text-[11px] font-bold ${item.badge}`}
                       >
                         {item.percentage}%
                       </span>
@@ -908,314 +742,24 @@ function MobileDashboard() {
                   ))}
                 </div>
               </div>
-            </div>
-          </MobileCard>
+            </MobileCard>
+          </section>
 
           {/* =================================================
               KUNJUNGAN BULAN INI
           ================================================= */}
-
           <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-2 px-[9px]">
-              <SectionTitle>
-                Kunjungan Bulan Ini
-              </SectionTitle>
-
+            <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
+              <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
               <div className="flex shrink-0 items-center gap-[5px]">
-                <Target
-                  size={19}
-                  strokeWidth={2.5}
-                  className="text-[#BF0B2C]"
-                />
-
-                <span className="whitespace-nowrap text-[12px] font-medium text-[#29232A] sm:text-[14px]">
+                <Target size={18} strokeWidth={2.3} className="text-[#C81032]" />
+                <span className="whitespace-nowrap text-[12.5px] font-medium text-[#29232A]">
                   Target: 40 Kunjungan
                 </span>
               </div>
             </div>
 
-            <MobileCard className="mt-[11px] px-[15px] py-[14px]">
-              <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] items-center gap-[9px]">
-
+            <MobileCard className="mt-[10px] px-[16px] py-[15px]">
+              <div className="grid grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[12px]">
                 {/* Total */}
-
-                <div className="min-w-0 border-r border-[#E5E5E8] pr-[9px]">
-                  <p className="text-[clamp(43px,7.2vw,55px)] font-extrabold leading-[0.95] tracking-[-0.065em] text-[#111111]">
-                    32
-                  </p>
-
-                  <p className="mt-[3px] whitespace-nowrap text-[14px] leading-tight text-[#29232A]">
-                    Total Kunjungan
-                  </p>
-                </div>
-
-                {/* Growth */}
-
-                <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[3px]">
-                  <div className="min-w-0">
-                    <span className="inline-flex items-center gap-[5px] rounded-full bg-[#DDF9E5] px-[9px] py-[5px] text-[15px] font-bold text-[#168B3E]">
-                      <TrendingUp size={17} strokeWidth={2.5} />
-                      +14%
-                    </span>
-
-                    <p className="mt-[6px] text-[13px] leading-[1.3] text-[#29232A]">
-                      Dibanding bulan lalu
-                      <br />
-                      (28 kunjungan)
-                    </p>
-                  </div>
-
-                  <div className="flex h-[91px] min-w-0 items-center justify-center">
-                    <Image
-                      src="/images/moku/illustrations/dashboard-activity.png"
-                      alt="Ilustrasi checklist kunjungan"
-                      width={240}
-                      height={240}
-                      className="h-full w-full object-contain"
-                      sizes="120px"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress */}
-
-              <div className="mt-[15px]">
-                <div className="mb-[6px] flex items-center justify-between">
-                  <p className="text-[14px] font-bold text-[#171717]">
-                    Pencapaian Target
-                  </p>
-
-                  <p className="text-[14px] font-extrabold text-[#111111]">
-                    80%
-                  </p>
-                </div>
-
-                <div className="h-[11px] overflow-hidden rounded-full bg-[#E8E8E8]">
-                  <div
-                    className="h-full rounded-full bg-[#BF0B2C]"
-                    style={{ width: "80%" }}
-                  />
-                </div>
-              </div>
-            </MobileCard>
-          </section>
-
-          {/* =================================================
-              AKSI CEPAT
-          ================================================= */}
-
-          <section className="min-w-0">
-            <div className="px-[9px]">
-              <SectionTitle>
-                Aksi Cepat
-              </SectionTitle>
-            </div>
-
-            <MobileCard className="mt-[11px] px-[12px] py-[13px]">
-              <div className="grid grid-cols-4">
-                <QuickAction
-                  href="/visits"
-                  label={
-                    <>
-                      Buat
-                      <br />
-                      Kunjungan
-                    </>
-                  }
-                >
-                  <Plus size={29} strokeWidth={2.5} />
-                </QuickAction>
-
-                <QuickAction
-                  href="/equipment"
-                  separated
-                  label={
-                    <>
-                      Tambah
-                      <br />
-                      Mesin
-                    </>
-                  }
-                >
-                  <Printer size={25} strokeWidth={2.1} />
-                </QuickAction>
-
-                <QuickAction
-                  href="/reports"
-                  separated
-                  label={
-                    <>
-                      Lihat
-                      <br />
-                      Laporan
-                    </>
-                  }
-                >
-                  <ChartNoAxesColumn size={26} strokeWidth={2.2} />
-                </QuickAction>
-
-                <QuickAction
-                  href="/reports/export"
-                  separated
-                  label={
-                    <>
-                      Ekspor
-                      <br />
-                      PDF
-                    </>
-                  }
-                >
-                  <Download size={25} strokeWidth={2.2} />
-                </QuickAction>
-              </div>
-            </MobileCard>
-          </section>
-
-          {/* =================================================
-              MESIN PERLU PERHATIAN
-          ================================================= */}
-
-          <Link
-            href="/monitoring"
-            className="flex min-h-[82px] min-w-0 items-center gap-[10px] rounded-[19px] border border-[#F4E4DF] bg-[#FFF2EE] px-[13px] py-[10px]"
-          >
-            <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
-              <AlertTriangle size={37} strokeWidth={1.9} />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-extrabold leading-[1.2] tracking-[-0.035em] text-[#171717]">
-                Mesin Perlu Perhatian
-              </p>
-
-              <p className="mt-[3px] text-[12px] leading-[1.3] text-[#51474E]">
-                4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan tindak lanjut.
-              </p>
-            </div>
-
-            <ChevronRight
-              size={27}
-              strokeWidth={2.5}
-              className="shrink-0 text-[#BF0B2C]"
-            />
-          </Link>
-
-          {/* =================================================
-              AKTIVITAS TERBARU
-          ================================================= */}
-
-          <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-2 px-[9px]">
-              <SectionTitle>
-                Aktivitas Terbaru
-              </SectionTitle>
-
-              <Link
-                href="/visit-history"
-                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[14px] font-bold text-[#BF0B2C]"
-              >
-                Lihat Semua
-                <ChevronRight size={20} strokeWidth={2.5} />
-              </Link>
-            </div>
-
-            <MobileCard className="mt-[11px] divide-y divide-[#EEEEEE] px-[13px]">
-              {recentActivities.map((activity, index) => (
-                <div
-                  key={`${activity.machine}-${index}`}
-                  className="flex min-h-[68px] min-w-0 items-center gap-[11px] py-[8px]"
-                >
-                  {/* Status icon */}
-
-                  <div
-                    className={`flex h-[47px] w-[47px] shrink-0 items-center justify-center rounded-full ${
-                      activity.status === "success"
-                        ? "bg-[#DDF8E7] text-[#249653]"
-                        : "bg-[#FCE7E8] text-[#D83B45]"
-                    }`}
-                  >
-                    {activity.status === "success" ? (
-                      <Check
-                        size={29}
-                        strokeWidth={3}
-                      />
-                    ) : (
-                      <Clock3
-                        size={29}
-                        strokeWidth={2.2}
-                      />
-                    )}
-                  </div>
-
-                  {/* Activity information */}
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-bold leading-tight text-[#171717]">
-                      {activity.title}
-                    </p>
-
-                    <p className="mt-[4px] truncate text-[12px] leading-tight text-[#817780]">
-                      {activity.machine} · {activity.customer}
-                    </p>
-                  </div>
-
-                  {/* Time badge */}
-
-                  <span
-                    className={`shrink-0 whitespace-nowrap rounded-full px-[12px] py-[6px] text-[12px] font-medium ${
-                      activity.status === "success"
-                        ? index === 0
-                          ? "bg-[#E4F7DD] text-[#365D31]"
-                          : "bg-[#F0F0F0] text-[#555555]"
-                        : "bg-[#FCE5EA] text-[#A51B30]"
-                    }`}
-                  >
-                    {activity.time}
-                  </span>
-                </div>
-              ))}
-            </MobileCard>
-          </section>
-
-          {/* =================================================
-              FOOTER
-          ================================================= */}
-
-          <div className="pb-3 pt-1 text-center">
-            <p className="text-[10px] text-[#A39AA0]">
-              MOKU — Monitoring Operasional Kunjungan Unit
-            </p>
-
-            <p className="mt-1 text-[10px] text-[#B3ABB0]">
-              Track Precisely, Deliver Quality
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-/* =========================================================
-   DASHBOARD PAGE
-========================================================= */
-
-export default function DashboardPage() {
-  const { isMobile, isReady } = useAppLayout();
-
-  if (!isReady) {
-    return (
-      <div
-        className="min-h-dvh w-full bg-[#F7F7F7]"
-        aria-label="Memuat Dashboard"
-      />
-    );
-  }
-
-  return isMobile ? (
-    <MobileDashboard />
-  ) : (
-    <DesktopDashboard />
-  );
-                }
+                <div className="min-w-0 border-r border-[#EAE
