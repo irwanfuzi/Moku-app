@@ -762,4 +762,243 @@ function MobileDashboard() {
             <MobileCard className="mt-[10px] px-[16px] py-[15px]">
               <div className="grid grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[12px]">
                 {/* Total */}
-                <div className="min-w-0 border-r border-[#EAE
+                <div className="min-w-0 border-r border-[#EAEAEF] pr-[10px]">
+                  <p className="text-[clamp(42px,10vw,50px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+                    32
+                  </p>
+                  <p className="mt-[6px] whitespace-nowrap text-[13px] font-medium text-[#29232A]">
+                    Total Kunjungan
+                  </p>
+                </div>
+
+                {/* Growth */}
+                <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[10px] py-[4px] text-[13.5px] font-bold text-[#15803D]">
+                      <TrendingUp size={15} strokeWidth={2.5} /> +14%
+                    </span>
+                    <p className="mt-[6px] text-[12px] leading-[1.35] text-[#3F3A42]">
+                      Dibanding bulan lalu
+                      <br />
+                      (28 kunjungan)
+                    </p>
+                  </div>
+
+                  <div className="flex h-[84px] min-w-0 items-center justify-center">
+                    <Image
+                      src="/images/moku/illustrations/dashboard-activity.png"
+                      alt="Ilustrasi checklist kunjungan"
+                      width={240}
+                      height={240}
+                      className="h-full w-full object-contain"
+                      sizes="110px"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="mt-[14px]">
+                <div className="mb-[6px] flex items-center justify-between">
+                  <p className="text-[13px] font-bold text-[#171717]">
+                    Pencapaian Target
+                  </p>
+                  <p className="text-[13px] font-extrabold text-[#111111]">
+                    80%
+                  </p>
+                </div>
+                <div className="h-[10px] overflow-hidden rounded-full bg-[#EAEAEF]">
+                  <div
+                    className="h-full rounded-full bg-[#8E001C]"
+                    style={{ width: "80%" }}
+                  />
+                </div>
+              </div>
+            </MobileCard>
+          </section>
+
+          {/* =================================================
+              AKSI CEPAT
+          ================================================= */}
+          <section className="min-w-0">
+            <div className="px-[2px]">
+              <SectionTitle>Aksi Cepat</SectionTitle>
+            </div>
+
+            <MobileCard className="mt-[10px] px-[10px] py-[14px]">
+              <div className="grid grid-cols-4">
+                <QuickAction
+                  href="/visits"
+                  label={
+                    <>
+                      Kunjungan
+                      <br />
+                      Baru
+                    </>
+                  }
+                >
+                  <Plus size={25} strokeWidth={2.5} />
+                </QuickAction>
+
+                <QuickAction
+                  href="/equipment"
+                  separated
+                  label={
+                    <>
+                      Tambah
+                      <br />
+                      Mesin
+                    </>
+                  }
+                >
+                  <Printer size={22} strokeWidth={2.1} />
+                </QuickAction>
+
+                <QuickAction href="/reports" separated label="Laporan">
+                  <ChartNoAxesColumn size={23} strokeWidth={2.2} />
+                </QuickAction>
+
+                <QuickAction
+                  href="/reports/export"
+                  separated
+                  label={
+                    <>
+                      Unduh
+                      <br />
+                      Laporan
+                    </>
+                  }
+                >
+                  <Download size={22} strokeWidth={2.2} />
+                </QuickAction>
+              </div>
+            </MobileCard>
+          </section>
+
+          {/* =================================================
+              MESIN PERLU PERHATIAN
+          ================================================= */}
+          <Link
+            href="/monitoring"
+            className="flex min-h-[78px] min-w-0 items-center gap-[14px] rounded-[18px] border border-[#F5E1D8] bg-[#FDF1EC] px-[16px] py-[12px]"
+          >
+            <AlertTriangle
+              size={34}
+              strokeWidth={2.1}
+              className="shrink-0 text-[#F28C0F]"
+            />
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[14.5px] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
+                Mesin Perlu Perhatian
+              </p>
+              <p className="mt-[3px] text-[12px] leading-[1.35] text-[#4A444D]">
+                4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
+                tindak lanjut.
+              </p>
+            </div>
+
+            <ChevronRight
+              size={22}
+              strokeWidth={2.5}
+              className="shrink-0 text-[#C81032]"
+            />
+          </Link>
+
+          {/* =================================================
+              AKTIVITAS TERBARU
+          ================================================= */}
+          <section className="min-w-0">
+            <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
+              <SectionTitle>Aktivitas Terbaru</SectionTitle>
+              <Link
+                href="/visit-history"
+                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[13.5px] font-bold text-[#C81032]"
+              >
+                Lihat Semua
+                <ChevronRight size={18} strokeWidth={2.5} />
+              </Link>
+            </div>
+
+            <MobileCard className="mt-[10px] divide-y divide-[#EFEFF2] px-[14px]">
+              {recentActivities.map((activity, index) => (
+                <div
+                  key={`${activity.machine}-${index}`}
+                  className="flex min-h-[66px] min-w-0 items-center gap-[12px] py-[10px]"
+                >
+                  {/* Status icon */}
+                  <div
+                    className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${
+                      activity.status === "success"
+                        ? "bg-[#E2F7E9] text-[#1D9A4E]"
+                        : "bg-[#F3F3F5] text-[#C81032]"
+                    }`}
+                  >
+                    {activity.status === "success" ? (
+                      <Check size={22} strokeWidth={2.8} />
+                    ) : (
+                      <Clock3 size={22} strokeWidth={2.3} />
+                    )}
+                  </div>
+
+                  {/* Activity information */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-bold leading-tight text-[#171717]">
+                      {activity.title}
+                    </p>
+                    <p className="mt-[4px] truncate text-[12px] leading-tight text-[#6E6873]">
+                      {activity.machine} • {activity.customer}
+                    </p>
+                  </div>
+
+                  {/* Time badge */}
+                  <span
+                    className={`min-w-[74px] shrink-0 whitespace-nowrap rounded-full px-[12px] py-[5px] text-center text-[11.5px] font-semibold ${
+                      activity.status === "success"
+                        ? index === 0
+                          ? "bg-[#DCF7D8] text-[#2F682A]"
+                          : "bg-[#EFEFF1] text-[#4E4A52]"
+                        : "bg-[#FCE6E9] text-[#A81830]"
+                    }`}
+                  >
+                    {activity.time}
+                  </span>
+                </div>
+              ))}
+            </MobileCard>
+          </section>
+
+          {/* =================================================
+              FOOTER
+          ================================================= */}
+          <div className="pb-3 pt-1 text-center">
+            <p className="text-[10px] text-[#A39AA0]">
+              MOKU — Monitoring Operasional Kunjungan Unit
+            </p>
+            <p className="mt-1 text-[10px] text-[#B3ABB0]">
+              Track Precisely, Deliver Quality
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* =========================================================
+   DASHBOARD PAGE
+========================================================= */
+export default function DashboardPage() {
+  const { isMobile, isReady } = useAppLayout();
+
+  if (!isReady) {
+    return (
+      <div
+        className="min-h-dvh w-full bg-[#F7F7F7]"
+        aria-label="Memuat Dashboard"
+      />
+    );
+  }
+
+  return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
+}
