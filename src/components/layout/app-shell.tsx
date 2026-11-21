@@ -572,7 +572,7 @@ export default function AppShell({
         }
 
         .moku-app-shell[data-layout-mode="desktop"] #main-content {
-          padding: 28px 24px 28px !important;
+          padding: 22px clamp(18px, 1.35vw, 21px) 24px !important;
         }
 
         /*
@@ -581,7 +581,7 @@ export default function AppShell({
 
         @media (min-width: 1440px) {
           .moku-app-shell[data-layout-mode="desktop"] #main-content {
-            padding: 32px !important;
+            padding: 24px !important;
           }
         }
 
