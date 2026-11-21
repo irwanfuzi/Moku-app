@@ -413,6 +413,7 @@ export default function AppShell({
     <AppLayoutContext.Provider value={layoutState}>
       <div
         data-layout-mode={layoutState.mode}
+        data-dashboard={pathname === "/" || pathname === "/dashboard"}
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
@@ -556,6 +557,10 @@ export default function AppShell({
           display: block !important;
         }
 
+        .moku-app-shell[data-layout-mode="desktop"][data-dashboard="true"] .moku-main-layout > header {
+          display: none !important;
+        }
+
         .moku-app-shell[data-layout-mode="desktop"]
           .moku-mobile-navigation {
           display: none !important;
@@ -583,6 +588,12 @@ export default function AppShell({
         */
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
+          display: none !important;
+        }
+
+        /* Mobile pages own their own page headers.
+           Do not render the desktop AppHeader above the PWA header. */
+        .moku-app-shell[data-layout-mode="mobile"] .moku-main-layout > header {
           display: none !important;
         }
 
