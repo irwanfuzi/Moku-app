@@ -632,9 +632,10 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <div className="pointer-events-none relative -mt-[1px] h-[clamp(26px,6.8cqw,32px)] overflow-hidden bg-[#E9A0AC]">
-          {/* Burgundy wave: the header now ends in a visible, smooth curved edge. */}
-          <div className="absolute -top-[48px] left-[-12%] h-[76px] w-[124%] rounded-[50%] bg-[#730217]" />
+        <div className="pointer-events-none relative -mt-[1px] h-[clamp(30px,8cqw,38px)] overflow-hidden bg-[#730217]">
+          {/* White canvas curves upward through the middle, leaving the burgundy
+              header visibly lower at both outer sides, like the approved reference. */}
+          <div className="absolute -top-[clamp(25px,7cqw,34px)] left-[-15%] h-[clamp(66px,18cqw,82px)] w-[130%] rounded-[50%] bg-[#F7F7F7]" />
         </div>
       )}
 
