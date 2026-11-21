@@ -538,19 +538,20 @@ function MobileDashboard() {
     <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
         {/* =================================================
-            HEADER
+            HEADER BANNER
         ================================================= */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(245px, 68vw, 285px)",
+            height: "clamp(248px, 69vw, 286px)",
           }}
         >
-          {/* Gradient & subtle glow */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_35%,#A80524_0%,#7A0118_55%,#5C0011_100%)]" />
+          {/* Gradient & subtle accent layer */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_28%,#A80524_0%,#7A0118_58%,#590010_100%)]" />
+          <div className="pointer-events-none absolute -bottom-[26px] left-[-12%] h-[92px] w-[124%] rounded-t-[48%] bg-[#B80D2E]/45" />
 
           {/* Logo and notification */}
-          <div className="absolute left-[20px] right-[20px] top-[max(44px,calc(env(safe-area-inset-top)+10px))] z-30 flex items-center justify-between">
+          <div className="absolute left-[20px] right-[20px] top-[max(42px,calc(env(safe-area-inset-top)+10px))] z-30 flex items-center justify-between">
             <Link href="/" aria-label="MOKU Dashboard" className="flex items-center">
               <Image
                 src="/images/moku/brand/moku-logo.png"
@@ -596,17 +597,17 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[20px] top-[max(98px,calc(env(safe-area-inset-top)+62px))] z-20 w-[calc(100%-40px)]">
+          <div className="absolute left-[20px] top-[max(96px,calc(env(safe-area-inset-top)+60px))] z-20 w-[calc(100%-40px)] pr-[128px]">
             <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[6px] max-w-[235px] text-[13.5px] font-normal leading-[1.35] text-white/90">
+            <p className="mt-[6px] max-w-[225px] text-[13.5px] font-normal leading-[1.35] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
           {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[12px] right-[12px] z-10 flex h-[142px] w-[142px] items-end justify-center sm:h-[160px] sm:w-[160px]">
+          <div className="pointer-events-none absolute bottom-[22px] right-[12px] z-10 flex h-[134px] w-[134px] items-end justify-center sm:h-[148px] sm:w-[148px]">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -614,33 +615,15 @@ function MobileDashboard() {
               height={420}
               priority
               className="h-full w-full object-contain object-bottom"
-              sizes="160px"
+              sizes="148px"
             />
           </div>
-
-          {/* Decorative waves */}
-          <svg
-            className="pointer-events-none absolute bottom-[-1px] left-0 z-[11] h-[44px] w-full"
-            viewBox="0 0 390 70"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M0 24C55 24 72 48 135 44C198 40 218 12 275 18C332 24 352 44 390 36V70H0V24Z"
-              fill="#C81032"
-              fillOpacity="0.65"
-            />
-            <path
-              d="M0 36C48 22 86 48 145 48C204 48 232 26 292 32C342 37 368 46 390 42V70H0V36Z"
-              fill="#F7F7F7"
-            />
-          </svg>
         </header>
 
         {/* =================================================
-            DASHBOARD CONTENT
+            CANVAS KONTEN (ROUNDED ATAS + OVERLAY HEADER)
         ================================================= */}
-        <div className="relative z-20 mt-[4px] flex flex-col gap-[18px] px-[16px]">
+        <div className="relative z-20 -mt-[22px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
           {/* =================================================
               STATUS MONITORING
           ================================================= */}
@@ -1001,4 +984,4 @@ export default function DashboardPage() {
   }
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+  }
