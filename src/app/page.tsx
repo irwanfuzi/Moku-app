@@ -1,3 +1,609 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
+
+import {
+  AlertTriangle,
+  Bell,
+  CalendarDays,
+  ChartNoAxesColumn,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  Download,
+  Filter,
+  Hourglass,
+  MoreVertical,
+  Plus,
+  Printer,
+  Search,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
+
+import { useAppLayout } from "@/components/layout/app-shell";
+
+/* =========================================================
+   DASHBOARD DATA
+========================================================= */
+
+const monitoringData = [
+  {
+    label: "Sudah Dikunjungi",
+    value: 32,
+    percentage: 66,
+    color: "#BF0B2C",
+    badge: "bg-[#FCECEF] text-[#BF0B2C]",
+  },
+  {
+    label: "Belum Dikunjungi",
+    value: 12,
+    percentage: 25,
+    color: "#D9D9D9",
+    badge: "bg-[#F1F1F1] text-[#666666]",
+  },
+  {
+    label: "Perlu Perhatian",
+    value: 4,
+    percentage: 9,
+    color: "#F28C0F",
+    badge: "bg-[#FFF0E5] text-[#EB5513]",
+  },
+];
+
+const recentActivities = [
+  {
+    title: "Kunjungan selesai",
+    machine: "MK-004",
+    customer: "PT. Citra Jaya",
+    time: "Hari ini",
+    status: "success",
+  },
+  {
+    title: "Kunjungan selesai",
+    machine: "MK-001",
+    customer: "PT. Sinar Mandiri",
+    time: "Kemarin",
+    status: "success",
+  },
+  {
+    title: "Kunjungan dijadwalkan",
+    machine: "MK-003",
+    customer: "PT. Prima Solusi",
+    time: "14 Okt",
+    status: "pending",
+  },
+];
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+function SectionTitle({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <h2 className="min-w-0 text-[clamp(16px,4.3cqw,19px)] font-bold leading-[1.16] tracking-[-0.035em] text-[#171717]">
+      {children}
+    </h2>
+  );
+}
+
+/* =========================================================
+   QUICK ACTION
+========================================================= */
+
+function QuickAction({
+  href,
+  label,
+  children,
+  separated = false,
+}: {
+  href: string;
+  label: ReactNode;
+  children: ReactNode;
+  separated?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex min-w-0 flex-col items-center justify-center gap-2 px-1 py-2 text-center ${
+        separated ? "border-l border-[#E7E7EA]" : ""
+      }`}
+    >
+      <span className="flex h-[clamp(32px,8.5cqw,39px)] w-[clamp(32px,8.5cqw,39px)] shrink-0 items-center justify-center rounded-[11px] bg-[#BF0B2C] text-white">
+        {children}
+      </span>
+
+      <span className="min-h-[2.25em] text-[clamp(11px,3cqw,13px)] font-medium leading-[1.15] text-[#29232A]">
+        {label}
+      </span>
+    </Link>
+  );
+}
+
+/* =========================================================
+   DESKTOP DASHBOARD
+========================================================= */
+
+const desktopMachineRows = [
+  {
+    no: 1,
+    code: "MK-001",
+    model: "Photocopy A3",
+    customer: "PT. Sinar Mandiri",
+    status: "Sudah Dikunjungi",
+    lastVisit: "12 Okt 2025",
+  },
+  {
+    no: 2,
+    code: "MK-002",
+    model: "Printer Laser",
+    customer: "CV. Multi Jaya",
+    status: "Belum Dikunjungi",
+    lastVisit: "-",
+  },
+  {
+    no: 3,
+    code: "MK-003",
+    model: "Photocopy A4",
+    customer: "PT. Prima Solusi",
+    status: "Perlu Perhatian",
+    lastVisit: "5 Okt 2025",
+  },
+  {
+    no: 4,
+    code: "MK-004",
+    model: "Scanner",
+    customer: "PT. Citra Jaya",
+    status: "Sudah Dikunjungi",
+    lastVisit: "10 Okt 2025",
+  },
+];
+
+const desktopVisitChart = [
+  { day: "Sen", visits: 12, target: 10 },
+  { day: "Sel", visits: 14, target: 12 },
+  { day: "Rab", visits: 12, target: 10 },
+  { day: "Kam", visits: 17, target: 15 },
+  { day: "Jum", visits: 10, target: 8 },
+  { day: "Sab", visits: 13, target: 10 },
+  { day: "Min", visits: 17, target: 16 },
+];
+
+function DesktopDashboard() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState("Semua Status");
+  const [customerFilter, setCustomerFilter] =
+    useState("Semua Pelanggan");
+  const [openAction, setOpenAction] =
+    useState<string | null>(null);
+  const [desktopMonth, setDesktopMonth] =
+    useState("Oktober 2025");
+
+  const filteredRows = desktopMachineRows.filter((row) => {
+    const query = search.trim().toLowerCase();
+
+    const matchesSearch =
+      !query ||
+      [row.code, row.model, row.customer, row.status].some(
+        (value) => value.toLowerCase().includes(query)
+      );
+
+    const matchesStatus =
+      statusFilter === "Semua Status" ||
+      row.status === statusFilter;
+
+    const matchesCustomer =
+      customerFilter === "Semua Pelanggan" ||
+      row.customer === customerFilter;
+
+    return matchesSearch && matchesStatus && matchesCustomer;
+  });
+
+  const kpis = [
+    { label: "Total Mesin", value: "48", icon: Printer },
+    { label: "Sudah Dikunjungi", value: "32", icon: Check },
+    { label: "Belum Dikunjungi", value: "12", icon: Hourglass },
+    { label: "Perlu Perhatian", value: "4", icon: AlertTriangle },
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-[1600px] min-w-0 space-y-5 text-[#171923]">
+
+      <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-[45px] font-bold leading-tight tracking-tight text-[#730217]">
+            Dashboard
+          </h1>
+
+          <p className="mt-1 text-[19px] leading-snug text-[#4F4B53]">
+            Ringkasan aktivitas dan monitoring kunjungan mesin.
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-4">
+          <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
+            <CalendarDays size={24} className="shrink-0" />
+
+            <select
+              value={desktopMonth}
+              onChange={(event) =>
+                setDesktopMonth(event.target.value)
+              }
+              className="w-full bg-transparent text-[19px] font-semibold outline-none"
+            >
+              <option>September 2025</option>
+              <option>Oktober 2025</option>
+              <option>November 2025</option>
+              <option>Desember 2025</option>
+              <option>Januari 2026</option>
+            </select>
+          </label>
+
+          <Link
+            href="/notifications"
+            aria-label="Notifikasi"
+            className="relative flex h-12 w-12 items-center justify-center text-[#29232A]"
+          >
+            <Bell size={29} strokeWidth={1.8} />
+            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#BF0B2C]" />
+          </Link>
+
+          <span className="h-[43px] w-px bg-[#E5E5E8]" />
+
+          <Link
+            href="/profile"
+            className="flex items-center gap-3 text-left"
+          >
+            <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">
+              B
+            </span>
+
+            <span>
+              <strong className="block text-[16px] leading-tight">
+                Budi Santoso
+              </strong>
+              <small className="text-[15px] text-[#77727A]">
+                Teknisi
+              </small>
+            </span>
+
+            <ChevronDown size={16} />
+          </Link>
+        </div>
+      </header>
+
+      {/* KPI SUMMARY */}
+
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {kpis.map(({ label, value, icon: Icon }) => (
+          <div
+            key={label}
+            className="flex min-h-[123px] min-w-0 items-center gap-[21px] rounded-[15px] border border-[#E5E5E8] bg-white px-5 py-4 shadow-sm"
+          >
+            <span className="flex h-[61px] w-[65px] shrink-0 items-center justify-center rounded-[13px] bg-[#730217] text-white">
+              <Icon size={37} strokeWidth={2} />
+            </span>
+
+            <span className="min-w-0">
+              <span className="block text-[19px] font-semibold leading-snug">
+                {label}
+              </span>
+
+              <span className="mt-1 block text-[45px] font-bold leading-none tracking-tight">
+                {value}
+              </span>
+            </span>
+          </div>
+        ))}
+      </section>
+
+      {/* CHARTS */}
+
+      <section className="grid min-w-0 grid-cols-2 gap-5">
+
+        <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
+          <h2 className="text-[25px] font-bold tracking-tight">
+            Status Monitoring Mesin
+          </h2>
+
+          <div className="mt-5 flex min-w-0 items-center justify-center gap-6">
+            <div
+              className="relative h-[203px] w-[203px] shrink-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(#BF0B2C 0deg 237deg, #D9D9D9 237deg 327deg, #F28C0F 327deg 360deg)",
+              }}
+            >
+              <div className="absolute inset-[34px] flex flex-col items-center justify-center rounded-full bg-white">
+                <strong className="text-[46px] font-bold leading-none">
+                  48
+                </strong>
+                <span className="mt-1 text-[17px] text-[#55545C]">
+                  Total Mesin
+                </span>
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1 space-y-9">
+              {monitoringData.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex min-w-0 items-center gap-3 text-[17px]"
+                >
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-[4px]"
+                    style={{ background: item.color }}
+                  />
+
+                  <span className="min-w-0 flex-1 truncate">
+                    {item.label}
+                  </span>
+
+                  <strong className="text-[20px] font-bold">
+                    {item.value}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </article>
+
+        <article className="h-[283px] min-w-0 rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
+          <h2 className="text-[25px] font-bold tracking-tight">
+            Kunjungan Bulan Ini
+          </h2>
+
+          <div className="mt-5 grid h-[190px] grid-cols-[32px_1fr] gap-2">
+            <div className="flex flex-col justify-between pb-6 text-right text-[15px] text-[#55545C]">
+              {[20, 16, 12, 8, 4, 0].map((n) => (
+                <span key={n}>{n}</span>
+              ))}
+            </div>
+
+            <div className="relative grid grid-cols-7 items-end gap-3 border-b border-[#DCDCE1]">
+              <div className="pointer-events-none absolute inset-0 flex flex-col justify-between pb-6">
+                {[0, 1, 2, 3, 4].map((n) => (
+                  <span key={n} className="border-t border-[#EEEEF0]" />
+                ))}
+              </div>
+
+              {desktopVisitChart.map((item) => (
+                <div
+                  key={item.day}
+                  className="relative z-[1] flex h-full flex-col items-center justify-end"
+                >
+                  <div className="flex h-[calc(100%-24px)] w-full items-end justify-center gap-[3px]">
+                    <span
+                      className="w-[42%] rounded-t-[4px] bg-[#BF0B2C]"
+                      style={{
+                        height: `${(item.visits / 20) * 100}%`,
+                      }}
+                    />
+
+                    <span
+                      className="w-[42%] rounded-t-[4px] bg-[#D7D7DC]"
+                      style={{
+                        height: `${(item.target / 20) * 100}%`,
+                      }}
+                    />
+                  </div>
+
+                  <span className="mt-2 text-[15px]">
+                    {item.day}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      {/* MACHINE TABLE */}
+
+      <section className="min-w-0 rounded-[16px] border border-[#E4E4E8] bg-white p-[21px] shadow-sm">
+
+        <h2 className="text-[25px] font-bold tracking-tight">
+          Daftar Mesin
+        </h2>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+
+          <label className="flex h-[40px] min-w-[300px] flex-1 items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
+            <Search size={18} className="shrink-0" />
+
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cari nama mesin, pelanggan, atau lokasi..."
+              className="w-full min-w-0 bg-transparent text-[16px] outline-none placeholder:text-[#777780]"
+            />
+          </label>
+
+          <label className="flex h-[40px] min-w-[200px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
+            <Filter size={18} />
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full bg-transparent text-[14px] outline-none"
+            >
+              <option>Semua Status</option>
+              <option>Sudah Dikunjungi</option>
+              <option>Belum Dikunjungi</option>
+              <option>Perlu Perhatian</option>
+            </select>
+          </label>
+
+          <label className="flex h-[40px] min-w-[200px] items-center gap-2 rounded-[9px] border border-[#DADAE0] px-3 shadow-sm">
+            <Users size={17} />
+
+            <select
+              value={customerFilter}
+              onChange={(event) => setCustomerFilter(event.target.value)}
+              className="w-full bg-transparent text-[14px] outline-none"
+            >
+              <option>Semua Pelanggan</option>
+              <option>PT. Sinar Mandiri</option>
+              <option>CV. Multi Jaya</option>
+              <option>PT. Prima Solusi</option>
+              <option>PT. Citra Jaya</option>
+            </select>
+          </label>
+
+          <Link
+            href="/equipment"
+            className="inline-flex h-[40px] items-center gap-2 rounded-full bg-[#730217] px-5 text-[15px] font-semibold text-white"
+          >
+            <Plus size={19} />
+            Tambah
+          </Link>
+
+        </div>
+
+        <div className="mt-4 w-full overflow-x-auto">
+
+          <table className="w-full min-w-[1000px] border-collapse text-left">
+
+            <thead>
+              <tr className="bg-[#F0F0F2] text-[14px] font-bold">
+                {[
+                  "No.",
+                  "Kode Mesin",
+                  "Nama Mesin",
+                  "Pelanggan",
+                  "Status Monitoring",
+                  "Kunjungan Terakhir",
+                  "Aksi",
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="whitespace-nowrap px-3 py-3 first:rounded-l-lg last:rounded-r-lg"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredRows.map((row) => (
+                <tr
+                  key={row.code}
+                  className="border-b border-[#E7E7EA] text-[14px] last:border-0"
+                >
+                  <td className="px-3 py-3">{row.no}</td>
+
+                  <td className="px-3 py-3 font-medium">
+                    {row.code}
+                  </td>
+
+                  <td className="px-3 py-3">{row.model}</td>
+
+                  <td className="px-3 py-3">{row.customer}</td>
+
+                  <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
+                        row.status === "Sudah Dikunjungi"
+                          ? "bg-[#F9E8EC] text-[#850B29]"
+                          : row.status === "Perlu Perhatian"
+                            ? "bg-[#FFF0E5] text-[#EB5513]"
+                            : "bg-[#F0F0F2] text-[#4C4B52]"
+                      }`}
+                    >
+                      {row.status === "Perlu Perhatian" ? (
+                        <AlertTriangle size={14} />
+                      ) : row.status === "Belum Dikunjungi" ? (
+                        <Hourglass size={14} />
+                      ) : (
+                        <Check size={14} />
+                      )}
+
+                      {row.status}
+                    </span>
+                  </td>
+
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {row.lastVisit}
+                  </td>
+
+                  <td className="relative px-3 py-3">
+
+                    <button
+                      type="button"
+                      aria-label={`Aksi ${row.code}`}
+                      onClick={() =>
+                        setOpenAction(
+                          openAction === row.code ? null : row.code
+                        )
+                      }
+                      className="rounded-md p-1 hover:bg-[#F3F3F5]"
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+
+                    {openAction === row.code && (
+                      <div className="absolute right-4 top-10 z-20 w-40 rounded-lg border border-[#E5E5E8] bg-white p-1 text-xs shadow-lg">
+
+                        <Link
+                          href="/equipment"
+                          className="block rounded px-3 py-2 hover:bg-[#F6F6F7]"
+                        >
+                          Detail Mesin
+                        </Link>
+
+                        <Link
+                          href="/visit-history"
+                          className="block rounded px-3 py-2 hover:bg-[#F6F6F7]"
+                        >
+                          Riwayat Kunjungan
+                        </Link>
+
+                      </div>
+                    )}
+
+                  </td>
+                </tr>
+              ))}
+
+              {filteredRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-3 py-8 text-center text-sm text-[#777780]"
+                  >
+                    Tidak ada mesin yang sesuai dengan pencarian.
+                  </td>
+                </tr>
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   MOBILE DASHBOARD
+========================================================= */
+
 export default function DashboardPage() {
   const { isMobile, isReady } = useAppLayout();
 
@@ -25,7 +631,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="relative w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(68px+env(safe-area-inset-bottom))]">
+    <main className="[container-type:inline-size] relative w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(68px+env(safe-area-inset-bottom))]">
 
       {/* =====================================================
           MOBILE HEADER
@@ -34,17 +640,17 @@ export default function DashboardPage() {
       {showMobileHeader && (
         <header className="relative isolate h-[clamp(190px,53cqw,230px)] overflow-hidden bg-[#730217] px-[clamp(18px,5cqw,22px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
 
-          {/* HEADER BACKGROUND */}
+          {/* BACKGROUND */}
 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#80051F] via-[#730217] to-[#650016]" />
 
-          {/* DECORATIVE RED SHAPES */}
+          {/* DECORATIVE SHAPES */}
 
           <div className="pointer-events-none absolute -right-[100px] top-[115px] h-[230px] w-[230px] rounded-full bg-[#BF0B2C]/35" />
 
           <div className="pointer-events-none absolute -left-[110px] bottom-[-110px] h-[230px] w-[300px] rounded-full bg-[#BF0B2C]/20" />
 
-          {/* ORGANIC WAVE */}
+          {/* WAVE */}
 
           <svg
             aria-hidden="true"
@@ -137,12 +743,14 @@ export default function DashboardPage() {
                         onClick={() =>
                           setShowNotifications(false)
                         }
+                        aria-label="Tutup notifikasi"
                       >
                         <X size={17} />
                       </button>
                     </div>
 
                     <div className="flex gap-3 border-t border-[#F0E9ED] py-3">
+
                       <AlertTriangle
                         size={18}
                         className="shrink-0 text-[#F28C0F]"
@@ -157,6 +765,7 @@ export default function DashboardPage() {
                           4 mesin memerlukan tindak lanjut.
                         </p>
                       </div>
+
                     </div>
 
                     <Link
@@ -173,6 +782,7 @@ export default function DashboardPage() {
                 )}
 
               </div>
+
             </div>
 
             {/* GREETING */}
@@ -210,17 +820,19 @@ export default function DashboardPage() {
             </div>
 
           </div>
+
         </header>
       )}
 
       {/* =====================================================
           WHITE CANVAS
-          Rounded top corners + overlap header
       ===================================================== */}
 
       <div
-        className={`relative z-20 mx-auto -mt-[clamp(19px,5.5cqw,25px)] min-h-screen w-full rounded-t-[clamp(23px,6cqw,28px)] bg-[#F7F7F7] px-[clamp(11px,3cqw,14px)] pt-[clamp(15px,4cqw,19px)] ${
-          showMobileHeader ? "" : "mt-0"
+        className={`relative z-20 mx-auto w-full rounded-t-[clamp(23px,6cqw,28px)] bg-[#F7F7F7] px-[clamp(11px,3cqw,14px)] pt-[clamp(15px,4cqw,19px)] ${
+          showMobileHeader
+            ? "-mt-[clamp(19px,5.5cqw,25px)]"
+            : "mt-0"
         }`}
       >
 
@@ -230,15 +842,13 @@ export default function DashboardPage() {
               STATUS MONITORING
           ================================================= */}
 
-          {/* SECTION HEADING OUTSIDE CARD */}
+          {/* TITLE + PERIOD */}
 
           <div className="flex min-w-0 items-center justify-between gap-2">
 
-            <h2 className="min-w-0 text-[clamp(15px,4.1cqw,19px)] font-bold leading-tight tracking-[-0.035em] text-[#171717]">
+            <SectionTitle>
               Status Monitoring Mesin
-            </h2>
-
-            {/* PERIOD */}
+            </SectionTitle>
 
             <div className="relative z-30 shrink-0">
 
@@ -253,7 +863,7 @@ export default function DashboardPage() {
 
                 <CalendarDays
                   size={19}
-                  className="shrink-0 text-[#171717]"
+                  className="shrink-0"
                 />
 
                 <span className="min-w-0 flex-1 whitespace-nowrap text-left text-[clamp(11px,3cqw,13px)] font-semibold text-[#171717]">
@@ -384,13 +994,13 @@ export default function DashboardPage() {
               KUNJUNGAN BULAN INI
           ================================================= */}
 
-          {/* SECTION HEADING OUTSIDE CARD */}
+          {/* TITLE + TARGET OUTSIDE CARD */}
 
           <div className="flex min-w-0 items-center justify-between gap-2 px-1">
 
-            <h2 className="text-[clamp(16px,4.3cqw,19px)] font-bold tracking-[-0.035em] text-[#29232A]">
+            <SectionTitle>
               Kunjungan Bulan Ini
-            </h2>
+            </SectionTitle>
 
             <span className="shrink-0 whitespace-nowrap text-[clamp(11px,3cqw,14px)] font-medium text-[#29232A]">
               Target: 40 Kunjungan
@@ -492,17 +1102,11 @@ export default function DashboardPage() {
               AKSI CEPAT
           ================================================= */}
 
-          {/* SECTION HEADING OUTSIDE CARD */}
-
           <div className="px-1">
-
-            <h2 className="text-[clamp(16px,4.3cqw,19px)] font-bold tracking-[-0.035em] text-[#171717]">
+            <SectionTitle>
               Aksi Cepat
-            </h2>
-
+            </SectionTitle>
           </div>
-
-          {/* QUICK ACTION CARD */}
 
           <section className="min-w-0 rounded-[19px] border border-[#EEEEEE] bg-white p-[clamp(10px,3cqw,14px)] shadow-[0_3px_12px_rgba(0,0,0,0.055)]">
 
@@ -553,9 +1157,7 @@ export default function DashboardPage() {
           >
 
             <div className="flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-[#FFE6D8] text-[#F28C0F]">
-
               <AlertTriangle size={30} strokeWidth={1.8} />
-
             </div>
 
             <div className="min-w-0 flex-1">
@@ -581,13 +1183,11 @@ export default function DashboardPage() {
               AKTIVITAS TERBARU
           ================================================= */}
 
-          {/* SECTION HEADING */}
-
           <div className="flex min-w-0 items-center justify-between gap-2 px-1">
 
-            <h2 className="text-[clamp(16px,4.3cqw,19px)] font-bold tracking-[-0.035em] text-[#171717]">
+            <SectionTitle>
               Aktivitas Terbaru
-            </h2>
+            </SectionTitle>
 
             <Link
               href="/visit-history"
@@ -610,8 +1210,6 @@ export default function DashboardPage() {
                 className="flex min-h-[62px] min-w-0 items-center gap-3 py-2"
               >
 
-                {/* STATUS ICON */}
-
                 <div
                   className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${
                     activity.status === "success"
@@ -628,8 +1226,6 @@ export default function DashboardPage() {
 
                 </div>
 
-                {/* ACTIVITY DETAIL */}
-
                 <div className="min-w-0 flex-1">
 
                   <p className="truncate text-[clamp(11px,3.1cqw,14px)] font-bold leading-tight text-[#171717]">
@@ -641,8 +1237,6 @@ export default function DashboardPage() {
                   </p>
 
                 </div>
-
-                {/* TIME BADGE */}
 
                 <span
                   className={`shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[clamp(10px,2.9cqw,12px)] font-medium ${
