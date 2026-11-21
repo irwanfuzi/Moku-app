@@ -112,7 +112,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex h-[clamp(68px,18.5cqw,74px)] min-h-[clamp(68px,18.5cqw,74px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
+      className="flex h-[clamp(64px,17.5cqw,70px)] min-h-[clamp(64px,17.5cqw,70px)] min-w-0 flex-col items-center justify-center gap-[clamp(4px,1.2cqw,6px)] rounded-[clamp(10px,3cqw,13px)] bg-[#FCECEF] px-1 py-[clamp(7px,2cqw,9px)] text-center"
     >
       <span className="flex h-[clamp(23px,6.4cqw,25px)] w-[clamp(23px,6.4cqw,25px)] shrink-0 items-center justify-center rounded-[clamp(7px,2cqw,9px)] bg-[#BF0B2C] text-white">
         {children}
@@ -428,7 +428,7 @@ export default function DashboardPage() {
       =================================================== */}
 
       {showMobileHeader && (
-        <header className="relative isolate h-[clamp(154px,42cqw,170px)] min-h-[clamp(154px,42cqw,170px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
+        <header className="relative isolate h-[clamp(152px,41.5cqw,168px)] min-h-[clamp(152px,41.5cqw,168px)] overflow-hidden bg-[#730217] px-[clamp(16px,4.9cqw,20px)] pb-[clamp(8px,2.1cqw,12px)] pt-[max(18px,env(safe-area-inset-top))] text-white">
 
           {/* HEADER DECORATION */}
 
@@ -657,7 +657,7 @@ export default function DashboardPage() {
             Status Monitoring Mesin
           </SectionTitle>
 
-          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(96px,25.5cqw,104px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
+          <div className="mt-[clamp(6px,1.8cqw,8px)] grid h-[clamp(92px,24.5cqw,100px)] min-w-0 grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] items-center gap-[clamp(5px,1.5cqw,8px)] rounded-[clamp(14px,4cqw,16px)] border border-[#F0F0F0] px-[clamp(6px,1.6cqw,8px)] py-[4px]">
 
             {/* DONUT */}
 
@@ -747,7 +747,7 @@ export default function DashboardPage() {
 
           {/* VISIT SUMMARY */}
 
-          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(62px,18cqw,72px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
+          <div className="mt-[clamp(7px,2.1cqw,9px)] grid min-h-[clamp(58px,16.8cqw,68px)] min-w-0 grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[clamp(5px,1.5cqw,8px)]">
 
             {/* TOTAL VISITS */}
 
@@ -797,9 +797,9 @@ export default function DashboardPage() {
 
           {/* TARGET PROGRESS */}
 
-          <div className="mt-[clamp(7px,2.1cqw,9px)]">
+          <div className="mt-[clamp(6px,1.7cqw,8px)]">
 
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
 
               <p className="text-[clamp(10px,2.9cqw,12px)] font-bold text-[#171717]">
                 Pencapaian Target
@@ -953,7 +953,7 @@ export default function DashboardPage() {
             {recentActivities.map((activity, index) => (
               <div
                 key={`${activity.machine}-${index}`}
-                className="flex min-h-[clamp(32px,8.7cqw,35px)] min-w-0 items-center gap-[clamp(8px,2.6cqw,10px)] py-[2px]"
+                className="flex min-h-[clamp(30px,8.2cqw,34px)] min-w-0 items-center gap-[clamp(8px,2.6cqw,10px)] py-[1px]"
               >
 
                 <div
