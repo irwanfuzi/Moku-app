@@ -665,10 +665,10 @@ function MobileDashboard() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full select-none bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Sticky Compact Top Bar (Putih murni #FFFFFF sama dengan status bar, ramping, & ikon sama tinggi) */}
+        {/* Sticky Compact Top Bar (Putih murni #FFFFFF sama dengan status bar, ramping, & ikon proporsional) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
@@ -678,7 +678,7 @@ function MobileDashboard() {
             }}
             className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow]"
           >
-            {/* Left: Full Logo -> Morphs smoothly to App Icon (sama tinggi dengan lonceng) */}
+            {/* Left: Full Logo -> Morphs smoothly to App Icon (27*u seimbang visual dengan lonceng) */}
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -705,7 +705,7 @@ function MobileDashboard() {
                   opacity: scrollProgress,
                   transform: `scale(${0.78 + scrollProgress * 0.22})`,
                 }}
-                className={`absolute left-0 flex h-[calc(23*var(--u))] w-[calc(23*var(--u))] items-center justify-center will-change-[opacity,transform] ${
+                className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
                   isCondensed ? "" : "pointer-events-none"
                 }`}
               >
@@ -715,7 +715,7 @@ function MobileDashboard() {
                   width={64}
                   height={64}
                   className="h-full w-full object-contain"
-                  sizes="32px"
+                  sizes="36px"
                 />
               </span>
             </Link>
