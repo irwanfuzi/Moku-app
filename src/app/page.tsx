@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Bell,
@@ -27,20 +27,8 @@ import {
 import { useAppLayout } from "@/components/layout/app-shell";
 
 /* =========================================================
-   DESIGN SYSTEM
+   DESIGN SYSTEM & CONSTANTS
 ========================================================= */
-const COLORS = {
-  burgundy: "#730217",
-  crimson: "#BF0B2C",
-  amber: "#F28C0F",
-  orangeRed: "#EB5513",
-  background: "#F7F7F7",
-  white: "#FFFFFF",
-  text: "#171717",
-  secondary: "#66616A",
-  border: "#ECECEC",
-};
-
 const MONTHS = [
   "Agustus 2026",
   "September 2026",
@@ -48,6 +36,8 @@ const MONTHS = [
   "November 2026",
   "Desember 2026",
 ];
+
+const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
 /* =========================================================
    DASHBOARD DATA
@@ -58,6 +48,7 @@ const monitoringData = [
     value: 32,
     percentage: 66,
     color: "#8E001C",
+    desktopColor: "#8E001C",
     badge: "bg-[#FCECEF] text-[#B81432]",
   },
   {
@@ -65,6 +56,7 @@ const monitoringData = [
     value: 12,
     percentage: 25,
     color: "#E2E2E5",
+    desktopColor: "#B8B8C0",
     badge: "bg-[#F2F2F4] text-[#66636A]",
   },
   {
@@ -72,6 +64,7 @@ const monitoringData = [
     value: 4,
     percentage: 9,
     color: "#F28C0F",
+    desktopColor: "#DCDCE0",
     badge: "bg-[#FFF1E6] text-[#E06D10]",
   },
 ];
@@ -100,9 +93,6 @@ const recentActivities = [
   },
 ];
 
-/* =========================================================
-   DESKTOP DATA
-========================================================= */
 const desktopMachineRows = [
   {
     no: 1,
@@ -153,7 +143,7 @@ const desktopVisitChart = [
 ========================================================= */
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="min-w-0 text-[19px] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
+    <h2 className="min-w-0 whitespace-nowrap text-[clamp(15.5px,4.3vw,19px)] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
       {children}
     </h2>
   );
@@ -168,7 +158,7 @@ function MobileCard({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-[21px] border border-[#EEEEEE] bg-white shadow-[0_2px_9px_rgba(0,0,0,0.055)] ${className}`}
+      className={`min-w-0 rounded-[clamp(16px,4.8vw,21px)] border border-[#EEEEEE] bg-white shadow-[0_2px_9px_rgba(0,0,0,0.055)] ${className}`}
     >
       {children}
     </section>
@@ -189,14 +179,14 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex min-w-0 flex-col items-center justify-start gap-[8px] px-1 text-center ${
+      className={`flex min-w-0 flex-col items-center justify-start gap-[clamp(6px,1.8vw,8px)] px-1 text-center ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[13px] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
+      <span className="flex h-[clamp(40px,11vw,46px)] w-[clamp(40px,11vw,46px)] shrink-0 items-center justify-center rounded-[clamp(11px,3vw,13px)] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
         {children}
       </span>
-      <span className="text-[12.5px] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
+      <span className="text-[clamp(11px,3vw,12.5px)] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
         {label}
       </span>
     </Link>
@@ -204,7 +194,7 @@ function QuickAction({
 }
 
 /* =========================================================
-   DESKTOP DASHBOARD
+   DESKTOP DASHBOARD (> 600px / FOLD / TABLET / DESKTOP SITE)
 ========================================================= */
 function DesktopDashboard() {
   const [search, setSearch] = useState("");
@@ -236,24 +226,25 @@ function DesktopDashboard() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-5 text-[#171923]">
-      <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[clamp(28px,3vw,40px)] font-bold text-[#730217]">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col gap-5 px-4 py-5 text-[#171923] md:px-6 lg:px-8">
+      {/* Header */}
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-[clamp(26px,2.8vw,34px)] font-extrabold leading-tight tracking-[-0.03em] text-[#730217]">
             Dashboard
           </h1>
-          <p className="mt-1 text-base text-[#4F4B53]">
+          <p className="mt-0.5 text-sm text-[#5A5660] md:text-[15px]">
             Ringkasan aktivitas dan monitoring kunjungan mesin.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <label className="flex h-[53px] min-w-[245px] items-center gap-3 rounded-[10px] border border-[#DADAE0] bg-white px-3 shadow-sm">
-            <CalendarDays size={24} />
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <label className="flex h-[44px] min-w-[175px] items-center gap-2.5 rounded-xl border border-[#E4E4E8] bg-white px-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+            <CalendarDays size={18} className="shrink-0 text-[#4F4B53]" />
             <select
               value={desktopMonth}
               onChange={(event) => setDesktopMonth(event.target.value)}
-              className="w-full bg-transparent text-[15px] font-semibold outline-none"
+              className="w-full cursor-pointer bg-transparent text-sm font-semibold text-[#171717] outline-none"
             >
               <option>September 2025</option>
               <option>Oktober 2025</option>
@@ -266,81 +257,99 @@ function DesktopDashboard() {
           <Link
             href="/notifications"
             aria-label="Notifikasi"
-            className="relative flex h-12 w-12 items-center justify-center rounded-full"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#29232A] transition hover:bg-[#F3ECEF]"
           >
-            <Bell size={29} />
-            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#BF0B2C]" />
+            <Bell size={23} strokeWidth={1.9} />
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-[#F7F7F7] bg-[#BF0B2C]" />
           </Link>
 
-          <span className="h-[43px] w-px bg-[#E5E5E8]" />
+          <span className="hidden h-8 w-px bg-[#E5E5E8] sm:block" />
 
-          <Link href="/profile" className="flex items-center gap-3">
-            <span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-[#F1E9EC] text-[17px] font-bold text-[#730217]">
-              B
+          <Link
+            href="/profile"
+            className="flex items-center gap-2.5 rounded-xl py-1 pr-1 transition hover:bg-[#F3ECEF]/60"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E9EC] text-sm font-bold text-[#730217]">
+              BS
             </span>
-            <span>
-              <strong className="block text-base">Budi Santoso</strong>
-              <small className="text-[15px] text-[#77727A]">Teknisi</small>
+            <span className="hidden text-left sm:block">
+              <strong className="block text-sm font-bold leading-tight text-[#171717]">
+                Budi Santoso
+              </strong>
+              <small className="block text-xs text-[#77727A]">Teknisi</small>
             </span>
-            <ChevronDown size={16} />
+            <ChevronDown size={15} className="text-[#77727A]" />
           </Link>
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {/* KPI Cards */}
+      <section className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {kpis.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="flex min-h-[123px] items-center gap-5 rounded-[15px] border border-[#E5E5E8] bg-white px-5 py-4 shadow-sm"
+            className="flex min-h-[96px] items-center gap-4 rounded-[18px] border border-[#ECECEF] bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] md:px-5"
           >
-            <span className="flex h-[61px] w-[65px] shrink-0 items-center justify-center rounded-[13px] bg-[#730217] text-white">
-              <Icon size={37} />
+            <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#8E001C] text-white shadow-[0_3px_8px_rgba(142,0,28,0.2)]">
+              <Icon size={25} strokeWidth={2.2} />
             </span>
-            <span>
-              <span className="block text-[19px] font-semibold">{label}</span>
-              <span className="mt-1 block text-[45px] font-bold leading-none">
+            <div className="min-w-0">
+              <span className="block truncate text-[13px] font-semibold text-[#29232A]">
+                {label}
+              </span>
+              <span className="mt-0.5 block text-[30px] font-extrabold leading-none tracking-[-0.03em] text-[#111111]">
                 {value}
               </span>
-            </span>
+            </div>
           </div>
         ))}
       </section>
 
-      <section className="grid grid-cols-2 gap-5">
-        <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
-          <h2 className="text-xl font-bold">Status Monitoring Mesin</h2>
-          <div className="mt-5 flex items-center justify-center gap-6">
+      {/* Charts Row */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.28fr)]">
+        {/* Status Monitoring Mesin */}
+        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+          <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+            Status Monitoring Mesin
+          </h2>
+
+          <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
             <div
-              className="relative h-[203px] w-[203px] shrink-0 rounded-full"
+              className="relative h-[168px] w-[168px] shrink-0 rounded-full"
               style={{
                 background:
-                  "conic-gradient(from -90deg, #F28C0F 0deg 32.4deg, #BF0B2C 32.4deg 270deg, #D7D7DC 270deg 360deg)",
+                  "conic-gradient(from 0deg, #8E001C 0deg 240deg, #D5D5DA 240deg 330deg, #E8E8EC 330deg 360deg)",
               }}
+              role="img"
+              aria-label="48 Total Mesin"
             >
-              <div className="absolute inset-[34px] flex flex-col items-center justify-center rounded-full bg-white">
-                <strong className="text-[46px] font-bold leading-none">
+              <div className="absolute inset-[26px] flex flex-col items-center justify-center rounded-full bg-white">
+                <strong className="text-[36px] font-extrabold leading-none tracking-[-0.04em] text-[#111111]">
                   48
                 </strong>
-                <span className="mt-1 text-[17px]">Mesin</span>
+                <span className="mt-1 text-xs font-medium text-[#66616A]">
+                  Total Mesin
+                </span>
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-8">
+            <div className="w-full min-w-0 flex-1 space-y-4 sm:pl-2">
               {monitoringData.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 text-base"
+                  className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span
-                    className="h-4 w-4 shrink-0 rounded-[4px]"
-                    style={{ background: item.color }}
-                  />
-                  <span className="min-w-0 flex-1">{item.label}</span>
-                  <span className="whitespace-nowrap">{item.value} Mesin</span>
-                  <strong
-                    className={`rounded-full px-3 py-1 text-sm ${item.badge}`}
-                  >
-                    {item.percentage}%
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-[4px]"
+                      style={{ backgroundColor: item.desktopColor }}
+                    />
+                    <span className="truncate font-medium text-[#29232A]">
+                      {item.label}
+                    </span>
+                  </div>
+                  <strong className="shrink-0 font-bold text-[#171717]">
+                    {item.value}
                   </strong>
                 </div>
               ))}
@@ -348,69 +357,102 @@ function DesktopDashboard() {
           </div>
         </article>
 
-        <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Statistik Kunjungan</h2>
-            <span className="text-sm text-[#77727A]">7 Hari Terakhir</span>
+        {/* Kunjungan Bulan Ini */}
+        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+              Kunjungan Bulan Ini
+            </h2>
+
+            <div className="flex items-center gap-4 text-xs font-medium text-[#5A5660]">
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-[3px] bg-[#8E001C]" />
+                Kunjungan
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-[3px] bg-[#D5D5DA]" />
+                Target
+              </span>
+            </div>
           </div>
 
-          <div className="mt-7 flex h-[190px] items-end justify-between gap-3 border-b border-l border-[#E9E9EC] px-3 pb-2">
-            {desktopVisitChart.map((item) => (
-              <div
-                key={item.day}
-                className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-              >
-                <div className="flex h-full w-full items-end justify-center gap-1">
+          <div className="mt-5 flex h-[176px] gap-3">
+            {/* Y-Axis */}
+            <div className="flex flex-col justify-between pb-6 text-right text-[11px] font-medium text-[#77727A]">
+              {Y_AXIS_TICKS.map((tick) => (
+                <span key={tick}>{tick}</span>
+              ))}
+            </div>
+
+            {/* Bars */}
+            <div className="relative flex flex-1 flex-col">
+              <div className="pointer-events-none absolute inset-x-0 bottom-6 top-1 flex flex-col justify-between">
+                {Y_AXIS_TICKS.map((tick) => (
                   <div
-                    className="w-[38%] rounded-t-[5px] bg-[#BF0B2C]"
-                    style={{ height: `${(item.visits / 20) * 100}%` }}
+                    key={tick}
+                    className="w-full border-t border-dashed border-[#EFEFF2]"
                   />
-                  <div
-                    className="w-[38%] rounded-t-[5px] bg-[#F2A0AE]"
-                    style={{ height: `${(item.target / 20) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs text-[#77727A]">{item.day}</span>
+                ))}
               </div>
-            ))}
+
+              <div className="relative z-10 flex flex-1 items-end justify-between gap-2 px-1 pb-6 pt-1 sm:gap-3">
+                {desktopVisitChart.map((item) => (
+                  <div
+                    key={item.day}
+                    className="flex h-full flex-1 flex-col items-center justify-end"
+                  >
+                    <div className="flex h-full w-full items-end justify-center gap-1">
+                      <div
+                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#8E001C] transition-all"
+                        style={{ height: `${(item.visits / 20) * 100}%` }}
+                        title={`Kunjungan ${item.day}: ${item.visits}`}
+                      />
+                      <div
+                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#D5D5DA] transition-all"
+                        style={{ height: `${(item.target / 20) * 100}%` }}
+                        title={`Target ${item.day}: ${item.target}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* X-Axis */}
+              <div className="flex justify-between px-1 text-center text-xs font-medium text-[#5A5660]">
+                {desktopVisitChart.map((item) => (
+                  <span key={item.day} className="flex-1">
+                    {item.day}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </article>
       </section>
 
-      <section className="rounded-[15px] border border-[#E4E4E8] bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold">Daftar Mesin</h2>
-            <p className="mt-1 text-sm text-[#77727A]">
-              Ringkasan status kunjungan mesin.
-            </p>
-          </div>
+      {/* Daftar Mesin */}
+      <section className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+          Daftar Mesin
+        </h2>
 
-          <Link
-            href="/equipment"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#730217] px-4 text-sm font-semibold text-white"
-          >
-            <Plus size={17} /> Tambah Mesin
-          </Link>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <label className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
-            <Search size={18} />
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <label className="flex h-10 min-w-[200px] flex-1 items-center gap-2 rounded-full border border-[#E4E4E8] bg-[#FAFAFB] px-3.5">
+            <Search size={16} className="shrink-0 text-[#77727A]" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Cari mesin atau pelanggan..."
-              className="w-full bg-transparent text-sm outline-none"
+              placeholder="Cari nama mesin, pelanggan, atau lokasi..."
+              className="w-full bg-transparent text-xs text-[#171717] outline-none placeholder:text-[#8E8994] sm:text-sm"
             />
           </label>
 
-          <label className="flex h-11 min-w-[160px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
-            <Filter size={17} />
+          <label className="flex h-10 min-w-[148px] items-center gap-2 rounded-full border border-[#E4E4E8] bg-white px-3.5">
+            <Filter size={15} className="shrink-0 text-[#5A5660]" />
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="w-full bg-transparent text-sm outline-none"
+              className="w-full cursor-pointer bg-transparent text-xs font-medium text-[#29232A] outline-none sm:text-sm"
             >
               <option>Semua Status</option>
               <option>Sudah Dikunjungi</option>
@@ -419,12 +461,12 @@ function DesktopDashboard() {
             </select>
           </label>
 
-          <label className="flex h-11 min-w-[180px] items-center gap-2 rounded-lg border border-[#DEDEE3] px-3">
-            <Users size={17} />
+          <label className="flex h-10 min-w-[162px] items-center gap-2 rounded-full border border-[#E4E4E8] bg-white px-3.5">
+            <Users size={15} className="shrink-0 text-[#5A5660]" />
             <select
               value={customerFilter}
               onChange={(event) => setCustomerFilter(event.target.value)}
-              className="w-full bg-transparent text-sm outline-none"
+              className="w-full cursor-pointer bg-transparent text-xs font-medium text-[#29232A] outline-none sm:text-sm"
             >
               <option>Semua Pelanggan</option>
               <option>PT. Sinar Mandiri</option>
@@ -433,71 +475,90 @@ function DesktopDashboard() {
               <option>PT. Citra Jaya</option>
             </select>
           </label>
+
+          <Link
+            href="/equipment"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#8E001C] px-4 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)] transition hover:bg-[#730217] sm:text-sm"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Tambah
+          </Link>
         </div>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[780px] border-collapse text-left">
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[700px] border-collapse text-left">
             <thead>
-              <tr className="border-y border-[#EEEEF0] bg-[#FAFAFB] text-xs font-bold uppercase text-[#77727A]">
-                <th className="px-4 py-4">No.</th>
-                <th className="px-4 py-4">Nomor Mesin</th>
-                <th className="px-4 py-4">Jenis Mesin</th>
-                <th className="px-4 py-4">Pelanggan</th>
-                <th className="px-4 py-4">Status Monitoring</th>
-                <th className="px-4 py-4">Kunjungan Terakhir</th>
-                <th className="px-4 py-4 text-center">Aksi</th>
+              <tr className="border-y border-[#EFEFF2] bg-[#F8F8FA] text-xs font-bold text-[#29232A]">
+                <th className="px-3.5 py-3">No.</th>
+                <th className="px-3.5 py-3">Kode Mesin</th>
+                <th className="px-3.5 py-3">Nama Mesin</th>
+                <th className="px-3.5 py-3">Pelanggan</th>
+                <th className="px-3.5 py-3">Status Monitoring</th>
+                <th className="px-3.5 py-3">Kunjungan Terakhir</th>
+                <th className="px-3.5 py-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr
                   key={row.code}
-                  className="border-b border-[#EEEEF0] text-sm hover:bg-[#FCFAFB]"
+                  className="border-b border-[#EFEFF2] text-sm transition hover:bg-[#FCFAFB]"
                 >
-                  <td className="px-4 py-4 text-[#77727A]">{row.no}</td>
-                  <td className="px-4 py-4 font-bold text-[#730217]">
+                  <td className="px-3.5 py-3.5 text-[#5A5660]">{row.no}</td>
+                  <td className="px-3.5 py-3.5 font-semibold text-[#171717]">
                     {row.code}
                   </td>
-                  <td className="px-4 py-4">{row.model}</td>
-                  <td className="px-4 py-4">{row.customer}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-3.5 py-3.5 text-[#29232A]">{row.model}</td>
+                  <td className="px-3.5 py-3.5 text-[#29232A]">
+                    {row.customer}
+                  </td>
+                  <td className="px-3.5 py-3.5">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
                         row.status === "Sudah Dikunjungi"
-                          ? "bg-[#E6F6EA] text-[#238447]"
+                          ? "bg-[#FCECEF] text-[#8E001C]"
                           : row.status === "Perlu Perhatian"
-                          ? "bg-[#FFF0E5] text-[#D66A13]"
-                          : "bg-[#F1F1F3] text-[#66636A]"
+                          ? "bg-[#FDECEE] text-[#B81432]"
+                          : "bg-[#F1F1F4] text-[#55525A]"
                       }`}
                     >
+                      {row.status === "Sudah Dikunjungi" ? (
+                        <Check size={13} strokeWidth={2.8} />
+                      ) : row.status === "Perlu Perhatian" ? (
+                        <AlertTriangle size={13} strokeWidth={2.4} />
+                      ) : (
+                        <Hourglass size={13} strokeWidth={2.3} />
+                      )}
                       {row.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4">{row.lastVisit}</td>
-                  <td className="relative px-4 py-4 text-center">
+                  <td className="px-3.5 py-3.5 text-[#29232A]">
+                    {row.lastVisit}
+                  </td>
+                  <td className="relative px-3.5 py-3.5 text-center">
                     <button
                       type="button"
                       aria-label={`Aksi ${row.code}`}
                       onClick={() =>
                         setOpenAction(openAction === row.code ? null : row.code)
                       }
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#77727A] hover:bg-[#F3ECEF]"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5660] hover:bg-[#F3ECEF]"
                     >
-                      <MoreVertical size={19} />
+                      <MoreVertical size={18} />
                     </button>
 
                     {openAction === row.code && (
-                      <div className="absolute right-8 top-12 z-20 w-40 rounded-lg border border-[#E7E2E5] bg-white p-1 text-left shadow-lg">
+                      <div className="absolute right-8 top-11 z-20 w-40 rounded-xl border border-[#E7E2E5] bg-white p-1 text-left shadow-lg">
                         <Link
                           href={`/equipment/${row.code}`}
-                          className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
+                          className="block rounded-lg px-3 py-2 text-sm hover:bg-[#F8F2F4]"
                           onClick={() => setOpenAction(null)}
                         >
                           Lihat Detail
                         </Link>
                         <Link
                           href={`/visits/new?equipment=${row.code}`}
-                          className="block rounded-md px-3 py-2 text-sm hover:bg-[#F8F2F4]"
+                          className="block rounded-lg px-3 py-2 text-sm hover:bg-[#F8F2F4]"
                           onClick={() => setOpenAction(null)}
                         >
                           Buat Kunjungan
@@ -512,7 +573,7 @@ function DesktopDashboard() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-12 text-center text-sm text-[#77727A]"
+                    className="px-4 py-10 text-center text-sm text-[#77727A]"
                   >
                     Tidak ada data mesin yang sesuai dengan pencarian.
                   </td>
@@ -522,12 +583,21 @@ function DesktopDashboard() {
           </table>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-[#77727A]">
+        <p>© 2025 MOKU. All rights reserved.</p>
+        <p className="flex items-center gap-2 font-medium text-[#4F4B53]">
+          <span className="h-3.5 w-[3px] rounded-full bg-[#8E001C]" />
+          Track Precisely, Deliver Quality.
+        </p>
+      </footer>
     </div>
   );
 }
 
 /* =========================================================
-   MOBILE DASHBOARD
+   MOBILE DASHBOARD (<= 600px, FLUID SCALING)
 ========================================================= */
 function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -535,15 +605,13 @@ function MobileDashboard() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   return (
-    <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
-      <div className="relative mx-auto w-full max-w-[760px]">
-        {/* =================================================
-            HEADER BANNER — OPSI C (MATTE GRAIN + HAIRLINE ARC)
-        ================================================= */}
+    <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(80px+env(safe-area-inset-bottom))]">
+      <div className="relative mx-auto w-full max-w-[600px]">
+        {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(212px, 55vw, 240px)",
+            height: "clamp(198px, 53vw, 238px)",
           }}
         >
           {/* Base micro-gradient */}
@@ -572,19 +640,23 @@ function MobileDashboard() {
           {/* Low-contrast ambient lift behind printer */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[125px] w-[125px] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
           {/* Logo and notification */}
-          <div className="absolute left-[20px] right-[20px] top-[max(34px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
-            <Link href="/" aria-label="MOKU Dashboard" className="flex items-center">
+          <div className="absolute left-[clamp(14px,4.5vw,20px)] right-[clamp(14px,4.5vw,20px)] top-[max(28px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+            <Link
+              href="/"
+              aria-label="MOKU Dashboard"
+              className="flex items-center"
+            >
               <Image
                 src="/images/moku/brand/moku-logo.png"
                 alt="MOKU"
                 width={180}
                 height={65}
                 priority
-                className="h-[38px] w-auto object-contain object-left"
+                className="h-[clamp(32px,9vw,38px)] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -595,10 +667,10 @@ function MobileDashboard() {
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[42px] w-[42px] items-center justify-center rounded-full text-white"
+                className="relative flex h-[clamp(38px,10vw,42px)] w-[clamp(38px,10vw,42px)] items-center justify-center rounded-full text-white"
               >
-                <Bell size={26} strokeWidth={1.8} />
-                <span className="absolute right-[7px] top-[6px] h-[10px] w-[10px] rounded-full bg-[#FF3B30]" />
+                <Bell size={24} strokeWidth={1.8} />
+                <span className="absolute right-[6px] top-[5px] h-[9px] w-[9px] rounded-full bg-[#FF3B30]" />
               </button>
 
               {showNotifications && (
@@ -622,17 +694,17 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[20px] top-[max(84px,calc(env(safe-area-inset-top)+52px))] z-20 w-[calc(100%-40px)] pr-[136px]">
-            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
+          <div className="absolute left-[clamp(14px,4.5vw,20px)] top-[max(76px,calc(env(safe-area-inset-top)+48px))] z-20 w-[calc(100%-clamp(28px,9vw,40px))] pr-[clamp(118px,32vw,142px)]">
+            <h1 className="whitespace-nowrap text-[clamp(20px,5.6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[5px] max-w-[220px] text-[13.5px] font-normal leading-[1.35] text-white/85">
+            <p className="mt-[4px] max-w-[215px] text-[clamp(11.5px,3.2vw,13.5px)] font-normal leading-[1.35] text-white/85">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
           {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[18px] right-[12px] z-10 flex h-[138px] w-[138px] items-end justify-center sm:h-[154px] sm:w-[154px]">
+          <div className="pointer-events-none absolute bottom-[clamp(14px,4vw,18px)] right-[clamp(8px,3vw,14px)] z-10 flex h-[clamp(118px,32vw,148px)] w-[clamp(118px,32vw,148px)] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -645,34 +717,32 @@ function MobileDashboard() {
           </div>
         </header>
 
-        {/* =================================================
-            CANVAS KONTEN (ROUNDED ATAS + OVERLAY HEADER)
-        ================================================= */}
-        <div className="relative z-20 -mt-[34px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
-          {/* =================================================
-              STATUS MONITORING
-          ================================================= */}
+        {/* Canvas Konten */}
+        <div className="relative z-20 -mt-[clamp(26px,7.5vw,34px)] flex flex-col gap-[clamp(13px,3.8vw,18px)] rounded-t-[clamp(22px,6vw,26px)] bg-[#F7F7F7] px-[clamp(12px,3.8vw,16px)] pt-[clamp(14px,4vw,18px)]">
+          {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
               <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
-              {/* Period selector */}
               <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowMonthPicker((previous) => !previous)}
                   aria-expanded={showMonthPicker}
-                  className="flex h-[36px] items-center gap-[6px] rounded-full border border-[#E6E6EA] bg-white px-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                  className="flex h-[clamp(32px,8.5vw,36px)] items-center gap-[clamp(4px,1.4vw,6px)] rounded-full border border-[#E6E6EA] bg-white px-[clamp(9px,2.8vw,12px)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                 >
-                  <CalendarDays size={16} className="shrink-0 text-[#171717]" />
-                  <span className="whitespace-nowrap text-[12px] font-bold text-[#171717]">
+                  <CalendarDays
+                    size={15}
+                    className="shrink-0 text-[#171717]"
+                  />
+                  <span className="whitespace-nowrap text-[clamp(11px,2.9vw,12px)] font-bold text-[#171717]">
                     {selectedMonth}
                   </span>
-                  <ChevronDown size={15} className="shrink-0 text-[#171717]" />
+                  <ChevronDown size={14} className="shrink-0 text-[#171717]" />
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute right-0 top-[42px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
+                  <div className="absolute right-0 top-[40px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
                     <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
                       Pilih Periode
                     </p>
@@ -699,13 +769,12 @@ function MobileDashboard() {
               </div>
             </div>
 
-            {/* Monitoring chart panel */}
-            <MobileCard className="mt-[10px] px-[14px] py-[14px]">
-              <div className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-center gap-[12px]">
+            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(10px,3.2vw,14px)] py-[clamp(11px,3.2vw,14px)]">
+              <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[clamp(8px,2.5vw,12px)]">
                 {/* Donut */}
-                <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[12px]">
+                <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[clamp(8px,2.5vw,12px)]">
                   <div
-                    className="relative aspect-square w-full max-w-[136px] rounded-full"
+                    className="relative aspect-square w-full max-w-[clamp(96px,26vw,132px)] rounded-full"
                     style={{
                       background:
                         "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
@@ -714,10 +783,10 @@ function MobileDashboard() {
                     aria-label="48 mesin"
                   >
                     <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
-                      <span className="text-[clamp(28px,5.8vw,38px)] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
+                      <span className="text-[clamp(24px,6.8vw,36px)] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
                         48
                       </span>
-                      <span className="mt-[3px] text-[13px] font-medium text-[#51474E]">
+                      <span className="mt-[2px] text-[clamp(11px,3vw,13px)] font-medium text-[#51474E]">
                         Mesin
                       </span>
                     </div>
@@ -725,24 +794,24 @@ function MobileDashboard() {
                 </div>
 
                 {/* Legend */}
-                <div className="min-w-0 space-y-[12px]">
+                <div className="min-w-0 space-y-[clamp(9px,2.6vw,12px)]">
                   {monitoringData.map((item) => (
                     <div
                       key={item.label}
-                      className="grid min-w-0 grid-cols-[12px_minmax(0,1fr)_auto_auto] items-center gap-[6px]"
+                      className="grid min-w-0 grid-cols-[clamp(10px,2.8vw,12px)_minmax(0,1fr)_auto_auto] items-center gap-[clamp(4px,1.4vw,6px)]"
                     >
                       <span
-                        className="h-[12px] w-[12px] rounded-[3.5px]"
+                        className="h-[clamp(10px,2.8vw,12px)] w-[clamp(10px,2.8vw,12px)] rounded-[3px]"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="min-w-0 truncate text-[clamp(11px,2.8vw,13px)] font-bold tracking-[-0.02em] text-[#171717]">
+                      <span className="min-w-0 truncate text-[clamp(10.5px,2.8vw,13px)] font-bold tracking-[-0.02em] text-[#171717]">
                         {item.label}
                       </span>
-                      <span className="whitespace-nowrap text-[clamp(11px,2.6vw,12.5px)] text-[#51474E]">
+                      <span className="whitespace-nowrap text-[clamp(10px,2.6vw,12.5px)] text-[#51474E]">
                         {item.value} Mesin
                       </span>
                       <span
-                        className={`min-w-[38px] rounded-full px-[6px] py-[3px] text-center text-[11px] font-bold ${item.badge}`}
+                        className={`min-w-[clamp(34px,9vw,38px)] rounded-full px-[clamp(5px,1.5vw,6px)] py-[clamp(2px,0.7vw,3px)] text-center text-[clamp(10px,2.6vw,11px)] font-bold ${item.badge}`}
                       >
                         {item.percentage}%
                       </span>
@@ -753,46 +822,42 @@ function MobileDashboard() {
             </MobileCard>
           </section>
 
-          {/* =================================================
-              KUNJUNGAN BULAN INI
-          ================================================= */}
+          {/* 2. Kunjungan Bulan Ini */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
               <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
-              <div className="flex shrink-0 items-center gap-[5px]">
-                <Target size={18} strokeWidth={2.3} className="text-[#C81032]" />
-                <span className="whitespace-nowrap text-[12.5px] font-medium text-[#29232A]">
+              <div className="flex shrink-0 items-center gap-[clamp(4px,1.2vw,5px)]">
+                <Target size={16} strokeWidth={2.3} className="text-[#C81032]" />
+                <span className="whitespace-nowrap text-[clamp(11px,3vw,12.5px)] font-medium text-[#29232A]">
                   Target: 40 Kunjungan
                 </span>
               </div>
             </div>
 
-            <MobileCard className="mt-[10px] px-[16px] py-[15px]">
-              <div className="grid grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[12px]">
-                {/* Total */}
-                <div className="min-w-0 border-r border-[#EAEAEF] pr-[10px]">
-                  <p className="text-[clamp(42px,10vw,50px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(12px,3.6vw,16px)] py-[clamp(12px,3.5vw,15px)]">
+              <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[clamp(8px,2.8vw,12px)]">
+                <div className="min-w-0 border-r border-[#EAEAEF] pr-[clamp(8px,2.4vw,10px)]">
+                  <p className="text-[clamp(36px,9.8vw,48px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
                   </p>
-                  <p className="mt-[6px] whitespace-nowrap text-[13px] font-medium text-[#29232A]">
+                  <p className="mt-[clamp(4px,1.4vw,6px)] whitespace-nowrap text-[clamp(11.5px,3vw,13px)] font-medium text-[#29232A]">
                     Total Kunjungan
                   </p>
                 </div>
 
-                {/* Growth */}
                 <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
                   <div className="min-w-0">
-                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[10px] py-[4px] text-[13.5px] font-bold text-[#15803D]">
-                      <TrendingUp size={15} strokeWidth={2.5} /> +14%
+                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[clamp(8px,2.4vw,10px)] py-[clamp(3px,0.9vw,4px)] text-[clamp(12px,3.2vw,13.5px)] font-bold text-[#15803D]">
+                      <TrendingUp size={14} strokeWidth={2.5} /> +14%
                     </span>
-                    <p className="mt-[6px] text-[12px] leading-[1.35] text-[#3F3A42]">
+                    <p className="mt-[clamp(4px,1.4vw,6px)] text-[clamp(10.5px,2.8vw,12px)] leading-[1.35] text-[#3F3A42]">
                       Dibanding bulan lalu
                       <br />
                       (28 kunjungan)
                     </p>
                   </div>
 
-                  <div className="flex h-[84px] min-w-0 items-center justify-center">
+                  <div className="flex h-[clamp(68px,19vw,84px)] min-w-0 items-center justify-center">
                     <Image
                       src="/images/moku/illustrations/dashboard-activity.png"
                       alt="Ilustrasi checklist kunjungan"
@@ -805,17 +870,16 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              {/* Progress */}
-              <div className="mt-[14px]">
-                <div className="mb-[6px] flex items-center justify-between">
-                  <p className="text-[13px] font-bold text-[#171717]">
+              <div className="mt-[clamp(10px,3vw,14px)]">
+                <div className="mb-[5px] flex items-center justify-between">
+                  <p className="text-[clamp(11.5px,3vw,13px)] font-bold text-[#171717]">
                     Pencapaian Target
                   </p>
-                  <p className="text-[13px] font-extrabold text-[#111111]">
+                  <p className="text-[clamp(11.5px,3vw,13px)] font-extrabold text-[#111111]">
                     80%
                   </p>
                 </div>
-                <div className="h-[10px] overflow-hidden rounded-full bg-[#EAEAEF]">
+                <div className="h-[clamp(8px,2.2vw,10px)] overflow-hidden rounded-full bg-[#EAEAEF]">
                   <div
                     className="h-full rounded-full bg-[#8E001C]"
                     style={{ width: "80%" }}
@@ -825,15 +889,13 @@ function MobileDashboard() {
             </MobileCard>
           </section>
 
-          {/* =================================================
-              AKSI CEPAT
-          ================================================= */}
+          {/* 3. Aksi Cepat */}
           <section className="min-w-0">
             <div className="px-[2px]">
               <SectionTitle>Aksi Cepat</SectionTitle>
             </div>
 
-            <MobileCard className="mt-[10px] px-[10px] py-[14px]">
+            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(6px,2.2vw,10px)] py-[clamp(11px,3.2vw,14px)]">
               <div className="grid grid-cols-4">
                 <QuickAction
                   href="/visits"
@@ -845,7 +907,7 @@ function MobileDashboard() {
                     </>
                   }
                 >
-                  <Plus size={25} strokeWidth={2.5} />
+                  <Plus size={22} strokeWidth={2.5} />
                 </QuickAction>
 
                 <QuickAction
@@ -859,11 +921,11 @@ function MobileDashboard() {
                     </>
                   }
                 >
-                  <Printer size={22} strokeWidth={2.1} />
+                  <Printer size={20} strokeWidth={2.1} />
                 </QuickAction>
 
                 <QuickAction href="/reports" separated label="Laporan">
-                  <ChartNoAxesColumn size={23} strokeWidth={2.2} />
+                  <ChartNoAxesColumn size={21} strokeWidth={2.2} />
                 </QuickAction>
 
                 <QuickAction
@@ -877,91 +939,84 @@ function MobileDashboard() {
                     </>
                   }
                 >
-                  <Download size={22} strokeWidth={2.2} />
+                  <Download size={20} strokeWidth={2.2} />
                 </QuickAction>
               </div>
             </MobileCard>
           </section>
 
-          {/* =================================================
-              MESIN PERLU PERHATIAN
-          ================================================= */}
+          {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="flex min-h-[78px] min-w-0 items-center gap-[14px] rounded-[18px] border border-[#F5E1D8] bg-[#FDF1EC] px-[16px] py-[12px]"
+            className="flex min-h-[clamp(68px,18vw,78px)] min-w-0 items-center gap-[clamp(10px,3vw,14px)] rounded-[clamp(15px,4.2vw,18px)] border border-[#F5E1D8] bg-[#FDF1EC] px-[clamp(12px,3.6vw,16px)] py-[clamp(10px,2.8vw,12px)]"
           >
             <AlertTriangle
-              size={34}
+              size={30}
               strokeWidth={2.1}
               className="shrink-0 text-[#F28C0F]"
             />
 
             <div className="min-w-0 flex-1">
-              <p className="text-[14.5px] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
+              <p className="text-[clamp(13px,3.5vw,14.5px)] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
                 Mesin Perlu Perhatian
               </p>
-              <p className="mt-[3px] text-[12px] leading-[1.35] text-[#4A444D]">
+              <p className="mt-[3px] text-[clamp(11px,2.9vw,12px)] leading-[1.35] text-[#4A444D]">
                 4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
                 tindak lanjut.
               </p>
             </div>
 
             <ChevronRight
-              size={22}
+              size={20}
               strokeWidth={2.5}
               className="shrink-0 text-[#C81032]"
             />
           </Link>
 
-          {/* =================================================
-              AKTIVITAS TERBARU
-          ================================================= */}
+          {/* 5. Aktivitas Terbaru */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
               <SectionTitle>Aktivitas Terbaru</SectionTitle>
               <Link
                 href="/visit-history"
-                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[13.5px] font-bold text-[#C81032]"
+                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[clamp(12px,3.2vw,13.5px)] font-bold text-[#C81032]"
               >
                 Lihat Semua
-                <ChevronRight size={18} strokeWidth={2.5} />
+                <ChevronRight size={17} strokeWidth={2.5} />
               </Link>
             </div>
 
-            <MobileCard className="mt-[10px] divide-y divide-[#EFEFF2] px-[14px]">
+            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] divide-y divide-[#EFEFF2] px-[clamp(10px,3.2vw,14px)]">
               {recentActivities.map((activity, index) => (
                 <div
                   key={`${activity.machine}-${index}`}
-                  className="flex min-h-[66px] min-w-0 items-center gap-[12px] py-[10px]"
+                  className="flex min-h-[clamp(58px,15.5vw,66px)] min-w-0 items-center gap-[clamp(9px,2.8vw,12px)] py-[clamp(8px,2.4vw,10px)]"
                 >
-                  {/* Status icon */}
                   <div
-                    className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${
+                    className={`flex h-[clamp(36px,9.8vw,42px)] w-[clamp(36px,9.8vw,42px)] shrink-0 items-center justify-center rounded-full ${
                       activity.status === "success"
                         ? "bg-[#E2F7E9] text-[#1D9A4E]"
                         : "bg-[#F3F3F5] text-[#C81032]"
                     }`}
                   >
                     {activity.status === "success" ? (
-                      <Check size={22} strokeWidth={2.8} />
+                      <Check size={20} strokeWidth={2.8} />
                     ) : (
-                      <Clock3 size={22} strokeWidth={2.3} />
+                      <Clock3 size={20} strokeWidth={2.3} />
                     )}
                   </div>
 
-                  {/* Activity information */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-bold leading-tight text-[#171717]">
+                    <p className="truncate text-[clamp(12.5px,3.4vw,14px)] font-bold leading-tight text-[#171717]">
                       {activity.title}
                     </p>
-                    <p className="mt-[4px] truncate text-[12px] leading-tight text-[#6E6873]">
+                    <p className="mt-[3px] truncate text-[clamp(11px,2.9vw,12px)] leading-tight text-[#6E6873]">
                       {activity.machine} • {activity.customer}
                     </p>
                   </div>
 
-                  {/* Time badge */}
                   <span
-                    className={`min-w-[74px] shrink-0 whitespace-nowrap rounded-full px-[12px] py-[5px] text-center text-[11.5px] font-semibold ${
+                    className={`min-w-[clamp(64px,17.5vw,74px)] shrink-0 whitespace-nowrap rounded-full px-[clamp(9px,2.8vw,12px)] py-[clamp(4px,1.2vw,5px)] text-center text-[clamp(10.5px,2.8vw,11.5px)] font-semibold ${
                       activity.status === "success"
                         ? index === 0
                           ? "bg-[#DCF7D8] text-[#2F682A]"
@@ -976,14 +1031,12 @@ function MobileDashboard() {
             </MobileCard>
           </section>
 
-          {/* =================================================
-              FOOTER
-          ================================================= */}
+          {/* Footer */}
           <div className="pb-3 pt-1 text-center">
-            <p className="text-[10px] text-[#A39AA0]">
+            <p className="text-[clamp(9.5px,2.4vw,10.5px)] text-[#A39AA0]">
               MOKU — Monitoring Operasional Kunjungan Unit
             </p>
-            <p className="mt-1 text-[10px] text-[#B3ABB0]">
+            <p className="mt-1 text-[clamp(9.5px,2.4vw,10.5px)] text-[#B3ABB0]">
               Track Precisely, Deliver Quality
             </p>
           </div>
@@ -994,12 +1047,31 @@ function MobileDashboard() {
 }
 
 /* =========================================================
-   DASHBOARD PAGE
+   DASHBOARD PAGE (<= 600px MOBILE, > 600px / DESKTOP SITE -> DESKTOP)
 ========================================================= */
 export default function DashboardPage() {
   const { isMobile, isReady } = useAppLayout();
+  const [useMobileView, setUseMobileView] = useState<boolean | null>(null);
 
-  if (!isReady) {
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 600px)");
+
+    const update = () => {
+      const ua = navigator.userAgent || "";
+      const isMobileUA =
+        /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      const isTouchDevice = navigator.maxTouchPoints > 0;
+      const isDesktopSiteMode = isTouchDevice && !isMobileUA;
+
+      setUseMobileView(mediaQuery.matches && !isDesktopSiteMode);
+    };
+
+    update();
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
+
+  if (!isReady || useMobileView === null) {
     return (
       <div
         className="min-h-dvh w-full bg-[#F7F7F7]"
@@ -1008,5 +1080,5 @@ export default function DashboardPage() {
     );
   }
 
-  return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
+  return useMobileView && isMobile ? <MobileDashboard /> : <DesktopDashboard />;
 }
