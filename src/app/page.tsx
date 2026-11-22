@@ -146,6 +146,48 @@ const desktopVisitChart = [
 /* =========================================================
    SHARED COMPONENTS
 ========================================================= */
+function MokuRobotIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Top Crest / Antenna */}
+      <path
+        d="M14.5 9.5L16.2 5.2L20 7.6L23.8 5.2L25.5 9.5"
+        fill="#F28C0F"
+      />
+      {/* Outer Orange Ring */}
+      <circle
+        cx="20"
+        cy="21.5"
+        r="14.5"
+        fill="#8E001C"
+        stroke="#F28C0F"
+        strokeWidth="3"
+      />
+      {/* Side Ears */}
+      <rect x="2.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
+      <rect x="34.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
+      {/* Visor */}
+      <rect x="10.5" y="16" width="19" height="10" rx="5" fill="#2A030B" />
+      {/* Glowing Eyes */}
+      <circle cx="15.8" cy="21" r="2.1" fill="#FFFFFF" />
+      <circle cx="24.2" cy="21" r="2.1" fill="#FFFFFF" />
+      {/* Smile / Mouth Accent */}
+      <path
+        d="M17.2 29.3C18.9 30.3 21.1 30.3 22.8 29.3"
+        stroke="#F28C0F"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <h2 className="min-w-0 whitespace-nowrap text-[calc(17.5*var(--u))] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
@@ -630,7 +672,7 @@ function MobileDashboard() {
       className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Sticky Compact Top Bar (Smooth morph: Full Logo -> app-icon.png + Notif) */}
+        {/* Sticky Compact Top Bar (Smooth morph: Full Logo -> Robot Icon + Notif) */}
         <div
           className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ease-out ${
             isScrolled
@@ -639,13 +681,12 @@ function MobileDashboard() {
           }`}
         >
           <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))]">
-            {/* Left: Full MOKU Logo -> Morphs smoothly to MOKU Robot App Icon */}
+            {/* Left: Full MOKU Logo -> Morphs smoothly to MOKU Robot Icon */}
             <Link
               href="/"
               aria-label="MOKU Dashboard"
               className="relative flex h-[calc(34*var(--u))] items-center"
             >
-              {/* Full Logo (visible at top) */}
               <Image
                 src="/images/moku/brand/moku-logo.png"
                 alt="MOKU"
@@ -660,7 +701,6 @@ function MobileDashboard() {
                 sizes="150px"
               />
 
-              {/* Compact Robot Icon (appears smoothly when scrolled) */}
               <span
                 className={`absolute left-0 flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center transition-all duration-300 ease-out ${
                   isScrolled
@@ -668,18 +708,11 @@ function MobileDashboard() {
                     : "pointer-events-none scale-75 opacity-0"
                 }`}
               >
-                <Image
-                  src="/images/moku/brand/app-icon.png"
-                  alt="MOKU"
-                  width={56}
-                  height={56}
-                  className="h-full w-full object-contain"
-                  sizes="40px"
-                />
+                <MokuRobotIcon className="h-full w-full" />
               </span>
             </Link>
 
-            {/* Right: Notification Bell (always visible, adapts color smoothly) */}
+            {/* Right: Notification Bell */}
             <div className="relative flex h-[calc(34*var(--u))] items-center">
               <button
                 type="button"
@@ -726,7 +759,7 @@ function MobileDashboard() {
 
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
         <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-hidden bg-[#83051C] text-white">
-          {/* Base micro-gradient (top color #83051C matches status bar theme-color) */}
+          {/* Base micro-gradient */}
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#83051C_0%,#760217_55%,#54000F_100%)]" />
 
           {/* Subtle matte grain texture */}
@@ -739,43 +772,43 @@ function MobileDashboard() {
             }}
           />
 
-          {/* Subtle hairline arcs */}
+          {/* Subtle hairline arcs (posisi kiri agar membingkai robot) */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
+            className="pointer-events-none absolute -left-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
+            className="pointer-events-none absolute -left-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
           />
 
-          {/* Low-contrast ambient lift behind printer */}
+          {/* Low-contrast ambient lift behind robot */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[8px] left-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
-          {/* Greeting */}
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(66*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(20.5*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
-              Halo, Budi Santoso
-            </h1>
-            <p className="mt-[calc(5*var(--u))] max-w-[calc(205*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
-              Berikut ringkasan operasional kunjungan unit.
-            </p>
-          </div>
-
-          {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[calc(15*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+          {/* Robot illustration (kiri — tatapan & printer menghadap ke teks di kanan) */}
+          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] left-[calc(10*var(--u))] z-10 flex h-[calc(132*var(--u))] w-[calc(132*var(--u))] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
-              alt="Ilustrasi mesin printer"
+              alt="Ilustrasi robot MOKU membawa printer"
               width={420}
               height={420}
               priority
               className="h-full w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
               sizes="154px"
             />
+          </div>
+
+          {/* Greeting (kanan robot — judul & deskripsi 1 baris) */}
+          <div className="absolute left-[calc(146*var(--u))] right-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(78*var(--u)))] z-20">
+            <h1 className="whitespace-nowrap text-[calc(21*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
+              Halo, Budi
+            </h1>
+            <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(11.5*var(--u))] font-normal leading-[1.35] text-white/85">
+              Ringkasan jadwal &amp; progres unit.
+            </p>
           </div>
         </header>
 
