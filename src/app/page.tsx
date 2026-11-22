@@ -50,16 +50,21 @@ const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
 
-// Top bar & status bar mengikuti posisi scroll (scroll-linked), dua arah,
-// ditulis ke DOM di frame yang sama (tanpa re-render React).
-// Hasil ukur dari rekaman PWA MOKU: status bar hanya punya 2 nilai (marun/putih),
-// tidak pernah warna di tengah, walau theme-color ditulis tiap frame. Jadi default-nya
-// bar dibuat berganti cepat di titik yang sama dengan status bar.
-// Ubah ke true HANYA jika status bar terbukti mengikuti warna bertahap
-// (mis. setelah mode edge-to-edge aktif dan status bar transparan).
+// Dua mode:
+//  A) Android (status bar milik sistem, hanya 2 nilai: marun/putih - terukur dari rekaman):
+//     fade top bar BERBASIS WAKTU (halus berapa pun kecepatan scroll), status bar
+//     berpindah tepat di tengah fade -> selisih warna maksimal setengah & sesaat.
+//  B) iOS standalone (black-translucent, halaman tergambar di bawah status bar):
+//     transisi mengikuti scroll per frame, status bar & top bar satu nilai.
+const SCROLL_START = 4; // mode B: px mulai berubah
+const SCROLL_RANGE = 72; // mode B: panjang transisi
+const SCROLL_ON = 24; // mode A: scroll turun melewati ini -> menuju putih
+const SCROLL_OFF = 10; // mode A: scroll naik di bawah ini -> kembali ke marun
+const TWEEN_MS = 240; // mode A: durasi fade
+// Warna top bar baru tampil 1-2 frame setelah paint, theme-color dipakai seketika.
+const THEME_LAG_MS = 24;
+// true hanya jika status bar terbukti mengikuti warna bertahap (edge-to-edge aktif)
 const STATUS_BAR_FOLLOWS_COLOR = false;
-const SCROLL_START = 4; // px: mulai berubah
-const SCROLL_RANGE = 72; // px: panjang transisi marun <-> putih
 
 const THEME_FROM = [0x83, 0x05, 0x1c]; // #83051C
 const THEME_TO = [0xff, 0xff, 0xff]; // #FFFFFF
@@ -69,9 +74,8 @@ function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
 }
 
-function smoothstep(edge0: number, edge1: number, x: number) {
-  const t = clamp01((x - edge0) / (edge1 - edge0));
-  return t * t * (3 - 2 * t);
+function easeInOut(k: number) {
+  return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
 }
 
 function mixThemeColor(t: number) {
@@ -689,7 +693,7 @@ function MobileDashboard() {
   const lastThemeColorRef = useRef(THEME_TOP);
   const barRef = useRef<HTMLDivElement | null>(null);
   const pwaRef = useRef(false);
-  const statusWhiteRef = useRef(false);
+  const cancelTweenRef = useRef<() => void>(() => {});
   const whiteStateRef = useRef(false);
   const syncBarRef = useRef<() => void>(() => {});
 
@@ -713,47 +717,86 @@ function MobileDashboard() {
           0
       );
 
-    const applyProgress = (p: number) => {
-      const pwa = STATUS_BAR_FOLLOWS_COLOR;
-      let barP = p;
-      let statusP = p;
-
-      if (!pwa) {
-        // Tab browser: status bar biner (histeresis), bar berganti cepat di titik yang sama
-        if (p >= 0.54) statusWhiteRef.current = true;
-        else if (p <= 0.46) statusWhiteRef.current = false;
-        statusP = statusWhiteRef.current ? 1 : 0;
-        barP = smoothstep(0.38, 0.62, p);
-      }
-
-      // top bar + isi (lewat CSS variable)
+    /* ---------- penulis DOM bersama ---------- */
+    const writeBar = (v: number) => {
       const bar = barRef.current;
       if (bar) {
-        const color = mixThemeColor(barP);
+        const color = mixThemeColor(v);
         bar.style.backgroundColor = color;
-        bar.style.setProperty("--p", barP.toFixed(3));
+        bar.style.setProperty("--p", v.toFixed(3));
         bar.style.setProperty("--bar", color);
       }
-
-      // status bar, di frame yang sama
-      const statusColor = mixThemeColor(statusP);
-      if (lastThemeColorRef.current !== statusColor) {
-        lastThemeColorRef.current = statusColor;
-        let meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) {
-          meta = document.createElement("meta");
-          meta.setAttribute("name", "theme-color");
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute("content", statusColor);
-      }
-
-      const white = barP > 0.5;
+      const white = v > 0.5;
       if (white !== whiteStateRef.current) {
         whiteStateRef.current = white;
         setIsScrolled(white);
       }
     };
+
+    const writeStatus = (statusP: number) => {
+      const color = mixThemeColor(statusP);
+      if (lastThemeColorRef.current === color) return;
+      lastThemeColorRef.current = color;
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute("content", color);
+    };
+
+    /* ---------- mode B: scroll-linked (iOS standalone / edge-to-edge) ---------- */
+    const applyLinked = (p: number) => {
+      writeBar(p);
+      writeStatus(p);
+    };
+
+    /* ---------- mode A: fade berbasis waktu, status bar pindah di tengah ---------- */
+    const tween = {
+      value: 0,
+      from: 0,
+      target: 0,
+      start: 0,
+      duration: 1,
+      raf: null as number | null,
+    };
+
+    const valueAt = (t: number) => {
+      const k = clamp01((t - tween.start) / tween.duration);
+      return tween.from + (tween.target - tween.from) * easeInOut(k);
+    };
+
+    const stepTween = (now: number) => {
+      const v = valueAt(now);
+      tween.value = v;
+      writeBar(v);
+      // status bar biner: pindah saat nilai (sedikit tertunda) melewati tengah
+      writeStatus(valueAt(now - THEME_LAG_MS) >= 0.5 ? 1 : 0);
+      tween.raf =
+        now - tween.start < tween.duration + THEME_LAG_MS
+          ? window.requestAnimationFrame(stepTween)
+          : null;
+    };
+
+    const runTween = (target: number) => {
+      if (target === tween.target) return;
+      tween.from = tween.value;
+      tween.target = target;
+      tween.start = performance.now();
+      tween.duration = Math.max(1, TWEEN_MS * Math.abs(target - tween.from));
+      if (tween.raf !== null) window.cancelAnimationFrame(tween.raf);
+      tween.raf = window.requestAnimationFrame(stepTween);
+    };
+
+    const stopTween = () => {
+      if (tween.raf !== null) {
+        window.cancelAnimationFrame(tween.raf);
+        tween.raf = null;
+      }
+      tween.target = tween.value > 0.5 ? 1 : 0;
+    };
+    cancelTweenRef.current = stopTween;
 
     const updateProgress = () => {
       rafRef.current = null;
@@ -761,10 +804,20 @@ function MobileDashboard() {
         isPullingRef.current ||
         pullDistanceRef.current > 0 ||
         isRefreshingRef.current;
-      const p = busy
-        ? 0
-        : clamp01((getScrollTop() - SCROLL_START) / SCROLL_RANGE);
-      applyProgress(p);
+      const top = getScrollTop();
+
+      if (STATUS_BAR_FOLLOWS_COLOR || pwaRef.current) {
+        stopTween();
+        applyLinked(
+          busy ? 0 : clamp01((top - SCROLL_START) / SCROLL_RANGE)
+        );
+        return;
+      }
+
+      let target = tween.target;
+      if (busy || top <= SCROLL_OFF) target = 0;
+      else if (top >= SCROLL_ON) target = 1;
+      runTween(target);
     };
     syncBarRef.current = updateProgress;
 
@@ -784,12 +837,15 @@ function MobileDashboard() {
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
       }
+      cancelTweenRef.current();
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
   useEffect(() => {
-    pwaRef.current = isPwaMode;
+    pwaRef.current = Boolean(
+      (window.navigator as Navigator & { standalone?: boolean }).standalone
+    );
     syncBarRef.current();
   }, [isPwaMode]);
 
@@ -1497,4 +1553,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-    }
+        }
