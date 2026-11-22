@@ -27,7 +27,7 @@ import {
 import { useAppLayout } from "@/components/layout/app-shell";
 
 /* =========================================================
-   DESIGN SYSTEM
+   DESIGN SYSTEM & CONSTANTS
 ========================================================= */
 const COLORS = {
   burgundy: "#730217",
@@ -213,6 +213,7 @@ function DesktopDashboard() {
   const [openAction, setOpenAction] = useState<string | null>(null);
   const [desktopMonth, setDesktopMonth] = useState("Oktober 2025");
 
+  // Filter tabel mesin berdasarkan pencarian, status, dan pelanggan
   const filteredRows = desktopMachineRows.filter((row) => {
     const query = search.trim().toLowerCase();
     const matchesSearch =
@@ -237,6 +238,7 @@ function DesktopDashboard() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-5 text-[#171923]">
+      {/* Header Desktop */}
       <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[clamp(28px,3vw,40px)] font-bold text-[#730217]">
@@ -287,6 +289,7 @@ function DesktopDashboard() {
         </div>
       </header>
 
+      {/* Kartu KPI Desktop */}
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {kpis.map(({ label, value, icon: Icon }) => (
           <div
@@ -306,6 +309,7 @@ function DesktopDashboard() {
         ))}
       </section>
 
+      {/* Grafik Monitoring & Statistik Kunjungan */}
       <section className="grid grid-cols-2 gap-5">
         <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
           <h2 className="text-xl font-bold">Status Monitoring Mesin</h2>
@@ -377,6 +381,7 @@ function DesktopDashboard() {
         </article>
       </section>
 
+      {/* Tabel Daftar Mesin */}
       <section className="rounded-[15px] border border-[#E4E4E8] bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -538,28 +543,44 @@ function MobileDashboard() {
     <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
         {/* =================================================
-            HEADER BANNER
+            HEADER BANNER (TINGGI PAS + WAVE IMAGE)
         ================================================= */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(248px, 69vw, 286px)",
+            height: "clamp(215px, 58vw, 248px)",
           }}
         >
-          {/* Gradient & subtle accent layer */}
+          {/* Gradient dasar merah marun */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_28%,#A80524_0%,#7A0118_58%,#590010_100%)]" />
-          <div className="pointer-events-none absolute -bottom-[26px] left-[-12%] h-[92px] w-[124%] rounded-t-[48%] bg-[#B80D2E]/45" />
 
-          {/* Logo and notification */}
-          <div className="absolute left-[20px] right-[20px] top-[max(42px,calc(env(safe-area-inset-top)+10px))] z-30 flex items-center justify-between">
-            <Link href="/" aria-label="MOKU Dashboard" className="flex items-center">
+          {/* Header wave image dari asset lokal */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[120px] w-full">
+            <Image
+              src="/images/moku/illustrations/header-wave.png"
+              alt=""
+              fill
+              priority
+              aria-hidden="true"
+              className="object-cover object-bottom"
+              sizes="100vw"
+            />
+          </div>
+
+          {/* Logo dan notifikasi */}
+          <div className="absolute left-[20px] right-[20px] top-[max(36px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+            <Link
+              href="/"
+              aria-label="MOKU Dashboard"
+              className="flex items-center"
+            >
               <Image
                 src="/images/moku/brand/moku-logo.png"
                 alt="MOKU"
                 width={180}
                 height={65}
                 priority
-                className="h-[40px] w-auto object-contain object-left"
+                className="h-[38px] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -596,18 +617,18 @@ function MobileDashboard() {
             </div>
           </div>
 
-          {/* Greeting */}
-          <div className="absolute left-[20px] top-[max(96px,calc(env(safe-area-inset-top)+60px))] z-20 w-[calc(100%-40px)] pr-[128px]">
+          {/* Sapaan pengguna */}
+          <div className="absolute left-[20px] top-[max(86px,calc(env(safe-area-inset-top)+54px))] z-20 w-[calc(100%-40px)] pr-[128px]">
             <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[6px] max-w-[225px] text-[13.5px] font-normal leading-[1.35] text-white/90">
+            <p className="mt-[5px] max-w-[225px] text-[13.5px] font-normal leading-[1.35] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
-          {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[22px] right-[12px] z-10 flex h-[134px] w-[134px] items-end justify-center sm:h-[148px] sm:w-[148px]">
+          {/* Ilustrasi mesin printer */}
+          <div className="pointer-events-none absolute bottom-[12px] right-[12px] z-10 flex h-[132px] w-[132px] items-end justify-center sm:h-[146px] sm:w-[146px]">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -615,7 +636,7 @@ function MobileDashboard() {
               height={420}
               priority
               className="h-full w-full object-contain object-bottom"
-              sizes="148px"
+              sizes="146px"
             />
           </div>
         </header>
@@ -625,13 +646,13 @@ function MobileDashboard() {
         ================================================= */}
         <div className="relative z-20 -mt-[22px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
           {/* =================================================
-              STATUS MONITORING
+              1. STATUS MONITORING MESIN
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
               <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
-              {/* Period selector */}
+              {/* Pemilih periode */}
               <div className="relative shrink-0">
                 <button
                   type="button"
@@ -674,10 +695,10 @@ function MobileDashboard() {
               </div>
             </div>
 
-            {/* Monitoring chart panel */}
+            {/* Panel chart monitoring */}
             <MobileCard className="mt-[10px] px-[14px] py-[14px]">
               <div className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-center gap-[12px]">
-                {/* Donut */}
+                {/* Donut Chart */}
                 <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[12px]">
                   <div
                     className="relative aspect-square w-full max-w-[136px] rounded-full"
@@ -699,7 +720,7 @@ function MobileDashboard() {
                   </div>
                 </div>
 
-                {/* Legend */}
+                {/* Legenda Monitoring */}
                 <div className="min-w-0 space-y-[12px]">
                   {monitoringData.map((item) => (
                     <div
@@ -729,7 +750,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              KUNJUNGAN BULAN INI
+              2. KUNJUNGAN BULAN INI
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
@@ -744,7 +765,7 @@ function MobileDashboard() {
 
             <MobileCard className="mt-[10px] px-[16px] py-[15px]">
               <div className="grid grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[12px]">
-                {/* Total */}
+                {/* Total Kunjungan */}
                 <div className="min-w-0 border-r border-[#EAEAEF] pr-[10px]">
                   <p className="text-[clamp(42px,10vw,50px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
@@ -754,7 +775,7 @@ function MobileDashboard() {
                   </p>
                 </div>
 
-                {/* Growth */}
+                {/* Pertumbuhan & Ilustrasi */}
                 <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
                   <div className="min-w-0">
                     <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[10px] py-[4px] text-[13.5px] font-bold text-[#15803D]">
@@ -780,7 +801,7 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              {/* Progress */}
+              {/* Progress Bar Target */}
               <div className="mt-[14px]">
                 <div className="mb-[6px] flex items-center justify-between">
                   <p className="text-[13px] font-bold text-[#171717]">
@@ -801,7 +822,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              AKSI CEPAT
+              3. AKSI CEPAT
           ================================================= */}
           <section className="min-w-0">
             <div className="px-[2px]">
@@ -859,7 +880,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              MESIN PERLU PERHATIAN
+              4. MESIN PERLU PERHATIAN
           ================================================= */}
           <Link
             href="/monitoring"
@@ -889,7 +910,7 @@ function MobileDashboard() {
           </Link>
 
           {/* =================================================
-              AKTIVITAS TERBARU
+              5. AKTIVITAS TERBARU
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
@@ -909,7 +930,7 @@ function MobileDashboard() {
                   key={`${activity.machine}-${index}`}
                   className="flex min-h-[66px] min-w-0 items-center gap-[12px] py-[10px]"
                 >
-                  {/* Status icon */}
+                  {/* Ikon status */}
                   <div
                     className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${
                       activity.status === "success"
@@ -924,7 +945,7 @@ function MobileDashboard() {
                     )}
                   </div>
 
-                  {/* Activity information */}
+                  {/* Informasi aktivitas */}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-bold leading-tight text-[#171717]">
                       {activity.title}
@@ -934,7 +955,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  {/* Time badge */}
+                  {/* Badge waktu */}
                   <span
                     className={`min-w-[74px] shrink-0 whitespace-nowrap rounded-full px-[12px] py-[5px] text-center text-[11.5px] font-semibold ${
                       activity.status === "success"
@@ -984,4 +1005,4 @@ export default function DashboardPage() {
   }
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-  }
+}
