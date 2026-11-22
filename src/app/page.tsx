@@ -50,7 +50,7 @@ const MAX_PULL = 136;
 const REFRESH_HOLD = 70;
 const REFRESH_DURATION_MS = 1800;
 const TOPBAR_SCROLL_START = 16;
-const TOPBAR_SCROLL_RANGE = 48;
+const TOPBAR_SCROLL_RANGE = 44;
 
 /* =========================================================
    DASHBOARD DATA
@@ -165,16 +165,6 @@ function detectStandalonePwa() {
   );
 
   return isStandaloneDisplay || isIosStandalone;
-}
-
-function interpolateHeaderThemeHex(progress: number): string {
-  const t = Math.min(1, Math.max(0, progress));
-  const r = Math.round(131 + (255 - 131) * t);
-  const g = Math.round(5 + (255 - 5) * t);
-  const b = Math.round(28 + (255 - 28) * t);
-
-  const toHex = (value: number) => value.toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
 function formatGreetingName(fullName: string) {
@@ -677,11 +667,11 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncThemeAndStatusBar = (progress: number) => {
-      const nextHex = interpolateHeaderThemeHex(progress);
+    const syncThemeColor = (progress: number) => {
+      // Sinkronkan theme-color ke putih saat top bar putih aktif agar menyatu dengan status bar
+      const nextHex = progress > 0.35 ? "#FFFFFF" : "#83051C";
       if (lastThemeColorRef.current !== nextHex) {
         lastThemeColorRef.current = nextHex;
-
         let metaTheme = document.querySelector('meta[name="theme-color"]');
         if (!metaTheme) {
           metaTheme = document.createElement("meta");
@@ -689,10 +679,6 @@ function MobileDashboard() {
           document.head.appendChild(metaTheme);
         }
         metaTheme.setAttribute("content", nextHex);
-
-        // Sinkronkan warna dasar html/body di balik area status bar transparan
-        document.documentElement.style.backgroundColor =
-          progress > 0.5 ? "#FFFFFF" : "#83051C";
       }
     };
 
@@ -716,7 +702,7 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncThemeAndStatusBar(0);
+        syncThemeColor(0);
         return;
       }
 
@@ -729,7 +715,7 @@ function MobileDashboard() {
       setScrollProgress((prev) =>
         Math.abs(prev - eased) > 0.004 ? eased : prev
       );
-      syncThemeAndStatusBar(eased);
+      syncThemeColor(eased);
     };
 
     const onScroll = () => {
@@ -749,7 +735,6 @@ function MobileDashboard() {
         window.clearTimeout(refreshTimerRef.current);
       }
       window.removeEventListener("scroll", onScroll);
-      document.documentElement.style.backgroundColor = "";
     };
   }, []);
 
@@ -925,19 +910,18 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar (Berubah putih menyatu dengan status bar dari top: 0) */}
+        {/* Sticky Compact Top Bar (Menyatu satu bidang putih tanpa garis pembatas) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
               backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
-              borderBottomColor: `rgba(236, 236, 239, ${effectiveScrollProgress})`,
-              boxShadow: `0 1px 6px rgba(41, 35, 42, ${effectiveScrollProgress * 0.035})`,
+              boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.04})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
                 : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
             }}
-            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
+            className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
           >
             <Link
               href="/"
@@ -1453,4 +1437,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-          }
+                                                       }
