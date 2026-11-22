@@ -131,8 +131,16 @@ function getPageInformation(pathname: string): PageInformation {
 }
 
 /* =========================================================
-   NAVIGATION DIRECTION
+   NAVIGATION DIRECTION & SUBPAGE CHECK
 ========================================================= */
+
+const MOBILE_SUBPAGE_PREFIXES = ["/notifications"];
+
+function isMobileSubpage(pathname: string): boolean {
+  return MOBILE_SUBPAGE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
 
 function getRouteDepth(pathname: string): number {
   return pathname.split("/").filter(Boolean).length;
@@ -142,6 +150,17 @@ function getNavigationDirection(
   previousPath: string,
   currentPath: string
 ): NavigationDirection {
+  const wasSubpage = isMobileSubpage(previousPath);
+  const nowSubpage = isMobileSubpage(currentPath);
+
+  if (!wasSubpage && nowSubpage) {
+    return "forward";
+  }
+
+  if (wasSubpage && !nowSubpage) {
+    return "backward";
+  }
+
   const previousDepth = getRouteDepth(previousPath);
   const currentDepth = getRouteDepth(currentPath);
 
@@ -371,6 +390,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
   }, [pathname]);
 
   const isMobileMode = layoutState.mode === "mobile";
+  const hideMobileBottomNav = isMobileMode && isMobileSubpage(pathname);
 
   return (
     <AppLayoutContext.Provider value={layoutState}>
@@ -380,8 +400,8 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
-        className={`moku-app-shell min-h-dvh w-full text-foreground ${
-          isMobileMode ? "bg-[#FAFAFC]" : "overflow-x-clip bg-background"
+        className={`moku-app-shell min-h-dvh w-full overflow-x-clip text-foreground ${
+          isMobileMode ? "bg-[#FAFAFC]" : "bg-background"
         }`}
       >
         <AppSidebar
@@ -398,10 +418,10 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           <main
             id="main-content"
             className={`
-              relative min-h-0 w-full min-w-0 flex-1
+              relative min-h-0 w-full min-w-0 flex-1 overflow-x-clip
               ${
                 layoutState.mode === "desktop"
-                  ? "overflow-x-clip bg-background px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
+                  ? "bg-background px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
                   : "bg-[#FAFAFC] p-0"
               }
             `}
@@ -428,9 +448,11 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           </footer>
         </div>
 
-        <div className="moku-mobile-navigation">
-          <BottomNavigation />
-        </div>
+        {!hideMobileBottomNav && (
+          <div className="moku-mobile-navigation">
+            <BottomNavigation />
+          </div>
+        )}
       </div>
 
       <style jsx global>{`
@@ -538,9 +560,10 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           display: block;
         }
 
-        /* SMOOTH ROUTE TRANSITION (NO BLANK FLASH, NO STICKY TRAP) */
+        /* NATIVE SLIDE PAGE TRANSITION (LIKE VIDEO REFERENCE) */
         .page-transition {
           min-width: 0;
+          will-change: transform, opacity;
         }
 
         [data-layout-mode="desktop"] .page-transition {
@@ -562,33 +585,37 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="forward"] {
-          animation: moku-push-forward-fade 220ms
+          animation: moku-native-slide-in 280ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="backward"] {
-          animation: moku-push-backward-fade 220ms
+          animation: moku-native-slide-back 260ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes moku-push-forward-fade {
+        @keyframes moku-native-slide-in {
           from {
             opacity: 0.96;
+            transform: translate3d(100%, 0, 0);
           }
 
           to {
             opacity: 1;
+            transform: translate3d(0, 0, 0);
           }
         }
 
-        @keyframes moku-push-backward-fade {
+        @keyframes moku-native-slide-back {
           from {
-            opacity: 0.96;
+            opacity: 0.94;
+            transform: translate3d(-24%, 0, 0);
           }
 
           to {
             opacity: 1;
+            transform: translate3d(0, 0, 0);
           }
         }
 
