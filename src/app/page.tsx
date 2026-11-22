@@ -632,10 +632,10 @@ function MobileDashboard() {
             className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
           />
 
-          {/* Low-contrast ambient lift behind printer */}
+          {/* Low-contrast ambient lift behind mascot */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[12px] right-[16px] z-[4] h-[126px] w-[126px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
           {/* Top Bar: Logo & Notification (sama tinggi & sejajar tengah) */}
@@ -691,32 +691,32 @@ function MobileDashboard() {
             </div>
           </div>
 
-          {/* Greeting */}
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(66*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(20.5*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
-              Halo, Budi Santoso
+          {/* Greeting (nama singkat tanpa label + subjudul halus) */}
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(64*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(146*var(--u))]">
+            <h1 className="whitespace-nowrap text-[calc(22*var(--u))] font-bold leading-[1.15] tracking-[-0.03em] text-white">
+              Halo, Budi
             </h1>
-            <p className="mt-[calc(5*var(--u))] max-w-[calc(205*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
-              Berikut ringkasan operasional kunjungan unit.
+            <p className="mt-[calc(5*var(--u))] max-w-[calc(200*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
+              Ringkasan jadwal dan progres kunjungan unit.
             </p>
           </div>
 
-          {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[calc(15*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+          {/* MOKU Robot Mascot (posisi sedikit turun agar overlap dengan canvas putih) */}
+          <div className="pointer-events-none absolute bottom-[calc(4*var(--u))] right-[calc(10*var(--u))] z-10 flex h-[calc(150*var(--u))] w-[calc(150*var(--u))] items-end justify-center">
             <Image
-              src="/images/moku/illustrations/dashboard-printer.png"
-              alt="Ilustrasi mesin printer"
+              src="/images/moku/illustrations/dashboard-robot-printer.png"
+              alt="Maskot MOKU membawa unit printer"
               width={420}
               height={420}
               priority
               className="h-full w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
-              sizes="154px"
+              sizes="170px"
             />
           </div>
         </header>
 
-        {/* Canvas Konten */}
-        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+        {/* Canvas Konten (naik sedikit ke -mt-[34*var(--u)] agar overlap halus dengan ilustrasi) */}
+        <div className="relative z-20 -mt-[calc(34*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
           {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
