@@ -154,7 +154,7 @@ function formatGreetingName(fullName: string) {
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="min-w-0 whitespace-nowrap text-[calc(17.5*var(--u))] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
+    <h2 className="min-w-0 whitespace-nowrap text-[calc(15.5*var(--u))] font-bold leading-[1.2] tracking-[-0.025em] text-[#171717]">
       {children}
     </h2>
   );
@@ -665,7 +665,7 @@ function MobileDashboard() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full select-none bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Sticky Compact Top Bar (Putih murni #FFFFFF sama dengan status bar, ramping, & ikon proporsional) */}
