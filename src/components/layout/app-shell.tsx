@@ -370,6 +370,8 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
     previousPathRef.current = pathname;
   }, [pathname]);
 
+  const isMobileMode = layoutState.mode === "mobile";
+
   return (
     <AppLayoutContext.Provider value={layoutState}>
       <div
@@ -378,7 +380,9 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         data-layout-ready={layoutState.isReady}
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
-        className="moku-app-shell min-h-dvh w-full overflow-x-clip bg-background text-foreground"
+        className={`moku-app-shell min-h-dvh w-full text-foreground ${
+          isMobileMode ? "bg-[#FAFAFC]" : "overflow-x-clip bg-background"
+        }`}
       >
         <AppSidebar
           collapsed={sidebarCollapsed}
@@ -395,11 +399,10 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
             id="main-content"
             className={`
               relative min-h-0 w-full min-w-0 flex-1
-              overflow-x-clip bg-background
               ${
                 layoutState.mode === "desktop"
-                  ? "px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
-                  : "p-0"
+                  ? "overflow-x-clip bg-background px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
+                  : "bg-[#FAFAFC] p-0"
               }
             `}
           >
@@ -535,7 +538,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           display: block;
         }
 
-        /* SMOOTH ROUTE TRANSITION (NO BLANK FLASH) */
+        /* SMOOTH ROUTE TRANSITION (NO BLANK FLASH, NO STICKY TRAP) */
         .page-transition {
           min-width: 0;
         }
@@ -559,37 +562,33 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="forward"] {
-          animation: moku-push-forward 220ms
+          animation: moku-push-forward-fade 220ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="backward"] {
-          animation: moku-push-backward 220ms
+          animation: moku-push-backward-fade 220ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes moku-push-forward {
+        @keyframes moku-push-forward-fade {
           from {
             opacity: 0.96;
-            transform: translate3d(14px, 0, 0);
           }
 
           to {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
           }
         }
 
-        @keyframes moku-push-backward {
+        @keyframes moku-push-backward-fade {
           from {
             opacity: 0.96;
-            transform: translate3d(-14px, 0, 0);
           }
 
           to {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
           }
         }
 
