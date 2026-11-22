@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   AlertTriangle,
   Bell,
@@ -600,6 +605,24 @@ function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const threshold = Math.max(92, Math.min(window.innerHeight * 0.13, 128));
+      const nextScrolled = window.scrollY > threshold;
+      setIsScrolled(nextScrolled);
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute("content", nextScrolled ? "#FFFFFF" : "#83051C");
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <main
@@ -607,6 +630,100 @@ function MobileDashboard() {
       className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
+        {/* Sticky Compact Top Bar (Smooth morph: Full Logo -> app-icon.png + Notif) */}
+        <div
+          className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ease-out ${
+            isScrolled
+              ? "border-b border-[#ECECEF] bg-white/95 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-md"
+              : "border-b border-transparent bg-transparent"
+          }`}
+        >
+          <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))]">
+            {/* Left: Full MOKU Logo -> Morphs smoothly to MOKU Robot App Icon */}
+            <Link
+              href="/"
+              aria-label="MOKU Dashboard"
+              className="relative flex h-[calc(34*var(--u))] items-center"
+            >
+              {/* Full Logo (visible at top) */}
+              <Image
+                src="/images/moku/brand/moku-logo.png"
+                alt="MOKU"
+                width={180}
+                height={65}
+                priority
+                className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left transition-all duration-300 ease-out ${
+                  isScrolled
+                    ? "pointer-events-none scale-75 opacity-0"
+                    : "scale-100 opacity-100"
+                }`}
+                sizes="150px"
+              />
+
+              {/* Compact Robot Icon (appears smoothly when scrolled) */}
+              <span
+                className={`absolute left-0 flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center transition-all duration-300 ease-out ${
+                  isScrolled
+                    ? "scale-100 opacity-100"
+                    : "pointer-events-none scale-75 opacity-0"
+                }`}
+              >
+                <Image
+                  src="/images/moku/brand/app-icon.png"
+                  alt="MOKU"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain"
+                  sizes="40px"
+                />
+              </span>
+            </Link>
+
+            {/* Right: Notification Bell (always visible, adapts color smoothly) */}
+            <div className="relative flex h-[calc(34*var(--u))] items-center">
+              <button
+                type="button"
+                aria-label="Notifikasi"
+                aria-expanded={showNotifications}
+                onClick={() => setShowNotifications((previous) => !previous)}
+                className={`relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full transition-colors duration-300 ${
+                  isScrolled
+                    ? "text-[#171717] hover:bg-[#F3F3F5]"
+                    : "text-white hover:bg-white/10"
+                }`}
+              >
+                <Bell
+                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
+                  strokeWidth={1.85}
+                />
+                <span
+                  className={`absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30] transition-all duration-300 ${
+                    isScrolled ? "ring-2 ring-white" : ""
+                  }`}
+                />
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 top-[calc(38*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold">Notifikasi</p>
+                    <button
+                      type="button"
+                      aria-label="Tutup notifikasi"
+                      onClick={() => setShowNotifications(false)}
+                    >
+                      <X size={17} />
+                    </button>
+                  </div>
+                  <p className="mt-3 text-xs text-[#77727A]">
+                    Belum ada notifikasi baru.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
         <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-hidden bg-[#83051C] text-white">
           {/* Base micro-gradient (top color #83051C matches status bar theme-color) */}
@@ -632,91 +749,38 @@ function MobileDashboard() {
             className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
           />
 
-          {/* Low-contrast ambient lift behind mascot */}
+          {/* Low-contrast ambient lift behind printer */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[12px] right-[16px] z-[4] h-[126px] w-[126px] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
-          {/* Top Bar: Logo & Notification (sama tinggi & sejajar tengah) */}
-          <div className="absolute left-[calc(18*var(--u))] right-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(10*var(--u)))] z-30 flex h-[calc(34*var(--u))] items-center justify-between">
-            <Link
-              href="/"
-              aria-label="MOKU Dashboard"
-              className="flex h-full items-center"
-            >
-              <Image
-                src="/images/moku/brand/moku-logo.png"
-                alt="MOKU"
-                width={180}
-                height={65}
-                priority
-                className="h-[calc(23*var(--u))] w-auto object-contain object-left"
-                sizes="150px"
-              />
-            </Link>
-
-            <div className="relative flex h-full items-center">
-              <button
-                type="button"
-                aria-label="Notifikasi"
-                aria-expanded={showNotifications}
-                onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-white"
-              >
-                <Bell
-                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
-                  strokeWidth={1.8}
-                />
-                <span className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30]" />
-              </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 top-[calc(38*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold">Notifikasi</p>
-                    <button
-                      type="button"
-                      aria-label="Tutup notifikasi"
-                      onClick={() => setShowNotifications(false)}
-                    >
-                      <X size={17} />
-                    </button>
-                  </div>
-                  <p className="mt-3 text-xs text-[#77727A]">
-                    Belum ada notifikasi baru.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Greeting (nama singkat tanpa label + subjudul halus) */}
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(64*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(146*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(22*var(--u))] font-bold leading-[1.15] tracking-[-0.03em] text-white">
-              Halo, Budi
+          {/* Greeting */}
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(66*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
+            <h1 className="whitespace-nowrap text-[calc(20.5*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
+              Halo, Budi Santoso
             </h1>
-            <p className="mt-[calc(5*var(--u))] max-w-[calc(200*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
-              Ringkasan jadwal dan progres kunjungan unit.
+            <p className="mt-[calc(5*var(--u))] max-w-[calc(205*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
+              Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
-          {/* MOKU Robot Mascot (posisi sedikit turun agar overlap dengan canvas putih) */}
-          <div className="pointer-events-none absolute bottom-[calc(4*var(--u))] right-[calc(10*var(--u))] z-10 flex h-[calc(150*var(--u))] w-[calc(150*var(--u))] items-end justify-center">
+          {/* Printer illustration */}
+          <div className="pointer-events-none absolute bottom-[calc(15*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
             <Image
-              src="/images/moku/illustrations/dashboard-robot-printer.png"
-              alt="Maskot MOKU membawa unit printer"
+              src="/images/moku/illustrations/dashboard-printer.png"
+              alt="Ilustrasi mesin printer"
               width={420}
               height={420}
               priority
               className="h-full w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
-              sizes="170px"
+              sizes="154px"
             />
           </div>
         </header>
 
-        {/* Canvas Konten (naik sedikit ke -mt-[34*var(--u)] agar overlap halus dengan ilustrasi) */}
-        <div className="relative z-20 -mt-[calc(34*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+        {/* Canvas Konten */}
+        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
           {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
