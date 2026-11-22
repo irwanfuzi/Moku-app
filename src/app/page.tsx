@@ -8,7 +8,6 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  type TouchEvent,
 } from "react";
 import {
   AlertTriangle,
@@ -46,8 +45,8 @@ const MONTHS = [
 
 const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
-const PULL_THRESHOLD = 64;
-const MAX_PULL = 96;
+const PULL_TRIGGER = 64;
+const MAX_PULL = 108;
 
 /* =========================================================
    DASHBOARD DATA
@@ -198,7 +197,7 @@ function ShimmerOverlay({ active }: { active: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="moku-skeleton pointer-events-none absolute inset-0 z-10 opacity-45 transition-opacity duration-200"
+      className="moku-skeleton pointer-events-none absolute inset-0 z-10 opacity-40 transition-opacity duration-200"
     />
   );
 }
@@ -642,25 +641,56 @@ function MobileDashboard() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPullDragging, setIsPullDragging] = useState(false);
 
+  const mainRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const isPullingRef = useRef(false);
+  const pullDistanceRef = useRef(0);
+  const isRefreshingRef = useRef(false);
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
   useEffect(() => {
+    pullDistanceRef.current = pullDistance;
+  }, [pullDistance]);
+
+  useEffect(() => {
+    isRefreshingRef.current = isRefreshing;
+  }, [isRefreshing]);
+
+  useEffect(() => {
     const getScrollTop = () =>
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
+      Math.max(
+        0,
+        window.scrollY ||
+          document.documentElement.scrollTop ||
+          document.body.scrollTop ||
+          0
+      );
 
     const updateProgress = () => {
       rafRef.current = null;
+      const scrollTop = getScrollTop();
+
+      if (
+        scrollTop <= 2 ||
+        isPullingRef.current ||
+        pullDistanceRef.current > 0 ||
+        isRefreshingRef.current
+      ) {
+        setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme && metaTheme.getAttribute("content") !== "#83051C") {
+          metaTheme.setAttribute("content", "#83051C");
+        }
+        return;
+      }
+
       const range = 96;
-      const raw = Math.min(Math.max(getScrollTop() / range, 0), 1);
+      const raw = Math.min(Math.max(scrollTop / range, 0), 1);
       const eased = raw * raw * (3 - 2 * raw);
 
       setScrollProgress((prev) =>
@@ -669,7 +699,10 @@ function MobileDashboard() {
 
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
-        metaTheme.setAttribute("content", eased > 0.55 ? "#FFFFFF" : "#83051C");
+        const nextColor = eased > 0.55 ? "#FFFFFF" : "#83051C";
+        if (metaTheme.getAttribute("content") !== nextColor) {
+          metaTheme.setAttribute("content", nextColor);
+        }
       }
     };
 
@@ -681,10 +714,6 @@ function MobileDashboard() {
 
     updateProgress();
     window.addEventListener("scroll", onScroll, { passive: true });
-    document.addEventListener("scroll", onScroll, {
-      passive: true,
-      capture: true,
-    });
 
     return () => {
       if (rafRef.current !== null) {
@@ -694,134 +723,170 @@ function MobileDashboard() {
         window.clearTimeout(refreshTimerRef.current);
       }
       window.removeEventListener("scroll", onScroll);
-      document.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, []);
 
-  const handleTouchStart = (event: TouchEvent<HTMLElement>) => {
-    if (!isPwaMode || isRefreshing) return;
-    const scrollTop =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
+  /* Native non-passive touch listeners agar tarikan dari atas (scrollTop === 0)
+     mulus, tidak bentrok dengan scroll ke bawah, dan elastis saat naik-turun */
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el || !isPwaMode) return;
 
-    if (scrollTop <= 0) {
-      touchStartYRef.current = event.touches[0].clientY;
-      isPullingRef.current = true;
-    } else {
-      touchStartYRef.current = null;
-      isPullingRef.current = false;
-    }
-  };
+    const getScrollTop = () =>
+      Math.max(
+        0,
+        window.scrollY ||
+          document.documentElement.scrollTop ||
+          document.body.scrollTop ||
+          0
+      );
 
-  const handleTouchMove = (event: TouchEvent<HTMLElement>) => {
-    if (
-      !isPwaMode ||
-      !isPullingRef.current ||
-      touchStartYRef.current === null ||
-      isRefreshing
-    ) {
-      return;
-    }
-
-    const deltaY = event.touches[0].clientY - touchStartYRef.current;
-    if (deltaY > 0) {
-      const damped = Math.min(MAX_PULL, deltaY * 0.42);
-      setPullDistance(damped);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!isPwaMode || !isPullingRef.current) return;
-    isPullingRef.current = false;
-    touchStartYRef.current = null;
-
-    if (pullDistance >= PULL_THRESHOLD * 0.65) {
-      setIsRefreshing(true);
-      setPullDistance(42);
-
-      if (refreshTimerRef.current !== null) {
-        window.clearTimeout(refreshTimerRef.current);
+    const onTouchStart = (event: globalThis.TouchEvent) => {
+      if (isRefreshingRef.current || event.touches.length !== 1) return;
+      if (getScrollTop() <= 0) {
+        touchStartYRef.current = event.touches[0].clientY;
+        isPullingRef.current = true;
+      } else {
+        touchStartYRef.current = null;
+        isPullingRef.current = false;
       }
-      refreshTimerRef.current = window.setTimeout(() => {
-        setIsRefreshing(false);
-        setPullDistance(0);
-      }, 950);
-    } else {
-      setPullDistance(0);
-    }
-  };
+    };
 
-  const showPwaRefreshIndicator = isPwaMode && (pullDistance > 0 || isRefreshing);
+    const onTouchMove = (event: globalThis.TouchEvent) => {
+      if (
+        !isPullingRef.current ||
+        touchStartYRef.current === null ||
+        isRefreshingRef.current
+      ) {
+        return;
+      }
+
+      if (getScrollTop() > 0) {
+        isPullingRef.current = false;
+        touchStartYRef.current = null;
+        setIsPullDragging(false);
+        setPullDistance(0);
+        return;
+      }
+
+      const deltaY = event.touches[0].clientY - touchStartYRef.current;
+
+      if (deltaY > 0) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        setIsPullDragging(true);
+        const damped = MAX_PULL * (1 - Math.exp(-deltaY / 190));
+        setPullDistance(damped);
+        setScrollProgress(0);
+      } else {
+        setIsPullDragging(false);
+        setPullDistance(0);
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (!isPullingRef.current) return;
+      isPullingRef.current = false;
+      touchStartYRef.current = null;
+      setIsPullDragging(false);
+
+      const currentPull = pullDistanceRef.current;
+      if (currentPull >= PULL_TRIGGER * 0.72) {
+        setIsRefreshing(true);
+        setPullDistance(54);
+        setScrollProgress(0);
+
+        if (refreshTimerRef.current !== null) {
+          window.clearTimeout(refreshTimerRef.current);
+        }
+        refreshTimerRef.current = window.setTimeout(() => {
+          setIsRefreshing(false);
+          setPullDistance(0);
+        }, 950);
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [isPwaMode]);
+
+  const effectiveScrollProgress =
+    pullDistance > 0 || isRefreshing ? 0 : scrollProgress;
+  const pullRatio = Math.min(1, pullDistance / 54);
+  const showPwaRefreshEmblem =
+    isPwaMode && (pullDistance > 4 || isRefreshing);
   const showPwaShimmer = isPwaMode && isRefreshing;
-  const isCondensed = scrollProgress > 0.5;
+  const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
 
   return (
     <main
+      ref={mainRef}
       style={{
         ...MOBILE_SCALE_VARS,
         overscrollBehaviorY: isPwaMode ? "none" : "auto",
       }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Custom Brand Pull-to-Refresh Indicator (PWA Only) */}
-      {showPwaRefreshIndicator && (
-        <div
-          style={{
-            transform: `translateY(${Math.max(0, pullDistance * 0.45)}px)`,
-            opacity: Math.min(1, Math.max(0.3, pullDistance / 36)),
-          }}
-          className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(36*var(--u)))] z-30 flex justify-center transition-opacity duration-150"
-        >
-          <div className="relative flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full border border-[#ECECEF] bg-white shadow-[0_4px_12px_rgba(41,35,42,0.12)]">
-            <span
-              aria-hidden="true"
-              className={`absolute inset-0 rounded-full border-2 border-transparent border-t-[#8E001C] border-r-[#F28C0F] ${
-                isRefreshing ? "animate-spin" : ""
-              }`}
-              style={{
-                transform: isRefreshing
-                  ? undefined
-                  : `rotate(${pullDistance * 4}deg)`,
-              }}
-            />
-            <div className="relative flex h-[calc(23*var(--u))] w-[calc(23*var(--u))] items-center justify-center rounded-full">
+      <div className="relative mx-auto w-full max-w-[600px]">
+        {/* Emblem Pull-to-Refresh MOKU di Ruang Ekspansi Atas (Menyatu dengan Header Merah) */}
+        {showPwaRefreshEmblem && (
+          <div
+            style={{
+              opacity: isRefreshing ? 1 : pullRatio,
+              transform: `translateY(${Math.min(18, pullDistance * 0.28)}px) scale(${
+                isRefreshing ? 1 : 0.72 + pullRatio * 0.28
+              })`,
+              transition: isPullDragging
+                ? "none"
+                : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
+            }}
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(6*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
+          >
+            <div className="relative flex h-[calc(30*var(--u))] w-[calc(30*var(--u))] items-center justify-center rounded-full bg-white/15 backdrop-blur-xs">
               <Image
                 src="/images/moku/brand/app-icon.png"
                 alt="Memuat ulang MOKU"
                 width={48}
                 height={48}
-                className="h-full w-full object-contain"
+                style={{
+                  transform: isRefreshing
+                    ? undefined
+                    : `rotate(${pullDistance * 4}deg)`,
+                }}
+                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] object-contain ${
+                  isRefreshing ? "animate-spin" : ""
+                }`}
               />
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Konten ikut bergeser halus saat ditarik di PWA */}
-      <div
-        style={{
-          transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
-          transition: isPullingRef.current
-            ? "none"
-            : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
-        className="relative mx-auto w-full max-w-[600px] will-change-transform"
-      >
-        {/* Sticky Compact Top Bar */}
+        {/* Sticky Compact Top Bar (Posisi tetap saat scroll; ikut turun mulus saat pull-to-refresh) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
-              backgroundColor: `rgba(255, 255, 255, ${scrollProgress})`,
-              borderBottomColor: `rgba(236, 236, 239, ${scrollProgress})`,
-              boxShadow: `0 1px 6px rgba(41, 35, 42, ${scrollProgress * 0.03})`,
+              backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
+              borderBottomColor: `rgba(236, 236, 239, ${effectiveScrollProgress})`,
+              boxShadow: `0 1px 6px rgba(41, 35, 42, ${effectiveScrollProgress * 0.03})`,
+              transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+              transition: isPullDragging
+                ? "none"
+                : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
-            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow]"
+            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
           >
             <Link
               href="/"
@@ -835,8 +900,8 @@ function MobileDashboard() {
                 height={65}
                 priority
                 style={{
-                  opacity: 1 - scrollProgress,
-                  transform: `scale(${1 - scrollProgress * 0.2})`,
+                  opacity: 1 - effectiveScrollProgress,
+                  transform: `scale(${1 - effectiveScrollProgress * 0.2})`,
                 }}
                 className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
                   isCondensed ? "pointer-events-none" : ""
@@ -846,8 +911,8 @@ function MobileDashboard() {
 
               <span
                 style={{
-                  opacity: scrollProgress,
-                  transform: `scale(${0.78 + scrollProgress * 0.22})`,
+                  opacity: effectiveScrollProgress,
+                  transform: `scale(${0.78 + effectiveScrollProgress * 0.22})`,
                 }}
                 className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
                   isCondensed ? "" : "pointer-events-none"
@@ -873,19 +938,19 @@ function MobileDashboard() {
                 className="relative flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
-                  style={{ opacity: 1 - scrollProgress }}
+                  style={{ opacity: 1 - effectiveScrollProgress }}
                   className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white will-change-[opacity]"
                   strokeWidth={1.85}
                 />
                 <Bell
-                  style={{ opacity: scrollProgress }}
+                  style={{ opacity: effectiveScrollProgress }}
                   className="absolute h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#171717] will-change-[opacity]"
                   strokeWidth={1.85}
                 />
 
                 <span
                   style={{
-                    boxShadow: `0 0 0 ${scrollProgress * 2}px #FFFFFF`,
+                    boxShadow: `0 0 0 ${effectiveScrollProgress * 2}px #FFFFFF`,
                   }}
                   className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30]"
                 />
@@ -912,399 +977,418 @@ function MobileDashboard() {
           </div>
         </div>
 
-        {/* Header Banner */}
-        <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-hidden bg-[#83051C] text-white">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#83051C_0%,#760217_55%,#54000F_100%)]" />
+        {/* Latar belakang marun menerus ke atas (-top-[140px]) agar menyatu penuh saat ditarik */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 -top-[140px] h-[calc(360*var(--u)+env(safe-area-inset-top))] bg-[#83051C]"
+        />
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-[2] opacity-[0.045] mix-blend-overlay"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-            }}
-          />
+        {/* Konten bergerak elastis menyatu dengan header merah saat ditarik */}
+        <div
+          style={{
+            transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+            transition: isPullDragging
+              ? "none"
+              : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+          className="relative will-change-transform"
+        >
+          {/* Header Banner */}
+          <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-visible bg-[#83051C] text-white">
+            {/* Perpanjangan gradien atas sehingga tidak ada garis sambungan */}
+            <div className="pointer-events-none absolute inset-x-0 -top-[140px] bottom-0 bg-[linear-gradient(180deg,#83051C_0%,#83051C_42%,#760217_74%,#54000F_100%)]" />
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
-          />
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
-          />
-
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(126*var(--u))]">
-            <h1 className="whitespace-nowrap font-display text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
-              Halo, {formatGreetingName(userName)}
-            </h1>
-            <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(10.5*var(--u))] font-normal leading-[1.35] tracking-[-0.015em] text-white/85">
-              Ringkasan operasional kunjungan unit.
-            </p>
-          </div>
-
-          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(16*var(--u))] z-10 flex h-[calc(126*var(--u))] w-[calc(126*var(--u))] items-end justify-center">
-            <Image
-              src="/images/moku/illustrations/dashboard-robot-printer.png"
-              alt="Ilustrasi robot MOKU membawa printer"
-              width={420}
-              height={420}
-              priority
-              className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
-              sizes="154px"
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-[2] overflow-hidden opacity-[0.045] mix-blend-overlay"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+              }}
             />
-          </div>
-        </header>
 
-        {/* Canvas Konten */}
-        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
-          {/* 1. Status Monitoring Mesin */}
-          <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
-              <SectionTitle>Status Monitoring Mesin</SectionTitle>
+            <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
+              <div
+                aria-hidden="true"
+                className="absolute -right-[52px] -top-[42px] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute -right-[108px] -top-[98px] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute bottom-[8px] right-[18px] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
+              />
+            </div>
 
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowMonthPicker((previous) => !previous)}
-                  aria-expanded={showMonthPicker}
-                  className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)]"
-                >
-                  <CalendarDays className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]" />
-                  <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
-                    {selectedMonth}
-                  </span>
-                  <ChevronDown className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]" />
-                </button>
+            <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(126*var(--u))]">
+              <h1 className="whitespace-nowrap font-display text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
+                Halo, {formatGreetingName(userName)}
+              </h1>
+              <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(10.5*var(--u))] font-normal leading-[1.35] tracking-[-0.015em] text-white/85">
+                Ringkasan operasional kunjungan unit.
+              </p>
+            </div>
 
-                {showMonthPicker && (
-                  <div className="absolute right-0 top-[40px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
-                    <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
-                      Pilih Periode
-                    </p>
-                    {MONTHS.map((month) => (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => {
-                          setSelectedMonth(month);
-                          setShowMonthPicker(false);
-                        }}
-                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${
-                          selectedMonth === month
-                            ? "bg-[#FCECEF] font-bold text-[#8E001C]"
-                            : "text-[#51474E]"
-                        }`}
+            <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(16*var(--u))] z-10 flex h-[calc(126*var(--u))] w-[calc(126*var(--u))] items-end justify-center">
+              <Image
+                src="/images/moku/illustrations/dashboard-robot-printer.png"
+                alt="Ilustrasi robot MOKU membawa printer"
+                width={420}
+                height={420}
+                priority
+                className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
+                sizes="154px"
+              />
+            </div>
+          </header>
+
+          {/* Canvas Konten */}
+          <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+            {/* 1. Status Monitoring Mesin */}
+            <section className="min-w-0">
+              <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
+                <SectionTitle>Status Monitoring Mesin</SectionTitle>
+
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowMonthPicker((previous) => !previous)}
+                    aria-expanded={showMonthPicker}
+                    className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)]"
+                  >
+                    <CalendarDays className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]" />
+                    <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
+                      {selectedMonth}
+                    </span>
+                    <ChevronDown className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]" />
+                  </button>
+
+                  {showMonthPicker && (
+                    <div className="absolute right-0 top-[40px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
+                      <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
+                        Pilih Periode
+                      </p>
+                      {MONTHS.map((month) => (
+                        <button
+                          key={month}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMonth(month);
+                            setShowMonthPicker(false);
+                          }}
+                          className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${
+                            selectedMonth === month
+                              ? "bg-[#FCECEF] font-bold text-[#8E001C]"
+                              : "text-[#51474E]"
+                          }`}
+                        >
+                          {month}
+                          {selectedMonth === month && <Check size={16} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
+                <ShimmerOverlay active={showPwaShimmer} />
+                <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[calc(10*var(--u))]">
+                  <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[calc(10*var(--u))]">
+                    <div
+                      className="relative aspect-square w-full max-w-[calc(114*var(--u))] rounded-full"
+                      style={{
+                        background:
+                          "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
+                      }}
+                      role="img"
+                      aria-label="48 mesin"
+                    >
+                      <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
+                        <span className="font-display text-[calc(30*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
+                          48
+                        </span>
+                        <span className="mt-[2px] text-[calc(12*var(--u))] font-medium text-[#51474E]">
+                          Mesin
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 space-y-[calc(10*var(--u))]">
+                    {monitoringData.map((item) => (
+                      <div
+                        key={item.label}
+                        className="grid min-w-0 grid-cols-[calc(11*var(--u))_minmax(0,1fr)_auto_auto] items-center gap-[calc(5*var(--u))]"
                       >
-                        {month}
-                        {selectedMonth === month && <Check size={16} />}
-                      </button>
+                        <span
+                          className="h-[calc(11*var(--u))] w-[calc(11*var(--u))] rounded-[3px]"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="min-w-0 truncate text-[calc(12*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                          {item.label}
+                        </span>
+                        <span className="whitespace-nowrap text-[calc(11.5*var(--u))] text-[#51474E]">
+                          {item.value} Mesin
+                        </span>
+                        <span
+                          className={`min-w-[calc(36*var(--u))] rounded-full px-[calc(6*var(--u))] py-[calc(2.5*var(--u))] text-center text-[calc(10.5*var(--u))] font-bold ${item.badge}`}
+                        >
+                          {item.percentage}%
+                        </span>
+                      </div>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
-
-            <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
-              <ShimmerOverlay active={showPwaShimmer} />
-              <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[calc(10*var(--u))]">
-                <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[calc(10*var(--u))]">
-                  <div
-                    className="relative aspect-square w-full max-w-[calc(114*var(--u))] rounded-full"
-                    style={{
-                      background:
-                        "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
-                    }}
-                    role="img"
-                    aria-label="48 mesin"
-                  >
-                    <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
-                      <span className="font-display text-[calc(30*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
-                        48
-                      </span>
-                      <span className="mt-[2px] text-[calc(12*var(--u))] font-medium text-[#51474E]">
-                        Mesin
-                      </span>
-                    </div>
-                  </div>
                 </div>
+              </MobileCard>
+            </section>
 
-                <div className="min-w-0 space-y-[calc(10*var(--u))]">
-                  {monitoringData.map((item) => (
-                    <div
-                      key={item.label}
-                      className="grid min-w-0 grid-cols-[calc(11*var(--u))_minmax(0,1fr)_auto_auto] items-center gap-[calc(5*var(--u))]"
-                    >
-                      <span
-                        className="h-[calc(11*var(--u))] w-[calc(11*var(--u))] rounded-[3px]"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="min-w-0 truncate text-[calc(12*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
-                        {item.label}
-                      </span>
-                      <span className="whitespace-nowrap text-[calc(11.5*var(--u))] text-[#51474E]">
-                        {item.value} Mesin
-                      </span>
-                      <span
-                        className={`min-w-[calc(36*var(--u))] rounded-full px-[calc(6*var(--u))] py-[calc(2.5*var(--u))] text-center text-[calc(10.5*var(--u))] font-bold ${item.badge}`}
-                      >
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  ))}
+            {/* 2. Kunjungan Bulan Ini */}
+            <section className="min-w-0">
+              <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
+                <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
+                <div className="flex shrink-0 items-center gap-[calc(5*var(--u))]">
+                  <Target
+                    strokeWidth={2.3}
+                    className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#C81032]"
+                  />
+                  <span className="whitespace-nowrap text-[calc(12*var(--u))] font-medium text-[#29232A]">
+                    Target: 40 Kunjungan
+                  </span>
                 </div>
               </div>
-            </MobileCard>
-          </section>
 
-          {/* 2. Kunjungan Bulan Ini */}
-          <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
-              <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
-              <div className="flex shrink-0 items-center gap-[calc(5*var(--u))]">
-                <Target
-                  strokeWidth={2.3}
-                  className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#C81032]"
-                />
-                <span className="whitespace-nowrap text-[calc(12*var(--u))] font-medium text-[#29232A]">
-                  Target: 40 Kunjungan
-                </span>
-              </div>
-            </div>
-
-            <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
-              <ShimmerOverlay active={showPwaShimmer} />
-              <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
-                <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
-                  <p className="font-display text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
-                    32
-                  </p>
-                  <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
-                    Total Kunjungan
-                  </p>
-                </div>
-
-                <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[4px]">
-                  <div className="min-w-0">
-                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3.5*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
-                      <TrendingUp
-                        strokeWidth={2.5}
-                        className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
-                      />{" "}
-                      +14%
-                    </span>
-                    <p className="mt-[calc(5*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#3F3A42]">
-                      Dibanding bulan lalu
-                      <br />
-                      (28 kunjungan)
+              <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
+                <ShimmerOverlay active={showPwaShimmer} />
+                <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
+                  <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
+                    <p className="font-display text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+                      32
+                    </p>
+                    <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
+                      Total Kunjungan
                     </p>
                   </div>
 
-                  <div className="flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
-                    <Image
-                      src="/images/moku/illustrations/dashboard-activity.png"
-                      alt="Ilustrasi checklist kunjungan"
-                      width={240}
-                      height={240}
-                      className="h-full w-full object-contain"
-                      sizes="110px"
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[4px]">
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3.5*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
+                        <TrendingUp
+                          strokeWidth={2.5}
+                          className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
+                        />{" "}
+                        +14%
+                      </span>
+                      <p className="mt-[calc(5*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#3F3A42]">
+                        Dibanding bulan lalu
+                        <br />
+                        (28 kunjungan)
+                      </p>
+                    </div>
+
+                    <div className="flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
+                      <Image
+                        src="/images/moku/illustrations/dashboard-activity.png"
+                        alt="Ilustrasi checklist kunjungan"
+                        width={240}
+                        height={240}
+                        className="h-full w-full object-contain"
+                        sizes="110px"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-[calc(8*var(--u))]">
+                  <div className="mb-[calc(4.5*var(--u))] flex items-center justify-between">
+                    <p className="text-[calc(12.5*var(--u))] font-bold text-[#171717]">
+                      Pencapaian Target
+                    </p>
+                    <p className="font-display text-[calc(12.5*var(--u))] font-extrabold text-[#111111]">
+                      80%
+                    </p>
+                  </div>
+                  <div className="h-[calc(9*var(--u))] overflow-hidden rounded-full bg-[#EAEAEF]">
+                    <div
+                      className="h-full rounded-full bg-[#8E001C]"
+                      style={{ width: "80%" }}
                     />
                   </div>
                 </div>
+              </MobileCard>
+            </section>
+
+            {/* 3. Aksi Cepat */}
+            <section className="min-w-0">
+              <div className="px-[2px]">
+                <SectionTitle>Aksi Cepat</SectionTitle>
               </div>
 
-              <div className="mt-[calc(8*var(--u))]">
-                <div className="mb-[calc(4.5*var(--u))] flex items-center justify-between">
-                  <p className="text-[calc(12.5*var(--u))] font-bold text-[#171717]">
-                    Pencapaian Target
-                  </p>
-                  <p className="font-display text-[calc(12.5*var(--u))] font-extrabold text-[#111111]">
-                    80%
-                  </p>
-                </div>
-                <div className="h-[calc(9*var(--u))] overflow-hidden rounded-full bg-[#EAEAEF]">
-                  <div
-                    className="h-full rounded-full bg-[#8E001C]"
-                    style={{ width: "80%" }}
-                  />
-                </div>
-              </div>
-            </MobileCard>
-          </section>
-
-          {/* 3. Aksi Cepat */}
-          <section className="min-w-0">
-            <div className="px-[2px]">
-              <SectionTitle>Aksi Cepat</SectionTitle>
-            </div>
-
-            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(12*var(--u))]">
-              <div className="grid grid-cols-4">
-                <QuickAction
-                  href="/visits"
-                  label={
-                    <>
-                      Kunjungan
-                      <br />
-                      Baru
-                    </>
-                  }
-                >
-                  <Plus
-                    strokeWidth={2.5}
-                    className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
-                  />
-                </QuickAction>
-
-                <QuickAction
-                  href="/equipment"
-                  separated
-                  label={
-                    <>
-                      Tambah
-                      <br />
-                      Mesin
-                    </>
-                  }
-                >
-                  <Printer
-                    strokeWidth={2.1}
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  />
-                </QuickAction>
-
-                <QuickAction href="/reports" separated label="Laporan">
-                  <ChartNoAxesColumn
-                    strokeWidth={2.2}
-                    className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
-                  />
-                </QuickAction>
-
-                <QuickAction
-                  href="/reports/export"
-                  separated
-                  label={
-                    <>
-                      Unduh
-                      <br />
-                      Laporan
-                    </>
-                  }
-                >
-                  <Download
-                    strokeWidth={2.2}
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  />
-                </QuickAction>
-              </div>
-            </MobileCard>
-          </section>
-
-          {/* 4. Mesin Perlu Perhatian */}
-          <Link
-            href="/monitoring"
-            className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)]"
-          >
-            <ShimmerOverlay active={showPwaShimmer} />
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-[calc(5*var(--u))] bg-[#8E001C]"
-            />
-
-            <AlertTriangle
-              strokeWidth={2.1}
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F27B13]"
-            />
-
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
-                Mesin Perlu Perhatian
-              </p>
-              <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#5E5863]">
-                4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
-                tindak lanjut.
-              </p>
-            </div>
-
-            <ChevronRight
-              strokeWidth={2.5}
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#C81032]"
-            />
-          </Link>
-
-          {/* 5. Aktivitas Terbaru */}
-          <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
-              <SectionTitle>Aktivitas Terbaru</SectionTitle>
-              <Link
-                href="/visit-history"
-                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032]"
-              >
-                Lihat Semua
-                <ChevronRight
-                  strokeWidth={2.5}
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
-                />
-              </Link>
-            </div>
-
-            <MobileCard className="relative mt-[calc(8*var(--u))] divide-y divide-[#EFEFF2] overflow-hidden px-[calc(12*var(--u))]">
-              <ShimmerOverlay active={showPwaShimmer} />
-              {recentActivities.map((activity, index) => (
-                <div
-                  key={`${activity.machine}-${index}`}
-                  className="flex min-h-[calc(60*var(--u))] min-w-0 items-center gap-[calc(10*var(--u))] py-[calc(9*var(--u))]"
-                >
-                  <div
-                    className={`flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full ${
-                      activity.status === "success"
-                        ? "bg-[#E2F7E9] text-[#1D9A4E]"
-                        : "bg-[#F3F3F5] text-[#C81032]"
-                    }`}
+              <MobileCard className="mt-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(12*var(--u))]">
+                <div className="grid grid-cols-4">
+                  <QuickAction
+                    href="/visits"
+                    label={
+                      <>
+                        Kunjungan
+                        <br />
+                        Baru
+                      </>
+                    }
                   >
-                    {activity.status === "success" ? (
-                      <Check
-                        strokeWidth={2.8}
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                      />
-                    ) : (
-                      <Clock3
-                        strokeWidth={2.3}
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                      />
-                    )}
-                  </div>
+                    <Plus
+                      strokeWidth={2.5}
+                      className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+                    />
+                  </QuickAction>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[calc(13.5*var(--u))] font-bold leading-tight text-[#171717]">
-                      {activity.title}
-                    </p>
-                    <p className="mt-[calc(3*var(--u))] truncate text-[calc(11.5*var(--u))] leading-tight text-[#6E6873]">
-                      {activity.machine} • {activity.customer}
-                    </p>
-                  </div>
+                  <QuickAction
+                    href="/equipment"
+                    separated
+                    label={
+                      <>
+                        Tambah
+                        <br />
+                        Mesin
+                      </>
+                    }
+                  >
+                    <Printer
+                      strokeWidth={2.1}
+                      className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                    />
+                  </QuickAction>
 
-                  <span className="shrink-0 whitespace-nowrap text-[calc(11.5*var(--u))] font-semibold text-[#5E5863]">
-                    {activity.time}
-                  </span>
+                  <QuickAction href="/reports" separated label="Laporan">
+                    <ChartNoAxesColumn
+                      strokeWidth={2.2}
+                      className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
+                    />
+                  </QuickAction>
+
+                  <QuickAction
+                    href="/reports/export"
+                    separated
+                    label={
+                      <>
+                        Unduh
+                        <br />
+                        Laporan
+                      </>
+                    }
+                  >
+                    <Download
+                      strokeWidth={2.2}
+                      className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                    />
+                  </QuickAction>
                 </div>
-              ))}
-            </MobileCard>
-          </section>
+              </MobileCard>
+            </section>
 
-          {/* Footer */}
-          <div className="pb-[calc(12*var(--u))] pt-[calc(4*var(--u))] text-center">
-            <p className="text-[calc(10*var(--u))] text-[#A39AA0]">
-              MOKU — Monitoring Operasional Kunjungan Unit
-            </p>
-            <p className="mt-[calc(4*var(--u))] text-[calc(10*var(--u))] text-[#B3ABB0]">
-              Track Precisely, Deliver Quality
-            </p>
+            {/* 4. Mesin Perlu Perhatian */}
+            <Link
+              href="/monitoring"
+              className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)]"
+            >
+              <ShimmerOverlay active={showPwaShimmer} />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-0 w-[calc(5*var(--u))] bg-[#8E001C]"
+              />
+
+              <AlertTriangle
+                strokeWidth={2.1}
+                className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F27B13]"
+              />
+
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
+                  Mesin Perlu Perhatian
+                </p>
+                <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#5E5863]">
+                  4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
+                  tindak lanjut.
+                </p>
+              </div>
+
+              <ChevronRight
+                strokeWidth={2.5}
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#C81032]"
+              />
+            </Link>
+
+            {/* 5. Aktivitas Terbaru */}
+            <section className="min-w-0">
+              <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
+                <SectionTitle>Aktivitas Terbaru</SectionTitle>
+                <Link
+                  href="/visit-history"
+                  className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032]"
+                >
+                  Lihat Semua
+                  <ChevronRight
+                    strokeWidth={2.5}
+                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
+                  />
+                </Link>
+              </div>
+
+              <MobileCard className="relative mt-[calc(8*var(--u))] divide-y divide-[#EFEFF2] overflow-hidden px-[calc(12*var(--u))]">
+                <ShimmerOverlay active={showPwaShimmer} />
+                {recentActivities.map((activity, index) => (
+                  <div
+                    key={`${activity.machine}-${index}`}
+                    className="flex min-h-[calc(60*var(--u))] min-w-0 items-center gap-[calc(10*var(--u))] py-[calc(9*var(--u))]"
+                  >
+                    <div
+                      className={`flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full ${
+                        activity.status === "success"
+                          ? "bg-[#E2F7E9] text-[#1D9A4E]"
+                          : "bg-[#F3F3F5] text-[#C81032]"
+                      }`}
+                    >
+                      {activity.status === "success" ? (
+                        <Check
+                          strokeWidth={2.8}
+                          className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                        />
+                      ) : (
+                        <Clock3
+                          strokeWidth={2.3}
+                          className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                        />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[calc(13.5*var(--u))] font-bold leading-tight text-[#171717]">
+                        {activity.title}
+                      </p>
+                      <p className="mt-[calc(3*var(--u))] truncate text-[calc(11.5*var(--u))] leading-tight text-[#6E6873]">
+                        {activity.machine} • {activity.customer}
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 whitespace-nowrap text-[calc(11.5*var(--u))] font-semibold text-[#5E5863]">
+                      {activity.time}
+                    </span>
+                  </div>
+                ))}
+              </MobileCard>
+            </section>
+
+            {/* Footer */}
+            <div className="pb-[calc(12*var(--u))] pt-[calc(4*var(--u))] text-center">
+              <p className="text-[calc(10*var(--u))] text-[#A39AA0]">
+                MOKU — Monitoring Operasional Kunjungan Unit
+              </p>
+              <p className="mt-[calc(4*var(--u))] text-[calc(10*var(--u))] text-[#B3ABB0]">
+                Track Precisely, Deliver Quality
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1319,4 +1403,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+              }
