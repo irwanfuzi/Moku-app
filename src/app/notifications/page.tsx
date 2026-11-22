@@ -76,7 +76,7 @@ const visitTypeLabels: Record<string, string> = {
 };
 
 const MOBILE_SCALE_VARS = {
-  "--u": "clamp(0.76px, min(0.2427vw, 0.22dvh), 1.04px)",
+  "--u": "clamp(0.78px, min(0.2427vw, 0.22dvh), 1.05px)",
 } as CSSProperties;
 
 /* =========================================================
@@ -89,7 +89,8 @@ function getMobileBadgeStyle(item: NotificationItem) {
   if (
     item.type === "monitoring" ||
     title.includes("perhatian") ||
-    title.includes("peringatan")
+    title.includes("peringatan") ||
+    title.includes("belum dikunjungi")
   ) {
     return {
       Icon: Warning,
@@ -104,7 +105,7 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: CalendarBlank,
-      circleClass: "bg-[#FADEE3] text-[#DC0E2E]",
+      circleClass: "bg-[#FADCE1] text-[#DC0E2E]",
     };
   }
 
@@ -115,11 +116,11 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: ChartBar,
-      circleClass: "bg-[#FADEE3] text-[#DC0E2E]",
+      circleClass: "bg-[#FADCE1] text-[#DC0E2E]",
     };
   }
 
-  if (item.type === "visit" || title.includes("selesai")) {
+  if (item.type === "visit" || title.includes("selesai") || title.includes("dicatat")) {
     return {
       Icon: CheckCircle,
       circleClass: "bg-[#DCF5E3] text-[#14AE47]",
@@ -130,7 +131,9 @@ function getMobileBadgeStyle(item: NotificationItem) {
     item.type === "equipment" ||
     item.type === "customer" ||
     title.includes("pembaruan") ||
-    title.includes("diperbarui")
+    title.includes("diperbarui") ||
+    title.includes("ditambahkan") ||
+    title.includes("dinonaktifkan")
   ) {
     return {
       Icon: Info,
@@ -140,7 +143,7 @@ function getMobileBadgeStyle(item: NotificationItem) {
 
   return {
     Icon: iconMap[item.type] ?? Bell,
-    circleClass: "bg-[#FADEE3] text-[#8E001C]",
+    circleClass: "bg-[#FADCE1] text-[#8E001C]",
   };
 }
 
@@ -591,7 +594,6 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
     message: string;
@@ -613,7 +615,6 @@ export default function NotificationsPage() {
   const swipeOffsetRef = useRef<Record<string, number>>({});
   const longPressTimerRef = useRef<number | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
-  const leaveTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
@@ -871,7 +872,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     NATIVE SLIDE-OUT BACK NAVIGATION (LIKE VIDEO REFERENCE)
+     BACK NAVIGATION (TRIGGERS APP SHELL BACKWARD TRANSITION)
   ======================================================= */
 
   const handleBack = () => {
@@ -880,16 +881,11 @@ export default function NotificationsPage() {
       return;
     }
 
-    if (isLeaving) return;
-
-    setIsLeaving(true);
-    leaveTimerRef.current = window.setTimeout(() => {
-      if (typeof window !== "undefined" && window.history.length > 1) {
-        router.back();
-      } else {
-        router.push("/");
-      }
-    }, 200);
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
   };
 
   /* =======================================================
@@ -1067,42 +1063,43 @@ export default function NotificationsPage() {
       if (deleteTimerRef.current !== null) {
         window.clearTimeout(deleteTimerRef.current);
       }
-      if (leaveTimerRef.current !== null) {
-        window.clearTimeout(leaveTimerRef.current);
-      }
     };
   }, []);
 
   /* =======================================================
-     MOBILE SUB-PAGE VIEW (PWA & MOBILE BROWSER, PORTRAIT & LANDSCAPE)
+     MOBILE SUB-PAGE VIEW (MATCHING 1000206788.png)
   ======================================================= */
 
   if (isMobileView) {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className={`min-h-dvh w-full min-w-0 overflow-x-clip bg-[#F8F8FA] pb-[calc(32*var(--u)+env(safe-area-inset-bottom))] transition-transform duration-200 ease-out ${
-          isLeaving ? "translate-x-full opacity-95" : "translate-x-0 opacity-100"
-        }`}
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#F8F8FA] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
       >
-        {/* Sticky Sub-Page Header (Menyatu dengan Status Bar Marun) */}
+        {/* Solid Maroon Header with Curved Sheet Overlap */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
-          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(26*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
+          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(32*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
             <div className="flex min-w-0 items-center gap-[calc(10*var(--u))]">
               <button
                 type="button"
                 onClick={handleBack}
                 aria-label={isSelectionMode ? "Batalkan pilihan" : "Kembali"}
-                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors active:bg-white/15"
+                className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors active:bg-white/15"
               >
                 {isSelectionMode ? (
-                  <X className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]" weight="bold" />
+                  <X
+                    className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+                    weight="bold"
+                  />
                 ) : (
-                  <ArrowLeft className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]" weight="bold" />
+                  <ArrowLeft
+                    className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+                    weight="bold"
+                  />
                 )}
               </button>
 
-              <h1 className="truncate font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
+              <h1 className="truncate font-display text-[calc(19.5*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
                 {isSelectionMode ? `${selectedCount} Dipilih` : "Notifikasi"}
               </h1>
             </div>
@@ -1120,15 +1117,15 @@ export default function NotificationsPage() {
         </header>
 
         {/* Curved White/Off-White Sheet Container */}
-        <div className="relative z-10 -mt-[calc(16*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-[#F8F8FA] pt-[calc(18*var(--u))]">
+        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(26*var(--u))] bg-[#F8F8FA] pt-[calc(20*var(--u))]">
           <div className="mx-auto w-full max-w-[680px] px-[calc(16*var(--u))]">
             {notifications.length > 0 ? (
-              <div className="space-y-[calc(20*var(--u))]">
+              <div className="space-y-[calc(22*var(--u))]">
                 {groupedNotifications.map((group, groupIndex) => (
                   <section key={group.label} className="min-w-0">
                     {/* Group Header */}
                     <div className="mb-[calc(10*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
-                      <h2 className="font-display text-[calc(15*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                      <h2 className="font-display text-[calc(15.5*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
                         {group.label}
                       </h2>
 
@@ -1144,7 +1141,7 @@ export default function NotificationsPage() {
                     </div>
 
                     {/* Group Cards */}
-                    <div className="space-y-[calc(10*var(--u))]">
+                    <div className="space-y-[calc(11*var(--u))]">
                       {group.items.map((item) => {
                         const isSelected = selectedIds.includes(item.id);
                         const isExiting = exitingIds.includes(item.id);
@@ -1188,12 +1185,12 @@ export default function NotificationsPage() {
                                 handleTouchCancel(item.id)
                               }
                               onContextMenu={(event) => event.preventDefault()}
-                              className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(13*var(--u))] rounded-[calc(18*var(--u))] px-[calc(14*var(--u))] py-[calc(13*var(--u))] shadow-[0_1px_3px_rgba(41,35,42,0.03)] transition-colors ${
+                              className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(14*var(--u))] rounded-[calc(18*var(--u))] px-[calc(15*var(--u))] py-[calc(14*var(--u))] transition-colors ${
                                 isSelected
-                                  ? "bg-[#FCECEF] ring-1 ring-[#8E001C]/35"
+                                  ? "bg-[#FADCE1] ring-1 ring-[#8E001C]/40"
                                   : !item.isRead
-                                    ? "bg-[#FDF3F5]"
-                                    : "bg-white"
+                                    ? "bg-[#FBECEF] shadow-[0_1px_3px_rgba(131,5,28,0.04)]"
+                                    : "border border-[#EFEFF2] bg-white shadow-[0_1px_4px_rgba(23,23,23,0.035)]"
                               }`}
                               style={{
                                 transform: `translate3d(${swipeOffset}px, 0, 0)`,
@@ -1208,7 +1205,7 @@ export default function NotificationsPage() {
                             >
                               {/* Leading Icon / Checkbox */}
                               {isSelectionMode ? (
-                                <div className="mt-[calc(2*var(--u))] flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 animate-selection-in items-center justify-center">
+                                <div className="mt-[calc(2*var(--u))] flex h-[calc(46*var(--u))] w-[calc(46*var(--u))] shrink-0 animate-selection-in items-center justify-center">
                                   <MokuCheckbox
                                     checked={isSelected}
                                     onChange={() => toggleSelection(item.id)}
@@ -1218,10 +1215,10 @@ export default function NotificationsPage() {
                                 </div>
                               ) : (
                                 <div
-                                  className={`mt-[calc(1*var(--u))] flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-full ${circleClass}`}
+                                  className={`mt-[calc(1*var(--u))] flex h-[calc(46*var(--u))] w-[calc(46*var(--u))] shrink-0 items-center justify-center rounded-full ${circleClass}`}
                                 >
                                   <Icon
-                                    className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+                                    className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
                                     weight="bold"
                                   />
                                 </div>
@@ -1236,11 +1233,11 @@ export default function NotificationsPage() {
                                 className="flex min-w-0 flex-1 flex-col outline-none"
                               >
                                 <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
-                                  <p className="min-w-0 flex-1 truncate font-display text-[calc(14.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
+                                  <p className="min-w-0 flex-1 truncate font-display text-[calc(15*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
                                     {item.title}
                                   </p>
 
-                                  <div className="flex shrink-0 items-center gap-[calc(6*var(--u))] pt-[calc(1*var(--u))]">
+                                  <div className="flex shrink-0 items-center gap-[calc(6*var(--u))] pt-[calc(1.5*var(--u))]">
                                     <span className="whitespace-nowrap text-[calc(12*var(--u))] font-medium tabular-nums text-[#5A555F]">
                                       {displayTime}
                                     </span>
@@ -1255,7 +1252,7 @@ export default function NotificationsPage() {
                                 </div>
 
                                 {subtitle && (
-                                  <p className="mt-[calc(4*var(--u))] line-clamp-2 text-[calc(12.5*var(--u))] leading-[1.38] text-[#3F3A42]">
+                                  <p className="mt-[calc(4.5*var(--u))] line-clamp-2 pr-[calc(12*var(--u))] text-[calc(12.5*var(--u))] leading-[1.4] text-[#3F3A42]">
                                     {subtitle}
                                   </p>
                                 )}
@@ -1307,7 +1304,7 @@ export default function NotificationsPage() {
 
         {/* MOBILE FLOATING SELECTION BAR */}
         {isSelectionMode && selectedCount > 0 && (
-          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between rounded-2xl border border-[#E8E9ED] bg-white px-4 py-2.5 shadow-xl">
+          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between rounded-2xl border border-[#E8E9ED] bg-white px-4 py-2.5 shadow-xl">
             <span className="text-xs font-bold text-[#8E001C]">
               {selectedCount} dipilih
             </span>
@@ -1839,4 +1836,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-      }
+    }
