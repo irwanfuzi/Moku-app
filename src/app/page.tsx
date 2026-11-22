@@ -50,29 +50,38 @@ const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
 
-// Top bar & status bar digerakkan oleh SATU animasi (requestAnimationFrame) yang
-// menulis warna ke meta theme-color dan ke background top bar di frame yang sama.
-// Animasi berbasis waktu (bukan jarak scroll), dipicu sekali saat melewati ambang.
-const SCROLL_ON = 14; // di atas ini -> menuju putih
-const SCROLL_OFF = 4; // di bawah ini -> kembali ke marun (histeresis)
-const TWEEN_MS = 260;
+// Top bar & status bar mengikuti posisi scroll (scroll-linked), dua arah,
+// ditulis ke DOM di frame yang sama (tanpa re-render React).
+// Hasil ukur dari rekaman PWA MOKU: status bar hanya punya 2 nilai (marun/putih),
+// tidak pernah warna di tengah, walau theme-color ditulis tiap frame. Jadi default-nya
+// bar dibuat berganti cepat di titik yang sama dengan status bar.
+// Ubah ke true HANYA jika status bar terbukti mengikuti warna bertahap
+// (mis. setelah mode edge-to-edge aktif dan status bar transparan).
+const STATUS_BAR_FOLLOWS_COLOR = false;
+const SCROLL_START = 4; // px: mulai berubah
+const SCROLL_RANGE = 72; // px: panjang transisi marun <-> putih
 
 const THEME_FROM = [0x83, 0x05, 0x1c]; // #83051C
 const THEME_TO = [0xff, 0xff, 0xff]; // #FFFFFF
 const THEME_TOP = "#83051C";
 
+function clamp01(v: number) {
+  return Math.min(1, Math.max(0, v));
+}
+
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = clamp01((x - edge0) / (edge1 - edge0));
+  return t * t * (3 - 2 * t);
+}
+
 function mixThemeColor(t: number) {
-  const k = Math.min(1, Math.max(0, t));
+  const k = clamp01(t);
   const hex = THEME_FROM.map((from, i) =>
     Math.round(from + (THEME_TO[i] - from) * k)
       .toString(16)
       .padStart(2, "0")
   ).join("");
   return `#${hex.toUpperCase()}`;
-}
-
-function easeInOut(k: number) {
-  return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
 }
 
 /* =========================================================
@@ -677,13 +686,12 @@ function MobileDashboard() {
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
-  const scrolledRef = useRef(false);
   const lastThemeColorRef = useRef(THEME_TOP);
   const barRef = useRef<HTMLDivElement | null>(null);
-  const tweenRef = useRef<{ value: number; raf: number | null }>({
-    value: 0,
-    raf: null,
-  });
+  const pwaRef = useRef(false);
+  const statusWhiteRef = useRef(false);
+  const whiteStateRef = useRef(false);
+  const syncBarRef = useRef<() => void>(() => {});
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
@@ -705,23 +713,60 @@ function MobileDashboard() {
           0
       );
 
+    const applyProgress = (p: number) => {
+      const pwa = STATUS_BAR_FOLLOWS_COLOR;
+      let barP = p;
+      let statusP = p;
+
+      if (!pwa) {
+        // Tab browser: status bar biner (histeresis), bar berganti cepat di titik yang sama
+        if (p >= 0.54) statusWhiteRef.current = true;
+        else if (p <= 0.46) statusWhiteRef.current = false;
+        statusP = statusWhiteRef.current ? 1 : 0;
+        barP = smoothstep(0.38, 0.62, p);
+      }
+
+      // top bar + isi (lewat CSS variable)
+      const bar = barRef.current;
+      if (bar) {
+        const color = mixThemeColor(barP);
+        bar.style.backgroundColor = color;
+        bar.style.setProperty("--p", barP.toFixed(3));
+        bar.style.setProperty("--bar", color);
+      }
+
+      // status bar, di frame yang sama
+      const statusColor = mixThemeColor(statusP);
+      if (lastThemeColorRef.current !== statusColor) {
+        lastThemeColorRef.current = statusColor;
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+          meta = document.createElement("meta");
+          meta.setAttribute("name", "theme-color");
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute("content", statusColor);
+      }
+
+      const white = barP > 0.5;
+      if (white !== whiteStateRef.current) {
+        whiteStateRef.current = white;
+        setIsScrolled(white);
+      }
+    };
+
     const updateProgress = () => {
       rafRef.current = null;
-      const scrollTop = getScrollTop();
       const busy =
         isPullingRef.current ||
         pullDistanceRef.current > 0 ||
         isRefreshingRef.current;
-
-      let next = scrolledRef.current;
-      if (busy || scrollTop <= SCROLL_OFF) next = false;
-      else if (scrollTop >= SCROLL_ON) next = true;
-
-      if (next !== scrolledRef.current) {
-        scrolledRef.current = next;
-        setIsScrolled(next);
-      }
+      const p = busy
+        ? 0
+        : clamp01((getScrollTop() - SCROLL_START) / SCROLL_RANGE);
+      applyProgress(p);
     };
+    syncBarRef.current = updateProgress;
 
     const onScroll = () => {
       if (rafRef.current === null) {
@@ -743,60 +788,17 @@ function MobileDashboard() {
     };
   }, []);
 
-  /* Satu animasi untuk status bar (theme-color) + top bar (background & isi) */
-  const scrolled = isScrolled && pullDistance === 0 && !isRefreshing;
-
   useEffect(() => {
-    const state = tweenRef.current;
-    const target = scrolled ? 1 : 0;
-    const from = state.value;
-    const start = performance.now();
-    const duration = Math.max(1, TWEEN_MS * Math.abs(target - from));
+    pwaRef.current = isPwaMode;
+    syncBarRef.current();
+  }, [isPwaMode]);
 
-    const apply = (v: number) => {
-      state.value = v;
-      const color = mixThemeColor(v);
+  // pull-to-refresh / refresh: bar kembali marun; setelah selesai ikut posisi scroll
+  useEffect(() => {
+    syncBarRef.current();
+  }, [isRefreshing, pullDistance > 0]);
 
-      // 1) top bar (+ isi lewat CSS variable)
-      const bar = barRef.current;
-      if (bar) {
-        bar.style.backgroundColor = color;
-        bar.style.setProperty("--p", v.toFixed(3));
-        bar.style.setProperty("--bar", color);
-      }
-
-      // 2) status bar, di frame yang sama
-      if (lastThemeColorRef.current !== color) {
-        lastThemeColorRef.current = color;
-        let meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) {
-          meta = document.createElement("meta");
-          meta.setAttribute("name", "theme-color");
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute("content", color);
-      }
-    };
-
-    const step = (now: number) => {
-      const k = Math.min(1, (now - start) / duration);
-      apply(from + (target - from) * easeInOut(k));
-      state.raf = k < 1 ? window.requestAnimationFrame(step) : null;
-    };
-
-    if (from === target) {
-      apply(target);
-    } else {
-      state.raf = window.requestAnimationFrame(step);
-    }
-
-    return () => {
-      if (state.raf !== null) {
-        window.cancelAnimationFrame(state.raf);
-        state.raf = null;
-      }
-    };
-  }, [scrolled]);
+  const scrolled = isScrolled;
 
   /* Native non-passive touch listeners dengan kurva elastis & gestur naik-turun mulus */
   useEffect(() => {
@@ -1495,4 +1497,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+    }
