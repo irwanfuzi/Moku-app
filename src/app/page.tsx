@@ -145,8 +145,13 @@ const desktopVisitChart = [
 ];
 
 /* =========================================================
-   SHARED COMPONENTS
+   HELPERS & SHARED COMPONENTS
 ========================================================= */
+function formatGreetingName(fullName: string) {
+  const words = fullName.trim().split(/\s+/);
+  return words.slice(0, 2).join(" ");
+}
+
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <h2 className="min-w-0 whitespace-nowrap text-[calc(17.5*var(--u))] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
@@ -655,6 +660,7 @@ function MobileDashboard() {
   }, []);
 
   const isCondensed = scrollProgress > 0.5;
+  const userName = "Budi Santoso";
 
   return (
     <main
@@ -662,25 +668,21 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Sticky Compact Top Bar (h-0 overflow-visible -> tanpa garis putih di atas header) */}
+        {/* Sticky Compact Top Bar (Putih murni #FFFFFF sama dengan status bar, ramping, & ikon sama tinggi) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
-              backgroundColor: `rgba(255, 255, 255, ${scrollProgress * 0.96})`,
+              backgroundColor: `rgba(255, 255, 255, ${scrollProgress})`,
               borderBottomColor: `rgba(236, 236, 239, ${scrollProgress})`,
-              boxShadow: `0 2px 12px rgba(0, 0, 0, ${scrollProgress * 0.06})`,
-              backdropFilter:
-                scrollProgress > 0.05
-                  ? `blur(${Math.round(scrollProgress * 12)}px)`
-                  : "none",
+              boxShadow: `0 1px 8px rgba(0, 0, 0, ${scrollProgress * 0.05})`,
             }}
-            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))] will-change-[background-color,box-shadow]"
+            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow]"
           >
-            {/* Left: Full Logo -> Morphs smoothly to App Icon */}
+            {/* Left: Full Logo -> Morphs smoothly to App Icon (sama tinggi dengan lonceng) */}
             <Link
               href="/"
               aria-label="MOKU Dashboard"
-              className="relative flex h-[calc(34*var(--u))] items-center"
+              className="relative flex h-[calc(28*var(--u))] items-center"
             >
               <Image
                 src="/images/moku/brand/moku-logo.png"
@@ -690,7 +692,7 @@ function MobileDashboard() {
                 priority
                 style={{
                   opacity: 1 - scrollProgress,
-                  transform: `scale(${1 - scrollProgress * 0.22})`,
+                  transform: `scale(${1 - scrollProgress * 0.2})`,
                 }}
                 className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
                   isCondensed ? "pointer-events-none" : ""
@@ -701,9 +703,9 @@ function MobileDashboard() {
               <span
                 style={{
                   opacity: scrollProgress,
-                  transform: `scale(${0.76 + scrollProgress * 0.24})`,
+                  transform: `scale(${0.78 + scrollProgress * 0.22})`,
                 }}
-                className={`absolute left-0 flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center will-change-[opacity,transform] ${
+                className={`absolute left-0 flex h-[calc(23*var(--u))] w-[calc(23*var(--u))] items-center justify-center will-change-[opacity,transform] ${
                   isCondensed ? "" : "pointer-events-none"
                 }`}
               >
@@ -713,28 +715,28 @@ function MobileDashboard() {
                   width={64}
                   height={64}
                   className="h-full w-full object-contain"
-                  sizes="36px"
+                  sizes="32px"
                 />
               </span>
             </Link>
 
             {/* Right: Notification Bell */}
-            <div className="relative flex h-[calc(34*var(--u))] items-center">
+            <div className="relative flex h-[calc(28*var(--u))] items-center">
               <button
                 type="button"
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full"
+                className="relative flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
                   style={{ opacity: 1 - scrollProgress }}
-                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))] text-white will-change-[opacity]"
+                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white will-change-[opacity]"
                   strokeWidth={1.85}
                 />
                 <Bell
                   style={{ opacity: scrollProgress }}
-                  className="absolute h-[calc(23*var(--u))] w-[calc(23*var(--u))] text-[#171717] will-change-[opacity]"
+                  className="absolute h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#171717] will-change-[opacity]"
                   strokeWidth={1.85}
                 />
 
@@ -742,12 +744,12 @@ function MobileDashboard() {
                   style={{
                     boxShadow: `0 0 0 ${scrollProgress * 2}px #FFFFFF`,
                   }}
-                  className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30]"
+                  className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30]"
                 />
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-[calc(38*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
+                <div className="absolute right-0 top-[calc(34*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold">Notifikasi</p>
                     <button
@@ -798,13 +800,13 @@ function MobileDashboard() {
             className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
-          {/* Greeting (kiri — judul & deskripsi 1 baris) */}
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(76*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(128*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(21*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
-              Halo, Budi
+          {/* Greeting (otomatis maks. 2 kata tanpa titik-titik + deskripsi 1 baris) */}
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(122*var(--u))]">
+            <h1 className="whitespace-nowrap text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
+              Halo, {formatGreetingName(userName)}
             </h1>
-            <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(11.5*var(--u))] font-normal leading-[1.35] text-white/85">
-              Ringkasan jadwal &amp; progres unit.
+            <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(10.5*var(--u))] font-normal leading-[1.35] tracking-[-0.015em] text-white/85">
+              Ringkasan operasional kunjungan unit.
             </p>
           </div>
 
