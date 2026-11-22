@@ -155,12 +155,10 @@ function MokuRobotIcon({ className = "" }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      {/* Top Crest / Antenna */}
       <path
         d="M14.5 9.5L16.2 5.2L20 7.6L23.8 5.2L25.5 9.5"
         fill="#F28C0F"
       />
-      {/* Outer Orange Ring */}
       <circle
         cx="20"
         cy="21.5"
@@ -169,15 +167,11 @@ function MokuRobotIcon({ className = "" }: { className?: string }) {
         stroke="#F28C0F"
         strokeWidth="3"
       />
-      {/* Side Ears */}
       <rect x="2.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
       <rect x="34.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
-      {/* Visor */}
       <rect x="10.5" y="16" width="19" height="10" rx="5" fill="#2A030B" />
-      {/* Glowing Eyes */}
       <circle cx="15.8" cy="21" r="2.1" fill="#FFFFFF" />
       <circle cx="24.2" cy="21" r="2.1" fill="#FFFFFF" />
-      {/* Smile / Mouth Accent */}
       <path
         d="M17.2 29.3C18.9 30.3 21.1 30.3 22.8 29.3"
         stroke="#F28C0F"
@@ -650,9 +644,15 @@ function MobileDashboard() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    const getScrollTop = () =>
+      window.scrollY ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
+
     const handleScroll = () => {
-      const threshold = Math.max(92, Math.min(window.innerHeight * 0.13, 128));
-      const nextScrolled = window.scrollY > threshold;
+      const threshold = Math.max(88, Math.min(window.innerHeight * 0.12, 124));
+      const nextScrolled = getScrollTop() > threshold;
       setIsScrolled(nextScrolled);
 
       const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -663,24 +663,32 @@ function MobileDashboard() {
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    document.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll, { capture: true });
+    };
   }, []);
 
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Sticky Compact Top Bar (Smooth morph: Full Logo -> Robot Icon + Notif) */}
+        {/* Sticky Compact Top Bar (Tetap lengket di atas saat di-scroll) */}
         <div
-          className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ease-out ${
+          className={`sticky top-0 z-40 -mb-[calc(52*var(--u)+env(safe-area-inset-top))] transition-all duration-300 ease-out ${
             isScrolled
               ? "border-b border-[#ECECEF] bg-white/95 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-md"
               : "border-b border-transparent bg-transparent"
           }`}
         >
-          <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))]">
+          <div className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))]">
             {/* Left: Full MOKU Logo -> Morphs smoothly to MOKU Robot Icon */}
             <Link
               href="/"
