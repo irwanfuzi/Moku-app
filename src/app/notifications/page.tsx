@@ -591,7 +591,9 @@ export default function NotificationsPage() {
   const router = useRouter();
   const { isMobile, isReady } = useAppLayout();
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
+    typeof window !== "undefined" ? loadNotifications() : []
+  );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
@@ -1836,4 +1838,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-    }
+}
