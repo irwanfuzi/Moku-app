@@ -674,7 +674,7 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 function MobileDashboard() {
-  const { isPWA } = useAppLayout();
+  const { isPWA, navigateWithTransition } = useAppLayout();
   const unreadCount = useUnreadNotificationCount();
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -987,6 +987,10 @@ function MobileDashboard() {
             <div className="relative mr-[calc(4*var(--u))] flex h-[calc(28*var(--u))] items-center">
               <Link
                 href="/notifications"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigateWithTransition("/notifications", "forward");
+                }}
                 aria-label={
                   unreadCount > 0
                     ? `Notifikasi (${unreadCount} belum dibaca)`
@@ -1434,4 +1438,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-    }
+}
