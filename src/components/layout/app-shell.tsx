@@ -560,7 +560,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           display: block;
         }
 
-        /* SMOOTH & WEIGHTED SLIDE TRANSITION */
+        /* FLICKER-FREE ROUTE TRANSITION */
         .page-transition {
           min-width: 0;
           will-change: transform, opacity;
@@ -585,21 +585,20 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="forward"] {
-          box-shadow: -12px 0 28px rgba(23, 23, 23, 0.14);
-          animation: moku-native-slide-in 380ms
+          animation: moku-native-slide-in 240ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="backward"] {
-          animation: moku-native-slide-back 340ms
+          animation: moku-native-slide-back 240ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         @keyframes moku-native-slide-in {
           from {
-            opacity: 0.96;
-            transform: translate3d(100%, 0, 0);
+            opacity: 0.92;
+            transform: translate3d(24px, 0, 0);
           }
 
           to {
@@ -611,7 +610,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         @keyframes moku-native-slide-back {
           from {
             opacity: 0.92;
-            transform: translate3d(-18%, 0, 0);
+            transform: translate3d(-24px, 0, 0);
           }
 
           to {
@@ -623,7 +622,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         @media (prefers-reduced-motion: reduce) {
           .page-transition {
             animation: none !important;
-            box-shadow: none !important;
           }
 
           .moku-main-layout {
