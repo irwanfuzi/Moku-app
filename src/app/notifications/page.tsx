@@ -11,7 +11,6 @@ import {
   type TouchEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { useAppLayout } from "@/components/layout/app-shell";
 
@@ -120,7 +119,11 @@ function getMobileBadgeStyle(item: NotificationItem) {
     };
   }
 
-  if (item.type === "visit" || title.includes("selesai") || title.includes("dicatat")) {
+  if (
+    item.type === "visit" ||
+    title.includes("selesai") ||
+    title.includes("dicatat")
+  ) {
     return {
       Icon: CheckCircle,
       circleClass: "bg-[#DCF5E3] text-[#14AE47]",
@@ -449,10 +452,7 @@ function getNotificationSubtitle(item: NotificationItem): string {
 
   const description = item.description?.trim();
 
-  if (
-    description &&
-    description.toLowerCase() !== title.trim()
-  ) {
+  if (description && description.toLowerCase() !== title.trim()) {
     return description;
   }
 
@@ -527,10 +527,7 @@ function EmptyNotificationWatermark() {
           fill="#BF0B2C"
         />
 
-        <path
-          d="M173 79L180 74L187 79V88H173V79Z"
-          fill="#FFFFFF"
-        />
+        <path d="M173 79L180 74L187 79V88H173V79Z" fill="#FFFFFF" />
 
         <path
           d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
@@ -588,8 +585,7 @@ function EmptyNotificationWatermark() {
 ========================================================= */
 
 export default function NotificationsPage() {
-  const router = useRouter();
-  const { isMobile, isReady } = useAppLayout();
+  const { isMobile, isReady, backWithTransition } = useAppLayout();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
     typeof window !== "undefined" ? loadNotifications() : []
@@ -800,37 +796,29 @@ export default function NotificationsPage() {
      DELETE & UNDO
   ======================================================= */
 
-  const finishDeletion = useCallback(
-    (ids: string[], message: string) => {
-      const deleted = deleteNotifications(ids);
+  const finishDeletion = useCallback((ids: string[], message: string) => {
+    const deleted = deleteNotifications(ids);
 
-      if (deleted.length === 0) return;
+    if (deleted.length === 0) return;
 
-      setSelectedIds((current) =>
-        current.filter((id) => !ids.includes(id))
-      );
+    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
 
-      setIsSelectionMode(false);
-      setSwipeOffsets({});
-      swipeOffsetRef.current = {};
-      setActiveSwipeId(null);
-      setExitingIds([]);
+    setIsSelectionMode(false);
+    setSwipeOffsets({});
+    swipeOffsetRef.current = {};
+    setActiveSwipeId(null);
+    setExitingIds([]);
 
-      setSnackbar({
-        message,
-        deleted,
-      });
-    },
-    []
-  );
+    setSnackbar({
+      message,
+      deleted,
+    });
+  }, []);
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
 
-    finishDeletion(
-      selectedIds,
-      `${selectedIds.length} notifikasi dihapus`
-    );
+    finishDeletion(selectedIds, `${selectedIds.length} notifikasi dihapus`);
   };
 
   const handleUndo = () => {
@@ -847,9 +835,7 @@ export default function NotificationsPage() {
 
       const latest = loadNotifications().map((item) => ({
         ...item,
-        isRead: undoMap.has(item.id)
-          ? undoMap.get(item.id)!
-          : item.isRead,
+        isRead: undoMap.has(item.id) ? undoMap.get(item.id)! : item.isRead,
       }));
 
       saveNotifications(latest);
@@ -874,7 +860,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     BACK NAVIGATION (TRIGGERS APP SHELL BACKWARD TRANSITION)
+     BACK NAVIGATION (VIEW TRANSITION ALA FLIP)
   ======================================================= */
 
   const handleBack = () => {
@@ -883,11 +869,7 @@ export default function NotificationsPage() {
       return;
     }
 
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+    backWithTransition("/");
   };
 
   /* =======================================================
@@ -958,10 +940,7 @@ export default function NotificationsPage() {
     }, 550);
   };
 
-  const handleTouchMove = (
-    event: TouchEvent<HTMLDivElement>,
-    id: string
-  ) => {
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>, id: string) => {
     const start = touchStartRef.current;
 
     if (isSelectionMode || !start || start.id !== id) return;
@@ -974,10 +953,7 @@ export default function NotificationsPage() {
       clearLongPressTimer();
     }
 
-    if (
-      deltaX < 0 &&
-      Math.abs(deltaX) > Math.abs(deltaY) * 1.15
-    ) {
+    if (deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
       start.horizontal = true;
       updateSwipeOffset(id, deltaX);
     }
@@ -1131,15 +1107,17 @@ export default function NotificationsPage() {
                         {group.label}
                       </h2>
 
-                      {groupIndex === 0 && unreadCount > 0 && !isSelectionMode && (
-                        <button
-                          type="button"
-                          onClick={handleMarkAllAsRead}
-                          className="shrink-0 text-[calc(13.5*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
-                        >
-                          Baca Semua ({unreadCount})
-                        </button>
-                      )}
+                      {groupIndex === 0 &&
+                        unreadCount > 0 &&
+                        !isSelectionMode && (
+                          <button
+                            type="button"
+                            onClick={handleMarkAllAsRead}
+                            className="shrink-0 text-[calc(13.5*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
+                          >
+                            Baca Semua ({unreadCount})
+                          </button>
+                        )}
                     </div>
 
                     {/* Group Cards */}
@@ -1183,9 +1161,7 @@ export default function NotificationsPage() {
                                 handleTouchMove(event, item.id)
                               }
                               onTouchEnd={() => handleTouchEnd(item.id)}
-                              onTouchCancel={() =>
-                                handleTouchCancel(item.id)
-                              }
+                              onTouchCancel={() => handleTouchCancel(item.id)}
                               onContextMenu={(event) => event.preventDefault()}
                               className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(14*var(--u))] rounded-[calc(18*var(--u))] px-[calc(15*var(--u))] py-[calc(14*var(--u))] transition-colors ${
                                 isSelected
@@ -1612,9 +1588,7 @@ export default function NotificationsPage() {
 
                       <Link
                         href={`/notifications/${encodeURIComponent(item.id)}`}
-                        onClick={(event) =>
-                          handleDetailClick(event, item.id)
-                        }
+                        onClick={(event) => handleDetailClick(event, item.id)}
                         className="flex min-w-0 flex-1 items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                       >
                         <div className="min-w-0 flex-1">
@@ -1659,10 +1633,7 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            finishDeletion(
-                              [item.id],
-                              "1 notifikasi dihapus"
-                            )
+                            finishDeletion([item.id], "1 notifikasi dihapus")
                           }
                           title="Hapus notifikasi"
                           aria-label={`Hapus ${item.title}`}
@@ -1714,7 +1685,8 @@ export default function NotificationsPage() {
 
         {notifications.length > 0 && (
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
-            Data notifikasi saat ini merupakan data demo untuk pengujian tampilan.
+            Data notifikasi saat ini merupakan data demo untuk pengujian
+            tampilan.
           </p>
         )}
       </div>
@@ -1733,9 +1705,7 @@ export default function NotificationsPage() {
               className="shrink-0 text-white"
             />
 
-            <span className="truncate text-sm">
-              {snackbar.message}
-            </span>
+            <span className="truncate text-sm">{snackbar.message}</span>
           </div>
 
           <button
