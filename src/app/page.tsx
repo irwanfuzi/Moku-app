@@ -593,7 +593,7 @@ function DesktopDashboard() {
    lebar (vw) & tinggi (dvh) di semua ukuran layar HP.
 ========================================================= */
 const MOBILE_SCALE_VARS = {
-  "--u": "clamp(0.82px, min(0.2427vw, 0.1094dvh), 1.06px)",
+  "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
 function MobileDashboard() {
@@ -604,7 +604,7 @@ function MobileDashboard() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(80px+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
@@ -664,7 +664,10 @@ function MobileDashboard() {
                 onClick={() => setShowNotifications((previous) => !previous)}
                 className="relative flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] items-center justify-center rounded-full text-white"
               >
-                <Bell className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]" strokeWidth={1.8} />
+                <Bell
+                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
+                  strokeWidth={1.8}
+                />
                 <span className="absolute right-[calc(6*var(--u))] top-[calc(5*var(--u))] h-[calc(9*var(--u))] w-[calc(9*var(--u))] rounded-full bg-[#FF3B30]" />
               </button>
 
@@ -726,9 +729,7 @@ function MobileDashboard() {
                   aria-expanded={showMonthPicker}
                   className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                 >
-                  <CalendarDays
-                    className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]"
-                  />
+                  <CalendarDays className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]" />
                   <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
                     {selectedMonth}
                   </span>
