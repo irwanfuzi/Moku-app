@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "MOKU",
   },
 
@@ -83,7 +83,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   viewportFit: "cover",
-  themeColor: "#730217",
+  themeColor: "#83051C",
 };
 
 interface RootLayoutProps {
