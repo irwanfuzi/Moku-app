@@ -5,10 +5,11 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import AppSidebar from "@/components/layout/app-sidebar";
 import AppHeader from "@/components/layout/app-header";
@@ -29,15 +30,20 @@ interface PageInformation {
 
 export type AppLayoutMode = "mobile" | "desktop";
 
+type NavigationDirection = "forward" | "backward";
+
 interface AppLayoutContextValue {
   mode: AppLayoutMode;
   isMobile: boolean;
   isDesktop: boolean;
   isPWA: boolean;
   isReady: boolean;
+  navigateWithTransition: (
+    href: string,
+    direction?: NavigationDirection
+  ) => void;
+  backWithTransition: (fallbackHref?: string) => void;
 }
-
-type NavigationDirection = "forward" | "backward";
 
 /* =========================================================
    APP LAYOUT CONTEXT
@@ -49,6 +55,8 @@ const AppLayoutContext = createContext<AppLayoutContextValue>({
   isDesktop: false,
   isPWA: false,
   isReady: false,
+  navigateWithTransition: () => {},
+  backWithTransition: () => {},
 });
 
 export function useAppLayout() {
@@ -153,13 +161,8 @@ function getNavigationDirection(
   const wasSubpage = isMobileSubpage(previousPath);
   const nowSubpage = isMobileSubpage(currentPath);
 
-  if (!wasSubpage && nowSubpage) {
-    return "forward";
-  }
-
-  if (wasSubpage && !nowSubpage) {
-    return "backward";
-  }
+  if (!wasSubpage && nowSubpage) return "forward";
+  if (wasSubpage && !nowSubpage) return "backward";
 
   const previousDepth = getRouteDepth(previousPath);
   const currentDepth = getRouteDepth(currentPath);
@@ -262,6 +265,12 @@ function detectLayoutMode(): {
   };
 }
 
+type ViewTransitionDoc = Document & {
+  startViewTransition?: (updateCallback: () => void | Promise<void>) => {
+    finished: Promise<void>;
+  };
+};
+
 declare global {
   interface Window {
     setMokuLayoutOverride?: (mode: AppLayoutMode | null) => void;
@@ -290,11 +299,18 @@ function installLayoutOverrideHelper() {
 
 export default function AppShell({ children }: Readonly<AppShellProps>) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const userToggledSidebarRef = useRef(false);
 
-  const [layoutState, setLayoutState] = useState<AppLayoutContextValue>({
+  const [layoutMeta, setLayoutMeta] = useState<{
+    mode: AppLayoutMode;
+    isMobile: boolean;
+    isDesktop: boolean;
+    isPWA: boolean;
+    isReady: boolean;
+  }>({
     mode: "mobile",
     isMobile: true,
     isDesktop: false,
@@ -304,10 +320,111 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
   const [navigationDirection, setNavigationDirection] =
     useState<NavigationDirection>("forward");
+  const [usedViewTransition, setUsedViewTransition] = useState(false);
 
   const previousPathRef = useRef(pathname);
+  const resolveTransitionRef = useRef<(() => void) | null>(null);
+  const transitionSafetyTimerRef = useRef<number | null>(null);
 
   const currentPage = getPageInformation(pathname);
+
+  const runViewTransition = useCallback(
+    (direction: NavigationDirection, action: () => void) => {
+      const doc = document as ViewTransitionDoc;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      if (
+        !layoutMeta.isMobile ||
+        prefersReducedMotion ||
+        typeof doc.startViewTransition !== "function"
+      ) {
+        setUsedViewTransition(false);
+        setNavigationDirection(direction);
+        action();
+        return;
+      }
+
+      if (resolveTransitionRef.current) {
+        resolveTransitionRef.current();
+        resolveTransitionRef.current = null;
+      }
+      if (transitionSafetyTimerRef.current !== null) {
+        window.clearTimeout(transitionSafetyTimerRef.current);
+        transitionSafetyTimerRef.current = null;
+      }
+
+      setUsedViewTransition(true);
+      setNavigationDirection(direction);
+      document.documentElement.dataset.navDirection = direction;
+
+      const transition = doc.startViewTransition(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveTransitionRef.current = resolve;
+            action();
+            transitionSafetyTimerRef.current = window.setTimeout(() => {
+              if (resolveTransitionRef.current) {
+                resolveTransitionRef.current();
+                resolveTransitionRef.current = null;
+              }
+            }, 600);
+          })
+      );
+
+      transition.finished.finally(() => {
+        delete document.documentElement.dataset.navDirection;
+        setUsedViewTransition(false);
+      });
+    },
+    [layoutMeta.isMobile]
+  );
+
+  const navigateWithTransition = useCallback(
+    (href: string, direction: NavigationDirection = "forward") => {
+      if (href === pathname) return;
+      runViewTransition(direction, () => router.push(href));
+    },
+    [pathname, router, runViewTransition]
+  );
+
+  const backWithTransition = useCallback(
+    (fallbackHref = "/") => {
+      runViewTransition("backward", () => {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+          router.back();
+        } else {
+          router.push(fallbackHref);
+        }
+      });
+    },
+    [router, runViewTransition]
+  );
+
+  // Selesaikan promise View Transition tepat saat DOM rute baru sudah terpasang
+  useLayoutEffect(() => {
+    if (previousPathRef.current === pathname) return;
+
+    if (!resolveTransitionRef.current) {
+      setNavigationDirection(
+        getNavigationDirection(previousPathRef.current, pathname)
+      );
+    }
+
+    previousPathRef.current = pathname;
+
+    if (transitionSafetyTimerRef.current !== null) {
+      window.clearTimeout(transitionSafetyTimerRef.current);
+      transitionSafetyTimerRef.current = null;
+    }
+
+    if (resolveTransitionRef.current) {
+      const resolve = resolveTransitionRef.current;
+      resolveTransitionRef.current = null;
+      resolve();
+    }
+  }, [pathname]);
 
   const handleToggleSidebar = useCallback(() => {
     userToggledSidebarRef.current = true;
@@ -321,7 +438,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       setSidebarCollapsed(window.innerWidth < 1024);
     }
 
-    setLayoutState((previous) => {
+    setLayoutMeta((previous) => {
       if (
         previous.mode === detected.mode &&
         previous.isPWA === detected.isPWA &&
@@ -369,6 +486,9 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       if (resizeTimer !== undefined) {
         window.clearTimeout(resizeTimer);
       }
+      if (transitionSafetyTimerRef.current !== null) {
+        window.clearTimeout(transitionSafetyTimerRef.current);
+      }
 
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
@@ -377,28 +497,22 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
     };
   }, [updateLayout]);
 
-  useEffect(() => {
-    if (previousPathRef.current === pathname) {
-      return;
-    }
-
-    setNavigationDirection(
-      getNavigationDirection(previousPathRef.current, pathname)
-    );
-
-    previousPathRef.current = pathname;
-  }, [pathname]);
-
-  const isMobileMode = layoutState.mode === "mobile";
+  const isMobileMode = layoutMeta.mode === "mobile";
   const hideMobileBottomNav = isMobileMode && isMobileSubpage(pathname);
 
+  const contextValue: AppLayoutContextValue = {
+    ...layoutMeta,
+    navigateWithTransition,
+    backWithTransition,
+  };
+
   return (
-    <AppLayoutContext.Provider value={layoutState}>
+    <AppLayoutContext.Provider value={contextValue}>
       <div
-        data-layout-mode={layoutState.mode}
+        data-layout-mode={layoutMeta.mode}
         data-dashboard={pathname === "/" || pathname === "/dashboard"}
-        data-layout-ready={layoutState.isReady}
-        data-pwa={layoutState.isPWA}
+        data-layout-ready={layoutMeta.isReady}
+        data-pwa={layoutMeta.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
         className={`moku-app-shell min-h-dvh w-full overflow-x-clip text-foreground ${
           isMobileMode ? "bg-[#F8F8FA]" : "bg-background"
@@ -420,7 +534,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
             className={`
               relative min-h-0 w-full min-w-0 flex-1 overflow-x-clip
               ${
-                layoutState.mode === "desktop"
+                layoutMeta.mode === "desktop"
                   ? "bg-background px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
                   : "bg-[#F8F8FA] p-0"
               }
@@ -428,7 +542,9 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           >
             <div
               key={pathname}
-              data-page-transition={navigationDirection}
+              data-page-transition={
+                usedViewTransition ? "none" : navigationDirection
+              }
               className="page-transition min-h-full w-full min-w-0"
             >
               {children}
@@ -453,9 +569,24 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
             <BottomNavigation />
           </div>
         )}
+
+        {/* Penutup area safe-area bawah agar warna marun manifest tidak tembus di Android edge-to-edge */}
+        {isMobileMode && (
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[env(safe-area-inset-bottom)] ${
+              hideMobileBottomNav ? "bg-[#F8F8FA]" : "bg-white"
+            }`}
+          />
+        )}
       </div>
 
       <style jsx global>{`
+        html,
+        body {
+          background-color: #ffffff;
+        }
+
         .moku-app-shell {
           position: relative;
           min-height: 100dvh;
@@ -560,10 +691,79 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           display: block;
         }
 
-        /* FLICKER-FREE ROUTE TRANSITION */
+        /* =====================================================
+           NATIVE DUAL-SCREEN VIEW TRANSITION (LIKE FLIP APP)
+        ===================================================== */
+        ::view-transition-group(root) {
+          animation-duration: 320ms;
+          animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        html[data-nav-direction="forward"]::view-transition-old(root) {
+          animation: moku-vt-out-left 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          z-index: 1;
+        }
+
+        html[data-nav-direction="forward"]::view-transition-new(root) {
+          animation: moku-vt-in-right 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          box-shadow: -10px 0 28px rgba(0, 0, 0, 0.16);
+          z-index: 2;
+        }
+
+        html[data-nav-direction="backward"]::view-transition-old(root) {
+          animation: moku-vt-out-right 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          box-shadow: -10px 0 28px rgba(0, 0, 0, 0.16);
+          z-index: 2;
+        }
+
+        html[data-nav-direction="backward"]::view-transition-new(root) {
+          animation: moku-vt-in-left 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          z-index: 1;
+        }
+
+        @keyframes moku-vt-in-right {
+          from {
+            transform: translate3d(100%, 0, 0);
+          }
+          to {
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes moku-vt-out-left {
+          from {
+            transform: translate3d(0, 0, 0);
+            filter: brightness(1);
+          }
+          to {
+            transform: translate3d(-25%, 0, 0);
+            filter: brightness(0.92);
+          }
+        }
+
+        @keyframes moku-vt-out-right {
+          from {
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            transform: translate3d(100%, 0, 0);
+          }
+        }
+
+        @keyframes moku-vt-in-left {
+          from {
+            transform: translate3d(-25%, 0, 0);
+            filter: brightness(0.92);
+          }
+          to {
+            transform: translate3d(0, 0, 0);
+            filter: brightness(1);
+          }
+        }
+
+        /* FALLBACK TRANSITION (BROWSER TANPA VIEW TRANSITIONS API) */
         .page-transition {
           min-width: 0;
-          will-change: transform, opacity;
         }
 
         [data-layout-mode="desktop"] .page-transition {
@@ -576,43 +776,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
             opacity: 0.96;
             transform: translate3d(0, 6px, 0);
           }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        [data-layout-mode="mobile"]
-          .page-transition[data-page-transition="forward"] {
-          animation: moku-native-slide-in 240ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        [data-layout-mode="mobile"]
-          .page-transition[data-page-transition="backward"] {
-          animation: moku-native-slide-back 240ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        @keyframes moku-native-slide-in {
-          from {
-            opacity: 0.92;
-            transform: translate3d(24px, 0, 0);
-          }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        @keyframes moku-native-slide-back {
-          from {
-            opacity: 0.92;
-            transform: translate3d(-24px, 0, 0);
-          }
-
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
@@ -620,7 +783,9 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .page-transition {
+          .page-transition,
+          ::view-transition-old(root),
+          ::view-transition-new(root) {
             animation: none !important;
           }
 
