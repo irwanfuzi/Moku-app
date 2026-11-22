@@ -1143,4 +1143,35 @@ function MobileDashboard() {
             </MobileCard>
           </section>
 
-          {/*
+          {/* Footer */}
+          <div className="pb-[calc(12*var(--u))] pt-[calc(4*var(--u))] text-center">
+            <p className="text-[calc(10*var(--u))] text-[#A39AA0]">
+              MOKU — Monitoring Operasional Kunjungan Unit
+            </p>
+            <p className="mt-[calc(4*var(--u))] text-[calc(10*var(--u))] text-[#B3ABB0]">
+              Track Precisely, Deliver Quality
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* =========================================================
+   DASHBOARD PAGE (SYNCED WITH AppShell)
+========================================================= */
+export default function DashboardPage() {
+  const { isMobile, isReady } = useAppLayout();
+
+  if (!isReady) {
+    return (
+      <div
+        className="min-h-dvh w-full bg-[#F7F7F7]"
+        aria-label="Memuat Dashboard"
+      />
+    );
+  }
+
+  return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
+}
