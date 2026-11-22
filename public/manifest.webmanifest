@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#FDFDFD",
-  "theme_color": "#6F010E",
+  "background_color": "#83051C",
+  "theme_color": "#83051C",
   "icons": [
     {
       "src": "/images/moku/brand/icon-192x192.png",
