@@ -49,8 +49,8 @@ const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
 const REFRESH_HOLD = 70;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 126;
-const TOPBAR_SCROLL_RANGE = 44;
+const TOPBAR_SCROLL_START = 96;
+const TOPBAR_SCROLL_RANGE = 76;
 
 /* =========================================================
    DASHBOARD DATA
@@ -165,6 +165,20 @@ function detectStandalonePwa() {
   );
 
   return isStandaloneDisplay || isIosStandalone;
+}
+
+/**
+ * Interpolasi halus warna theme-color antara #83051C (131, 5, 28)
+ * dan #FFFFFF (255, 255, 255) agar status bar HP memudar menyatu dengan top bar.
+ */
+function interpolateHeaderThemeHex(progress: number): string {
+  const t = Math.min(1, Math.max(0, progress));
+  const r = Math.round(131 + (255 - 131) * t);
+  const g = Math.round(5 + (255 - 5) * t);
+  const b = Math.round(28 + (255 - 28) * t);
+
+  const toHex = (value: number) => value.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
 function formatGreetingName(fullName: string) {
@@ -654,6 +668,7 @@ function MobileDashboard() {
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
+  const lastThemeColorRef = useRef("#83051C");
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
@@ -666,6 +681,17 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
+    const syncThemeColor = (progress: number) => {
+      const nextHex = interpolateHeaderThemeHex(progress);
+      if (lastThemeColorRef.current !== nextHex) {
+        lastThemeColorRef.current = nextHex;
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+          metaTheme.setAttribute("content", nextHex);
+        }
+      }
+    };
+
     const getScrollTop = () =>
       Math.max(
         0,
@@ -679,7 +705,6 @@ function MobileDashboard() {
       rafRef.current = null;
       const scrollTop = getScrollTop();
 
-      // Top bar tetap merah transparan sampai canvas putih mendekati area top bar
       if (
         scrollTop <= TOPBAR_SCROLL_START ||
         isPullingRef.current ||
@@ -687,10 +712,7 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme && metaTheme.getAttribute("content") !== "#83051C") {
-          metaTheme.setAttribute("content", "#83051C");
-        }
+        syncThemeColor(0);
         return;
       }
 
@@ -701,16 +723,9 @@ function MobileDashboard() {
       const eased = raw * raw * (3 - 2 * raw);
 
       setScrollProgress((prev) =>
-        Math.abs(prev - eased) > 0.005 ? eased : prev
+        Math.abs(prev - eased) > 0.004 ? eased : prev
       );
-
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) {
-        const nextColor = eased > 0.55 ? "#FFFFFF" : "#83051C";
-        if (metaTheme.getAttribute("content") !== nextColor) {
-          metaTheme.setAttribute("content", nextColor);
-        }
-      }
+      syncThemeColor(eased);
     };
 
     const onScroll = () => {
@@ -786,7 +801,6 @@ function MobileDashboard() {
         setPullDistance(damped);
         setScrollProgress(0);
       } else if (deltaY < -4) {
-        // Baru lepas dari mode pull jika jari benar-benar digeser ke atas melewati titik awal
         isPullingRef.current = false;
         touchStartYRef.current = null;
         setIsPullDragging(false);
@@ -840,12 +854,8 @@ function MobileDashboard() {
   const emblemOpacity = isRefreshing
     ? 1
     : Math.min(1, Math.max(0, (pullDistance - 2) / 34));
-  const emblemTranslateY = isRefreshing
-    ? 14
-    : -24 + pullRatio * 38;
-  const emblemScale = isRefreshing
-    ? 1
-    : 0.45 + pullRatio * 0.55;
+  const emblemTranslateY = isRefreshing ? 14 : -24 + pullRatio * 38;
+  const emblemScale = isRefreshing ? 1 : 0.45 + pullRatio * 0.55;
   const showPwaShimmer = isPwaMode && isRefreshing;
   const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
@@ -860,7 +870,7 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Emblem Pull-to-Refresh MOKU (Selalu terpasang di DOM agar animasi muncul/hilangnya mulus) */}
+        {/* Emblem Pull-to-Refresh MOKU */}
         {isPwaMode && (
           <div
             aria-hidden={!isRefreshing && pullDistance <= 0}
@@ -910,7 +920,7 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar */}
+        {/* Sticky Compact Top Bar (Menyatu dengan status bar dari top: 0) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
@@ -922,7 +932,7 @@ function MobileDashboard() {
                 ? "none"
                 : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
             }}
-            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
+            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
           >
             <Link
               href="/"
@@ -1438,4 +1448,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+                                                           }
