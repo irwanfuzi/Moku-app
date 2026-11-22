@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
+  type TouchEvent,
 } from "react";
 import {
   AlertTriangle,
@@ -44,6 +45,9 @@ const MONTHS = [
 ];
 
 const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
+
+const PULL_THRESHOLD = 68;
+const MAX_PULL = 104;
 
 /* =========================================================
    DASHBOARD DATA
@@ -147,6 +151,18 @@ const desktopVisitChart = [
 /* =========================================================
    HELPERS & SHARED COMPONENTS
 ========================================================= */
+function detectStandalonePwa() {
+  if (typeof window === "undefined") return false;
+  const isStandaloneDisplay =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches;
+  const isIosStandalone =
+    Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+
+  return isStandaloneDisplay || isIosStandalone;
+}
+
 function formatGreetingName(fullName: string) {
   const words = fullName.trim().split(/\s+/);
   return words.slice(0, 2).join(" ");
@@ -173,6 +189,16 @@ function MobileCard({
     >
       {children}
     </section>
+  );
+}
+
+function ShimmerOverlay({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div
+      aria-hidden="true"
+      className="moku-skeleton pointer-events-none absolute inset-0 z-10 opacity-45 transition-opacity duration-200"
+    />
   );
 }
 
@@ -237,7 +263,7 @@ function DesktopDashboard() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
+    <div className="moku-fade-in mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
@@ -612,9 +638,18 @@ function MobileDashboard() {
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isPwaMode, setIsPwaMode] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const rafRef = useRef<number | null>(null);
+  const refreshTimerRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const isPullingRef = useRef(false);
 
   useEffect(() => {
+    setIsPwaMode(detectStandalonePwa());
+
     const getScrollTop = () =>
       window.scrollY ||
       document.documentElement.scrollTop ||
@@ -654,20 +689,117 @@ function MobileDashboard() {
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
       }
+      if (refreshTimerRef.current !== null) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, []);
 
+  const handleTouchStart = (event: TouchEvent<HTMLElement>) => {
+    if (!isPwaMode || isRefreshing) return;
+    const scrollTop =
+      window.scrollY ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
+
+    if (scrollTop <= 0) {
+      touchStartYRef.current = event.touches[0].clientY;
+      isPullingRef.current = true;
+    } else {
+      touchStartYRef.current = null;
+      isPullingRef.current = false;
+    }
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLElement>) => {
+    if (
+      !isPwaMode ||
+      !isPullingRef.current ||
+      touchStartYRef.current === null ||
+      isRefreshing
+    ) {
+      return;
+    }
+
+    const deltaY = event.touches[0].clientY - touchStartYRef.current;
+    if (deltaY > 0) {
+      const damped = Math.min(MAX_PULL, deltaY * 0.45);
+      setPullDistance(damped);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPwaMode || !isPullingRef.current) return;
+    isPullingRef.current = false;
+    touchStartYRef.current = null;
+
+    if (pullDistance >= PULL_THRESHOLD * 0.65) {
+      setIsRefreshing(true);
+      setPullDistance(PULL_THRESHOLD * 0.75);
+
+      if (refreshTimerRef.current !== null) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+      refreshTimerRef.current = window.setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 950);
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  const showPwaRefreshIndicator = isPwaMode && (pullDistance > 0 || isRefreshing);
+  const showPwaShimmer = isPwaMode && isRefreshing;
   const isCondensed = scrollProgress > 0.5;
   const userName = "Budi Santoso";
 
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="moku-fade-in min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
+        {/* Custom Brand Pull-to-Refresh Indicator (PWA Only) */}
+        {showPwaRefreshIndicator && (
+          <div
+            style={{
+              transform: `translateY(${Math.max(0, pullDistance - 10)}px)`,
+              opacity: Math.min(1, Math.max(0.25, pullDistance / 42)),
+            }}
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(36*var(--u)))] z-30 flex justify-center transition-opacity duration-150"
+          >
+            <div className="relative flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] items-center justify-center rounded-full border border-[#ECECEF] bg-white shadow-[0_4px_12px_rgba(41,35,42,0.12)]">
+              <span
+                aria-hidden="true"
+                className={`absolute inset-0 rounded-full border-2 border-transparent border-t-[#8E001C] border-r-[#F28C0F] ${
+                  isRefreshing ? "animate-spin" : ""
+                }`}
+                style={{
+                  transform: isRefreshing
+                    ? undefined
+                    : `rotate(${pullDistance * 3.6}deg)`,
+                }}
+              />
+              <div className="relative flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] items-center justify-center rounded-full">
+                <Image
+                  src="/images/moku/brand/app-icon.png"
+                  alt="Memuat ulang MOKU"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Sticky Compact Top Bar */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
@@ -865,7 +997,8 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
+            <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
+              <ShimmerOverlay active={showPwaShimmer} />
               <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[calc(10*var(--u))]">
                 <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[calc(10*var(--u))]">
                   <div
@@ -931,7 +1064,8 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
+            <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
+              <ShimmerOverlay active={showPwaShimmer} />
               <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
                 <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
                   <p className="font-display text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
@@ -1063,6 +1197,7 @@ function MobileDashboard() {
             href="/monitoring"
             className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)]"
           >
+            <ShimmerOverlay active={showPwaShimmer} />
             <span
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 w-[calc(5*var(--u))] bg-[#8E001C]"
@@ -1105,7 +1240,8 @@ function MobileDashboard() {
               </Link>
             </div>
 
-            <MobileCard className="mt-[calc(8*var(--u))] divide-y divide-[#EFEFF2] px-[calc(12*var(--u))]">
+            <MobileCard className="relative mt-[calc(8*var(--u))] divide-y divide-[#EFEFF2] overflow-hidden px-[calc(12*var(--u))]">
+              <ShimmerOverlay active={showPwaShimmer} />
               {recentActivities.map((activity, index) => (
                 <div
                   key={`${activity.machine}-${index}`}
@@ -1179,4 +1315,4 @@ export default function DashboardPage() {
   }
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+        }
