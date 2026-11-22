@@ -39,11 +39,6 @@ const MONTHS = [
 
 const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
-/* Universal viewport unit based on 412x914 reference */
-const MOBILE_SCALE_STYLE = {
-  "--u": "clamp(0.82px, min(0.2427vw, 0.1094dvh), 1.06px)",
-} as CSSProperties;
-
 /* =========================================================
    DASHBOARD DATA
 ========================================================= */
@@ -144,7 +139,7 @@ const desktopVisitChart = [
 ];
 
 /* =========================================================
-   SHARED MOBILE COMPONENTS (--u SCALED)
+   SHARED COMPONENTS
 ========================================================= */
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
@@ -184,14 +179,14 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex min-w-0 flex-col items-center justify-start gap-[calc(7*var(--u))] px-[calc(4*var(--u))] text-center ${
+      className={`flex min-w-0 flex-col items-center justify-start gap-[calc(6*var(--u))] px-[calc(4*var(--u))] text-center ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
+      <span className="flex h-[calc(42*var(--u))] w-[calc(42*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
         {children}
       </span>
-      <span className="text-[calc(12*var(--u))] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
+      <span className="text-[calc(11.5*var(--u))] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
         {label}
       </span>
     </Link>
@@ -593,8 +588,14 @@ function DesktopDashboard() {
 }
 
 /* =========================================================
-   MOBILE DASHBOARD (UNIVERSAL --u AUTO-SCALING)
+   MOBILE DASHBOARD (UNIVERSAL PROPORTIONAL SCALE --u)
+   Acuan: 412x914 -> --u = 1px. Otomatis menyesuaikan
+   lebar (vw) & tinggi (dvh) di semua ukuran layar HP.
 ========================================================= */
+const MOBILE_SCALE_VARS = {
+  "--u": "clamp(0.82px, min(0.2427vw, 0.1094dvh), 1.06px)",
+} as CSSProperties;
+
 function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
@@ -602,12 +603,12 @@ function MobileDashboard() {
 
   return (
     <main
-      style={MOBILE_SCALE_STYLE}
-      className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(76*var(--u)+env(safe-area-inset-bottom))]"
+      style={MOBILE_SCALE_VARS}
+      className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(80px+env(safe-area-inset-bottom))]"
     >
-      <div className="relative mx-auto w-full max-w-[calc(520*var(--u))]">
+      <div className="relative mx-auto w-full max-w-[600px]">
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
-        <header className="relative isolate h-[calc(224*var(--u))] overflow-hidden bg-[#730217] text-white">
+        <header className="relative isolate h-[calc(210*var(--u))] overflow-hidden bg-[#730217] text-white">
           {/* Base micro-gradient */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_95%_at_18%_18%,#9B0823_0%,#760217_54%,#54000F_100%)]" />
 
@@ -624,21 +625,21 @@ function MobileDashboard() {
           {/* Subtle hairline arcs */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-[calc(52*var(--u))] -top-[calc(42*var(--u))] z-[3] h-[calc(250*var(--u))] w-[calc(250*var(--u))] rounded-full border border-white/[0.08]"
+            className="pointer-events-none absolute -right-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-[calc(108*var(--u))] -top-[calc(98*var(--u))] z-[3] h-[calc(360*var(--u))] w-[calc(360*var(--u))] rounded-full border border-white/[0.05]"
+            className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
           />
 
           {/* Low-contrast ambient lift behind printer */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[calc(8*var(--u))] right-[calc(18*var(--u))] z-[4] h-[calc(120*var(--u))] w-[calc(120*var(--u))] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
           {/* Logo and notification */}
-          <div className="absolute left-[calc(16*var(--u))] right-[calc(16*var(--u))] top-[max(calc(22*var(--u)),calc(env(safe-area-inset-top)+calc(6*var(--u))))] z-30 flex items-center justify-between">
+          <div className="absolute left-[calc(18*var(--u))] right-[calc(18*var(--u))] top-[max(calc(22*var(--u)),calc(env(safe-area-inset-top)+6px))] z-30 flex items-center justify-between">
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -663,28 +664,23 @@ function MobileDashboard() {
                 onClick={() => setShowNotifications((previous) => !previous)}
                 className="relative flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] items-center justify-center rounded-full text-white"
               >
-                <Bell
-                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
-                  strokeWidth={1.8}
-                />
+                <Bell className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]" strokeWidth={1.8} />
                 <span className="absolute right-[calc(6*var(--u))] top-[calc(5*var(--u))] h-[calc(9*var(--u))] w-[calc(9*var(--u))] rounded-full bg-[#FF3B30]" />
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-[calc(46*var(--u))] z-50 w-[calc(270*var(--u))] rounded-xl border border-[#EEEEEE] bg-white p-[calc(14*var(--u))] text-[#29232A] shadow-xl">
+                <div className="absolute right-0 top-12 z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
                   <div className="flex items-center justify-between">
-                    <p className="text-[calc(13*var(--u))] font-bold">
-                      Notifikasi
-                    </p>
+                    <p className="text-sm font-bold">Notifikasi</p>
                     <button
                       type="button"
                       aria-label="Tutup notifikasi"
                       onClick={() => setShowNotifications(false)}
                     >
-                      <X className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]" />
+                      <X size={17} />
                     </button>
                   </div>
-                  <p className="mt-[calc(10*var(--u))] text-[calc(12*var(--u))] text-[#77727A]">
+                  <p className="mt-3 text-xs text-[#77727A]">
                     Belum ada notifikasi baru.
                   </p>
                 </div>
@@ -693,17 +689,17 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[calc(16*var(--u))] top-[max(calc(72*var(--u)),calc(env(safe-area-inset-top)+calc(46*var(--u))))] z-20 w-[calc(100%-calc(32*var(--u)))] pr-[calc(128*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(24*var(--u))] font-bold leading-[1.15] tracking-[-0.035em] text-white">
+          <div className="absolute left-[calc(18*var(--u))] top-[max(calc(70*var(--u)),calc(env(safe-area-inset-top)+44px))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(132*var(--u))]">
+            <h1 className="whitespace-nowrap text-[calc(23*var(--u))] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[calc(4*var(--u))] max-w-[calc(210*var(--u))] text-[calc(12.5*var(--u))] font-normal leading-[1.35] text-white/85">
+            <p className="mt-[calc(4*var(--u))] max-w-[calc(215*var(--u))] text-[calc(12.5*var(--u))] font-normal leading-[1.35] text-white/85">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
           {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[calc(16*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -717,10 +713,10 @@ function MobileDashboard() {
         </header>
 
         {/* Canvas Konten */}
-        <div className="relative z-20 -mt-[calc(30*var(--u))] flex flex-col gap-[calc(15*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
           {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
+            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
               <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
               <div className="relative shrink-0">
@@ -736,14 +732,12 @@ function MobileDashboard() {
                   <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
                     {selectedMonth}
                   </span>
-                  <ChevronDown
-                    className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]"
-                  />
+                  <ChevronDown className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]" />
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute right-0 top-[calc(38*var(--u))] z-50 w-[calc(205*var(--u))] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-[calc(6*var(--u))] text-[#29232A] shadow-xl">
-                    <p className="px-[calc(14*var(--u))] py-[calc(6*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-[#817780]">
+                  <div className="absolute right-0 top-[40px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
+                    <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
                       Pilih Periode
                     </p>
                     {MONTHS.map((month) => (
@@ -754,16 +748,14 @@ function MobileDashboard() {
                           setSelectedMonth(month);
                           setShowMonthPicker(false);
                         }}
-                        className={`flex w-full items-center justify-between px-[calc(14*var(--u))] py-[calc(9*var(--u))] text-left text-[calc(13*var(--u))] ${
+                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${
                           selectedMonth === month
                             ? "bg-[#FCECEF] font-bold text-[#8E001C]"
                             : "text-[#51474E]"
                         }`}
                       >
                         {month}
-                        {selectedMonth === month && (
-                          <Check className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]" />
-                        )}
+                        {selectedMonth === month && <Check size={16} />}
                       </button>
                     ))}
                   </div>
@@ -771,12 +763,12 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[calc(9*var(--u))] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
+            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[calc(10*var(--u))]">
                 {/* Donut */}
                 <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[calc(10*var(--u))]">
                   <div
-                    className="relative h-[calc(116*var(--u))] w-[calc(116*var(--u))] shrink-0 rounded-full"
+                    className="relative aspect-square w-full max-w-[calc(114*var(--u))] rounded-full"
                     style={{
                       background:
                         "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
@@ -785,10 +777,10 @@ function MobileDashboard() {
                     aria-label="48 mesin"
                   >
                     <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
-                      <span className="text-[calc(32*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
+                      <span className="text-[calc(30*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
                         48
                       </span>
-                      <span className="mt-[calc(2*var(--u))] text-[calc(12*var(--u))] font-medium text-[#51474E]">
+                      <span className="mt-[2px] text-[calc(12*var(--u))] font-medium text-[#51474E]">
                         Mesin
                       </span>
                     </div>
@@ -796,14 +788,14 @@ function MobileDashboard() {
                 </div>
 
                 {/* Legend */}
-                <div className="min-w-0 space-y-[calc(11*var(--u))]">
+                <div className="min-w-0 space-y-[calc(10*var(--u))]">
                   {monitoringData.map((item) => (
                     <div
                       key={item.label}
                       className="grid min-w-0 grid-cols-[calc(11*var(--u))_minmax(0,1fr)_auto_auto] items-center gap-[calc(5*var(--u))]"
                     >
                       <span
-                        className="h-[calc(11*var(--u))] w-[calc(11*var(--u))] rounded-[calc(3*var(--u))]"
+                        className="h-[calc(11*var(--u))] w-[calc(11*var(--u))] rounded-[3px]"
                         style={{ backgroundColor: item.color }}
                       />
                       <span className="min-w-0 truncate text-[calc(12*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
@@ -826,12 +818,12 @@ function MobileDashboard() {
 
           {/* 2. Kunjungan Bulan Ini */}
           <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
+            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
               <SectionTitle>Kunjungan Bulan Ini</SectionTitle>
               <div className="flex shrink-0 items-center gap-[calc(5*var(--u))]">
                 <Target
-                  className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#C81032]"
                   strokeWidth={2.3}
+                  className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#C81032]"
                 />
                 <span className="whitespace-nowrap text-[calc(12*var(--u))] font-medium text-[#29232A]">
                   Target: 40 Kunjungan
@@ -839,10 +831,10 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[calc(9*var(--u))] px-[calc(14*var(--u))] py-[calc(13*var(--u))]">
+            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(14*var(--u))] py-[calc(13*var(--u))]">
               <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
-                <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(10*var(--u))]">
-                  <p className="text-[calc(44*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+                <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
+                  <p className="text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
                   </p>
                   <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
@@ -850,12 +842,12 @@ function MobileDashboard() {
                   </p>
                 </div>
 
-                <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[calc(4*var(--u))]">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
                   <div className="min-w-0">
-                    <span className="inline-flex items-center gap-[calc(4*var(--u))] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3.5*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
+                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3.5*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
                       <TrendingUp
-                        className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
                         strokeWidth={2.5}
+                        className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
                       />{" "}
                       +14%
                     </span>
@@ -866,7 +858,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  <div className="flex h-[calc(76*var(--u))] min-w-0 items-center justify-center">
+                  <div className="flex h-[calc(74*var(--u))] min-w-0 items-center justify-center">
                     <Image
                       src="/images/moku/illustrations/dashboard-activity.png"
                       alt="Ilustrasi checklist kunjungan"
@@ -879,7 +871,7 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              <div className="mt-[calc(12*var(--u))]">
+              <div className="mt-[calc(11*var(--u))]">
                 <div className="mb-[calc(5*var(--u))] flex items-center justify-between">
                   <p className="text-[calc(12.5*var(--u))] font-bold text-[#171717]">
                     Pencapaian Target
@@ -888,7 +880,7 @@ function MobileDashboard() {
                     80%
                   </p>
                 </div>
-                <div className="h-[calc(9.5*var(--u))] overflow-hidden rounded-full bg-[#EAEAEF]">
+                <div className="h-[calc(9*var(--u))] overflow-hidden rounded-full bg-[#EAEAEF]">
                   <div
                     className="h-full rounded-full bg-[#8E001C]"
                     style={{ width: "80%" }}
@@ -900,11 +892,11 @@ function MobileDashboard() {
 
           {/* 3. Aksi Cepat */}
           <section className="min-w-0">
-            <div className="px-[calc(2*var(--u))]">
+            <div className="px-[2px]">
               <SectionTitle>Aksi Cepat</SectionTitle>
             </div>
 
-            <MobileCard className="mt-[calc(9*var(--u))] px-[calc(8*var(--u))] py-[calc(12*var(--u))]">
+            <MobileCard className="mt-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(12*var(--u))]">
               <div className="grid grid-cols-4">
                 <QuickAction
                   href="/visits"
@@ -917,8 +909,8 @@ function MobileDashboard() {
                   }
                 >
                   <Plus
-                    className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
                     strokeWidth={2.5}
+                    className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
                   />
                 </QuickAction>
 
@@ -934,15 +926,15 @@ function MobileDashboard() {
                   }
                 >
                   <Printer
-                    className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                     strokeWidth={2.1}
+                    className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                   />
                 </QuickAction>
 
                 <QuickAction href="/reports" separated label="Laporan">
                   <ChartNoAxesColumn
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
                     strokeWidth={2.2}
+                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
                   />
                 </QuickAction>
 
@@ -958,8 +950,8 @@ function MobileDashboard() {
                   }
                 >
                   <Download
-                    className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                     strokeWidth={2.2}
+                    className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                   />
                 </QuickAction>
               </div>
@@ -969,11 +961,11 @@ function MobileDashboard() {
           {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="flex min-h-[calc(72*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] rounded-[calc(17*var(--u))] border border-[#F5E1D8] bg-[#FDF1EC] px-[calc(14*var(--u))] py-[calc(11*var(--u))]"
+            className="flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] rounded-[calc(17*var(--u))] border border-[#F5E1D8] bg-[#FDF1EC] px-[calc(14*var(--u))] py-[calc(10*var(--u))]"
           >
             <AlertTriangle
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F28C0F]"
               strokeWidth={2.1}
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F28C0F]"
             />
 
             <div className="min-w-0 flex-1">
@@ -987,35 +979,35 @@ function MobileDashboard() {
             </div>
 
             <ChevronRight
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#C81032]"
               strokeWidth={2.5}
+              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#C81032]"
             />
           </Link>
 
           {/* 5. Aktivitas Terbaru */}
           <section className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
+            <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
               <SectionTitle>Aktivitas Terbaru</SectionTitle>
               <Link
                 href="/visit-history"
-                className="flex shrink-0 items-center gap-[calc(2*var(--u))] whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032]"
+                className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032]"
               >
                 Lihat Semua
                 <ChevronRight
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
                   strokeWidth={2.5}
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
                 />
               </Link>
             </div>
 
-            <MobileCard className="mt-[calc(9*var(--u))] divide-y divide-[#EFEFF2] px-[calc(12*var(--u))]">
+            <MobileCard className="mt-[calc(8*var(--u))] divide-y divide-[#EFEFF2] px-[calc(12*var(--u))]">
               {recentActivities.map((activity, index) => (
                 <div
                   key={`${activity.machine}-${index}`}
-                  className="flex min-h-[calc(62*var(--u))] min-w-0 items-center gap-[calc(11*var(--u))] py-[calc(9*var(--u))]"
+                  className="flex min-h-[calc(60*var(--u))] min-w-0 items-center gap-[calc(10*var(--u))] py-[calc(9*var(--u))]"
                 >
                   <div
-                    className={`flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-full ${
+                    className={`flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full ${
                       activity.status === "success"
                         ? "bg-[#E2F7E9] text-[#1D9A4E]"
                         : "bg-[#F3F3F5] text-[#C81032]"
@@ -1023,13 +1015,13 @@ function MobileDashboard() {
                   >
                     {activity.status === "success" ? (
                       <Check
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                         strokeWidth={2.8}
+                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                       />
                     ) : (
                       <Clock3
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                         strokeWidth={2.3}
+                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
                       />
                     )}
                   </div>
@@ -1044,7 +1036,7 @@ function MobileDashboard() {
                   </div>
 
                   <span
-                    className={`min-w-[calc(70*var(--u))] shrink-0 whitespace-nowrap rounded-full px-[calc(11*var(--u))] py-[calc(4.5*var(--u))] text-center text-[calc(11*var(--u))] font-semibold ${
+                    className={`min-w-[calc(68*var(--u))] shrink-0 whitespace-nowrap rounded-full px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-center text-[calc(11*var(--u))] font-semibold ${
                       activity.status === "success"
                         ? index === 0
                           ? "bg-[#DCF7D8] text-[#2F682A]"
