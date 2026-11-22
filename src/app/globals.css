@@ -170,9 +170,28 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+}
+
+/* Lock text selection ONLY inside installed PWA mode */
+@media (display-mode: standalone),
+  (display-mode: fullscreen),
+  (display-mode: minimal-ui) {
+  *,
+  *::before,
+  *::after {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 }
 
 html {
@@ -216,22 +235,13 @@ body {
   overscroll-behavior-x: none;
 }
 
-/* Native form typography & allow text selection inside inputs */
+/* Native form typography */
 
 button,
 input,
 textarea,
 select {
   font: inherit;
-}
-
-input,
-textarea,
-select,
-[contenteditable="true"] {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
 }
 
 button {
