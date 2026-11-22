@@ -958,7 +958,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  <div className="flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] justify-self-end items-center justify-center">
+                  <div className="flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
                     <Image
                       src="/images/moku/illustrations/dashboard-activity.png"
                       alt="Ilustrasi checklist kunjungan"
@@ -1061,18 +1061,18 @@ function MobileDashboard() {
           {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] rounded-[calc(17*var(--u))] border border-[#F3CEBE] bg-[#FDE9DF] px-[calc(14*var(--u))] py-[calc(10*var(--u))]"
+            className="flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] rounded-[calc(17*var(--u))] border border-[#F5C7D0] bg-[#FFF1F3] px-[calc(14*var(--u))] py-[calc(10*var(--u))]"
           >
             <AlertTriangle
               strokeWidth={2.1}
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F27B13]"
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#EB5513]"
             />
 
             <div className="min-w-0 flex-1">
               <p className="text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
                 Mesin Perlu Perhatian
               </p>
-              <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#3B343E]">
+              <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#473A3E]">
                 4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
                 tindak lanjut.
               </p>
@@ -1135,15 +1135,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  <span
-                    className={`shrink-0 whitespace-nowrap text-[calc(11.5*var(--u))] font-semibold ${
-                      activity.status === "success"
-                        ? index === 0
-                          ? "text-[#2F682A]"
-                          : "text-[#6E6873]"
-                        : "text-[#A81830]"
-                    }`}
-                  >
+                  <span className="shrink-0 whitespace-nowrap text-[calc(11.5*var(--u))] font-semibold text-[#5E5863]">
                     {activity.time}
                   </span>
                 </div>
@@ -1151,35 +1143,4 @@ function MobileDashboard() {
             </MobileCard>
           </section>
 
-          {/* Footer */}
-          <div className="pb-[calc(12*var(--u))] pt-[calc(4*var(--u))] text-center">
-            <p className="text-[calc(10*var(--u))] text-[#A39AA0]">
-              MOKU — Monitoring Operasional Kunjungan Unit
-            </p>
-            <p className="mt-[calc(4*var(--u))] text-[calc(10*var(--u))] text-[#B3ABB0]">
-              Track Precisely, Deliver Quality
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-/* =========================================================
-   DASHBOARD PAGE (SYNCED WITH AppShell)
-========================================================= */
-export default function DashboardPage() {
-  const { isMobile, isReady } = useAppLayout();
-
-  if (!isReady) {
-    return (
-      <div
-        className="min-h-dvh w-full bg-[#F7F7F7]"
-        aria-label="Memuat Dashboard"
-      />
-    );
-  }
-
-  return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+          {/*
