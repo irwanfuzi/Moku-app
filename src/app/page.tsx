@@ -169,7 +169,7 @@ function MobileCard({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-[calc(19*var(--u))] border border-[#EEEEEE] bg-white shadow-[0_2px_9px_rgba(0,0,0,0.055)] ${className}`}
+      className={`min-w-0 rounded-[calc(19*var(--u))] border border-[#EEEEEE] bg-white shadow-[0_1px_4px_rgba(41,35,42,0.025)] ${className}`}
     >
       {children}
     </section>
@@ -194,7 +194,7 @@ function QuickAction({
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
+      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-none">
         {children}
       </span>
       <span className="text-[calc(11.5*var(--u))] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
@@ -271,7 +271,7 @@ function DesktopDashboard() {
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#29232A] transition hover:bg-[#F3ECEF]"
           >
             <Bell size={23} strokeWidth={1.9} />
-            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-[#F7F7F7] bg-[#BF0B2C]" />
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-[#FAFAFC] bg-[#BF0B2C]" />
           </Link>
 
           <span className="hidden h-8 w-px bg-[#E5E5E8] sm:block" />
@@ -299,9 +299,9 @@ function DesktopDashboard() {
         {kpis.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="flex min-h-[96px] items-center gap-4 rounded-[18px] border border-[#ECECEF] bg-white px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] md:px-5"
+            className="flex min-h-[96px] items-center gap-4 rounded-[18px] border border-[#ECECEF] bg-white px-4 py-4 shadow-[0_1px_4px_rgba(41,35,42,0.025)] md:px-5"
           >
-            <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#8E001C] text-white shadow-[0_3px_8px_rgba(142,0,28,0.2)]">
+            <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#8E001C] text-white">
               <Icon size={25} strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
@@ -319,7 +319,7 @@ function DesktopDashboard() {
       {/* Charts Row */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.28fr)]">
         {/* Status Monitoring Mesin */}
-        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_1px_4px_rgba(41,35,42,0.025)]">
           <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
             Status Monitoring Mesin
           </h2>
@@ -369,7 +369,7 @@ function DesktopDashboard() {
         </article>
 
         {/* Kunjungan Bulan Ini */}
-        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_1px_4px_rgba(41,35,42,0.025)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
               Kunjungan Bulan Ini
@@ -442,7 +442,7 @@ function DesktopDashboard() {
       </section>
 
       {/* Daftar Mesin */}
-      <section className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+      <section className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_1px_4px_rgba(41,35,42,0.025)]">
         <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
           Daftar Mesin
         </h2>
@@ -489,7 +489,7 @@ function DesktopDashboard() {
 
           <Link
             href="/equipment"
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#8E001C] px-4 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)] transition hover:bg-[#730217] sm:text-sm"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#8E001C] px-4 text-xs font-semibold text-white transition hover:bg-[#730217] sm:text-sm"
           >
             <Plus size={16} strokeWidth={2.5} />
             Tambah
@@ -665,7 +665,7 @@ function MobileDashboard() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Sticky Compact Top Bar */}
@@ -674,7 +674,7 @@ function MobileDashboard() {
             style={{
               backgroundColor: `rgba(255, 255, 255, ${scrollProgress})`,
               borderBottomColor: `rgba(236, 236, 239, ${scrollProgress})`,
-              boxShadow: `0 1px 8px rgba(0, 0, 0, ${scrollProgress * 0.05})`,
+              boxShadow: `0 1px 6px rgba(41, 35, 42, ${scrollProgress * 0.03})`,
             }}
             className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow]"
           >
@@ -817,7 +817,7 @@ function MobileDashboard() {
         </header>
 
         {/* Canvas Konten */}
-        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#F7F7F7] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+        <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
           {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
@@ -828,7 +828,7 @@ function MobileDashboard() {
                   type="button"
                   onClick={() => setShowMonthPicker((previous) => !previous)}
                   aria-expanded={showMonthPicker}
-                  className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                  className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)]"
                 >
                   <CalendarDays className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]" />
                   <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
@@ -1061,7 +1061,7 @@ function MobileDashboard() {
           {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_2px_9px_rgba(0,0,0,0.055)]"
+            className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)]"
           >
             <span
               aria-hidden="true"
@@ -1172,7 +1172,7 @@ export default function DashboardPage() {
   if (!isReady) {
     return (
       <div
-        className="min-h-dvh w-full bg-[#F7F7F7]"
+        className="min-h-dvh w-full bg-[#FAFAFC]"
         aria-label="Memuat Dashboard"
       />
     );
