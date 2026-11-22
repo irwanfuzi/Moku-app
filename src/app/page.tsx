@@ -27,7 +27,7 @@ import {
 import { useAppLayout } from "@/components/layout/app-shell";
 
 /* =========================================================
-   DESIGN SYSTEM & CONSTANTS
+   DESIGN SYSTEM
 ========================================================= */
 const COLORS = {
   burgundy: "#730217",
@@ -538,58 +538,53 @@ function MobileDashboard() {
     <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
         {/* =================================================
-            HEADER BANNER (LEBIH PADAT + PRINTER MENYATU)
+            HEADER BANNER — OPSI C (MATTE GRAIN + HAIRLINE ARC)
         ================================================= */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(210px, 54vw, 236px)",
+            height: "clamp(212px, 55vw, 240px)",
           }}
         >
-          {/* Gradient dasar merah marun yang lebih halus */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_24%_30%,#B8082A_0%,#82011A_56%,#5A0010_100%)]" />
+          {/* Base micro-gradient */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_95%_at_18%_18%,#9B0823_0%,#760217_54%,#54000F_100%)]" />
 
-          {/* Ambient glow merah lembut di dasar agar transisi wave menyatu */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[96px] bg-gradient-to-t from-[#D41136]/45 via-[#A40624]/15 to-transparent" />
-
-          {/* Header wave image dibuat lebih landai, lembut, dan menyatu (tidak kaku) */}
+          {/* Subtle matte grain texture */}
           <div
-            className="pointer-events-none absolute -inset-x-[10%] bottom-[14px] z-[5] h-[106px] sm:h-[122px]"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-[2] opacity-[0.045] mix-blend-overlay"
             style={{
-              maskImage:
-                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 28%, black 70%, black 100%)",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 28%, black 70%, black 100%)",
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
             }}
-          >
-            <Image
-              src="/images/moku/illustrations/header-wave.png"
-              alt=""
-              fill
-              priority
-              aria-hidden="true"
-              className="scale-x-[1.08] object-cover object-bottom opacity-75 mix-blend-lighten"
-              sizes="100vw"
-            />
-          </div>
+          />
 
-          {/* Lapisan blend halus di atas wave agar kontras tepi tidak terlalu tajam */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[88px] bg-gradient-to-tr from-[#7A0118]/35 via-transparent to-[#E3163D]/15" />
+          {/* Subtle hairline arcs */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
+          />
 
-          {/* Logo dan notifikasi */}
-          <div className="absolute left-[20px] right-[20px] top-[max(24px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
-            <Link
-              href="/"
-              aria-label="MOKU Dashboard"
-              className="flex items-center"
-            >
+          {/* Low-contrast ambient lift behind printer */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[125px] w-[125px] rounded-full bg-[#D9163A]/20 blur-2xl"
+          />
+
+          {/* Logo and notification */}
+          <div className="absolute left-[20px] right-[20px] top-[max(34px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+            <Link href="/" aria-label="MOKU Dashboard" className="flex items-center">
               <Image
                 src="/images/moku/brand/moku-logo.png"
                 alt="MOKU"
                 width={180}
                 height={65}
                 priority
-                className="h-[36px] w-auto object-contain object-left"
+                className="h-[38px] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -626,44 +621,42 @@ function MobileDashboard() {
             </div>
           </div>
 
-          {/* Sapaan pengguna */}
-          <div className="absolute left-[20px] top-[max(74px,calc(env(safe-area-inset-top)+52px))] z-20 w-[calc(100%-40px)] pr-[148px]">
-            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.025em] text-white">
+          {/* Greeting */}
+          <div className="absolute left-[20px] top-[max(84px,calc(env(safe-area-inset-top)+52px))] z-20 w-[calc(100%-40px)] pr-[136px]">
+            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[5px] max-w-[215px] text-[13.5px] font-normal leading-[1.35] text-white/90">
+            <p className="mt-[5px] max-w-[220px] text-[13.5px] font-normal leading-[1.35] text-white/85">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
-          {/* Ilustrasi mesin printer (sejajar sapaan & dasarnya masuk halus di belakang canvas) */}
-          <div className="pointer-events-none absolute bottom-[14px] right-[12px] z-10 flex h-[144px] w-[144px] items-end justify-center sm:h-[160px] sm:w-[160px]">
-            {/* Soft warm glow di belakang printer agar tidak terlihat kaku/menempel datar */}
-            <div className="absolute inset-4 rounded-full bg-[#FF4D6D]/20 blur-xl" />
+          {/* Printer illustration */}
+          <div className="pointer-events-none absolute bottom-[18px] right-[12px] z-10 flex h-[138px] w-[138px] items-end justify-center sm:h-[154px] sm:w-[154px]">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
               width={420}
               height={420}
               priority
-              className="relative h-full w-full object-contain object-bottom opacity-[0.96] drop-shadow-[0_10px_20px_rgba(78,0,14,0.28)]"
-              sizes="160px"
+              className="h-full w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
+              sizes="154px"
             />
           </div>
         </header>
 
         {/* =================================================
-            CANVAS KONTEN (NAIK LEBIH TINGGI OVERLAY HEADER)
+            CANVAS KONTEN (ROUNDED ATAS + OVERLAY HEADER)
         ================================================= */}
         <div className="relative z-20 -mt-[34px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
           {/* =================================================
-              1. STATUS MONITORING MESIN
+              STATUS MONITORING
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
               <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
-              {/* Pemilih periode */}
+              {/* Period selector */}
               <div className="relative shrink-0">
                 <button
                   type="button"
@@ -706,10 +699,10 @@ function MobileDashboard() {
               </div>
             </div>
 
-            {/* Panel chart monitoring */}
+            {/* Monitoring chart panel */}
             <MobileCard className="mt-[10px] px-[14px] py-[14px]">
               <div className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-center gap-[12px]">
-                {/* Donut Chart */}
+                {/* Donut */}
                 <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[12px]">
                   <div
                     className="relative aspect-square w-full max-w-[136px] rounded-full"
@@ -731,7 +724,7 @@ function MobileDashboard() {
                   </div>
                 </div>
 
-                {/* Legenda Monitoring */}
+                {/* Legend */}
                 <div className="min-w-0 space-y-[12px]">
                   {monitoringData.map((item) => (
                     <div
@@ -761,7 +754,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              2. KUNJUNGAN BULAN INI
+              KUNJUNGAN BULAN INI
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
@@ -776,7 +769,7 @@ function MobileDashboard() {
 
             <MobileCard className="mt-[10px] px-[16px] py-[15px]">
               <div className="grid grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] items-center gap-[12px]">
-                {/* Total Kunjungan */}
+                {/* Total */}
                 <div className="min-w-0 border-r border-[#EAEAEF] pr-[10px]">
                   <p className="text-[clamp(42px,10vw,50px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
@@ -786,7 +779,7 @@ function MobileDashboard() {
                   </p>
                 </div>
 
-                {/* Pertumbuhan & Ilustrasi */}
+                {/* Growth */}
                 <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
                   <div className="min-w-0">
                     <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[10px] py-[4px] text-[13.5px] font-bold text-[#15803D]">
@@ -812,7 +805,7 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              {/* Progress Bar Target */}
+              {/* Progress */}
               <div className="mt-[14px]">
                 <div className="mb-[6px] flex items-center justify-between">
                   <p className="text-[13px] font-bold text-[#171717]">
@@ -833,7 +826,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              3. AKSI CEPAT
+              AKSI CEPAT
           ================================================= */}
           <section className="min-w-0">
             <div className="px-[2px]">
@@ -891,7 +884,7 @@ function MobileDashboard() {
           </section>
 
           {/* =================================================
-              4. MESIN PERLU PERHATIAN
+              MESIN PERLU PERHATIAN
           ================================================= */}
           <Link
             href="/monitoring"
@@ -921,7 +914,7 @@ function MobileDashboard() {
           </Link>
 
           {/* =================================================
-              5. AKTIVITAS TERBARU
+              AKTIVITAS TERBARU
           ================================================= */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
@@ -941,7 +934,7 @@ function MobileDashboard() {
                   key={`${activity.machine}-${index}`}
                   className="flex min-h-[66px] min-w-0 items-center gap-[12px] py-[10px]"
                 >
-                  {/* Ikon status */}
+                  {/* Status icon */}
                   <div
                     className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${
                       activity.status === "success"
@@ -956,7 +949,7 @@ function MobileDashboard() {
                     )}
                   </div>
 
-                  {/* Informasi aktivitas */}
+                  {/* Activity information */}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-bold leading-tight text-[#171717]">
                       {activity.title}
@@ -966,7 +959,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  {/* Badge waktu */}
+                  {/* Time badge */}
                   <span
                     className={`min-w-[74px] shrink-0 whitespace-nowrap rounded-full px-[12px] py-[5px] text-center text-[11.5px] font-semibold ${
                       activity.status === "success"
