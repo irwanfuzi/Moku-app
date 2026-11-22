@@ -203,11 +203,13 @@ function detectMobileBrowserMode(): boolean {
 }
 
 /**
- * Prioritas penentuan layout:
+ * Prioritas penentuan layout (berlaku untuk Web & PWA):
  * 1. URL override (?moku-layout=mobile|desktop) untuk QA.
  * 2. localStorage override (moku-layout-override) untuk testing manual.
- * 3. Mobile hanya aktif jika viewport <= 600px DAN browser bukan mode Desktop Site.
- *    Layar > 600px (Fold terbuka, tablet, laptop, PC) atau mode Desktop Site -> desktop.
+ * 3. Mobile hanya aktif jika sisi terpendek layar <= 600px DAN bukan mode Desktop Site.
+ *    - HP biasa portrait & landscape -> mobile
+ *    - HP biasa + mode Desktop Site (portrait & landscape) -> desktop
+ *    - HP Fold terbuka / Tablet / Laptop / PC (> 600px) -> desktop
  */
 function detectLayoutMode(): {
   mode: AppLayoutMode;
@@ -241,11 +243,12 @@ function detectLayoutMode(): {
     // Continue with browser & viewport detection.
   }
 
-  const isCompactViewport = window.matchMedia("(max-width: 600px)").matches;
+  const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+  const isPhoneSize = shortestSide <= 600;
   const isMobileBrowser = detectMobileBrowserMode();
 
   return {
-    mode: isCompactViewport && isMobileBrowser ? "mobile" : "desktop",
+    mode: isPhoneSize && isMobileBrowser ? "mobile" : "desktop",
     isPWA,
     source: "device",
   };
@@ -367,9 +370,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
     const displayMode = window.matchMedia("(display-mode: standalone)");
     displayMode.addEventListener("change", updateLayout);
 
-    const compactViewport = window.matchMedia("(max-width: 600px)");
-    compactViewport.addEventListener("change", updateLayout);
-
     const screenOrientation = window.screen.orientation;
     screenOrientation?.addEventListener("change", handleResize);
 
@@ -381,7 +381,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
       displayMode.removeEventListener("change", updateLayout);
-      compactViewport.removeEventListener("change", updateLayout);
       screenOrientation?.removeEventListener("change", handleResize);
     };
   }, [updateLayout]);
@@ -580,7 +579,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         }
 
         /*
-          MOBILE WEB / PWA (<= 600px)
+          MOBILE WEB / PWA (SHORTEST SIDE <= 600px, PORTRAIT & LANDSCAPE)
         */
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
