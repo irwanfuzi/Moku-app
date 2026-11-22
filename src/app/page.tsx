@@ -667,9 +667,11 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncThemeColor = (progress: number) => {
-      // Sinkronkan theme-color ke putih saat top bar putih aktif agar menyatu dengan status bar
-      const nextHex = progress > 0.35 ? "#FFFFFF" : "#83051C";
+    const syncStatusBarUnified = (progress: number) => {
+      // Samakan titik pergantian status bar & top bar (progress > 0.5)
+      const isWhiteState = progress > 0.5;
+      const nextHex = isWhiteState ? "#FFFFFF" : "#83051C";
+
       if (lastThemeColorRef.current !== nextHex) {
         lastThemeColorRef.current = nextHex;
         let metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -679,6 +681,7 @@ function MobileDashboard() {
           document.head.appendChild(metaTheme);
         }
         metaTheme.setAttribute("content", nextHex);
+        document.documentElement.style.backgroundColor = nextHex;
       }
     };
 
@@ -702,7 +705,7 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncThemeColor(0);
+        syncStatusBarUnified(0);
         return;
       }
 
@@ -715,7 +718,7 @@ function MobileDashboard() {
       setScrollProgress((prev) =>
         Math.abs(prev - eased) > 0.004 ? eased : prev
       );
-      syncThemeColor(eased);
+      syncStatusBarUnified(eased);
     };
 
     const onScroll = () => {
@@ -735,6 +738,7 @@ function MobileDashboard() {
         window.clearTimeout(refreshTimerRef.current);
       }
       window.removeEventListener("scroll", onScroll);
+      document.documentElement.style.backgroundColor = "";
     };
   }, []);
 
@@ -915,7 +919,7 @@ function MobileDashboard() {
           <div
             style={{
               backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
-              boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.04})`,
+              boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.035})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
@@ -1437,4 +1441,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-                                                       }
+}
