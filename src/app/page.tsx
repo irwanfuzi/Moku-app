@@ -213,7 +213,6 @@ function DesktopDashboard() {
   const [openAction, setOpenAction] = useState<string | null>(null);
   const [desktopMonth, setDesktopMonth] = useState("Oktober 2025");
 
-  // Filter tabel mesin berdasarkan pencarian, status, dan pelanggan
   const filteredRows = desktopMachineRows.filter((row) => {
     const query = search.trim().toLowerCase();
     const matchesSearch =
@@ -238,7 +237,6 @@ function DesktopDashboard() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-5 text-[#171923]">
-      {/* Header Desktop */}
       <header className="flex min-h-[88px] flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[clamp(28px,3vw,40px)] font-bold text-[#730217]">
@@ -289,7 +287,6 @@ function DesktopDashboard() {
         </div>
       </header>
 
-      {/* Kartu KPI Desktop */}
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {kpis.map(({ label, value, icon: Icon }) => (
           <div
@@ -309,7 +306,6 @@ function DesktopDashboard() {
         ))}
       </section>
 
-      {/* Grafik Monitoring & Statistik Kunjungan */}
       <section className="grid grid-cols-2 gap-5">
         <article className="h-[283px] rounded-[15px] border border-[#E4E4E8] bg-white p-[22px] shadow-sm">
           <h2 className="text-xl font-bold">Status Monitoring Mesin</h2>
@@ -381,7 +377,6 @@ function DesktopDashboard() {
         </article>
       </section>
 
-      {/* Tabel Daftar Mesin */}
       <section className="rounded-[15px] border border-[#E4E4E8] bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -543,32 +538,35 @@ function MobileDashboard() {
     <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
         {/* =================================================
-            HEADER BANNER (TINGGI PAS + WAVE IMAGE)
+            HEADER BANNER (NATURAL WAVE + PROPORSI REFERENSI)
         ================================================= */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(215px, 58vw, 248px)",
+            height: "clamp(228px, 60vw, 260px)",
           }}
         >
-          {/* Gradient dasar merah marun */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_28%,#A80524_0%,#7A0118_58%,#590010_100%)]" />
+          {/* Gradient dasar merah marun yang lebih halus */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_24%_32%,#B50728_0%,#82011A_55%,#5A0010_100%)]" />
 
-          {/* Header wave image dari asset lokal */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[120px] w-full">
+          {/* Ambient glow merah lembut di dasar agar transisi wave tidak kaku */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[95px] bg-gradient-to-t from-[#C80E32]/45 via-[#A40624]/15 to-transparent" />
+
+          {/* Header wave image melebar halus menyapu kiri ke kanan */}
+          <div className="pointer-events-none absolute -inset-x-[4%] bottom-[-6px] z-[5] h-[138px] sm:h-[154px]">
             <Image
               src="/images/moku/illustrations/header-wave.png"
               alt=""
               fill
               priority
               aria-hidden="true"
-              className="object-cover object-bottom"
+              className="object-cover object-bottom opacity-95"
               sizes="100vw"
             />
           </div>
 
           {/* Logo dan notifikasi */}
-          <div className="absolute left-[20px] right-[20px] top-[max(36px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+          <div className="absolute left-[20px] right-[20px] top-[max(34px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -618,25 +616,25 @@ function MobileDashboard() {
           </div>
 
           {/* Sapaan pengguna */}
-          <div className="absolute left-[20px] top-[max(86px,calc(env(safe-area-inset-top)+54px))] z-20 w-[calc(100%-40px)] pr-[128px]">
-            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
+          <div className="absolute left-[20px] top-[max(88px,calc(env(safe-area-inset-top)+56px))] z-20 w-[calc(100%-40px)] pr-[145px]">
+            <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.025em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[5px] max-w-[225px] text-[13.5px] font-normal leading-[1.35] text-white/90">
+            <p className="mt-[6px] max-w-[215px] text-[13.5px] font-normal leading-[1.38] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
-          {/* Ilustrasi mesin printer */}
-          <div className="pointer-events-none absolute bottom-[12px] right-[12px] z-10 flex h-[132px] w-[132px] items-end justify-center sm:h-[146px] sm:w-[146px]">
+          {/* Ilustrasi mesin printer (skala lebih proporsional & menyatu di belakang canvas) */}
+          <div className="pointer-events-none absolute bottom-[6px] right-[10px] z-10 flex h-[152px] w-[152px] items-end justify-center sm:h-[172px] sm:w-[172px]">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
               width={420}
               height={420}
               priority
-              className="h-full w-full object-contain object-bottom"
-              sizes="146px"
+              className="h-full w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(89,0,16,0.22)]"
+              sizes="172px"
             />
           </div>
         </header>
