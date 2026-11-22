@@ -47,10 +47,10 @@ const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
 const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
-const REFRESH_HOLD = 70;
+const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 16;
-const TOPBAR_SCROLL_RANGE = 44;
+const TOPBAR_SCROLL_START = 44;
+const TOPBAR_SCROLL_RANGE = 56;
 
 /* =========================================================
    DASHBOARD DATA
@@ -667,21 +667,14 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncStatusBarUnified = (progress: number) => {
-      // Samakan titik pergantian status bar & top bar (progress > 0.5)
-      const isWhiteState = progress > 0.5;
-      const nextHex = isWhiteState ? "#FFFFFF" : "#83051C";
-
+    const syncThemeColor = (progress: number) => {
+      const nextHex = progress > 0.5 ? "#FFFFFF" : "#83051C";
       if (lastThemeColorRef.current !== nextHex) {
         lastThemeColorRef.current = nextHex;
-        let metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (!metaTheme) {
-          metaTheme = document.createElement("meta");
-          metaTheme.setAttribute("name", "theme-color");
-          document.head.appendChild(metaTheme);
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+          metaTheme.setAttribute("content", nextHex);
         }
-        metaTheme.setAttribute("content", nextHex);
-        document.documentElement.style.backgroundColor = nextHex;
       }
     };
 
@@ -705,7 +698,7 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncStatusBarUnified(0);
+        syncThemeColor(0);
         return;
       }
 
@@ -718,7 +711,7 @@ function MobileDashboard() {
       setScrollProgress((prev) =>
         Math.abs(prev - eased) > 0.004 ? eased : prev
       );
-      syncStatusBarUnified(eased);
+      syncThemeColor(eased);
     };
 
     const onScroll = () => {
@@ -738,7 +731,6 @@ function MobileDashboard() {
         window.clearTimeout(refreshTimerRef.current);
       }
       window.removeEventListener("scroll", onScroll);
-      document.documentElement.style.backgroundColor = "";
     };
   }, []);
 
@@ -848,8 +840,9 @@ function MobileDashboard() {
   const emblemOpacity = isRefreshing
     ? 1
     : Math.min(1, Math.max(0, (pullDistance - 2) / 34));
-  const emblemTranslateY = isRefreshing ? 14 : -24 + pullRatio * 38;
-  const emblemScale = isRefreshing ? 1 : 0.45 + pullRatio * 0.55;
+  // Jarak gerak dibatasi di area safe-area atas agar tidak menimpa logo MOKU
+  const emblemTranslateY = isRefreshing ? 4 : -10 + pullRatio * 14;
+  const emblemScale = isRefreshing ? 0.96 : 0.5 + pullRatio * 0.46;
   const showPwaShimmer = isPwaMode && isRefreshing;
   const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
@@ -864,7 +857,7 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Emblem Pull-to-Refresh MOKU */}
+        {/* Emblem Pull-to-Refresh MOKU (Diposisikan rapi di atas agar tidak menabrak logo MOKU) */}
         {isPwaMode && (
           <div
             aria-hidden={!isRefreshing && pullDistance <= 0}
@@ -875,9 +868,9 @@ function MobileDashboard() {
                 ? "none"
                 : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1), opacity 240ms ease",
             }}
-            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(6*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)-calc(2*var(--u)))] z-50 flex justify-center will-change-[transform,opacity]"
           >
-            <div className="relative flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(45,0,10,0.28)]">
+            <div className="relative flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(45,0,10,0.28)]">
               <span
                 aria-hidden="true"
                 style={{
@@ -893,7 +886,7 @@ function MobileDashboard() {
               </span>
 
               <div
-                className={`relative z-10 flex h-[calc(26*var(--u))] w-[calc(26*var(--u))] items-center justify-center transition-transform duration-300 ${
+                className={`relative z-10 flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center transition-transform duration-300 ${
                   isRefreshing ? "animate-pulse scale-105" : ""
                 }`}
               >
@@ -914,7 +907,7 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar (Menyatu satu bidang putih tanpa garis pembatas) */}
+        {/* Sticky Compact Top Bar */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
@@ -1441,4 +1434,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-}
+                    }
