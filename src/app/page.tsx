@@ -608,7 +608,7 @@ function MobileDashboard() {
     >
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
-        <header className="relative isolate h-[calc(210*var(--u))] overflow-hidden bg-[#730217] text-white">
+        <header className="relative isolate h-[calc(218*var(--u))] overflow-hidden bg-[#730217] text-white">
           {/* Base micro-gradient */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_95%_at_18%_18%,#9B0823_0%,#760217_54%,#54000F_100%)]" />
 
@@ -692,17 +692,17 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[calc(18*var(--u))] top-[max(calc(70*var(--u)),calc(env(safe-area-inset-top)+44px))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(132*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(23*var(--u))] font-bold leading-[1.15] tracking-[-0.035em] text-white">
+          <div className="absolute left-[calc(18*var(--u))] top-[max(calc(84*var(--u)),calc(env(safe-area-inset-top)+56px))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
+            <h1 className="whitespace-nowrap text-[calc(20.5*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[calc(4*var(--u))] max-w-[calc(215*var(--u))] text-[calc(12.5*var(--u))] font-normal leading-[1.35] text-white/85">
+            <p className="mt-[calc(5*var(--u))] max-w-[calc(205*var(--u))] text-[calc(11.5*var(--u))] font-normal leading-[1.38] text-white/85">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
           {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+          <div className="pointer-events-none absolute bottom-[calc(15*var(--u))] right-[calc(12*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
