@@ -8,7 +8,7 @@
 ========================================================= */
 
 /* =========================================================
-   1. THEME CONFIGURATION
+1. THEME CONFIGURATION
 ========================================================= */
 
 @theme inline {
@@ -52,7 +52,7 @@
 }
 
 /* =========================================================
-   2. LIGHT THEME
+2. LIGHT THEME
 ========================================================= */
 
 :root {
@@ -109,7 +109,7 @@
 }
 
 /* =========================================================
-   3. DARK THEME
+3. DARK THEME
 ========================================================= */
 
 .dark,
@@ -163,13 +163,16 @@
 }
 
 /* =========================================================
-   4. RESET & BASE STYLES
+4. RESET & BASE STYLES
 ========================================================= */
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 html {
@@ -213,13 +216,22 @@ body {
   overscroll-behavior-x: none;
 }
 
-/* Native form typography */
+/* Native form typography & allow text selection inside inputs */
 
 button,
 input,
 textarea,
 select {
   font: inherit;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 button {
@@ -247,7 +259,7 @@ svg {
 }
 
 /* =========================================================
-   5. CLEAN SCROLLBAR
+5. CLEAN SCROLLBAR
    Hide scrollbar without disabling scrolling.
 ========================================================= */
 
@@ -289,7 +301,7 @@ main,
 }
 
 /* =========================================================
-   6. TYPOGRAPHY
+6. TYPOGRAPHY
 ========================================================= */
 
 h1,
@@ -299,10 +311,10 @@ h4,
 h5,
 h6 {
   /*
-   * Keep global heading rules limited to the reset.
-   * Component-level Tailwind utilities control color, size,
-   * weight, line-height and tracking so mobile headers do not
-   * inherit the default dark heading color.
+- Keep global heading rules limited to the reset.
+- Component-level Tailwind utilities control color, size,
+- weight, line-height and tracking so mobile headers do not
+- inherit the default dark heading color.
    */
   margin: 0;
 }
@@ -324,7 +336,7 @@ small {
 }
 
 /* =========================================================
-   7. FOCUS & ACCESSIBILITY
+7. FOCUS & ACCESSIBILITY
 ========================================================= */
 
 :focus-visible {
@@ -339,7 +351,7 @@ select:focus-visible {
 }
 
 /* =========================================================
-   8. FORM ELEMENTS
+8. FORM ELEMENTS
 ========================================================= */
 
 input,
@@ -362,7 +374,7 @@ select:disabled {
 }
 
 /* =========================================================
-   9. COMMON COMPONENT UTILITIES
+9. COMMON COMPONENT UTILITIES
 ========================================================= */
 
 .moku-card {
@@ -431,7 +443,7 @@ select:disabled {
 }
 
 /* =========================================================
-   10. STATUS BADGES
+10. STATUS BADGES
 ========================================================= */
 
 .moku-status {
@@ -488,7 +500,7 @@ select:disabled {
 }
 
 /* =========================================================
-   11. ANIMATION UTILITIES
+11. ANIMATION UTILITIES
 ========================================================= */
 
 /* PAGE FADE IN */
@@ -543,7 +555,7 @@ select:disabled {
 }
 
 /* =========================================================
-   12. RESPONSIVE TYPOGRAPHY
+12. RESPONSIVE TYPOGRAPHY
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -553,7 +565,7 @@ select:disabled {
 }
 
 /* =========================================================
-   13. REDUCED MOTION
+13. REDUCED MOTION
 ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -568,7 +580,7 @@ select:disabled {
 }
 
 /* =========================================================
-   14. NATIVE PAGE VIEW TRANSITIONS
+14. NATIVE PAGE VIEW TRANSITIONS
 ========================================================= */
 
 @supports (view-transition-name: root) {
@@ -614,4 +626,3 @@ select:disabled {
     animation-duration: 1ms !important;
   }
 }
- 
