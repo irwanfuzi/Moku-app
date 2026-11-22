@@ -726,11 +726,7 @@ function MobileDashboard() {
   }, []);
 
   useEffect(() => {
-    if (
-      isPullingRef.current ||
-      pullDistance > 0 ||
-      isRefreshing
-    ) {
+    if (isPullingRef.current || pullDistance > 0 || isRefreshing) {
       setIconProgress(0);
     }
   }, [pullDistance, isRefreshing]);
@@ -957,24 +953,24 @@ function MobileDashboard() {
               </span>
             </Link>
 
-            <div className="relative flex h-[calc(28*var(--u))] items-center">
+            <div className="relative mr-[calc(4*var(--u))] flex h-[calc(28*var(--u))] items-center">
               <button
                 type="button"
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center rounded-full"
+                className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
                   className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
                   strokeWidth={1.85}
                 />
 
-                <span className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30] ring-[1.5px] ring-[#83051C]" />
+                <span className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30] ring-[1.5px] ring-[#83051C]" />
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-[calc(34*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
+                <div className="absolute right-0 top-[calc(36*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold">Notifikasi</p>
                     <button
@@ -1419,4 +1415,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-    }
+        }
