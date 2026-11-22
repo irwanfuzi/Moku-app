@@ -1,13 +1,13 @@
 {
   "id": "/",
-  "name": "MOKU - Monitoring Operasional Kunjungan Unit",
+  "name": "MOKU Mobile App",
   "short_name": "MOKU",
   "description": "Aplikasi monitoring operasional kunjungan dan layanan mesin.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#83051C",
+  "background_color": "#FFFFFF",
   "theme_color": "#83051C",
   "icons": [
     {
@@ -23,4 +23,4 @@
       "purpose": "any"
     }
   ]
-} 
+}
