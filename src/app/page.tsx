@@ -538,22 +538,22 @@ function MobileDashboard() {
     <main className="min-h-dvh w-full overflow-x-clip bg-[#F7F7F7] pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="relative mx-auto w-full max-w-[760px]">
         {/* =================================================
-            HEADER BANNER (NATURAL WAVE + PROPORSI REFERENSI)
+            HEADER BANNER (LEBIH PADAT + PRINTER MENYATU)
         ================================================= */}
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(228px, 60vw, 260px)",
+            height: "clamp(210px, 54vw, 236px)",
           }}
         >
           {/* Gradient dasar merah marun yang lebih halus */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_24%_32%,#B50728_0%,#82011A_55%,#5A0010_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_24%_30%,#B8082A_0%,#82011A_56%,#5A0010_100%)]" />
 
-          {/* Ambient glow merah lembut di dasar agar transisi wave tidak kaku */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[95px] bg-gradient-to-t from-[#C80E32]/45 via-[#A40624]/15 to-transparent" />
+          {/* Ambient glow merah lembut di dasar agar transisi wave menyatu */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[90px] bg-gradient-to-t from-[#CC0F34]/50 via-[#A40624]/20 to-transparent" />
 
-          {/* Header wave image melebar halus menyapu kiri ke kanan */}
-          <div className="pointer-events-none absolute -inset-x-[4%] bottom-[-6px] z-[5] h-[138px] sm:h-[154px]">
+          {/* Header wave image diposisikan naik mengikuti tinggi canvas putih */}
+          <div className="pointer-events-none absolute -inset-x-[4%] bottom-[6px] z-[5] h-[118px] sm:h-[132px]">
             <Image
               src="/images/moku/illustrations/header-wave.png"
               alt=""
@@ -566,7 +566,7 @@ function MobileDashboard() {
           </div>
 
           {/* Logo dan notifikasi */}
-          <div className="absolute left-[20px] right-[20px] top-[max(34px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+          <div className="absolute left-[20px] right-[20px] top-[max(24px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -578,7 +578,7 @@ function MobileDashboard() {
                 width={180}
                 height={65}
                 priority
-                className="h-[38px] w-auto object-contain object-left"
+                className="h-[36px] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -616,33 +616,35 @@ function MobileDashboard() {
           </div>
 
           {/* Sapaan pengguna */}
-          <div className="absolute left-[20px] top-[max(88px,calc(env(safe-area-inset-top)+56px))] z-20 w-[calc(100%-40px)] pr-[145px]">
+          <div className="absolute left-[20px] top-[max(74px,calc(env(safe-area-inset-top)+52px))] z-20 w-[calc(100%-40px)] pr-[148px]">
             <h1 className="whitespace-nowrap text-[clamp(22px,6vw,26px)] font-bold leading-[1.15] tracking-[-0.025em] text-white">
               Halo, Budi Santoso
             </h1>
-            <p className="mt-[6px] max-w-[215px] text-[13.5px] font-normal leading-[1.38] text-white/90">
+            <p className="mt-[5px] max-w-[215px] text-[13.5px] font-normal leading-[1.35] text-white/90">
               Berikut ringkasan operasional kunjungan unit.
             </p>
           </div>
 
-          {/* Ilustrasi mesin printer (skala lebih proporsional & menyatu di belakang canvas) */}
-          <div className="pointer-events-none absolute bottom-[6px] right-[10px] z-10 flex h-[152px] w-[152px] items-end justify-center sm:h-[172px] sm:w-[172px]">
+          {/* Ilustrasi mesin printer (sejajar sapaan & dasarnya masuk halus di belakang canvas) */}
+          <div className="pointer-events-none absolute bottom-[14px] right-[12px] z-10 flex h-[144px] w-[144px] items-end justify-center sm:h-[160px] sm:w-[160px]">
+            {/* Soft warm glow di belakang printer agar tidak terlihat kaku/menempel datar */}
+            <div className="absolute inset-4 rounded-full bg-[#FF4D6D]/20 blur-xl" />
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
               width={420}
               height={420}
               priority
-              className="h-full w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(89,0,16,0.22)]"
-              sizes="172px"
+              className="relative h-full w-full object-contain object-bottom opacity-[0.96] drop-shadow-[0_10px_20px_rgba(78,0,14,0.28)]"
+              sizes="160px"
             />
           </div>
         </header>
 
         {/* =================================================
-            CANVAS KONTEN (ROUNDED ATAS + OVERLAY HEADER)
+            CANVAS KONTEN (NAIK LEBIH TINGGI OVERLAY HEADER)
         ================================================= */}
-        <div className="relative z-20 -mt-[22px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
+        <div className="relative z-20 -mt-[34px] flex flex-col gap-[18px] rounded-t-[26px] bg-[#F7F7F7] px-[16px] pt-[18px]">
           {/* =================================================
               1. STATUS MONITORING MESIN
           ================================================= */}
