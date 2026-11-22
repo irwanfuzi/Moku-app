@@ -47,10 +47,10 @@ const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
 const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
-const REFRESH_HOLD = 68;
+const REFRESH_HOLD = 70;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 24;
-const TOPBAR_SCROLL_RANGE = 88;
+const TOPBAR_SCROLL_START = 126;
+const TOPBAR_SCROLL_RANGE = 44;
 
 /* =========================================================
    DASHBOARD DATA
@@ -679,6 +679,7 @@ function MobileDashboard() {
       rafRef.current = null;
       const scrollTop = getScrollTop();
 
+      // Top bar tetap merah transparan sampai canvas putih mendekati area top bar
       if (
         scrollTop <= TOPBAR_SCROLL_START ||
         isPullingRef.current ||
@@ -732,7 +733,7 @@ function MobileDashboard() {
     };
   }, []);
 
-  /* Native non-passive touch listeners dengan kurva elastis lentur */
+  /* Native non-passive touch listeners dengan kurva elastis & gestur naik-turun mulus */
   useEffect(() => {
     const el = mainRef.current;
     if (!el || !isPwaMode) return;
@@ -784,8 +785,13 @@ function MobileDashboard() {
         const damped = MAX_PULL * (1 - Math.exp(-deltaY / 135));
         setPullDistance(damped);
         setScrollProgress(0);
-      } else {
+      } else if (deltaY < -4) {
+        // Baru lepas dari mode pull jika jari benar-benar digeser ke atas melewati titik awal
+        isPullingRef.current = false;
+        touchStartYRef.current = null;
         setIsPullDragging(false);
+        setPullDistance(0);
+      } else {
         setPullDistance(0);
       }
     };
@@ -831,8 +837,15 @@ function MobileDashboard() {
     pullDistance > 0 || isRefreshing ? 0 : scrollProgress;
   const pullRatio = Math.min(1, pullDistance / REFRESH_HOLD);
   const ringDeg = Math.round(pullRatio * 360);
-  const showPwaRefreshEmblem =
-    isPwaMode && (pullDistance > 4 || isRefreshing);
+  const emblemOpacity = isRefreshing
+    ? 1
+    : Math.min(1, Math.max(0, (pullDistance - 2) / 34));
+  const emblemTranslateY = isRefreshing
+    ? 14
+    : -24 + pullRatio * 38;
+  const emblemScale = isRefreshing
+    ? 1
+    : 0.45 + pullRatio * 0.55;
   const showPwaShimmer = isPwaMode && isRefreshing;
   const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
@@ -847,19 +860,18 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Emblem Pull-to-Refresh MOKU (Ukuran proporsional + cincin progresif & animasi halus) */}
-        {showPwaRefreshEmblem && (
+        {/* Emblem Pull-to-Refresh MOKU (Selalu terpasang di DOM agar animasi muncul/hilangnya mulus) */}
+        {isPwaMode && (
           <div
+            aria-hidden={!isRefreshing && pullDistance <= 0}
             style={{
-              opacity: isRefreshing ? 1 : Math.min(1, pullRatio * 1.15),
-              transform: `translateY(${Math.min(10, pullDistance * 0.14)}px) scale(${
-                isRefreshing ? 1 : 0.65 + pullRatio * 0.35
-              })`,
+              opacity: emblemOpacity,
+              transform: `translate3d(0, ${emblemTranslateY}px, 0) scale(${emblemScale})`,
               transition: isPullDragging
                 ? "none"
-                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1), opacity 220ms ease",
+                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1), opacity 240ms ease",
             }}
-            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(8*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(6*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
           >
             <div className="relative flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(45,0,10,0.28)]">
               <span
@@ -889,7 +901,7 @@ function MobileDashboard() {
                   style={{
                     transform: isRefreshing
                       ? undefined
-                      : `rotate(${(pullRatio - 0.5) * 24}deg)`,
+                      : `rotate(${(pullRatio - 0.5) * 32}deg)`,
                   }}
                   className="h-full w-full object-contain"
                 />
@@ -1426,4 +1438,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-                              }
+}
