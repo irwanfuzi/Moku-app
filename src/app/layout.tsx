@@ -1,14 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 
 import AppShell from "@/components/layout/app-shell";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-plus-jakarta",
+  variable: "--font-inter",
+  preload: true,
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-manrope",
   preload: true,
 });
 
@@ -96,7 +103,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={plusJakartaSans.variable}
+      className={`${inter.variable} ${manrope.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased">
@@ -105,4 +112,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-} 
+}
