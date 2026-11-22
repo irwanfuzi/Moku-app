@@ -7,12 +7,7 @@
    Framework: Tailwind CSS v4
 ========================================================= */
 
-/* =========================================================
-1. THEME CONFIGURATION
-========================================================= */
-
 @theme inline {
-  /* Brand */
   --color-primary: var(--moku-primary);
   --color-primary-hover: var(--moku-primary-hover);
   --color-primary-light: var(--moku-primary-light);
@@ -23,43 +18,32 @@
   --color-accent: var(--moku-accent);
   --color-highlight: var(--moku-highlight);
 
-  /* Background */
   --color-background: var(--moku-background);
   --color-surface: var(--moku-surface);
   --color-surface-secondary: var(--moku-surface-secondary);
 
-  /* Typography */
   --color-foreground: var(--moku-text);
   --color-muted: var(--moku-text-secondary);
 
-  /* Borders */
   --color-border: var(--moku-border);
   --color-input: var(--moku-input);
 
-  /* Status */
   --color-success: var(--moku-success);
   --color-warning: var(--moku-warning);
   --color-danger: var(--moku-danger);
   --color-info: var(--moku-info);
 
-  /* Typography */
   --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
   --font-display: var(--font-plus-jakarta), var(--font-inter), Arial, sans-serif;
 
-  /* Radius */
   --radius-card: 16px;
   --radius-control: 10px;
   --radius-panel: 20px;
 }
 
-/* =========================================================
-2. LIGHT THEME
-========================================================= */
-
 :root {
   color-scheme: light;
 
-  /* Official Brand Palette */
   --moku-primary: #730217;
   --moku-primary-hover: #5c0112;
   --moku-primary-light: #f5e6e9;
@@ -70,54 +54,37 @@
   --moku-accent: #f28c0f;
   --moku-highlight: #eb5513;
 
-  /* Background */
   --moku-background: #f2f2f2;
   --moku-surface: #ffffff;
   --moku-surface-secondary: #f7f7f7;
 
-  /* Typography */
   --moku-text: #29232a;
   --moku-text-secondary: #716a70;
   --moku-text-muted: #999399;
 
-  /* Borders */
   --moku-border: #e6e3e4;
   --moku-input: #dcd7d9;
 
-  /* Status */
   --moku-success: #23966b;
   --moku-warning: #c98219;
   --moku-danger: #dc4c55;
   --moku-info: #4285b8;
 
-  /* Additional Colors */
   --moku-white: #ffffff;
   --moku-light-gray: #f2f2f2;
 
-  /* Shadows */
-  --moku-shadow-sm:
-    0 1px 2px rgba(41, 35, 42, 0.04);
+  --moku-shadow-sm: 0 1px 2px rgba(41, 35, 42, 0.04);
+  --moku-shadow-md: 0 4px 16px rgba(41, 35, 42, 0.06);
+  --moku-shadow-lg: 0 12px 32px rgba(41, 35, 42, 0.08);
 
-  --moku-shadow-md:
-    0 4px 16px rgba(41, 35, 42, 0.06);
-
-  --moku-shadow-lg:
-    0 12px 32px rgba(41, 35, 42, 0.08);
-
-  /* Layout */
   --moku-sidebar-width: 260px;
   --moku-header-height: 72px;
 }
-
-/* =========================================================
-3. DARK THEME
-========================================================= */
 
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Brand */
   --moku-primary: #bf0b2c;
   --moku-primary-hover: #d51b3e;
   --moku-primary-light: #451b25;
@@ -128,44 +95,29 @@
   --moku-accent: #f5a33d;
   --moku-highlight: #f07843;
 
-  /* Background */
   --moku-background: #181517;
   --moku-surface: #231e20;
   --moku-surface-secondary: #2d2629;
 
-  /* Typography */
   --moku-text: #f5f1f2;
   --moku-text-secondary: #c0b6ba;
   --moku-text-muted: #91858a;
 
-  /* Borders */
   --moku-border: #40373b;
   --moku-input: #51454a;
 
-  /* Status */
   --moku-success: #50bd91;
   --moku-warning: #efb94e;
   --moku-danger: #f17a80;
   --moku-info: #70b4e0;
 
-  /* Additional Colors */
   --moku-white: #ffffff;
   --moku-light-gray: #302b2d;
 
-  /* Shadows */
-  --moku-shadow-sm:
-    0 1px 2px rgba(0, 0, 0, 0.16);
-
-  --moku-shadow-md:
-    0 4px 16px rgba(0, 0, 0, 0.20);
-
-  --moku-shadow-lg:
-    0 12px 32px rgba(0, 0, 0, 0.28);
+  --moku-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --moku-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.20);
+  --moku-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.28);
 }
-
-/* =========================================================
-4. RESET & BASE STYLES
-========================================================= */
 
 *,
 *::before,
@@ -173,10 +125,15 @@
   box-sizing: border-box;
 }
 
-/* Lock text selection ONLY inside installed PWA mode */
+/* Lock text selection & native pull-to-refresh ONLY inside installed PWA mode */
 @media (display-mode: standalone),
   (display-mode: fullscreen),
   (display-mode: minimal-ui) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
   *,
   *::before,
   *::after {
@@ -198,9 +155,7 @@
 html {
   min-height: 100%;
   width: 100%;
-
   scroll-behavior: auto;
-
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
@@ -209,34 +164,25 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-
   margin: 0;
-
   background-color: var(--moku-background);
   color: var(--moku-text);
-
   font-family:
     var(--font-inter),
     Arial,
     Helvetica,
     sans-serif;
-
   font-size: 14px;
   line-height: 1.6;
-
   font-feature-settings:
     "cv02",
     "cv03",
     "cv04",
     "cv11";
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   overscroll-behavior-x: none;
 }
-
-/* Native form typography */
 
 button,
 input,
@@ -269,11 +215,6 @@ svg {
   color: var(--moku-primary);
 }
 
-/* =========================================================
-5. CLEAN SCROLLBAR
-   Hide scrollbar without disabling scrolling.
-========================================================= */
-
 html,
 body,
 * {
@@ -290,14 +231,10 @@ body::-webkit-scrollbar,
   background: transparent !important;
 }
 
-/* Horizontal overflow prevention */
-
 html,
 body {
   overflow-x: clip;
 }
-
-/* Natural touch scrolling */
 
 body,
 main,
@@ -305,15 +242,9 @@ main,
   -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent horizontal overscroll */
-
 .moku-app-shell {
   overscroll-behavior-x: none;
 }
-
-/* =========================================================
-6. TYPOGRAPHY
-========================================================= */
 
 h1,
 h2,
@@ -321,12 +252,6 @@ h3,
 h4,
 h5,
 h6 {
-  /*
-- Keep global heading rules limited to the reset.
-- Component-level Tailwind utilities control color, size,
-- weight, line-height and tracking so mobile headers do not
-- inherit the default dark heading color.
-   */
   margin: 0;
 }
 
@@ -346,10 +271,6 @@ small {
   color: var(--moku-primary);
 }
 
-/* =========================================================
-7. FOCUS & ACCESSIBILITY
-========================================================= */
-
 :focus-visible {
   outline: 3px solid var(--moku-accent);
   outline-offset: 3px;
@@ -360,10 +281,6 @@ textarea:focus-visible,
 select:focus-visible {
   outline-offset: 0;
 }
-
-/* =========================================================
-8. FORM ELEMENTS
-========================================================= */
 
 input,
 textarea,
@@ -384,10 +301,6 @@ select:disabled {
   opacity: 0.6;
 }
 
-/* =========================================================
-9. COMMON COMPONENT UTILITIES
-========================================================= */
-
 .moku-card {
   background-color: var(--moku-surface);
   border: 1px solid var(--moku-border);
@@ -405,14 +318,10 @@ select:disabled {
   width: 100%;
   min-height: 42px;
   padding: 10px 12px;
-
   background-color: var(--moku-surface);
-
   border: 1px solid var(--moku-input);
   border-radius: 10px;
-
   color: var(--moku-text);
-
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
@@ -421,7 +330,6 @@ select:disabled {
 .moku-input:focus {
   border-color: var(--moku-primary);
   outline: none;
-
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--moku-primary) 12%, transparent);
 }
@@ -431,18 +339,13 @@ select:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   min-height: 42px;
   padding: 10px 18px;
-
   background-color: var(--moku-primary);
-
   border: 1px solid var(--moku-primary);
   border-radius: 10px;
-
   color: #ffffff;
   font-weight: 600;
-
   transition:
     background-color 160ms ease,
     border-color 160ms ease;
@@ -453,18 +356,12 @@ select:disabled {
   border-color: var(--moku-primary-hover);
 }
 
-/* =========================================================
-10. STATUS BADGES
-========================================================= */
-
 .moku-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-
   padding: 5px 10px;
   border-radius: 20px;
-
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -476,7 +373,6 @@ select:disabled {
     var(--moku-success) 12%,
     transparent
   );
-
   color: var(--moku-success);
 }
 
@@ -486,7 +382,6 @@ select:disabled {
     var(--moku-warning) 14%,
     transparent
   );
-
   color: var(--moku-warning);
 }
 
@@ -496,7 +391,6 @@ select:disabled {
     var(--moku-danger) 12%,
     transparent
   );
-
   color: var(--moku-danger);
 }
 
@@ -506,15 +400,8 @@ select:disabled {
     var(--moku-info) 12%,
     transparent
   );
-
   color: var(--moku-info);
 }
-
-/* =========================================================
-11. ANIMATION UTILITIES
-========================================================= */
-
-/* PAGE FADE IN */
 
 @keyframes moku-fade-in {
   from {
@@ -528,8 +415,6 @@ select:disabled {
   }
 }
 
-/* SKELETON SHIMMER */
-
 @keyframes moku-skeleton-shimmer {
   0% {
     background-position: 100% 0;
@@ -540,13 +425,9 @@ select:disabled {
   }
 }
 
-/* PAGE ANIMATION */
-
 .moku-fade-in {
   animation: moku-fade-in 180ms ease-out both;
 }
-
-/* SKELETON COMPONENT */
 
 .moku-skeleton {
   background: linear-gradient(
@@ -555,29 +436,17 @@ select:disabled {
     var(--moku-border) 50%,
     var(--moku-surface-secondary) 75%
   );
-
   background-size: 200% 100%;
   background-position: 100% 0;
-
   border-radius: 8px;
-
-  animation:
-    moku-skeleton-shimmer 1.5s ease-in-out infinite;
+  animation: moku-skeleton-shimmer 1.5s ease-in-out infinite;
 }
-
-/* =========================================================
-12. RESPONSIVE TYPOGRAPHY
-========================================================= */
 
 @media (max-width: 768px) {
   body {
     font-size: 13px;
   }
 }
-
-/* =========================================================
-13. REDUCED MOTION
-========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -587,53 +456,5 @@ select:disabled {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* =========================================================
-14. NATIVE PAGE VIEW TRANSITIONS
-========================================================= */
-
-@supports (view-transition-name: root) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 200ms;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-    animation-fill-mode: both;
-  }
-
-  ::view-transition-old(root) {
-    animation-name: moku-native-page-out;
-  }
-
-  ::view-transition-new(root) {
-    animation-name: moku-native-page-in;
-  }
-
-  @keyframes moku-native-page-out {
-    from {
-      opacity: 1;
-    }
-
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes moku-native-page-in {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 1ms !important;
   }
 }
