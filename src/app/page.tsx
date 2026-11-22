@@ -154,7 +154,7 @@ function MobileCard({
   className = "",
 }: {
   children: ReactNode;
-  className?: string;
+  className = "",
 }) {
   return (
     <section
@@ -608,9 +608,9 @@ function MobileDashboard() {
     >
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Header Banner — Opsi C (Matte Grain + Hairline Arc) */}
-        <header className="relative isolate h-[calc(218*var(--u))] overflow-hidden bg-[#730217] text-white">
-          {/* Base micro-gradient */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_95%_at_18%_18%,#9B0823_0%,#760217_54%,#54000F_100%)]" />
+        <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-hidden bg-[#83051C] text-white">
+          {/* Base micro-gradient (top color #83051C matches status bar theme-color) */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#83051C_0%,#760217_55%,#54000F_100%)]" />
 
           {/* Subtle matte grain texture */}
           <div
@@ -638,12 +638,12 @@ function MobileDashboard() {
             className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
-          {/* Logo and notification */}
-          <div className="absolute left-[calc(18*var(--u))] right-[calc(18*var(--u))] top-[max(calc(22*var(--u)),calc(env(safe-area-inset-top)+6px))] z-30 flex items-center justify-between">
+          {/* Top Bar: Logo & Notification (sama tinggi & sejajar tengah) */}
+          <div className="absolute left-[calc(18*var(--u))] right-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(10*var(--u)))] z-30 flex h-[calc(34*var(--u))] items-center justify-between">
             <Link
               href="/"
               aria-label="MOKU Dashboard"
-              className="flex items-center"
+              className="flex h-full items-center"
             >
               <Image
                 src="/images/moku/brand/moku-logo.png"
@@ -651,28 +651,28 @@ function MobileDashboard() {
                 width={180}
                 height={65}
                 priority
-                className="h-[calc(35*var(--u))] w-auto object-contain object-left"
-                sizes="180px"
+                className="h-[calc(23*var(--u))] w-auto object-contain object-left"
+                sizes="150px"
               />
             </Link>
 
-            <div className="relative">
+            <div className="relative flex h-full items-center">
               <button
                 type="button"
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] items-center justify-center rounded-full text-white"
+                className="relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-white"
               >
                 <Bell
                   className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
                   strokeWidth={1.8}
                 />
-                <span className="absolute right-[calc(6*var(--u))] top-[calc(5*var(--u))] h-[calc(9*var(--u))] w-[calc(9*var(--u))] rounded-full bg-[#FF3B30]" />
+                <span className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30]" />
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-12 z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
+                <div className="absolute right-0 top-[calc(38*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold">Notifikasi</p>
                     <button
@@ -692,7 +692,7 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[calc(18*var(--u))] top-[max(calc(84*var(--u)),calc(env(safe-area-inset-top)+56px))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(66*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(134*var(--u))]">
             <h1 className="whitespace-nowrap text-[calc(20.5*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
               Halo, Budi Santoso
             </h1>
