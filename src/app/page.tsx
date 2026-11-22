@@ -28,9 +28,12 @@ import {
   Target,
   TrendingUp,
   Users,
-  X,
 } from "lucide-react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import {
+  loadNotifications,
+  subscribeNotifications,
+} from "@/lib/notification-store";
 
 /* =========================================================
    DESIGN SYSTEM & CONSTANTS
@@ -160,6 +163,22 @@ const desktopVisitChart = [
 /* =========================================================
    HELPERS & SHARED COMPONENTS
 ========================================================= */
+function useUnreadNotificationCount() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const syncUnread = () => {
+      const items = loadNotifications();
+      setUnreadCount(items.filter((item) => !item.isRead).length);
+    };
+
+    syncUnread();
+    return subscribeNotifications(syncUnread);
+  }, []);
+
+  return unreadCount;
+}
+
 function detectStandalonePwa() {
   if (typeof window === "undefined") return false;
   const isStandaloneDisplay =
@@ -244,6 +263,7 @@ function QuickAction({
    DESKTOP DASHBOARD (> 600px / FOLD / TABLET / DESKTOP SITE)
 ========================================================= */
 function DesktopDashboard() {
+  const unreadCount = useUnreadNotificationCount();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua Status");
   const [customerFilter, setCustomerFilter] = useState("Semua Pelanggan");
@@ -271,6 +291,8 @@ function DesktopDashboard() {
     { label: "Belum Dikunjungi", value: "12", icon: Hourglass },
     { label: "Perlu Perhatian", value: "4", icon: AlertTriangle },
   ];
+
+  const badgeText = unreadCount > 99 ? "99+" : String(unreadCount);
 
   return (
     <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
@@ -303,11 +325,19 @@ function DesktopDashboard() {
 
           <Link
             href="/notifications"
-            aria-label="Notifikasi"
+            aria-label={
+              unreadCount > 0
+                ? `Notifikasi (${unreadCount} belum dibaca)`
+                : "Notifikasi"
+            }
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#29232A] transition hover:bg-[#F3ECEF]"
           >
             <Bell size={23} strokeWidth={1.9} />
-            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-[#FAFAFC] bg-[#BF0B2C]" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#BF0B2C] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#FAFAFC]">
+                {badgeText}
+              </span>
+            )}
           </Link>
 
           <span className="hidden h-8 w-px bg-[#E5E5E8] sm:block" />
@@ -645,7 +675,7 @@ const MOBILE_SCALE_VARS = {
 
 function MobileDashboard() {
   const { isPWA } = useAppLayout();
-  const [showNotifications, setShowNotifications] = useState(false);
+  const unreadCount = useUnreadNotificationCount();
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [iconProgress, setIconProgress] = useState(0);
@@ -838,6 +868,7 @@ function MobileDashboard() {
   const showPwaShimmer = isPwaMode && isRefreshing;
   const isIconSwapped = iconProgress > 0.5;
   const userName = "Budi Santoso";
+  const badgeText = unreadCount > 99 ? "99+" : String(unreadCount);
 
   return (
     <main
@@ -954,38 +985,26 @@ function MobileDashboard() {
             </Link>
 
             <div className="relative mr-[calc(4*var(--u))] flex h-[calc(28*var(--u))] items-center">
-              <button
-                type="button"
-                aria-label="Notifikasi"
-                aria-expanded={showNotifications}
-                onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full"
+              <Link
+                href="/notifications"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifikasi (${unreadCount} belum dibaca)`
+                    : "Notifikasi"
+                }
+                className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors active:bg-white/15"
               >
                 <Bell
                   className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
                   strokeWidth={1.85}
                 />
 
-                <span className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30] ring-[1.5px] ring-[#83051C]" />
-              </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 top-[calc(36*var(--u))] z-50 w-[min(280px,80vw)] rounded-xl border border-[#EEEEEE] bg-white p-4 text-[#29232A] shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold">Notifikasi</p>
-                    <button
-                      type="button"
-                      aria-label="Tutup notifikasi"
-                      onClick={() => setShowNotifications(false)}
-                    >
-                      <X size={17} />
-                    </button>
-                  </div>
-                  <p className="mt-3 text-xs text-[#77727A]">
-                    Belum ada notifikasi baru.
-                  </p>
-                </div>
-              )}
+                {unreadCount > 0 && (
+                  <span className="absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-[#83051C]">
+                    {badgeText}
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
         </div>
@@ -1415,4 +1434,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-        }
+    }
