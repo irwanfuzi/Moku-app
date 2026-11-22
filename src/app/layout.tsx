@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 
 import AppShell from "@/components/layout/app-shell";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
@@ -12,10 +12,10 @@ const inter = Inter({
   preload: true,
 });
 
-const manrope = Manrope({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-manrope",
+  variable: "--font-plus-jakarta",
   preload: true,
 });
 
@@ -103,7 +103,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${inter.variable} ${manrope.variable}`}
+      className={`${inter.variable} ${plusJakartaSans.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased">
