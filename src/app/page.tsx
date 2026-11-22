@@ -154,7 +154,7 @@ function MobileCard({
   className = "",
 }: {
   children: ReactNode;
-  className = "",
+  className?: string;
 }) {
   return (
     <section
