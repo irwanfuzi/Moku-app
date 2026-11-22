@@ -45,8 +45,12 @@ const MONTHS = [
 
 const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
-const PULL_TRIGGER = 64;
-const MAX_PULL = 108;
+const PULL_TRIGGER = 76;
+const MAX_PULL = 136;
+const REFRESH_HOLD = 68;
+const REFRESH_DURATION_MS = 1800;
+const TOPBAR_SCROLL_START = 24;
+const TOPBAR_SCROLL_RANGE = 88;
 
 /* =========================================================
    DASHBOARD DATA
@@ -676,7 +680,7 @@ function MobileDashboard() {
       const scrollTop = getScrollTop();
 
       if (
-        scrollTop <= 2 ||
+        scrollTop <= TOPBAR_SCROLL_START ||
         isPullingRef.current ||
         pullDistanceRef.current > 0 ||
         isRefreshingRef.current
@@ -689,8 +693,10 @@ function MobileDashboard() {
         return;
       }
 
-      const range = 96;
-      const raw = Math.min(Math.max(scrollTop / range, 0), 1);
+      const raw = Math.min(
+        Math.max((scrollTop - TOPBAR_SCROLL_START) / TOPBAR_SCROLL_RANGE, 0),
+        1
+      );
       const eased = raw * raw * (3 - 2 * raw);
 
       setScrollProgress((prev) =>
@@ -726,8 +732,7 @@ function MobileDashboard() {
     };
   }, []);
 
-  /* Native non-passive touch listeners agar tarikan dari atas (scrollTop === 0)
-     mulus, tidak bentrok dengan scroll ke bawah, dan elastis saat naik-turun */
+  /* Native non-passive touch listeners dengan kurva elastis lentur */
   useEffect(() => {
     const el = mainRef.current;
     if (!el || !isPwaMode) return;
@@ -776,7 +781,7 @@ function MobileDashboard() {
           event.preventDefault();
         }
         setIsPullDragging(true);
-        const damped = MAX_PULL * (1 - Math.exp(-deltaY / 190));
+        const damped = MAX_PULL * (1 - Math.exp(-deltaY / 135));
         setPullDistance(damped);
         setScrollProgress(0);
       } else {
@@ -794,7 +799,7 @@ function MobileDashboard() {
       const currentPull = pullDistanceRef.current;
       if (currentPull >= PULL_TRIGGER * 0.72) {
         setIsRefreshing(true);
-        setPullDistance(54);
+        setPullDistance(REFRESH_HOLD);
         setScrollProgress(0);
 
         if (refreshTimerRef.current !== null) {
@@ -803,7 +808,7 @@ function MobileDashboard() {
         refreshTimerRef.current = window.setTimeout(() => {
           setIsRefreshing(false);
           setPullDistance(0);
-        }, 950);
+        }, REFRESH_DURATION_MS);
       } else {
         setPullDistance(0);
       }
@@ -824,7 +829,8 @@ function MobileDashboard() {
 
   const effectiveScrollProgress =
     pullDistance > 0 || isRefreshing ? 0 : scrollProgress;
-  const pullRatio = Math.min(1, pullDistance / 54);
+  const pullRatio = Math.min(1, pullDistance / REFRESH_HOLD);
+  const ringDeg = Math.round(pullRatio * 360);
   const showPwaRefreshEmblem =
     isPwaMode && (pullDistance > 4 || isRefreshing);
   const showPwaShimmer = isPwaMode && isRefreshing;
@@ -841,40 +847,58 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Emblem Pull-to-Refresh MOKU di Ruang Ekspansi Atas (Menyatu dengan Header Merah) */}
+        {/* Emblem Pull-to-Refresh MOKU (Ukuran proporsional + cincin progresif & animasi halus) */}
         {showPwaRefreshEmblem && (
           <div
             style={{
-              opacity: isRefreshing ? 1 : pullRatio,
-              transform: `translateY(${Math.min(18, pullDistance * 0.28)}px) scale(${
-                isRefreshing ? 1 : 0.72 + pullRatio * 0.28
+              opacity: isRefreshing ? 1 : Math.min(1, pullRatio * 1.15),
+              transform: `translateY(${Math.min(10, pullDistance * 0.14)}px) scale(${
+                isRefreshing ? 1 : 0.65 + pullRatio * 0.35
               })`,
               transition: isPullDragging
                 ? "none"
-                : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
+                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1), opacity 220ms ease",
             }}
-            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(6*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(8*var(--u)))] z-30 flex justify-center will-change-[transform,opacity]"
           >
-            <div className="relative flex h-[calc(30*var(--u))] w-[calc(30*var(--u))] items-center justify-center rounded-full bg-white/15 backdrop-blur-xs">
-              <Image
-                src="/images/moku/brand/app-icon.png"
-                alt="Memuat ulang MOKU"
-                width={48}
-                height={48}
+            <div className="relative flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(45,0,10,0.28)]">
+              <span
+                aria-hidden="true"
                 style={{
-                  transform: isRefreshing
-                    ? undefined
-                    : `rotate(${pullDistance * 4}deg)`,
+                  background: isRefreshing
+                    ? "conic-gradient(from 0deg, #8E001C 0deg, #F28C0F 180deg, rgba(142,0,28,0.12) 360deg)"
+                    : `conic-gradient(from -90deg, #8E001C 0deg ${ringDeg}deg, #EFEFF4 ${ringDeg}deg 360deg)`,
                 }}
-                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] object-contain ${
+                className={`absolute inset-0 rounded-full p-[calc(2.5*var(--u))] ${
                   isRefreshing ? "animate-spin" : ""
                 }`}
-              />
+              >
+                <span className="block h-full w-full rounded-full bg-white" />
+              </span>
+
+              <div
+                className={`relative z-10 flex h-[calc(26*var(--u))] w-[calc(26*var(--u))] items-center justify-center transition-transform duration-300 ${
+                  isRefreshing ? "animate-pulse scale-105" : ""
+                }`}
+              >
+                <Image
+                  src="/images/moku/brand/app-icon.png"
+                  alt="Memuat ulang MOKU"
+                  width={56}
+                  height={56}
+                  style={{
+                    transform: isRefreshing
+                      ? undefined
+                      : `rotate(${(pullRatio - 0.5) * 24}deg)`,
+                  }}
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Sticky Compact Top Bar (Posisi tetap saat scroll; ikut turun mulus saat pull-to-refresh) */}
+        {/* Sticky Compact Top Bar */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
@@ -884,7 +908,7 @@ function MobileDashboard() {
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
-                : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
             }}
             className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(5*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
           >
@@ -977,10 +1001,10 @@ function MobileDashboard() {
           </div>
         </div>
 
-        {/* Latar belakang marun menerus ke atas (-top-[140px]) agar menyatu penuh saat ditarik */}
+        {/* Latar belakang marun menerus ke atas (-top-[180px]) agar menyatu penuh saat ditarik */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-[140px] h-[calc(360*var(--u)+env(safe-area-inset-top))] bg-[#83051C]"
+          className="pointer-events-none absolute inset-x-0 -top-[180px] h-[calc(400*var(--u)+env(safe-area-inset-top))] bg-[#83051C]"
         />
 
         {/* Konten bergerak elastis menyatu dengan header merah saat ditarik */}
@@ -989,14 +1013,13 @@ function MobileDashboard() {
             transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
             transition: isPullDragging
               ? "none"
-              : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+              : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
           }}
           className="relative will-change-transform"
         >
           {/* Header Banner */}
           <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-visible bg-[#83051C] text-white">
-            {/* Perpanjangan gradien atas sehingga tidak ada garis sambungan */}
-            <div className="pointer-events-none absolute inset-x-0 -top-[140px] bottom-0 bg-[linear-gradient(180deg,#83051C_0%,#83051C_42%,#760217_74%,#54000F_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 -top-[180px] bottom-0 bg-[linear-gradient(180deg,#83051C_0%,#83051C_48%,#760217_76%,#54000F_100%)]" />
 
             <div
               aria-hidden="true"
@@ -1403,4 +1426,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-              }
+                              }
