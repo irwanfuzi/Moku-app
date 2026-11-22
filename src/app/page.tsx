@@ -51,19 +51,16 @@ const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
 
 // Dua mode:
-//  A) Android (status bar milik sistem, hanya 2 nilai: marun/putih - terukur dari rekaman):
+//  A) Android (status bar milik sistem, marun/putih):
 //     fade top bar BERBASIS WAKTU (halus berapa pun kecepatan scroll), status bar
-//     berpindah tepat di tengah fade -> selisih warna maksimal setengah & sesaat.
+//     berpindah tepat di tengah fade (v >= 0.5) tanpa jeda lag tambahan.
 //  B) iOS standalone (black-translucent, halaman tergambar di bawah status bar):
 //     transisi mengikuti scroll per frame, status bar & top bar satu nilai.
-const SCROLL_START = 4; // mode B: px mulai berubah
-const SCROLL_RANGE = 72; // mode B: panjang transisi
-const SCROLL_ON = 24; // mode A: scroll turun melewati ini -> menuju putih
-const SCROLL_OFF = 10; // mode A: scroll naik di bawah ini -> kembali ke marun
-const TWEEN_MS = 240; // mode A: durasi fade
-// Warna top bar baru tampil 1-2 frame setelah paint, theme-color dipakai seketika.
-const THEME_LAG_MS = 24;
-// true hanya jika status bar terbukti mengikuti warna bertahap (edge-to-edge aktif)
+const SCROLL_START = 4;
+const SCROLL_RANGE = 72;
+const SCROLL_ON = 24;
+const SCROLL_OFF = 10;
+const TWEEN_MS = 240;
 const STATUS_BAR_FOLLOWS_COLOR = false;
 
 const THEME_FROM = [0x83, 0x05, 0x1c]; // #83051C
@@ -737,13 +734,15 @@ function MobileDashboard() {
       const color = mixThemeColor(statusP);
       if (lastThemeColorRef.current === color) return;
       lastThemeColorRef.current = color;
-      let meta = document.querySelector('meta[name="theme-color"]');
-      if (!meta) {
-        meta = document.createElement("meta");
+      const metas = document.querySelectorAll('meta[name="theme-color"]');
+      if (metas.length === 0) {
+        const meta = document.createElement("meta");
         meta.setAttribute("name", "theme-color");
+        meta.setAttribute("content", color);
         document.head.appendChild(meta);
+        return;
       }
-      meta.setAttribute("content", color);
+      metas.forEach((meta) => meta.setAttribute("content", color));
     };
 
     /* ---------- mode B: scroll-linked (iOS standalone / edge-to-edge) ---------- */
@@ -752,7 +751,7 @@ function MobileDashboard() {
       writeStatus(p);
     };
 
-    /* ---------- mode A: fade berbasis waktu, status bar pindah di tengah ---------- */
+    /* ---------- mode A: fade berbasis waktu, status bar pindah tepat di tengah (v >= 0.5) ---------- */
     const tween = {
       value: 0,
       from: 0,
@@ -771,10 +770,9 @@ function MobileDashboard() {
       const v = valueAt(now);
       tween.value = v;
       writeBar(v);
-      // status bar biner: pindah saat nilai (sedikit tertunda) melewati tengah
-      writeStatus(valueAt(now - THEME_LAG_MS) >= 0.5 ? 1 : 0);
+      writeStatus(v >= 0.5 ? 1 : 0);
       tween.raf =
-        now - tween.start < tween.duration + THEME_LAG_MS
+        now - tween.start < tween.duration
           ? window.requestAnimationFrame(stepTween)
           : null;
     };
@@ -1553,4 +1551,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-        }
+                        }
