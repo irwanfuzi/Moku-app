@@ -49,8 +49,8 @@ const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 44;
-const TOPBAR_SCROLL_RANGE = 56;
+const TOPBAR_SCROLL_START = 24;
+const TOPBAR_SCROLL_RANGE = 52;
 
 /* =========================================================
    DASHBOARD DATA
@@ -667,14 +667,18 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncThemeColor = (progress: number) => {
-      const nextHex = progress > 0.5 ? "#FFFFFF" : "#83051C";
+    const syncWhiteTheme = (progress: number) => {
+      // Arahkan theme-color ke #FFFFFF lebih awal agar status bar dan top bar menyatu putih
+      const nextHex = progress > 0.15 ? "#FFFFFF" : "#83051C";
       if (lastThemeColorRef.current !== nextHex) {
         lastThemeColorRef.current = nextHex;
-        const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) {
-          metaTheme.setAttribute("content", nextHex);
+        let metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (!metaTheme) {
+          metaTheme = document.createElement("meta");
+          metaTheme.setAttribute("name", "theme-color");
+          document.head.appendChild(metaTheme);
         }
+        metaTheme.setAttribute("content", nextHex);
       }
     };
 
@@ -698,7 +702,7 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncThemeColor(0);
+        syncWhiteTheme(0);
         return;
       }
 
@@ -706,12 +710,13 @@ function MobileDashboard() {
         Math.max((scrollTop - TOPBAR_SCROLL_START) / TOPBAR_SCROLL_RANGE, 0),
         1
       );
-      const eased = raw * raw * (3 - 2 * raw);
+      // Kurva putih lebih penuh dan merata saat di-scroll
+      const whiteFactor = Math.pow(raw, 0.65);
 
       setScrollProgress((prev) =>
-        Math.abs(prev - eased) > 0.004 ? eased : prev
+        Math.abs(prev - whiteFactor) > 0.004 ? whiteFactor : prev
       );
-      syncThemeColor(eased);
+      syncWhiteTheme(whiteFactor);
     };
 
     const onScroll = () => {
@@ -840,7 +845,6 @@ function MobileDashboard() {
   const emblemOpacity = isRefreshing
     ? 1
     : Math.min(1, Math.max(0, (pullDistance - 2) / 34));
-  // Jarak gerak dibatasi di area safe-area atas agar tidak menimpa logo MOKU
   const emblemTranslateY = isRefreshing ? 4 : -10 + pullRatio * 14;
   const emblemScale = isRefreshing ? 0.96 : 0.5 + pullRatio * 0.46;
   const showPwaShimmer = isPwaMode && isRefreshing;
@@ -857,7 +861,7 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Emblem Pull-to-Refresh MOKU (Diposisikan rapi di atas agar tidak menabrak logo MOKU) */}
+        {/* Emblem Pull-to-Refresh MOKU */}
         {isPwaMode && (
           <div
             aria-hidden={!isRefreshing && pullDistance <= 0}
@@ -907,12 +911,12 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar */}
+        {/* Sticky Compact Top Bar (Transisi warna putih menyatu dari safe-area atas) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
               backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
-              boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.035})`,
+              boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.04})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
@@ -1434,4 +1438,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-                    }
+      }
