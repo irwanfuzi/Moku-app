@@ -49,8 +49,8 @@ const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
 const REFRESH_HOLD = 70;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 96;
-const TOPBAR_SCROLL_RANGE = 76;
+const TOPBAR_SCROLL_START = 8;
+const TOPBAR_SCROLL_RANGE = 48;
 
 /* =========================================================
    DASHBOARD DATA
@@ -165,20 +165,6 @@ function detectStandalonePwa() {
   );
 
   return isStandaloneDisplay || isIosStandalone;
-}
-
-/**
- * Interpolasi halus warna theme-color antara #83051C (131, 5, 28)
- * dan #FFFFFF (255, 255, 255) agar status bar HP memudar menyatu dengan top bar.
- */
-function interpolateHeaderThemeHex(progress: number): string {
-  const t = Math.min(1, Math.max(0, progress));
-  const r = Math.round(131 + (255 - 131) * t);
-  const g = Math.round(5 + (255 - 5) * t);
-  const b = Math.round(28 + (255 - 28) * t);
-
-  const toHex = (value: number) => value.toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
 function formatGreetingName(fullName: string) {
@@ -668,7 +654,6 @@ function MobileDashboard() {
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
-  const lastThemeColorRef = useRef("#83051C");
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
@@ -681,16 +666,10 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncThemeColor = (progress: number) => {
-      const nextHex = interpolateHeaderThemeHex(progress);
-      if (lastThemeColorRef.current !== nextHex) {
-        lastThemeColorRef.current = nextHex;
-        const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) {
-          metaTheme.setAttribute("content", nextHex);
-        }
-      }
-    };
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute("content", "#83051C");
+    }
 
     const getScrollTop = () =>
       Math.max(
@@ -712,7 +691,6 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncThemeColor(0);
         return;
       }
 
@@ -725,7 +703,6 @@ function MobileDashboard() {
       setScrollProgress((prev) =>
         Math.abs(prev - eased) > 0.004 ? eased : prev
       );
-      syncThemeColor(eased);
     };
 
     const onScroll = () => {
@@ -857,7 +834,6 @@ function MobileDashboard() {
   const emblemTranslateY = isRefreshing ? 14 : -24 + pullRatio * 38;
   const emblemScale = isRefreshing ? 1 : 0.45 + pullRatio * 0.55;
   const showPwaShimmer = isPwaMode && isRefreshing;
-  const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
 
   return (
@@ -920,19 +896,18 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar (Menyatu dengan status bar dari top: 0) */}
+        {/* Sticky Compact Top Bar (Menyatu 1 bidang merah marun #83051C dengan Status Bar) */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
-              backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
-              borderBottomColor: `rgba(236, 236, 239, ${effectiveScrollProgress})`,
-              boxShadow: `0 1px 6px rgba(41, 35, 42, ${effectiveScrollProgress * 0.03})`,
+              backgroundColor: `rgba(131, 5, 28, ${effectiveScrollProgress})`,
+              boxShadow: `0 6px 18px rgba(45, 0, 10, ${effectiveScrollProgress * 0.22})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
                 : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
             }}
-            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
+            className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(7*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
           >
             <Link
               href="/"
@@ -945,34 +920,9 @@ function MobileDashboard() {
                 width={180}
                 height={65}
                 priority
-                style={{
-                  opacity: 1 - effectiveScrollProgress,
-                  transform: `scale(${1 - effectiveScrollProgress * 0.2})`,
-                }}
-                className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
-                  isCondensed ? "pointer-events-none" : ""
-                }`}
+                className="h-[calc(23*var(--u))] w-auto origin-left object-contain object-left"
                 sizes="150px"
               />
-
-              <span
-                style={{
-                  opacity: effectiveScrollProgress,
-                  transform: `scale(${0.78 + effectiveScrollProgress * 0.22})`,
-                }}
-                className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
-                  isCondensed ? "" : "pointer-events-none"
-                }`}
-              >
-                <Image
-                  src="/images/moku/brand/app-icon.png"
-                  alt="Ikon MOKU"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-contain"
-                  sizes="36px"
-                />
-              </span>
             </Link>
 
             <div className="relative flex h-[calc(28*var(--u))] items-center">
@@ -984,22 +934,11 @@ function MobileDashboard() {
                 className="relative flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
-                  style={{ opacity: 1 - effectiveScrollProgress }}
-                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white will-change-[opacity]"
-                  strokeWidth={1.85}
-                />
-                <Bell
-                  style={{ opacity: effectiveScrollProgress }}
-                  className="absolute h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#171717] will-change-[opacity]"
+                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
                   strokeWidth={1.85}
                 />
 
-                <span
-                  style={{
-                    boxShadow: `0 0 0 ${effectiveScrollProgress * 2}px #FFFFFF`,
-                  }}
-                  className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30]"
-                />
+                <span className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30] ring-[1.5px] ring-[#83051C]" />
               </button>
 
               {showNotifications && (
@@ -1448,4 +1387,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-                                                           }
+      }
