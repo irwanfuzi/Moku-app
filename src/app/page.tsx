@@ -49,8 +49,31 @@ const PULL_TRIGGER = 76;
 const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
-const TOPBAR_SCROLL_START = 24;
-const TOPBAR_SCROLL_RANGE = 52;
+
+// Transisi top bar dipersingkat supaya fade terasa cepat & kompak
+const TOPBAR_SCROLL_START = 8;
+const TOPBAR_SCROLL_RANGE = 36;
+
+// Warna theme-color / status bar: marun (atas) -> putih (setelah scroll)
+const THEME_FROM = [0x83, 0x05, 0x1c]; // #83051C
+const THEME_TO = [0xff, 0xff, 0xff]; // #FFFFFF
+const THEME_INITIAL = "#83051C";
+
+/**
+ * Interpolasi marun -> putih. DIPAKAI BERSAMA oleh:
+ *  - meta theme-color (status bar)
+ *  - background top bar
+ * Jadi keduanya selalu persis sama warnanya di setiap frame.
+ */
+function mixThemeColor(t: number) {
+  const k = Math.min(1, Math.max(0, t));
+  const hex = THEME_FROM.map((from, i) =>
+    Math.round(from + (THEME_TO[i] - from) * k)
+      .toString(16)
+      .padStart(2, "0")
+  ).join("");
+  return `#${hex.toUpperCase()}`;
+}
 
 /* =========================================================
    DASHBOARD DATA
@@ -654,7 +677,7 @@ function MobileDashboard() {
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
-  const lastThemeColorRef = useRef("#83051C");
+  const lastThemeColorRef = useRef(THEME_INITIAL);
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
@@ -667,19 +690,20 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    const syncWhiteTheme = (progress: number) => {
-      // Arahkan theme-color ke #FFFFFF lebih awal agar status bar dan top bar menyatu putih
-      const nextHex = progress > 0.15 ? "#FFFFFF" : "#83051C";
-      if (lastThemeColorRef.current !== nextHex) {
-        lastThemeColorRef.current = nextHex;
-        let metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (!metaTheme) {
-          metaTheme = document.createElement("meta");
-          metaTheme.setAttribute("name", "theme-color");
-          document.head.appendChild(metaTheme);
-        }
-        metaTheme.setAttribute("content", nextHex);
+    // Status bar (theme-color) ikut berubah halus, memakai faktor yang SAMA
+    // dengan background top bar -> keduanya menyatu tanpa batas.
+    const syncThemeColor = (progress: number) => {
+      const nextHex = mixThemeColor(progress);
+      if (lastThemeColorRef.current === nextHex) return;
+      lastThemeColorRef.current = nextHex;
+
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement("meta");
+        metaTheme.setAttribute("name", "theme-color");
+        document.head.appendChild(metaTheme);
       }
+      metaTheme.setAttribute("content", nextHex);
     };
 
     const getScrollTop = () =>
@@ -702,21 +726,19 @@ function MobileDashboard() {
         isRefreshingRef.current
       ) {
         setScrollProgress((prev) => (prev !== 0 ? 0 : prev));
-        syncWhiteTheme(0);
+        syncThemeColor(0);
         return;
       }
 
-      const raw = Math.min(
+      const progress = Math.min(
         Math.max((scrollTop - TOPBAR_SCROLL_START) / TOPBAR_SCROLL_RANGE, 0),
         1
       );
-      // Kurva putih lebih penuh dan merata saat di-scroll
-      const whiteFactor = Math.pow(raw, 0.65);
 
       setScrollProgress((prev) =>
-        Math.abs(prev - whiteFactor) > 0.004 ? whiteFactor : prev
+        Math.abs(prev - progress) > 0.004 ? progress : prev
       );
-      syncWhiteTheme(whiteFactor);
+      syncThemeColor(progress);
     };
 
     const onScroll = () => {
@@ -851,6 +873,14 @@ function MobileDashboard() {
   const isCondensed = effectiveScrollProgress > 0.5;
   const userName = "Budi Santoso";
 
+  // Warna top bar = warna status bar (satu sumber: mixThemeColor)
+  const topBarColor = mixThemeColor(effectiveScrollProgress);
+
+  // Crossfade berurutan: logo penuh memudar di paruh 1, ikon muncul di paruh 2
+  // (tidak ada momen dua logo tumpang tindih)
+  const logoOpacity = Math.max(0, 1 - effectiveScrollProgress * 2);
+  const iconOpacity = Math.max(0, effectiveScrollProgress * 2 - 1);
+
   return (
     <main
       ref={mainRef}
@@ -911,11 +941,13 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar (Transisi warna putih menyatu dari safe-area atas) */}
+        {/* Sticky Compact Top Bar
+            Warna solid hasil interpolasi yang SAMA dengan theme-color status bar,
+            jadi status bar + top bar terlihat sebagai satu blok saat transisi. */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
             style={{
-              backgroundColor: `rgba(255, 255, 255, ${effectiveScrollProgress})`,
+              backgroundColor: topBarColor,
               boxShadow: `0 2px 10px rgba(41, 35, 42, ${effectiveScrollProgress * 0.04})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
@@ -936,7 +968,7 @@ function MobileDashboard() {
                 height={65}
                 priority
                 style={{
-                  opacity: 1 - effectiveScrollProgress,
+                  opacity: logoOpacity,
                   transform: `scale(${1 - effectiveScrollProgress * 0.2})`,
                 }}
                 className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
@@ -947,7 +979,7 @@ function MobileDashboard() {
 
               <span
                 style={{
-                  opacity: effectiveScrollProgress,
+                  opacity: iconOpacity,
                   transform: `scale(${0.78 + effectiveScrollProgress * 0.22})`,
                 }}
                 className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
@@ -986,7 +1018,7 @@ function MobileDashboard() {
 
                 <span
                   style={{
-                    boxShadow: `0 0 0 ${effectiveScrollProgress * 2}px #FFFFFF`,
+                    boxShadow: `0 0 0 ${effectiveScrollProgress * 2}px ${topBarColor}`,
                   }}
                   className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30]"
                 />
@@ -1438,4 +1470,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-      }
+}
