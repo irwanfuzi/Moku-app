@@ -50,39 +50,12 @@ const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
 
-// Dua mode:
-//  A) Android (status bar milik sistem, marun/putih):
-//     fade top bar BERBASIS WAKTU (halus berapa pun kecepatan scroll), status bar
-//     berpindah tepat di tengah fade (v >= 0.5) tanpa jeda lag tambahan.
-//  B) iOS standalone (black-translucent, halaman tergambar di bawah status bar):
-//     transisi mengikuti scroll per frame, status bar & top bar satu nilai.
-const SCROLL_START = 4;
-const SCROLL_RANGE = 72;
-const SCROLL_ON = 24;
-const SCROLL_OFF = 10;
-const TWEEN_MS = 240;
-const STATUS_BAR_FOLLOWS_COLOR = false;
-
-const THEME_FROM = [0x83, 0x05, 0x1c]; // #83051C
-const THEME_TO = [0xff, 0xff, 0xff]; // #FFFFFF
-const THEME_TOP = "#83051C";
+const ICON_SCROLL_START = 16;
+const ICON_SCROLL_RANGE = 56;
+const MAROON_HEX = "#83051C";
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
-}
-
-function easeInOut(k: number) {
-  return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-}
-
-function mixThemeColor(t: number) {
-  const k = clamp01(t);
-  const hex = THEME_FROM.map((from, i) =>
-    Math.round(from + (THEME_TO[i] - from) * k)
-      .toString(16)
-      .padStart(2, "0")
-  ).join("");
-  return `#${hex.toUpperCase()}`;
 }
 
 /* =========================================================
@@ -675,7 +648,7 @@ function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [iconProgress, setIconProgress] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPullDragging, setIsPullDragging] = useState(false);
@@ -687,12 +660,6 @@ function MobileDashboard() {
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
-  const lastThemeColorRef = useRef(THEME_TOP);
-  const barRef = useRef<HTMLDivElement | null>(null);
-  const pwaRef = useRef(false);
-  const cancelTweenRef = useRef<() => void>(() => {});
-  const whiteStateRef = useRef(false);
-  const syncBarRef = useRef<() => void>(() => {});
 
   const isPwaMode = isPWA || detectStandalonePwa();
 
@@ -705,6 +672,9 @@ function MobileDashboard() {
   }, [isRefreshing]);
 
   useEffect(() => {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    metas.forEach((meta) => meta.setAttribute("content", MAROON_HEX));
+
     const getScrollTop = () =>
       Math.max(
         0,
@@ -714,118 +684,34 @@ function MobileDashboard() {
           0
       );
 
-    /* ---------- penulis DOM bersama ---------- */
-    const writeBar = (v: number) => {
-      const bar = barRef.current;
-      if (bar) {
-        const color = mixThemeColor(v);
-        bar.style.backgroundColor = color;
-        bar.style.setProperty("--p", v.toFixed(3));
-        bar.style.setProperty("--bar", color);
-      }
-      const white = v > 0.5;
-      if (white !== whiteStateRef.current) {
-        whiteStateRef.current = white;
-        setIsScrolled(white);
-      }
-    };
-
-    const writeStatus = (statusP: number) => {
-      const color = mixThemeColor(statusP);
-      if (lastThemeColorRef.current === color) return;
-      lastThemeColorRef.current = color;
-      const metas = document.querySelectorAll('meta[name="theme-color"]');
-      if (metas.length === 0) {
-        const meta = document.createElement("meta");
-        meta.setAttribute("name", "theme-color");
-        meta.setAttribute("content", color);
-        document.head.appendChild(meta);
-        return;
-      }
-      metas.forEach((meta) => meta.setAttribute("content", color));
-    };
-
-    /* ---------- mode B: scroll-linked (iOS standalone / edge-to-edge) ---------- */
-    const applyLinked = (p: number) => {
-      writeBar(p);
-      writeStatus(p);
-    };
-
-    /* ---------- mode A: fade berbasis waktu, status bar pindah tepat di tengah (v >= 0.5) ---------- */
-    const tween = {
-      value: 0,
-      from: 0,
-      target: 0,
-      start: 0,
-      duration: 1,
-      raf: null as number | null,
-    };
-
-    const valueAt = (t: number) => {
-      const k = clamp01((t - tween.start) / tween.duration);
-      return tween.from + (tween.target - tween.from) * easeInOut(k);
-    };
-
-    const stepTween = (now: number) => {
-      const v = valueAt(now);
-      tween.value = v;
-      writeBar(v);
-      writeStatus(v >= 0.5 ? 1 : 0);
-      tween.raf =
-        now - tween.start < tween.duration
-          ? window.requestAnimationFrame(stepTween)
-          : null;
-    };
-
-    const runTween = (target: number) => {
-      if (target === tween.target) return;
-      tween.from = tween.value;
-      tween.target = target;
-      tween.start = performance.now();
-      tween.duration = Math.max(1, TWEEN_MS * Math.abs(target - tween.from));
-      if (tween.raf !== null) window.cancelAnimationFrame(tween.raf);
-      tween.raf = window.requestAnimationFrame(stepTween);
-    };
-
-    const stopTween = () => {
-      if (tween.raf !== null) {
-        window.cancelAnimationFrame(tween.raf);
-        tween.raf = null;
-      }
-      tween.target = tween.value > 0.5 ? 1 : 0;
-    };
-    cancelTweenRef.current = stopTween;
-
-    const updateProgress = () => {
+    const updateIconProgress = () => {
       rafRef.current = null;
       const busy =
         isPullingRef.current ||
         pullDistanceRef.current > 0 ||
         isRefreshingRef.current;
-      const top = getScrollTop();
 
-      if (STATUS_BAR_FOLLOWS_COLOR || pwaRef.current) {
-        stopTween();
-        applyLinked(
-          busy ? 0 : clamp01((top - SCROLL_START) / SCROLL_RANGE)
-        );
+      if (busy) {
+        setIconProgress((prev) => (prev !== 0 ? 0 : prev));
         return;
       }
 
-      let target = tween.target;
-      if (busy || top <= SCROLL_OFF) target = 0;
-      else if (top >= SCROLL_ON) target = 1;
-      runTween(target);
+      const top = getScrollTop();
+      const raw = clamp01((top - ICON_SCROLL_START) / ICON_SCROLL_RANGE);
+      const smooth = raw * raw * (3 - 2 * raw);
+
+      setIconProgress((prev) =>
+        Math.abs(prev - smooth) > 0.004 ? smooth : prev
+      );
     };
-    syncBarRef.current = updateProgress;
 
     const onScroll = () => {
       if (rafRef.current === null) {
-        rafRef.current = window.requestAnimationFrame(updateProgress);
+        rafRef.current = window.requestAnimationFrame(updateIconProgress);
       }
     };
 
-    updateProgress();
+    updateIconProgress();
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
@@ -835,24 +721,19 @@ function MobileDashboard() {
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
       }
-      cancelTweenRef.current();
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
   useEffect(() => {
-    pwaRef.current = Boolean(
-      (window.navigator as Navigator & { standalone?: boolean }).standalone
-    );
-    syncBarRef.current();
-  }, [isPwaMode]);
-
-  // pull-to-refresh / refresh: bar kembali marun; setelah selesai ikut posisi scroll
-  useEffect(() => {
-    syncBarRef.current();
-  }, [isRefreshing, pullDistance > 0]);
-
-  const scrolled = isScrolled;
+    if (
+      isPullingRef.current ||
+      pullDistance > 0 ||
+      isRefreshing
+    ) {
+      setIconProgress(0);
+    }
+  }, [pullDistance, isRefreshing]);
 
   /* Native non-passive touch listeners dengan kurva elastis & gestur naik-turun mulus */
   useEffect(() => {
@@ -959,6 +840,7 @@ function MobileDashboard() {
   const emblemTranslateY = isRefreshing ? 4 : -10 + pullRatio * 14;
   const emblemScale = isRefreshing ? 0.96 : 0.5 + pullRatio * 0.46;
   const showPwaShimmer = isPwaMode && isRefreshing;
+  const isIconSwapped = iconProgress > 0.5;
   const userName = "Budi Santoso";
 
   return (
@@ -1021,20 +903,18 @@ function MobileDashboard() {
           </div>
         )}
 
-        {/* Sticky Compact Top Bar
-            Warna & isi digerakkan lewat CSS variable --p (0..1) yang ditulis
-            bersamaan dengan theme-color di animasi yang sama. */}
+        {/* Sticky Compact Top Bar: warna tetap merah marun menyatu dengan status bar, hanya logo/ikon yang berubah */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
-            ref={barRef}
             style={{
-              boxShadow: "0 2px 10px rgb(41 35 42 / calc(var(--p, 0) * 0.04))",
+              backgroundColor: MAROON_HEX,
+              boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
               transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
               transition: isPullDragging
                 ? "none"
                 : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
             }}
-            className="flex w-full items-center justify-between bg-[#83051C] px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[background-color,box-shadow,transform]"
+            className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[box-shadow,transform]"
           >
             <Link
               href="/"
@@ -1048,22 +928,22 @@ function MobileDashboard() {
                 height={65}
                 priority
                 style={{
-                  opacity: "max(0, calc(1 - var(--p, 0) * 2))",
-                  transform: "scale(calc(1 - var(--p, 0) * 0.2))",
+                  opacity: 1 - iconProgress,
+                  transform: `scale(${1 - iconProgress * 0.18})`,
                 }}
                 className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
-                  scrolled ? "pointer-events-none" : ""
+                  isIconSwapped ? "pointer-events-none" : ""
                 }`}
                 sizes="150px"
               />
 
               <span
                 style={{
-                  opacity: "max(0, calc(var(--p, 0) * 2 - 1))",
-                  transform: "scale(calc(0.78 + var(--p, 0) * 0.22))",
+                  opacity: iconProgress,
+                  transform: `scale(${0.82 + iconProgress * 0.18})`,
                 }}
                 className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
-                  scrolled ? "" : "pointer-events-none"
+                  isIconSwapped ? "" : "pointer-events-none"
                 }`}
               >
                 <Image
@@ -1086,23 +966,11 @@ function MobileDashboard() {
                 className="relative flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
-                  style={{ opacity: "calc(1 - var(--p, 0))" }}
-                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white will-change-[opacity]"
-                  strokeWidth={1.85}
-                />
-                <Bell
-                  style={{ opacity: "var(--p, 0)" }}
-                  className="absolute h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#171717] will-change-[opacity]"
+                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
                   strokeWidth={1.85}
                 />
 
-                <span
-                  style={{
-                    boxShadow:
-                      "0 0 0 calc(var(--p, 0) * 2px) var(--bar, #83051C)",
-                  }}
-                  className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30]"
-                />
+                <span className="absolute right-[calc(2*var(--u))] top-[calc(2*var(--u))] h-[calc(8*var(--u))] w-[calc(8*var(--u))] rounded-full bg-[#FF3B30] ring-[1.5px] ring-[#83051C]" />
               </button>
 
               {showNotifications && (
@@ -1551,4 +1419,4 @@ export default function DashboardPage() {
   const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-                        }
+    }
