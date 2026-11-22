@@ -550,20 +550,31 @@ function MobileDashboard() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_24%_30%,#B8082A_0%,#82011A_56%,#5A0010_100%)]" />
 
           {/* Ambient glow merah lembut di dasar agar transisi wave menyatu */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[90px] bg-gradient-to-t from-[#CC0F34]/50 via-[#A40624]/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-[96px] bg-gradient-to-t from-[#D41136]/45 via-[#A40624]/15 to-transparent" />
 
-          {/* Header wave image diposisikan naik mengikuti tinggi canvas putih */}
-          <div className="pointer-events-none absolute -inset-x-[4%] bottom-[6px] z-[5] h-[118px] sm:h-[132px]">
+          {/* Header wave image dibuat lebih landai, lembut, dan menyatu (tidak kaku) */}
+          <div
+            className="pointer-events-none absolute -inset-x-[10%] bottom-[14px] z-[5] h-[106px] sm:h-[122px]"
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 28%, black 70%, black 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 28%, black 70%, black 100%)",
+            }}
+          >
             <Image
               src="/images/moku/illustrations/header-wave.png"
               alt=""
               fill
               priority
               aria-hidden="true"
-              className="object-cover object-bottom opacity-95"
+              className="scale-x-[1.08] object-cover object-bottom opacity-75 mix-blend-lighten"
               sizes="100vw"
             />
           </div>
+
+          {/* Lapisan blend halus di atas wave agar kontras tepi tidak terlalu tajam */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[88px] bg-gradient-to-tr from-[#7A0118]/35 via-transparent to-[#E3163D]/15" />
 
           {/* Logo dan notifikasi */}
           <div className="absolute left-[20px] right-[20px] top-[max(24px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
