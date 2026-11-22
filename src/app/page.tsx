@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -146,42 +147,6 @@ const desktopVisitChart = [
 /* =========================================================
    SHARED COMPONENTS
 ========================================================= */
-function MokuRobotIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M14.5 9.5L16.2 5.2L20 7.6L23.8 5.2L25.5 9.5"
-        fill="#F28C0F"
-      />
-      <circle
-        cx="20"
-        cy="21.5"
-        r="14.5"
-        fill="#8E001C"
-        stroke="#F28C0F"
-        strokeWidth="3"
-      />
-      <rect x="2.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
-      <rect x="34.5" y="18.5" width="3" height="6" rx="1.5" fill="#F28C0F" />
-      <rect x="10.5" y="16" width="19" height="10" rx="5" fill="#2A030B" />
-      <circle cx="15.8" cy="21" r="2.1" fill="#FFFFFF" />
-      <circle cx="24.2" cy="21" r="2.1" fill="#FFFFFF" />
-      <path
-        d="M17.2 29.3C18.9 30.3 21.1 30.3 22.8 29.3"
-        stroke="#F28C0F"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <h2 className="min-w-0 whitespace-nowrap text-[calc(17.5*var(--u))] font-bold leading-[1.2] tracking-[-0.04em] text-[#171717]">
@@ -641,7 +606,8 @@ function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const getScrollTop = () =>
@@ -650,29 +616,45 @@ function MobileDashboard() {
       document.body.scrollTop ||
       0;
 
-    const handleScroll = () => {
-      const threshold = Math.max(88, Math.min(window.innerHeight * 0.12, 124));
-      const nextScrolled = getScrollTop() > threshold;
-      setIsScrolled(nextScrolled);
+    const updateProgress = () => {
+      rafRef.current = null;
+      const range = 96;
+      const raw = Math.min(Math.max(getScrollTop() / range, 0), 1);
+      const eased = raw * raw * (3 - 2 * raw);
+
+      setScrollProgress((prev) =>
+        Math.abs(prev - eased) > 0.005 ? eased : prev
+      );
 
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
-        metaTheme.setAttribute("content", nextScrolled ? "#FFFFFF" : "#83051C");
+        metaTheme.setAttribute("content", eased > 0.55 ? "#FFFFFF" : "#83051C");
       }
     };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    document.addEventListener("scroll", handleScroll, {
+    const onScroll = () => {
+      if (rafRef.current === null) {
+        rafRef.current = window.requestAnimationFrame(updateProgress);
+      }
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, {
       passive: true,
       capture: true,
     });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("scroll", handleScroll, { capture: true });
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, []);
+
+  const isCondensed = scrollProgress > 0.5;
 
   return (
     <main
@@ -680,16 +662,21 @@ function MobileDashboard() {
       className="min-h-dvh w-full bg-[#F7F7F7] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Sticky Compact Top Bar (Tetap lengket di atas saat di-scroll) */}
-        <div
-          className={`sticky top-0 z-40 -mb-[calc(52*var(--u)+env(safe-area-inset-top))] transition-all duration-300 ease-out ${
-            isScrolled
-              ? "border-b border-[#ECECEF] bg-white/95 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-md"
-              : "border-b border-transparent bg-transparent"
-          }`}
-        >
-          <div className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))]">
-            {/* Left: Full MOKU Logo -> Morphs smoothly to MOKU Robot Icon */}
+        {/* Sticky Compact Top Bar (h-0 overflow-visible -> tanpa garis putih di atas header) */}
+        <div className="sticky top-0 z-40 h-0 overflow-visible">
+          <div
+            style={{
+              backgroundColor: `rgba(255, 255, 255, ${scrollProgress * 0.96})`,
+              borderBottomColor: `rgba(236, 236, 239, ${scrollProgress})`,
+              boxShadow: `0 2px 12px rgba(0, 0, 0, ${scrollProgress * 0.06})`,
+              backdropFilter:
+                scrollProgress > 0.05
+                  ? `blur(${Math.round(scrollProgress * 12)}px)`
+                  : "none",
+            }}
+            className="flex w-full items-center justify-between border-b px-[calc(18*var(--u))] pb-[calc(8*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(10*var(--u)))] will-change-[background-color,box-shadow]"
+          >
+            {/* Left: Full Logo -> Morphs smoothly to App Icon */}
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -701,22 +688,33 @@ function MobileDashboard() {
                 width={180}
                 height={65}
                 priority
-                className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left transition-all duration-300 ease-out ${
-                  isScrolled
-                    ? "pointer-events-none scale-75 opacity-0"
-                    : "scale-100 opacity-100"
+                style={{
+                  opacity: 1 - scrollProgress,
+                  transform: `scale(${1 - scrollProgress * 0.22})`,
+                }}
+                className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
+                  isCondensed ? "pointer-events-none" : ""
                 }`}
                 sizes="150px"
               />
 
               <span
-                className={`absolute left-0 flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center transition-all duration-300 ease-out ${
-                  isScrolled
-                    ? "scale-100 opacity-100"
-                    : "pointer-events-none scale-75 opacity-0"
+                style={{
+                  opacity: scrollProgress,
+                  transform: `scale(${0.76 + scrollProgress * 0.24})`,
+                }}
+                className={`absolute left-0 flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] items-center justify-center will-change-[opacity,transform] ${
+                  isCondensed ? "" : "pointer-events-none"
                 }`}
               >
-                <MokuRobotIcon className="h-full w-full" />
+                <Image
+                  src="/images/moku/brand/app-icon.png"
+                  alt="Ikon MOKU"
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-contain"
+                  sizes="36px"
+                />
               </span>
             </Link>
 
@@ -727,20 +725,24 @@ function MobileDashboard() {
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className={`relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full transition-colors duration-300 ${
-                  isScrolled
-                    ? "text-[#171717] hover:bg-[#F3F3F5]"
-                    : "text-white hover:bg-white/10"
-                }`}
+                className="relative flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full"
               >
                 <Bell
-                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))]"
+                  style={{ opacity: 1 - scrollProgress }}
+                  className="h-[calc(23*var(--u))] w-[calc(23*var(--u))] text-white will-change-[opacity]"
                   strokeWidth={1.85}
                 />
+                <Bell
+                  style={{ opacity: scrollProgress }}
+                  className="absolute h-[calc(23*var(--u))] w-[calc(23*var(--u))] text-[#171717] will-change-[opacity]"
+                  strokeWidth={1.85}
+                />
+
                 <span
-                  className={`absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30] transition-all duration-300 ${
-                    isScrolled ? "ring-2 ring-white" : ""
-                  }`}
+                  style={{
+                    boxShadow: `0 0 0 ${scrollProgress * 2}px #FFFFFF`,
+                  }}
+                  className="absolute right-[calc(4*var(--u))] top-[calc(4*var(--u))] h-[calc(8.5*var(--u))] w-[calc(8.5*var(--u))] rounded-full bg-[#FF3B30]"
                 />
               </button>
 
@@ -780,43 +782,43 @@ function MobileDashboard() {
             }}
           />
 
-          {/* Subtle hairline arcs (posisi kiri agar membingkai robot) */}
+          {/* Subtle hairline arcs (kanan) */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -left-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
+            className="pointer-events-none absolute -right-[52px] -top-[42px] z-[3] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -left-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
+            className="pointer-events-none absolute -right-[108px] -top-[98px] z-[3] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
           />
 
           {/* Low-contrast ambient lift behind robot */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[8px] left-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
+            className="pointer-events-none absolute bottom-[8px] right-[18px] z-[4] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
           />
 
-          {/* Robot illustration (kiri — tatapan & printer menghadap ke teks di kanan) */}
-          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] left-[calc(10*var(--u))] z-10 flex h-[calc(132*var(--u))] w-[calc(132*var(--u))] items-end justify-center">
-            <Image
-              src="/images/moku/illustrations/dashboard-printer.png"
-              alt="Ilustrasi robot MOKU membawa printer"
-              width={420}
-              height={420}
-              priority
-              className="h-full w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
-              sizes="154px"
-            />
-          </div>
-
-          {/* Greeting (kanan robot — judul & deskripsi 1 baris) */}
-          <div className="absolute left-[calc(146*var(--u))] right-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(78*var(--u)))] z-20">
+          {/* Greeting (kiri — judul & deskripsi 1 baris) */}
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(76*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(128*var(--u))]">
             <h1 className="whitespace-nowrap text-[calc(21*var(--u))] font-bold leading-[1.18] tracking-[-0.03em] text-white">
               Halo, Budi
             </h1>
             <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(11.5*var(--u))] font-normal leading-[1.35] text-white/85">
               Ringkasan jadwal &amp; progres unit.
             </p>
+          </div>
+
+          {/* Robot illustration (kanan — di-flip agar menghadap ke tulisan di kiri) */}
+          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(10*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+            <Image
+              src="/images/moku/illustrations/dashboard-robot-printer.png"
+              alt="Ilustrasi robot MOKU membawa printer"
+              width={420}
+              height={420}
+              priority
+              className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
+              sizes="154px"
+            />
           </div>
         </header>
 
