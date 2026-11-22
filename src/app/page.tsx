@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Bell,
@@ -179,11 +179,11 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex min-w-0 flex-col items-center justify-start gap-[clamp(6px,1.8vw,8px)] px-1 text-center ${
+      className={`flex min-w-0 flex-col items-center justify-start gap-[clamp(5px,1.5vw,8px)] px-1 text-center ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[clamp(40px,11vw,46px)] w-[clamp(40px,11vw,46px)] shrink-0 items-center justify-center rounded-[clamp(11px,3vw,13px)] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
+      <span className="flex h-[clamp(38px,10.5vw,46px)] w-[clamp(38px,10.5vw,46px)] shrink-0 items-center justify-center rounded-[clamp(11px,3vw,13px)] bg-[#8E001C] text-white shadow-[0_2px_6px_rgba(142,0,28,0.2)]">
         {children}
       </span>
       <span className="text-[clamp(11px,3vw,12.5px)] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
@@ -226,7 +226,7 @@ function DesktopDashboard() {
   ];
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col gap-5 px-4 py-5 text-[#171923] md:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
@@ -583,21 +583,12 @@ function DesktopDashboard() {
           </table>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-[#77727A]">
-        <p>© 2025 MOKU. All rights reserved.</p>
-        <p className="flex items-center gap-2 font-medium text-[#4F4B53]">
-          <span className="h-3.5 w-[3px] rounded-full bg-[#8E001C]" />
-          Track Precisely, Deliver Quality.
-        </p>
-      </footer>
     </div>
   );
 }
 
 /* =========================================================
-   MOBILE DASHBOARD (<= 600px, FLUID SCALING)
+   MOBILE DASHBOARD (<= 600px, FLUID WIDTH + HEIGHT SCALING)
 ========================================================= */
 function MobileDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -611,7 +602,7 @@ function MobileDashboard() {
         <header
           className="relative isolate overflow-hidden bg-[#730217] text-white"
           style={{
-            height: "clamp(198px, 53vw, 238px)",
+            height: "clamp(182px, 23.5dvh, 232px)",
           }}
         >
           {/* Base micro-gradient */}
@@ -644,7 +635,7 @@ function MobileDashboard() {
           />
 
           {/* Logo and notification */}
-          <div className="absolute left-[clamp(14px,4.5vw,20px)] right-[clamp(14px,4.5vw,20px)] top-[max(28px,calc(env(safe-area-inset-top)+8px))] z-30 flex items-center justify-between">
+          <div className="absolute left-[clamp(14px,4.5vw,20px)] right-[clamp(14px,4.5vw,20px)] top-[max(20px,calc(env(safe-area-inset-top)+6px))] z-30 flex items-center justify-between">
             <Link
               href="/"
               aria-label="MOKU Dashboard"
@@ -656,7 +647,7 @@ function MobileDashboard() {
                 width={180}
                 height={65}
                 priority
-                className="h-[clamp(32px,9vw,38px)] w-auto object-contain object-left"
+                className="h-[clamp(30px,8.5vw,38px)] w-auto object-contain object-left"
                 sizes="180px"
               />
             </Link>
@@ -667,7 +658,7 @@ function MobileDashboard() {
                 aria-label="Notifikasi"
                 aria-expanded={showNotifications}
                 onClick={() => setShowNotifications((previous) => !previous)}
-                className="relative flex h-[clamp(38px,10vw,42px)] w-[clamp(38px,10vw,42px)] items-center justify-center rounded-full text-white"
+                className="relative flex h-[clamp(36px,9.5vw,42px)] w-[clamp(36px,9.5vw,42px)] items-center justify-center rounded-full text-white"
               >
                 <Bell size={24} strokeWidth={1.8} />
                 <span className="absolute right-[6px] top-[5px] h-[9px] w-[9px] rounded-full bg-[#FF3B30]" />
@@ -694,7 +685,7 @@ function MobileDashboard() {
           </div>
 
           {/* Greeting */}
-          <div className="absolute left-[clamp(14px,4.5vw,20px)] top-[max(76px,calc(env(safe-area-inset-top)+48px))] z-20 w-[calc(100%-clamp(28px,9vw,40px))] pr-[clamp(118px,32vw,142px)]">
+          <div className="absolute left-[clamp(14px,4.5vw,20px)] top-[max(66px,calc(env(safe-area-inset-top)+44px))] z-20 w-[calc(100%-clamp(28px,9vw,40px))] pr-[clamp(112px,30vw,142px)]">
             <h1 className="whitespace-nowrap text-[clamp(20px,5.6vw,26px)] font-bold leading-[1.15] tracking-[-0.035em] text-white">
               Halo, Budi Santoso
             </h1>
@@ -704,7 +695,7 @@ function MobileDashboard() {
           </div>
 
           {/* Printer illustration */}
-          <div className="pointer-events-none absolute bottom-[clamp(14px,4vw,18px)] right-[clamp(8px,3vw,14px)] z-10 flex h-[clamp(118px,32vw,148px)] w-[clamp(118px,32vw,148px)] items-end justify-center">
+          <div className="pointer-events-none absolute bottom-[clamp(12px,1.8dvh,18px)] right-[clamp(8px,3vw,14px)] z-10 flex h-[clamp(108px,14.5dvh,146px)] w-[clamp(108px,30vw,146px)] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-printer.png"
               alt="Ilustrasi mesin printer"
@@ -718,7 +709,7 @@ function MobileDashboard() {
         </header>
 
         {/* Canvas Konten */}
-        <div className="relative z-20 -mt-[clamp(26px,7.5vw,34px)] flex flex-col gap-[clamp(13px,3.8vw,18px)] rounded-t-[clamp(22px,6vw,26px)] bg-[#F7F7F7] px-[clamp(12px,3.8vw,16px)] pt-[clamp(14px,4vw,18px)]">
+        <div className="relative z-20 -mt-[clamp(24px,3.2dvh,34px)] flex flex-col gap-[clamp(10px,1.7dvh,18px)] rounded-t-[clamp(22px,6vw,26px)] bg-[#F7F7F7] px-[clamp(12px,3.8vw,16px)] pt-[clamp(12px,1.8dvh,18px)]">
           {/* 1. Status Monitoring Mesin */}
           <section className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2 px-[2px]">
@@ -729,7 +720,7 @@ function MobileDashboard() {
                   type="button"
                   onClick={() => setShowMonthPicker((previous) => !previous)}
                   aria-expanded={showMonthPicker}
-                  className="flex h-[clamp(32px,8.5vw,36px)] items-center gap-[clamp(4px,1.4vw,6px)] rounded-full border border-[#E6E6EA] bg-white px-[clamp(9px,2.8vw,12px)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                  className="flex h-[clamp(30px,8vw,36px)] items-center gap-[clamp(4px,1.4vw,6px)] rounded-full border border-[#E6E6EA] bg-white px-[clamp(9px,2.8vw,12px)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                 >
                   <CalendarDays
                     size={15}
@@ -769,12 +760,12 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(10px,3.2vw,14px)] py-[clamp(11px,3.2vw,14px)]">
+            <MobileCard className="mt-[clamp(6px,1dvh,10px)] px-[clamp(10px,3.2vw,14px)] py-[clamp(9px,1.4dvh,14px)]">
               <div className="grid grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] items-center gap-[clamp(8px,2.5vw,12px)]">
                 {/* Donut */}
                 <div className="flex items-center justify-center border-r border-[#EAEAEF] pr-[clamp(8px,2.5vw,12px)]">
                   <div
-                    className="relative aspect-square w-full max-w-[clamp(96px,26vw,132px)] rounded-full"
+                    className="relative aspect-square w-full max-w-[clamp(92px,25vw,130px)] rounded-full"
                     style={{
                       background:
                         "conic-gradient(from -32deg, #F28C0F 0deg 32deg, #8E001C 32deg 270deg, #E2E2E5 270deg 360deg)",
@@ -794,7 +785,7 @@ function MobileDashboard() {
                 </div>
 
                 {/* Legend */}
-                <div className="min-w-0 space-y-[clamp(9px,2.6vw,12px)]">
+                <div className="min-w-0 space-y-[clamp(7px,1.1dvh,12px)]">
                   {monitoringData.map((item) => (
                     <div
                       key={item.label}
@@ -834,30 +825,30 @@ function MobileDashboard() {
               </div>
             </div>
 
-            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(12px,3.6vw,16px)] py-[clamp(12px,3.5vw,15px)]">
+            <MobileCard className="mt-[clamp(6px,1dvh,10px)] px-[clamp(12px,3.6vw,16px)] py-[clamp(10px,1.5dvh,15px)]">
               <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[clamp(8px,2.8vw,12px)]">
                 <div className="min-w-0 border-r border-[#EAEAEF] pr-[clamp(8px,2.4vw,10px)]">
-                  <p className="text-[clamp(36px,9.8vw,48px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+                  <p className="text-[clamp(34px,9.5vw,48px)] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
                   </p>
-                  <p className="mt-[clamp(4px,1.4vw,6px)] whitespace-nowrap text-[clamp(11.5px,3vw,13px)] font-medium text-[#29232A]">
+                  <p className="mt-[clamp(4px,1.2vw,6px)] whitespace-nowrap text-[clamp(11.5px,3vw,13px)] font-medium text-[#29232A]">
                     Total Kunjungan
                   </p>
                 </div>
 
                 <div className="grid min-w-0 grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center gap-[4px]">
                   <div className="min-w-0">
-                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[clamp(8px,2.4vw,10px)] py-[clamp(3px,0.9vw,4px)] text-[clamp(12px,3.2vw,13.5px)] font-bold text-[#15803D]">
+                    <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[clamp(8px,2.4vw,10px)] py-[clamp(3px,0.8vw,4px)] text-[clamp(12px,3.2vw,13.5px)] font-bold text-[#15803D]">
                       <TrendingUp size={14} strokeWidth={2.5} /> +14%
                     </span>
-                    <p className="mt-[clamp(4px,1.4vw,6px)] text-[clamp(10.5px,2.8vw,12px)] leading-[1.35] text-[#3F3A42]">
+                    <p className="mt-[clamp(4px,1.2vw,6px)] text-[clamp(10.5px,2.8vw,12px)] leading-[1.35] text-[#3F3A42]">
                       Dibanding bulan lalu
                       <br />
                       (28 kunjungan)
                     </p>
                   </div>
 
-                  <div className="flex h-[clamp(68px,19vw,84px)] min-w-0 items-center justify-center">
+                  <div className="flex h-[clamp(60px,8dvh,84px)] min-w-0 items-center justify-center">
                     <Image
                       src="/images/moku/illustrations/dashboard-activity.png"
                       alt="Ilustrasi checklist kunjungan"
@@ -870,7 +861,7 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              <div className="mt-[clamp(10px,3vw,14px)]">
+              <div className="mt-[clamp(8px,1.3dvh,14px)]">
                 <div className="mb-[5px] flex items-center justify-between">
                   <p className="text-[clamp(11.5px,3vw,13px)] font-bold text-[#171717]">
                     Pencapaian Target
@@ -879,7 +870,7 @@ function MobileDashboard() {
                     80%
                   </p>
                 </div>
-                <div className="h-[clamp(8px,2.2vw,10px)] overflow-hidden rounded-full bg-[#EAEAEF]">
+                <div className="h-[clamp(8px,1.1dvh,10px)] overflow-hidden rounded-full bg-[#EAEAEF]">
                   <div
                     className="h-full rounded-full bg-[#8E001C]"
                     style={{ width: "80%" }}
@@ -895,7 +886,7 @@ function MobileDashboard() {
               <SectionTitle>Aksi Cepat</SectionTitle>
             </div>
 
-            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] px-[clamp(6px,2.2vw,10px)] py-[clamp(11px,3.2vw,14px)]">
+            <MobileCard className="mt-[clamp(6px,1dvh,10px)] px-[clamp(6px,2.2vw,10px)] py-[clamp(9px,1.4dvh,14px)]">
               <div className="grid grid-cols-4">
                 <QuickAction
                   href="/visits"
@@ -948,7 +939,7 @@ function MobileDashboard() {
           {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="flex min-h-[clamp(68px,18vw,78px)] min-w-0 items-center gap-[clamp(10px,3vw,14px)] rounded-[clamp(15px,4.2vw,18px)] border border-[#F5E1D8] bg-[#FDF1EC] px-[clamp(12px,3.6vw,16px)] py-[clamp(10px,2.8vw,12px)]"
+            className="flex min-h-[clamp(60px,8dvh,78px)] min-w-0 items-center gap-[clamp(10px,3vw,14px)] rounded-[clamp(15px,4.2vw,18px)] border border-[#F5E1D8] bg-[#FDF1EC] px-[clamp(12px,3.6vw,16px)] py-[clamp(8px,1.2dvh,12px)]"
           >
             <AlertTriangle
               size={30}
@@ -986,11 +977,11 @@ function MobileDashboard() {
               </Link>
             </div>
 
-            <MobileCard className="mt-[clamp(8px,2.4vw,10px)] divide-y divide-[#EFEFF2] px-[clamp(10px,3.2vw,14px)]">
+            <MobileCard className="mt-[clamp(6px,1dvh,10px)] divide-y divide-[#EFEFF2] px-[clamp(10px,3.2vw,14px)]">
               {recentActivities.map((activity, index) => (
                 <div
                   key={`${activity.machine}-${index}`}
-                  className="flex min-h-[clamp(58px,15.5vw,66px)] min-w-0 items-center gap-[clamp(9px,2.8vw,12px)] py-[clamp(8px,2.4vw,10px)]"
+                  className="flex min-h-[clamp(54px,7.2dvh,66px)] min-w-0 items-center gap-[clamp(9px,2.8vw,12px)] py-[clamp(7px,1dvh,10px)]"
                 >
                   <div
                     className={`flex h-[clamp(36px,9.8vw,42px)] w-[clamp(36px,9.8vw,42px)] shrink-0 items-center justify-center rounded-full ${
@@ -1047,31 +1038,12 @@ function MobileDashboard() {
 }
 
 /* =========================================================
-   DASHBOARD PAGE (<= 600px MOBILE, > 600px / DESKTOP SITE -> DESKTOP)
+   DASHBOARD PAGE (SYNCED WITH AppShell)
 ========================================================= */
 export default function DashboardPage() {
   const { isMobile, isReady } = useAppLayout();
-  const [useMobileView, setUseMobileView] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 600px)");
-
-    const update = () => {
-      const ua = navigator.userAgent || "";
-      const isMobileUA =
-        /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-      const isTouchDevice = navigator.maxTouchPoints > 0;
-      const isDesktopSiteMode = isTouchDevice && !isMobileUA;
-
-      setUseMobileView(mediaQuery.matches && !isDesktopSiteMode);
-    };
-
-    update();
-    mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
-  }, []);
-
-  if (!isReady || useMobileView === null) {
+  if (!isReady) {
     return (
       <div
         className="min-h-dvh w-full bg-[#F7F7F7]"
@@ -1080,5 +1052,5 @@ export default function DashboardPage() {
     );
   }
 
-  return useMobileView && isMobile ? <MobileDashboard /> : <DesktopDashboard />;
+  return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
 }
