@@ -167,30 +167,22 @@ function getNavigationDirection(
 ========================================================= */
 
 function detectPWA(): boolean {
-  const standalone = window.matchMedia(
-    "(display-mode: standalone)"
-  ).matches;
+  const standalone = window.matchMedia("(display-mode: standalone)").matches;
 
-  const iosStandalone = (
-    window.navigator as Navigator & {
-      standalone?: boolean;
-    }
-  ).standalone === true;
+  const iosStandalone =
+    (
+      window.navigator as Navigator & {
+        standalone?: boolean;
+      }
+    ).standalone === true;
 
   return standalone || iosStandalone;
 }
 
 /**
- * Layout selection priority:
- * 1. URL override (?moku-layout=mobile|desktop) for deterministic QA.
- * 2. localStorage override (moku-layout-override) for manual testing.
- * 3. Browser device-mode signal for normal runtime behavior.
- * Orientation and viewport width never switch a phone's layout.
- */
-/**
- * userAgentData.mobile is preferred where supported because browsers that
- * enable "Desktop site" generally report mobile=false.
- * The classic user-agent fallback covers iOS and older browsers.
+ * userAgentData.mobile diprioritaskan karena browser mobile yang mengaktifkan
+ * mode "Desktop site" akan melaporkan mobile = false.
+ * Fallback user-agent mencakup iOS Safari dan browser lama.
  */
 function detectMobileBrowserMode(): boolean {
   const userAgentData = (
@@ -210,6 +202,13 @@ function detectMobileBrowserMode(): boolean {
   );
 }
 
+/**
+ * Prioritas penentuan layout:
+ * 1. URL override (?moku-layout=mobile|desktop) untuk QA.
+ * 2. localStorage override (moku-layout-override) untuk testing manual.
+ * 3. Mobile hanya aktif jika viewport <= 600px DAN browser bukan mode Desktop Site.
+ *    Layar > 600px (Fold terbuka, tablet, laptop, PC) atau mode Desktop Site -> desktop.
+ */
 function detectLayoutMode(): {
   mode: AppLayoutMode;
   isPWA: boolean;
@@ -229,9 +228,7 @@ function detectLayoutMode(): {
   }
 
   try {
-    const storedOverride = window.localStorage.getItem(
-      "moku-layout-override"
-    );
+    const storedOverride = window.localStorage.getItem("moku-layout-override");
 
     if (storedOverride === "mobile" || storedOverride === "desktop") {
       return {
@@ -241,11 +238,14 @@ function detectLayoutMode(): {
       };
     }
   } catch {
-    // Continue with browser device-mode detection.
+    // Continue with browser & viewport detection.
   }
 
+  const isCompactViewport = window.matchMedia("(max-width: 600px)").matches;
+  const isMobileBrowser = detectMobileBrowserMode();
+
   return {
-    mode: detectMobileBrowserMode() ? "mobile" : "desktop",
+    mode: isCompactViewport && isMobileBrowser ? "mobile" : "desktop",
     isPWA,
     source: "device",
   };
@@ -255,7 +255,7 @@ function detectLayoutMode(): {
  * QA helper:
  * window.setMokuLayoutOverride("desktop")
  * window.setMokuLayoutOverride("mobile")
- * window.setMokuLayoutOverride(null) // return to automatic detection
+ * window.setMokuLayoutOverride(null) // kembali ke deteksi otomatis
  */
 declare global {
   interface Window {
@@ -278,25 +278,24 @@ function installLayoutOverrideHelper() {
     window.location.reload();
   };
 }
+
 /* =========================================================
    APP SHELL
 ========================================================= */
 
-export default function AppShell({
-  children,
-}: Readonly<AppShellProps>) {
+export default function AppShell({ children }: Readonly<AppShellProps>) {
   const pathname = usePathname();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const userToggledSidebarRef = useRef(false);
 
-  const [layoutState, setLayoutState] =
-    useState<AppLayoutContextValue>({
-      mode: "mobile",
-      isMobile: true,
-      isDesktop: false,
-      isPWA: false,
-      isReady: false,
-    });
+  const [layoutState, setLayoutState] = useState<AppLayoutContextValue>({
+    mode: "mobile",
+    isMobile: true,
+    isDesktop: false,
+    isPWA: false,
+    isReady: false,
+  });
 
   const [navigationDirection, setNavigationDirection] =
     useState<NavigationDirection>("forward");
@@ -310,6 +309,7 @@ export default function AppShell({
   ======================================================= */
 
   const handleToggleSidebar = useCallback(() => {
+    userToggledSidebarRef.current = true;
     setSidebarCollapsed((previous) => !previous);
   }, []);
 
@@ -319,6 +319,12 @@ export default function AppShell({
 
   const updateLayout = useCallback(() => {
     const detected = detectLayoutMode();
+
+    // Auto-collapse sidebar di layar Fold/Tablet (601px - 1023px)
+    // selama user belum klik toggle manual
+    if (detected.mode === "desktop" && !userToggledSidebarRef.current) {
+      setSidebarCollapsed(window.innerWidth < 1024);
+    }
 
     setLayoutState((previous) => {
       if (
@@ -358,14 +364,13 @@ export default function AppShell({
     window.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", handleResize);
 
-    const displayMode = window.matchMedia(
-      "(display-mode: standalone)"
-    );
-
+    const displayMode = window.matchMedia("(display-mode: standalone)");
     displayMode.addEventListener("change", updateLayout);
 
-    const screenOrientation = window.screen.orientation;
+    const compactViewport = window.matchMedia("(max-width: 600px)");
+    compactViewport.addEventListener("change", updateLayout);
 
+    const screenOrientation = window.screen.orientation;
     screenOrientation?.addEventListener("change", handleResize);
 
     return () => {
@@ -374,18 +379,10 @@ export default function AppShell({
       }
 
       window.removeEventListener("resize", handleResize);
-
-      window.removeEventListener(
-        "orientationchange",
-        handleResize
-      );
-
+      window.removeEventListener("orientationchange", handleResize);
       displayMode.removeEventListener("change", updateLayout);
-
-      screenOrientation?.removeEventListener(
-        "change",
-        handleResize
-      );
+      compactViewport.removeEventListener("change", updateLayout);
+      screenOrientation?.removeEventListener("change", handleResize);
     };
   }, [updateLayout]);
 
@@ -511,10 +508,7 @@ export default function AppShell({
         }
 
         /*
-          DESKTOP SITE + TABLET + LAPTOP + DESKTOP PC
-
-          Satu standar layout desktop.
-          Tidak ada ukuran compact khusus landscape.
+          DESKTOP SITE + FOLD (> 600px) + TABLET + LAPTOP + DESKTOP PC
         */
 
         .moku-app-shell[data-layout-mode="desktop"] {
@@ -540,8 +534,6 @@ export default function AppShell({
           margin-left: 280px;
           flex: 0 0 calc(100% - 280px);
           min-height: 100dvh;
-          /* Perubahan geometri layout harus langsung, bukan dianimasikan.
-             Ini mencegah canvas bergeser saat hard refresh. */
           transition: none !important;
         }
 
@@ -562,7 +554,9 @@ export default function AppShell({
           display: block !important;
         }
 
-        .moku-app-shell[data-layout-mode="desktop"][data-dashboard="true"] .moku-main-layout > header {
+        .moku-app-shell[data-layout-mode="desktop"][data-dashboard="true"]
+          .moku-main-layout
+          > header {
           display: none !important;
         }
 
@@ -586,18 +580,13 @@ export default function AppShell({
         }
 
         /*
-          MOBILE WEB / PWA
-
-          Portrait dan landscape tetap menggunakan satu
-          komposisi mobile yang sama.
+          MOBILE WEB / PWA (<= 600px)
         */
 
         .moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
           display: none !important;
         }
 
-        /* Mobile pages own their own page headers.
-           Do not render the desktop AppHeader above the PWA header. */
         .moku-app-shell[data-layout-mode="mobile"] .moku-main-layout > header {
           display: none !important;
         }
@@ -613,8 +602,7 @@ export default function AppShell({
           display: none !important;
         }
 
-        .moku-app-shell[data-layout-mode="mobile"]
-          .moku-mobile-navigation {
+        .moku-app-shell[data-layout-mode="mobile"] .moku-mobile-navigation {
           display: block;
         }
 
