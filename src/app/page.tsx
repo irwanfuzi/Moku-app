@@ -46,8 +46,8 @@ const MONTHS = [
 
 const Y_AXIS_TICKS = [20, 16, 12, 8, 4, 0];
 
-const PULL_THRESHOLD = 68;
-const MAX_PULL = 104;
+const PULL_THRESHOLD = 64;
+const MAX_PULL = 96;
 
 /* =========================================================
    DASHBOARD DATA
@@ -157,8 +157,9 @@ function detectStandalonePwa() {
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: fullscreen)").matches ||
     window.matchMedia("(display-mode: minimal-ui)").matches;
-  const isIosStandalone =
-    Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+  const isIosStandalone = Boolean(
+    (window.navigator as Navigator & { standalone?: boolean }).standalone
+  );
 
   return isStandaloneDisplay || isIosStandalone;
 }
@@ -263,7 +264,7 @@ function DesktopDashboard() {
   ];
 
   return (
-    <div className="moku-fade-in mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 text-[#171923]">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
@@ -634,11 +635,11 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 function MobileDashboard() {
+  const { isPWA } = useAppLayout();
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isPwaMode, setIsPwaMode] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -647,9 +648,9 @@ function MobileDashboard() {
   const touchStartYRef = useRef<number | null>(null);
   const isPullingRef = useRef(false);
 
-  useEffect(() => {
-    setIsPwaMode(detectStandalonePwa());
+  const isPwaMode = isPWA || detectStandalonePwa();
 
+  useEffect(() => {
     const getScrollTop = () =>
       window.scrollY ||
       document.documentElement.scrollTop ||
@@ -726,7 +727,7 @@ function MobileDashboard() {
 
     const deltaY = event.touches[0].clientY - touchStartYRef.current;
     if (deltaY > 0) {
-      const damped = Math.min(MAX_PULL, deltaY * 0.45);
+      const damped = Math.min(MAX_PULL, deltaY * 0.42);
       setPullDistance(damped);
     }
   };
@@ -738,7 +739,7 @@ function MobileDashboard() {
 
     if (pullDistance >= PULL_THRESHOLD * 0.65) {
       setIsRefreshing(true);
-      setPullDistance(PULL_THRESHOLD * 0.75);
+      setPullDistance(42);
 
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
@@ -759,47 +760,59 @@ function MobileDashboard() {
 
   return (
     <main
-      style={MOBILE_SCALE_VARS}
+      style={{
+        ...MOBILE_SCALE_VARS,
+        overscrollBehaviorY: isPwaMode ? "none" : "auto",
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="moku-fade-in min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      <div className="relative mx-auto w-full max-w-[600px]">
-        {/* Custom Brand Pull-to-Refresh Indicator (PWA Only) */}
-        {showPwaRefreshIndicator && (
-          <div
-            style={{
-              transform: `translateY(${Math.max(0, pullDistance - 10)}px)`,
-              opacity: Math.min(1, Math.max(0.25, pullDistance / 42)),
-            }}
-            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(36*var(--u)))] z-30 flex justify-center transition-opacity duration-150"
-          >
-            <div className="relative flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] items-center justify-center rounded-full border border-[#ECECEF] bg-white shadow-[0_4px_12px_rgba(41,35,42,0.12)]">
-              <span
-                aria-hidden="true"
-                className={`absolute inset-0 rounded-full border-2 border-transparent border-t-[#8E001C] border-r-[#F28C0F] ${
-                  isRefreshing ? "animate-spin" : ""
-                }`}
-                style={{
-                  transform: isRefreshing
-                    ? undefined
-                    : `rotate(${pullDistance * 3.6}deg)`,
-                }}
+      {/* Custom Brand Pull-to-Refresh Indicator (PWA Only) */}
+      {showPwaRefreshIndicator && (
+        <div
+          style={{
+            transform: `translateY(${Math.max(0, pullDistance * 0.45)}px)`,
+            opacity: Math.min(1, Math.max(0.3, pullDistance / 36)),
+          }}
+          className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(36*var(--u)))] z-30 flex justify-center transition-opacity duration-150"
+        >
+          <div className="relative flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full border border-[#ECECEF] bg-white shadow-[0_4px_12px_rgba(41,35,42,0.12)]">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-0 rounded-full border-2 border-transparent border-t-[#8E001C] border-r-[#F28C0F] ${
+                isRefreshing ? "animate-spin" : ""
+              }`}
+              style={{
+                transform: isRefreshing
+                  ? undefined
+                  : `rotate(${pullDistance * 4}deg)`,
+              }}
+            />
+            <div className="relative flex h-[calc(23*var(--u))] w-[calc(23*var(--u))] items-center justify-center rounded-full">
+              <Image
+                src="/images/moku/brand/app-icon.png"
+                alt="Memuat ulang MOKU"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
               />
-              <div className="relative flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] items-center justify-center rounded-full">
-                <Image
-                  src="/images/moku/brand/app-icon.png"
-                  alt="Memuat ulang MOKU"
-                  width={48}
-                  height={48}
-                  className="h-full w-full object-contain"
-                />
-              </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Konten ikut bergeser halus saat ditarik di PWA */}
+      <div
+        style={{
+          transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+          transition: isPullingRef.current
+            ? "none"
+            : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+        className="relative mx-auto w-full max-w-[600px] will-change-transform"
+      >
         {/* Sticky Compact Top Bar */}
         <div className="sticky top-0 z-40 h-0 overflow-visible">
           <div
@@ -1303,16 +1316,7 @@ function MobileDashboard() {
    DASHBOARD PAGE (SYNCED WITH AppShell)
 ========================================================= */
 export default function DashboardPage() {
-  const { isMobile, isReady } = useAppLayout();
-
-  if (!isReady) {
-    return (
-      <div
-        className="min-h-dvh w-full bg-[#FAFAFC]"
-        aria-label="Memuat Dashboard"
-      />
-    );
-  }
+  const { isMobile } = useAppLayout();
 
   return isMobile ? <MobileDashboard /> : <DesktopDashboard />;
-        }
+}
