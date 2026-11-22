@@ -154,7 +154,7 @@ function formatGreetingName(fullName: string) {
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="min-w-0 whitespace-nowrap text-[calc(15.5*var(--u))] font-bold leading-[1.2] tracking-[-0.025em] text-[#171717]">
+    <h2 className="min-w-0 whitespace-nowrap font-display text-[calc(15.5*var(--u))] font-bold leading-[1.2] tracking-[-0.025em] text-[#171717]">
       {children}
     </h2>
   );
@@ -241,7 +241,7 @@ function DesktopDashboard() {
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[clamp(26px,2.8vw,34px)] font-extrabold leading-tight tracking-[-0.03em] text-[#730217]">
+          <h1 className="font-display text-[clamp(26px,2.8vw,34px)] font-extrabold leading-tight tracking-[-0.03em] text-[#730217]">
             Dashboard
           </h1>
           <p className="mt-0.5 text-sm text-[#5A5660] md:text-[15px]">
@@ -280,7 +280,7 @@ function DesktopDashboard() {
             href="/profile"
             className="flex items-center gap-2.5 rounded-xl py-1 pr-1 transition hover:bg-[#F3ECEF]/60"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E9EC] text-sm font-bold text-[#730217]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E9EC] font-display text-sm font-bold text-[#730217]">
               BS
             </span>
             <span className="hidden text-left sm:block">
@@ -308,7 +308,7 @@ function DesktopDashboard() {
               <span className="block truncate text-[13px] font-semibold text-[#29232A]">
                 {label}
               </span>
-              <span className="mt-0.5 block text-[30px] font-extrabold leading-none tracking-[-0.03em] text-[#111111]">
+              <span className="mt-0.5 block font-display text-[30px] font-extrabold leading-none tracking-[-0.03em] text-[#111111]">
                 {value}
               </span>
             </div>
@@ -320,7 +320,7 @@ function DesktopDashboard() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.28fr)]">
         {/* Status Monitoring Mesin */}
         <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-          <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+          <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
             Status Monitoring Mesin
           </h2>
 
@@ -335,7 +335,7 @@ function DesktopDashboard() {
               aria-label="48 Total Mesin"
             >
               <div className="absolute inset-[26px] flex flex-col items-center justify-center rounded-full bg-white">
-                <strong className="text-[36px] font-extrabold leading-none tracking-[-0.04em] text-[#111111]">
+                <strong className="font-display text-[36px] font-extrabold leading-none tracking-[-0.04em] text-[#111111]">
                   48
                 </strong>
                 <span className="mt-1 text-xs font-medium text-[#66616A]">
@@ -371,7 +371,7 @@ function DesktopDashboard() {
         {/* Kunjungan Bulan Ini */}
         <article className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+            <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
               Kunjungan Bulan Ini
             </h2>
 
@@ -443,7 +443,7 @@ function DesktopDashboard() {
 
       {/* Daftar Mesin */}
       <section className="rounded-[18px] border border-[#ECECEF] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-        <h2 className="text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
+        <h2 className="font-display text-[17px] font-bold tracking-[-0.02em] text-[#171717]">
           Daftar Mesin
         </h2>
 
@@ -795,7 +795,7 @@ function MobileDashboard() {
           />
 
           <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(126*var(--u))]">
-            <h1 className="whitespace-nowrap text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
+            <h1 className="whitespace-nowrap font-display text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
               Halo, {formatGreetingName(userName)}
             </h1>
             <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(10.5*var(--u))] font-normal leading-[1.35] tracking-[-0.015em] text-white/85">
@@ -878,7 +878,7 @@ function MobileDashboard() {
                     aria-label="48 mesin"
                   >
                     <div className="absolute inset-[15%] flex flex-col items-center justify-center rounded-full bg-white">
-                      <span className="text-[calc(30*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
+                      <span className="font-display text-[calc(30*var(--u))] font-extrabold leading-none tracking-[-0.05em] text-[#111111]">
                         48
                       </span>
                       <span className="mt-[2px] text-[calc(12*var(--u))] font-medium text-[#51474E]">
@@ -934,7 +934,7 @@ function MobileDashboard() {
             <MobileCard className="mt-[calc(8*var(--u))] px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
               <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
                 <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
-                  <p className="text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
+                  <p className="font-display text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                     32
                   </p>
                   <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
@@ -976,7 +976,7 @@ function MobileDashboard() {
                   <p className="text-[calc(12.5*var(--u))] font-bold text-[#171717]">
                     Pencapaian Target
                   </p>
-                  <p className="text-[calc(12.5*var(--u))] font-extrabold text-[#111111]">
+                  <p className="font-display text-[calc(12.5*var(--u))] font-extrabold text-[#111111]">
                     80%
                   </p>
                 </div>
@@ -1074,7 +1074,7 @@ function MobileDashboard() {
             />
 
             <div className="min-w-0 flex-1">
-              <p className="text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
+              <p className="font-display text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
                 Mesin Perlu Perhatian
               </p>
               <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#5E5863]">
