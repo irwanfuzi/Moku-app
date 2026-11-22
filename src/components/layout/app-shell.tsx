@@ -401,7 +401,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         data-pwa={layoutState.isPWA}
         data-sidebar-collapsed={sidebarCollapsed}
         className={`moku-app-shell min-h-dvh w-full overflow-x-clip text-foreground ${
-          isMobileMode ? "bg-[#FAFAFC]" : "bg-background"
+          isMobileMode ? "bg-[#F8F8FA]" : "bg-background"
         }`}
       >
         <AppSidebar
@@ -422,7 +422,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
               ${
                 layoutState.mode === "desktop"
                   ? "bg-background px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7"
-                  : "bg-[#FAFAFC] p-0"
+                  : "bg-[#F8F8FA] p-0"
               }
             `}
           >
@@ -560,7 +560,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           display: block;
         }
 
-        /* NATIVE SLIDE PAGE TRANSITION (LIKE VIDEO REFERENCE) */
+        /* SMOOTH & WEIGHTED SLIDE TRANSITION */
         .page-transition {
           min-width: 0;
           will-change: transform, opacity;
@@ -585,13 +585,14 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="forward"] {
-          animation: moku-native-slide-in 280ms
+          box-shadow: -12px 0 28px rgba(23, 23, 23, 0.14);
+          animation: moku-native-slide-in 380ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         [data-layout-mode="mobile"]
           .page-transition[data-page-transition="backward"] {
-          animation: moku-native-slide-back 260ms
+          animation: moku-native-slide-back 340ms
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
@@ -609,8 +610,8 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         @keyframes moku-native-slide-back {
           from {
-            opacity: 0.94;
-            transform: translate3d(-24%, 0, 0);
+            opacity: 0.92;
+            transform: translate3d(-18%, 0, 0);
           }
 
           to {
@@ -622,6 +623,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         @media (prefers-reduced-motion: reduce) {
           .page-transition {
             animation: none !important;
+            box-shadow: none !important;
           }
 
           .moku-main-layout {
