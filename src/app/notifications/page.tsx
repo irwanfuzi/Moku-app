@@ -93,7 +93,7 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: Warning,
-      circleClass: "bg-[#FCE8DC] text-[#EB6A14]",
+      circleClass: "bg-[#FCE6D8] text-[#EB6A14]",
     };
   }
 
@@ -104,7 +104,7 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: CalendarBlank,
-      circleClass: "bg-[#FBE2E6] text-[#D81131]",
+      circleClass: "bg-[#FADEE3] text-[#DC0E2E]",
     };
   }
 
@@ -115,14 +115,14 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: ChartBar,
-      circleClass: "bg-[#FBE2E6] text-[#D81131]",
+      circleClass: "bg-[#FADEE3] text-[#DC0E2E]",
     };
   }
 
   if (item.type === "visit" || title.includes("selesai")) {
     return {
       Icon: CheckCircle,
-      circleClass: "bg-[#DDF5E3] text-[#17B24A]",
+      circleClass: "bg-[#DCF5E3] text-[#14AE47]",
     };
   }
 
@@ -134,13 +134,13 @@ function getMobileBadgeStyle(item: NotificationItem) {
   ) {
     return {
       Icon: Info,
-      circleClass: "bg-[#DFEEFB] text-[#1B7FD9]",
+      circleClass: "bg-[#DCECFB] text-[#1A7BD6]",
     };
   }
 
   return {
     Icon: iconMap[item.type] ?? Bell,
-    circleClass: "bg-[#FBE2E6] text-[#8E001C]",
+    circleClass: "bg-[#FADEE3] text-[#8E001C]",
   };
 }
 
@@ -591,6 +591,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
     message: string;
@@ -612,6 +613,7 @@ export default function NotificationsPage() {
   const swipeOffsetRef = useRef<Record<string, number>>({});
   const longPressTimerRef = useRef<number | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
+  const leaveTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
@@ -869,7 +871,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     BACK NAVIGATION (SUBPAGE)
+     NATIVE SLIDE-OUT BACK NAVIGATION (LIKE VIDEO REFERENCE)
   ======================================================= */
 
   const handleBack = () => {
@@ -878,11 +880,16 @@ export default function NotificationsPage() {
       return;
     }
 
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+    if (isLeaving) return;
+
+    setIsLeaving(true);
+    leaveTimerRef.current = window.setTimeout(() => {
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.push("/");
+      }
+    }, 200);
   };
 
   /* =======================================================
@@ -1060,6 +1067,9 @@ export default function NotificationsPage() {
       if (deleteTimerRef.current !== null) {
         window.clearTimeout(deleteTimerRef.current);
       }
+      if (leaveTimerRef.current !== null) {
+        window.clearTimeout(leaveTimerRef.current);
+      }
     };
   }, []);
 
@@ -1071,17 +1081,19 @@ export default function NotificationsPage() {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFC] pb-[calc(88*var(--u)+env(safe-area-inset-bottom))]"
+        className={`min-h-dvh w-full min-w-0 overflow-x-clip bg-[#F8F8FA] pb-[calc(32*var(--u)+env(safe-area-inset-bottom))] transition-transform duration-200 ease-out ${
+          isLeaving ? "translate-x-full opacity-95" : "translate-x-0 opacity-100"
+        }`}
       >
         {/* Sticky Sub-Page Header (Menyatu dengan Status Bar Marun) */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
-          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(24*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
-            <div className="flex min-w-0 items-center gap-[calc(8*var(--u))]">
+          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(26*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
+            <div className="flex min-w-0 items-center gap-[calc(10*var(--u))]">
               <button
                 type="button"
                 onClick={handleBack}
                 aria-label={isSelectionMode ? "Batalkan pilihan" : "Kembali"}
-                className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors active:bg-white/15"
+                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors active:bg-white/15"
               >
                 {isSelectionMode ? (
                   <X className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]" weight="bold" />
@@ -1095,42 +1107,28 @@ export default function NotificationsPage() {
               </h1>
             </div>
 
-            {notifications.length > 0 && (
-              <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
-                {isSelectionMode ? (
-                  <button
-                    type="button"
-                    onClick={toggleSelectAll}
-                    className="rounded-full bg-white/15 px-[calc(11*var(--u))] py-[calc(5*var(--u))] text-[calc(12*var(--u))] font-semibold text-white transition active:bg-white/25"
-                  >
-                    {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => enterSelectionMode()}
-                    aria-label="Pilih notifikasi"
-                    title="Pilih notifikasi"
-                    className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-white/90 transition active:bg-white/15"
-                  >
-                    <Checks className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]" weight="bold" />
-                  </button>
-                )}
-              </div>
+            {notifications.length > 0 && isSelectionMode && (
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                className="shrink-0 rounded-full bg-white/15 px-[calc(12*var(--u))] py-[calc(5*var(--u))] text-[calc(12*var(--u))] font-semibold text-white transition active:bg-white/25"
+              >
+                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
+              </button>
             )}
           </div>
         </header>
 
-        {/* Curved Sheet Container */}
-        <div className="relative z-10 -mt-[calc(14*var(--u))] min-h-[calc(100dvh-calc(70*var(--u)))] rounded-t-[calc(22*var(--u))] bg-[#FAFAFC] pt-[calc(16*var(--u))]">
-          <div className="page-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))]">
+        {/* Curved White/Off-White Sheet Container */}
+        <div className="relative z-10 -mt-[calc(16*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-[#F8F8FA] pt-[calc(18*var(--u))]">
+          <div className="mx-auto w-full max-w-[680px] px-[calc(16*var(--u))]">
             {notifications.length > 0 ? (
-              <div className="space-y-[calc(18*var(--u))]">
+              <div className="space-y-[calc(20*var(--u))]">
                 {groupedNotifications.map((group, groupIndex) => (
                   <section key={group.label} className="min-w-0">
                     {/* Group Header */}
                     <div className="mb-[calc(10*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
-                      <h2 className="font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                      <h2 className="font-display text-[calc(15*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
                         {group.label}
                       </h2>
 
@@ -1138,7 +1136,7 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           onClick={handleMarkAllAsRead}
-                          className="shrink-0 text-[calc(13*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
+                          className="shrink-0 text-[calc(13.5*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
                         >
                           Baca Semua ({unreadCount})
                         </button>
@@ -1158,13 +1156,13 @@ export default function NotificationsPage() {
                         return (
                           <div
                             key={item.id}
-                            className={`notification-row relative overflow-hidden rounded-[calc(16*var(--u))] ${
+                            className={`notification-row relative overflow-hidden rounded-[calc(18*var(--u))] ${
                               isExiting ? "notification-exit" : ""
                             }`}
                           >
                             {/* Swipe Delete Background */}
                             <div
-                              className="absolute inset-y-0 right-0 z-0 flex w-[84px] items-center justify-center rounded-r-[calc(16*var(--u))] bg-[#BF0B2C]"
+                              className="absolute inset-y-0 right-0 z-0 flex w-[84px] items-center justify-center rounded-r-[calc(18*var(--u))] bg-[#BF0B2C]"
                               style={{
                                 opacity: Math.min(Math.abs(swipeOffset) / 52, 1),
                               }}
@@ -1190,12 +1188,12 @@ export default function NotificationsPage() {
                                 handleTouchCancel(item.id)
                               }
                               onContextMenu={(event) => event.preventDefault()}
-                              className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] rounded-[calc(16*var(--u))] border px-[calc(13*var(--u))] py-[calc(12*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.03)] transition-colors ${
+                              className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(13*var(--u))] rounded-[calc(18*var(--u))] px-[calc(14*var(--u))] py-[calc(13*var(--u))] shadow-[0_1px_3px_rgba(41,35,42,0.03)] transition-colors ${
                                 isSelected
-                                  ? "border-[#8E001C]/35 bg-[#FCECEF]"
+                                  ? "bg-[#FCECEF] ring-1 ring-[#8E001C]/35"
                                   : !item.isRead
-                                    ? "border-[#F4E1E5] bg-[#FDF4F6]"
-                                    : "border-[#EFEFF2] bg-white"
+                                    ? "bg-[#FDF3F5]"
+                                    : "bg-white"
                               }`}
                               style={{
                                 transform: `translate3d(${swipeOffset}px, 0, 0)`,
@@ -1210,7 +1208,7 @@ export default function NotificationsPage() {
                             >
                               {/* Leading Icon / Checkbox */}
                               {isSelectionMode ? (
-                                <div className="mt-[calc(2*var(--u))] flex h-[calc(42*var(--u))] w-[calc(42*var(--u))] shrink-0 animate-selection-in items-center justify-center">
+                                <div className="mt-[calc(2*var(--u))] flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 animate-selection-in items-center justify-center">
                                   <MokuCheckbox
                                     checked={isSelected}
                                     onChange={() => toggleSelection(item.id)}
@@ -1220,10 +1218,10 @@ export default function NotificationsPage() {
                                 </div>
                               ) : (
                                 <div
-                                  className={`mt-[calc(1*var(--u))] flex h-[calc(42*var(--u))] w-[calc(42*var(--u))] shrink-0 items-center justify-center rounded-full ${circleClass}`}
+                                  className={`mt-[calc(1*var(--u))] flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-full ${circleClass}`}
                                 >
                                   <Icon
-                                    className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
+                                    className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
                                     weight="bold"
                                   />
                                 </div>
@@ -1238,12 +1236,12 @@ export default function NotificationsPage() {
                                 className="flex min-w-0 flex-1 flex-col outline-none"
                               >
                                 <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
-                                  <p className="min-w-0 flex-1 truncate font-display text-[calc(14*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
+                                  <p className="min-w-0 flex-1 truncate font-display text-[calc(14.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
                                     {item.title}
                                   </p>
 
                                   <div className="flex shrink-0 items-center gap-[calc(6*var(--u))] pt-[calc(1*var(--u))]">
-                                    <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#66616A]">
+                                    <span className="whitespace-nowrap text-[calc(12*var(--u))] font-medium tabular-nums text-[#5A555F]">
                                       {displayTime}
                                     </span>
 
@@ -1257,7 +1255,7 @@ export default function NotificationsPage() {
                                 </div>
 
                                 {subtitle && (
-                                  <p className="mt-[calc(4*var(--u))] line-clamp-2 text-[calc(12.5*var(--u))] leading-[1.4] text-[#4F4A53]">
+                                  <p className="mt-[calc(4*var(--u))] line-clamp-2 text-[calc(12.5*var(--u))] leading-[1.38] text-[#3F3A42]">
                                     {subtitle}
                                   </p>
                                 )}
@@ -1275,14 +1273,10 @@ export default function NotificationsPage() {
                     </div>
                   </section>
                 ))}
-
-                <p className="pt-[calc(4*var(--u))] text-center text-[calc(10.5*var(--u))] text-[#999096]">
-                  Geser kartu ke kiri untuk menghapus • Tekan tahan untuk memilih
-                </p>
               </div>
             ) : (
               /* EMPTY STATE */
-              <div className="relative flex min-h-[calc(64dvh)] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
+              <div className="relative flex min-h-[calc(68dvh)] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="opacity-[0.17]">
                     <EmptyNotificationWatermark />
@@ -1313,7 +1307,7 @@ export default function NotificationsPage() {
 
         {/* MOBILE FLOATING SELECTION BAR */}
         {isSelectionMode && selectedCount > 0 && (
-          <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between rounded-2xl border border-[#E8E9ED] bg-white px-4 py-2.5 shadow-xl">
+          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between rounded-2xl border border-[#E8E9ED] bg-white px-4 py-2.5 shadow-xl">
             <span className="text-xs font-bold text-[#8E001C]">
               {selectedCount} dipilih
             </span>
@@ -1326,7 +1320,7 @@ export default function NotificationsPage() {
                 title="Tandai sudah dibaca"
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors hover:bg-[#8E001C]/10"
               >
-                <Check size={19} weight="bold" />
+                <Checks size={19} weight="bold" />
               </button>
 
               <button
@@ -1357,7 +1351,7 @@ export default function NotificationsPage() {
           <div
             role="status"
             aria-live="polite"
-            className="snackbar-enter fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+            className="snackbar-enter fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
           >
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <CheckCircle
@@ -1384,10 +1378,6 @@ export default function NotificationsPage() {
         )}
 
         <style jsx>{`
-          .page-enter {
-            animation: notification-enter 220ms ease-out both;
-          }
-
           .snackbar-enter {
             animation: snackbar-enter 220ms ease-out both;
           }
@@ -1422,18 +1412,6 @@ export default function NotificationsPage() {
             animation: notification-exit 220ms ease-in forwards;
             pointer-events: none;
             overflow: hidden;
-          }
-
-          @keyframes notification-enter {
-            from {
-              opacity: 0;
-              transform: translateY(8px);
-            }
-
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
           }
 
           @keyframes snackbar-enter {
@@ -1503,7 +1481,6 @@ export default function NotificationsPage() {
           }
 
           @media (prefers-reduced-motion: reduce) {
-            .page-enter,
             .snackbar-enter,
             .animate-selection-in,
             .animate-toolbar-in,
@@ -1862,4 +1839,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-    }
+      }
