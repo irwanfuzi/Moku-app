@@ -1061,18 +1061,23 @@ function MobileDashboard() {
           {/* 4. Mesin Perlu Perhatian */}
           <Link
             href="/monitoring"
-            className="flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] rounded-[calc(17*var(--u))] border border-[#F5C7D0] bg-[#FFF1F3] px-[calc(14*var(--u))] py-[calc(10*var(--u))]"
+            className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] bg-[#FFF6F0] px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_2px_9px_rgba(0,0,0,0.045)]"
           >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-[calc(5*var(--u))] bg-[#F27B13]"
+            />
+
             <AlertTriangle
               strokeWidth={2.1}
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#EB5513]"
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F27B13]"
             />
 
             <div className="min-w-0 flex-1">
               <p className="text-[calc(14*var(--u))] font-bold leading-[1.2] tracking-[-0.02em] text-[#171717]">
                 Mesin Perlu Perhatian
               </p>
-              <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#473A3E]">
+              <p className="mt-[calc(3*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#4A413D]">
                 4 mesin belum dikunjungi pada {selectedMonth} dan memerlukan
                 tindak lanjut.
               </p>
