@@ -190,7 +190,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex min-w-0 flex-col items-center justify-start gap-[calc(5.5*var(--u))] px-[calc(4*var(--u))] text-center ${
+      className={`flex min-w-0 flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
@@ -1065,7 +1065,7 @@ function MobileDashboard() {
           >
             <AlertTriangle
               strokeWidth={2.1}
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F28C0F]"
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 text-[#F27B13]"
             />
 
             <div className="min-w-0 flex-1">
