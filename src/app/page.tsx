@@ -801,7 +801,7 @@ function MobileDashboard() {
           />
 
           {/* Greeting (otomatis maks. 2 kata tanpa titik-titik + deskripsi 1 baris) */}
-          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(122*var(--u))]">
+          <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(126*var(--u))]">
             <h1 className="whitespace-nowrap text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
               Halo, {formatGreetingName(userName)}
             </h1>
@@ -810,8 +810,8 @@ function MobileDashboard() {
             </p>
           </div>
 
-          {/* Robot illustration (kanan — di-flip agar menghadap ke tulisan di kiri) */}
-          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(10*var(--u))] z-10 flex h-[calc(134*var(--u))] w-[calc(134*var(--u))] items-end justify-center">
+          {/* Robot illustration (kanan — sejajar margin 16*u agar tidak mepet tepi layar) */}
+          <div className="pointer-events-none absolute bottom-[calc(14*var(--u))] right-[calc(16*var(--u))] z-10 flex h-[calc(126*var(--u))] w-[calc(126*var(--u))] items-end justify-center">
             <Image
               src="/images/moku/illustrations/dashboard-robot-printer.png"
               alt="Ilustrasi robot MOKU membawa printer"
