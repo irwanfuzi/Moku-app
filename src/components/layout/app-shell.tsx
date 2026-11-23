@@ -426,6 +426,61 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
     }
   }, [pathname]);
 
+  // Tangkap tombol back sistem HP & gestur navigasi layar (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (resolveTransitionRef.current) return;
+
+      const doc = document as ViewTransitionDoc;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      if (
+        !layoutMeta.isMobile ||
+        prefersReducedMotion ||
+        typeof doc.startViewTransition !== "function"
+      ) {
+        setUsedViewTransition(false);
+        setNavigationDirection("backward");
+        return;
+      }
+
+      if (transitionSafetyTimerRef.current !== null) {
+        window.clearTimeout(transitionSafetyTimerRef.current);
+        transitionSafetyTimerRef.current = null;
+      }
+
+      setUsedViewTransition(true);
+      setNavigationDirection("backward");
+      document.documentElement.dataset.navDirection = "backward";
+
+      const transition = doc.startViewTransition(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveTransitionRef.current = resolve;
+            transitionSafetyTimerRef.current = window.setTimeout(() => {
+              if (resolveTransitionRef.current) {
+                resolveTransitionRef.current();
+                resolveTransitionRef.current = null;
+              }
+            }, 500);
+          })
+      );
+
+      transition.finished.finally(() => {
+        delete document.documentElement.dataset.navDirection;
+        setUsedViewTransition(false);
+      });
+    };
+
+    window.addEventListener("popstate", handlePopState, true);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState, true);
+    };
+  }, [layoutMeta.isMobile]);
+
   const handleToggleSidebar = useCallback(() => {
     userToggledSidebarRef.current = true;
     setSidebarCollapsed((previous) => !previous);
@@ -692,33 +747,27 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         }
 
         /* =====================================================
-           NATIVE DUAL-SCREEN VIEW TRANSITION (LIKE FLIP APP)
+           SIDE-BY-SIDE VIEW TRANSITION (2 LAYAR BERDAMPINGAN)
         ===================================================== */
         ::view-transition-group(root) {
-          animation-duration: 320ms;
-          animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+          animation-duration: 380ms;
+          animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         html[data-nav-direction="forward"]::view-transition-old(root) {
-          animation: moku-vt-out-left 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
-          z-index: 1;
+          animation: moku-vt-out-left 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="forward"]::view-transition-new(root) {
-          animation: moku-vt-in-right 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
-          box-shadow: -10px 0 28px rgba(0, 0, 0, 0.16);
-          z-index: 2;
+          animation: moku-vt-in-right 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-old(root) {
-          animation: moku-vt-out-right 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
-          box-shadow: -10px 0 28px rgba(0, 0, 0, 0.16);
-          z-index: 2;
+          animation: moku-vt-out-right 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-new(root) {
-          animation: moku-vt-in-left 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
-          z-index: 1;
+          animation: moku-vt-in-left 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         @keyframes moku-vt-in-right {
@@ -733,11 +782,9 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         @keyframes moku-vt-out-left {
           from {
             transform: translate3d(0, 0, 0);
-            filter: brightness(1);
           }
           to {
-            transform: translate3d(-25%, 0, 0);
-            filter: brightness(0.92);
+            transform: translate3d(-100%, 0, 0);
           }
         }
 
@@ -752,12 +799,10 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
         @keyframes moku-vt-in-left {
           from {
-            transform: translate3d(-25%, 0, 0);
-            filter: brightness(0.92);
+            transform: translate3d(-100%, 0, 0);
           }
           to {
             transform: translate3d(0, 0, 0);
-            filter: brightness(1);
           }
         }
 
