@@ -5,16 +5,53 @@ import {
   IonContent,
   IonPage,
   IonRouterOutlet,
+  createAnimation,
   setupIonicReact,
   useIonRouter,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { ArrowLeft, Bell } from "@phosphor-icons/react";
 
+const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
+  const duration = 280;
+  const easing = "cubic-bezier(0.32, 0.72, 0, 1)";
+  const enteringEl = opts?.enteringEl as HTMLElement | undefined;
+  const leavingEl = opts?.leavingEl as HTMLElement | undefined;
+  const isBack = opts?.direction === "back";
+
+  const rootAnimation = createAnimation().duration(duration).easing(easing);
+
+  if (enteringEl) {
+    const enterAnim = createAnimation()
+      .addElement(enteringEl)
+      .beforeRemoveClass("ion-page-invisible")
+      .fromTo(
+        "transform",
+        isBack ? "translateX(-100%)" : "translateX(100%)",
+        "translateX(0%)"
+      );
+    rootAnimation.addAnimation(enterAnim);
+  }
+
+  if (leavingEl) {
+    const leaveAnim = createAnimation()
+      .addElement(leavingEl)
+      .fromTo(
+        "transform",
+        "translateX(0%)",
+        isBack ? "translateX(100%)" : "translateX(-100%)"
+      );
+    rootAnimation.addAnimation(leaveAnim);
+  }
+
+  return rootAnimation;
+};
+
 setupIonicReact({
   mode: "ios",
   animated: true,
   swipeBackEnabled: true,
+  navAnimation: seamlessSlideAnimation,
 });
 
 const contentStyle = {
