@@ -2,9 +2,159 @@
 @import "@ionic/react/css/structure.css";
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", sans-serif;
-  --font-display: "Plus Jakarta Sans", sans-serif;
+/* =========================================================
+   MOKU DESIGN SYSTEM
+   Monitoring Operasional Kunjungan Unit
+   Brand: Deep Burgundy & Crimson
+   Framework: Tailwind CSS v4 + Ionic
+========================================================= */
+
+@theme inline {
+  --color-primary: var(--moku-primary);
+  --color-primary-hover: var(--moku-primary-hover);
+  --color-primary-light: var(--moku-primary-light);
+
+  --color-secondary: var(--moku-secondary);
+  --color-secondary-light: var(--moku-secondary-light);
+
+  --color-accent: var(--moku-accent);
+  --color-highlight: var(--moku-highlight);
+
+  --color-background: var(--moku-background);
+  --color-surface: var(--moku-surface);
+  --color-surface-secondary: var(--moku-surface-secondary);
+
+  --color-foreground: var(--moku-text);
+  --color-muted: var(--moku-text-secondary);
+
+  --color-border: var(--moku-border);
+  --color-input: var(--moku-input);
+
+  --color-success: var(--moku-success);
+  --color-warning: var(--moku-warning);
+  --color-danger: var(--moku-danger);
+  --color-info: var(--moku-info);
+
+  --font-sans: "Inter", Arial, Helvetica, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-panel: 20px;
+}
+
+:root {
+  color-scheme: light;
+
+  --font-inter: "Inter";
+  --font-plus-jakarta: "Plus Jakarta Sans";
+
+  --moku-primary: #730217;
+  --moku-primary-hover: #5c0112;
+  --moku-primary-light: #f5e6e9;
+
+  --moku-secondary: #bf0b2c;
+  --moku-secondary-light: #f9e7eb;
+
+  --moku-accent: #f28c0f;
+  --moku-highlight: #eb5513;
+
+  --moku-background: #f2f2f2;
+  --moku-surface: #ffffff;
+  --moku-surface-secondary: #f7f7f7;
+
+  --moku-text: #29232a;
+  --moku-text-secondary: #716a70;
+  --moku-text-muted: #999399;
+
+  --moku-border: #e6e3e4;
+  --moku-input: #dcd7d9;
+
+  --moku-success: #23966b;
+  --moku-warning: #c98219;
+  --moku-danger: #dc4c55;
+  --moku-info: #4285b8;
+
+  --moku-white: #ffffff;
+  --moku-light-gray: #f2f2f2;
+
+  --moku-shadow-sm: 0 1px 2px rgba(41, 35, 42, 0.04);
+  --moku-shadow-md: 0 4px 16px rgba(41, 35, 42, 0.06);
+  --moku-shadow-lg: 0 12px 32px rgba(41, 35, 42, 0.08);
+
+  --moku-sidebar-width: 260px;
+  --moku-header-height: 72px;
+}
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --moku-primary: #bf0b2c;
+  --moku-primary-hover: #d51b3e;
+  --moku-primary-light: #451b25;
+
+  --moku-secondary: #e13b59;
+  --moku-secondary-light: #40202a;
+
+  --moku-accent: #f5a33d;
+  --moku-highlight: #f07843;
+
+  --moku-background: #181517;
+  --moku-surface: #231e20;
+  --moku-surface-secondary: #2d2629;
+
+  --moku-text: #f5f1f2;
+  --moku-text-secondary: #c0b6ba;
+  --moku-text-muted: #91858a;
+
+  --moku-border: #40373b;
+  --moku-input: #51454a;
+
+  --moku-success: #50bd91;
+  --moku-warning: #efb94e;
+  --moku-danger: #f17a80;
+  --moku-info: #70b4e0;
+
+  --moku-white: #ffffff;
+  --moku-light-gray: #302b2d;
+
+  --moku-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --moku-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --moku-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Lock text selection & native pull-to-refresh ONLY inside installed PWA mode */
+@media (display-mode: standalone),
+  (display-mode: fullscreen),
+  (display-mode: minimal-ui) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 }
 
 html,
@@ -14,6 +164,385 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: var(--font-sans);
+}
+
+html {
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
   background-color: #ffffff;
+  color: var(--moku-text);
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-x: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background-color: var(--moku-primary-light);
+  color: var(--moku-primary);
+}
+
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body,
+main,
+.moku-app-shell {
+  -webkit-overflow-scrolling: touch;
+}
+
+.moku-app-shell {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  overscroll-behavior-x: none;
+}
+
+.moku-main-layout {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  margin-left: 0;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   APP SHELL LAYOUT (DESKTOP & MOBILE)
+========================================================= */
+
+.moku-app-shell[data-layout-mode="desktop"] {
+  min-height: 100dvh;
+}
+
+.moku-app-shell[data-layout-mode="desktop"] .moku-sidebar {
+  display: flex !important;
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 280px !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.moku-app-shell[data-layout-mode="desktop"] .moku-main-layout {
+  width: calc(100% - 280px);
+  margin-left: 280px;
+  flex: 0 0 calc(100% - 280px);
+  min-height: 100dvh;
+  transition: none !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
+  .moku-sidebar {
+  width: 72px !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"][data-sidebar-collapsed="true"]
+  .moku-main-layout {
+  width: calc(100% - 72px);
+  margin-left: 72px;
+  flex-basis: calc(100% - 72px);
+  transition: none !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"] .moku-desktop-footer {
+  display: block !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"][data-dashboard="true"]
+  .moku-main-layout
+  > header {
+  display: none !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"] .moku-mobile-navigation {
+  display: none !important;
+}
+
+.moku-app-shell[data-layout-mode="desktop"] #main-content {
+  padding: 22px clamp(18px, 1.35vw, 21px) 24px !important;
+}
+
+@media (min-width: 1440px) {
+  .moku-app-shell[data-layout-mode="desktop"] #main-content {
+    padding: 24px !important;
+  }
+}
+
+.moku-app-shell[data-layout-mode="mobile"] .moku-sidebar {
+  display: none !important;
+}
+
+.moku-app-shell[data-layout-mode="mobile"] .moku-main-layout > header {
+  display: none !important;
+}
+
+.moku-app-shell[data-layout-mode="mobile"] .moku-main-layout {
+  width: 100% !important;
+  margin-left: 0 !important;
+  flex-basis: 100% !important;
+  min-height: 100dvh;
+}
+
+.moku-app-shell[data-layout-mode="mobile"] .moku-desktop-footer {
+  display: none !important;
+}
+
+.moku-app-shell[data-layout-mode="mobile"] .moku-mobile-navigation {
+  display: block;
+}
+
+/* =========================================================
+   TYPOGRAPHY & COMPONENTS
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+small {
+  font-size: 12px;
+}
+
+.text-muted {
+  color: var(--moku-text-secondary);
+}
+
+.text-primary {
+  color: var(--moku-primary);
+}
+
+:focus-visible {
+  outline: 3px solid var(--moku-accent);
+  outline-offset: 3px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+}
+
+input,
+textarea,
+select {
+  color: var(--moku-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--moku-text-muted);
+  opacity: 1;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.moku-card {
+  background-color: var(--moku-surface);
+  border: 1px solid var(--moku-border);
+  border-radius: 16px;
+  box-shadow: var(--moku-shadow-sm);
+}
+
+.moku-panel {
+  background-color: var(--moku-surface-secondary);
+  border: 1px solid var(--moku-border);
+  border-radius: 20px;
+}
+
+.moku-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  background-color: var(--moku-surface);
+  border: 1px solid var(--moku-input);
+  border-radius: 10px;
+  color: var(--moku-text);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.moku-input:focus {
+  border-color: var(--moku-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--moku-primary) 12%, transparent);
+}
+
+.moku-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  background-color: var(--moku-primary);
+  border: 1px solid var(--moku-primary);
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.moku-button-primary:hover {
+  background-color: var(--moku-primary-hover);
+  border-color: var(--moku-primary-hover);
+}
+
+.moku-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.moku-status-success {
+  background-color: color-mix(in srgb, var(--moku-success) 12%, transparent);
+  color: var(--moku-success);
+}
+
+.moku-status-warning {
+  background-color: color-mix(in srgb, var(--moku-warning) 14%, transparent);
+  color: var(--moku-warning);
+}
+
+.moku-status-danger {
+  background-color: color-mix(in srgb, var(--moku-danger) 12%, transparent);
+  color: var(--moku-danger);
+}
+
+.moku-status-info {
+  background-color: color-mix(in srgb, var(--moku-info) 12%, transparent);
+  color: var(--moku-info);
+}
+
+@keyframes moku-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes moku-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.moku-fade-in {
+  animation: moku-fade-in 180ms ease-out both;
+}
+
+.moku-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--moku-surface-secondary) 25%,
+    var(--moku-border) 50%,
+    var(--moku-surface-secondary) 75%
+  );
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  border-radius: 8px;
+  animation: moku-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
