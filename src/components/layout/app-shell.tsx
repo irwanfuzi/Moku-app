@@ -30,7 +30,7 @@ interface PageInformation {
 
 export type AppLayoutMode = "mobile" | "desktop";
 
-type NavigationDirection = "forward" | "backward";
+type NavigationDirection = "forward" | "backward" | "none";
 
 interface AppLayoutContextValue {
   mode: AppLayoutMode;
@@ -40,7 +40,7 @@ interface AppLayoutContextValue {
   isReady: boolean;
   navigateWithTransition: (
     href: string,
-    direction?: NavigationDirection
+    direction?: "forward" | "backward"
   ) => void;
   backWithTransition: (fallbackHref?: string) => void;
 }
@@ -157,7 +157,7 @@ function getRouteDepth(pathname: string): number {
 function getNavigationDirection(
   previousPath: string,
   currentPath: string
-): NavigationDirection {
+): "forward" | "backward" {
   const wasSubpage = isMobileSubpage(previousPath);
   const nowSubpage = isMobileSubpage(currentPath);
 
@@ -319,8 +319,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
   });
 
   const [navigationDirection, setNavigationDirection] =
-    useState<NavigationDirection>("forward");
-  const [usedViewTransition, setUsedViewTransition] = useState(false);
+    useState<NavigationDirection>("none");
 
   const previousPathRef = useRef(pathname);
   const resolveTransitionRef = useRef<(() => void) | null>(null);
@@ -329,7 +328,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
   const currentPage = getPageInformation(pathname);
 
   const runViewTransition = useCallback(
-    (direction: NavigationDirection, action: () => void) => {
+    (direction: "forward" | "backward", action: () => void) => {
       const doc = document as ViewTransitionDoc;
       const prefersReducedMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
@@ -340,7 +339,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         prefersReducedMotion ||
         typeof doc.startViewTransition !== "function"
       ) {
-        setUsedViewTransition(false);
         setNavigationDirection(direction);
         action();
         return;
@@ -355,8 +353,8 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         transitionSafetyTimerRef.current = null;
       }
 
-      setUsedViewTransition(true);
-      setNavigationDirection(direction);
+      // Kunci ke "none" agar CSS fallback tidak pernah jalan dobel setelah View Transition selesai
+      setNavigationDirection("none");
       document.documentElement.dataset.navDirection = direction;
 
       const transition = doc.startViewTransition(
@@ -375,14 +373,13 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
 
       transition.finished.finally(() => {
         delete document.documentElement.dataset.navDirection;
-        setUsedViewTransition(false);
       });
     },
     [layoutMeta.isMobile]
   );
 
   const navigateWithTransition = useCallback(
-    (href: string, direction: NavigationDirection = "forward") => {
+    (href: string, direction: "forward" | "backward" = "forward") => {
       if (href === pathname) return;
       runViewTransition(direction, () => router.push(href));
     },
@@ -542,9 +539,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           >
             <div
               key={pathname}
-              data-page-transition={
-                usedViewTransition ? "none" : navigationDirection
-              }
+              data-page-transition={navigationDirection}
               className="page-transition min-h-full w-full min-w-0"
             >
               {children}
