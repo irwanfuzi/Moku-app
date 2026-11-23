@@ -13,7 +13,7 @@ import { IonReactRouter } from "@ionic/react-router";
 import { ArrowLeft, Bell } from "@phosphor-icons/react";
 
 const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
-  const duration = 480; // Lebih santai & mulus seperti Flip (bisa diubah 380 - 450)
+  const duration = 520; // Lebih santai & mulus seperti Flip (bisa diubah 380 - 450)
   const easing = "cubic-bezier(0.22, 1, 0.36, 1)"; // Smooth ease-out
   const enteringEl = opts?.enteringEl as HTMLElement | undefined;
   const leavingEl = opts?.leavingEl as HTMLElement | undefined;
