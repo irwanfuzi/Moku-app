@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "MOKU Mobile App",
+  "name": "MOKU - Monitoring Operasional Kunjungan Unit",
   "short_name": "MOKU",
   "description": "Aplikasi monitoring operasional kunjungan dan layanan mesin.",
   "start_url": "/",
