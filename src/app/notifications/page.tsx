@@ -452,7 +452,10 @@ function getNotificationSubtitle(item: NotificationItem): string {
 
   const description = item.description?.trim();
 
-  if (description && description.toLowerCase() !== title.trim()) {
+  if (
+    description &&
+    description.toLowerCase() !== title.trim()
+  ) {
     return description;
   }
 
@@ -527,7 +530,10 @@ function EmptyNotificationWatermark() {
           fill="#BF0B2C"
         />
 
-        <path d="M173 79L180 74L187 79V88H173V79Z" fill="#FFFFFF" />
+        <path
+          d="M173 79L180 74L187 79V88H173V79Z"
+          fill="#FFFFFF"
+        />
 
         <path
           d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
@@ -602,6 +608,7 @@ export default function NotificationsPage() {
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
   const [exitingIds, setExitingIds] = useState<string[]>([]);
+  const [isLoadingList, setIsLoadingList] = useState(true);
 
   const touchStartRef = useRef<{
     id: string;
@@ -610,12 +617,24 @@ export default function NotificationsPage() {
     horizontal: boolean;
   } | null>(null);
 
+  const edgeSwipeRef = useRef<{ x: number; y: number } | null>(null);
   const swipeOffsetRef = useRef<Record<string, number>>({});
   const longPressTimerRef = useRef<number | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
+
+  /* =======================================================
+     BRIEF SMOOTH LOADING ANIMATION ON ENTRY
+  ======================================================= */
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsLoadingList(false);
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   /* =======================================================
      SYNC THEME-COLOR ON MOBILE SUBPAGE
@@ -796,29 +815,37 @@ export default function NotificationsPage() {
      DELETE & UNDO
   ======================================================= */
 
-  const finishDeletion = useCallback((ids: string[], message: string) => {
-    const deleted = deleteNotifications(ids);
+  const finishDeletion = useCallback(
+    (ids: string[], message: string) => {
+      const deleted = deleteNotifications(ids);
 
-    if (deleted.length === 0) return;
+      if (deleted.length === 0) return;
 
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setSelectedIds((current) =>
+        current.filter((id) => !ids.includes(id))
+      );
 
-    setIsSelectionMode(false);
-    setSwipeOffsets({});
-    swipeOffsetRef.current = {};
-    setActiveSwipeId(null);
-    setExitingIds([]);
+      setIsSelectionMode(false);
+      setSwipeOffsets({});
+      swipeOffsetRef.current = {};
+      setActiveSwipeId(null);
+      setExitingIds([]);
 
-    setSnackbar({
-      message,
-      deleted,
-    });
-  }, []);
+      setSnackbar({
+        message,
+        deleted,
+      });
+    },
+    []
+  );
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
 
-    finishDeletion(selectedIds, `${selectedIds.length} notifikasi dihapus`);
+    finishDeletion(
+      selectedIds,
+      `${selectedIds.length} notifikasi dihapus`
+    );
   };
 
   const handleUndo = () => {
@@ -835,7 +862,9 @@ export default function NotificationsPage() {
 
       const latest = loadNotifications().map((item) => ({
         ...item,
-        isRead: undoMap.has(item.id) ? undoMap.get(item.id)! : item.isRead,
+        isRead: undoMap.has(item.id)
+          ? undoMap.get(item.id)!
+          : item.isRead,
       }));
 
       saveNotifications(latest);
@@ -860,7 +889,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     BACK NAVIGATION (VIEW TRANSITION ALA FLIP)
+     BACK NAVIGATION & EDGE-SWIPE BACK
   ======================================================= */
 
   const handleBack = () => {
@@ -872,8 +901,32 @@ export default function NotificationsPage() {
     backWithTransition("/");
   };
 
+  const handleEdgeTouchStart = (event: TouchEvent<HTMLElement>) => {
+    if (isSelectionMode || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    if (touch.clientX <= 32) {
+      edgeSwipeRef.current = { x: touch.clientX, y: touch.clientY };
+    } else {
+      edgeSwipeRef.current = null;
+    }
+  };
+
+  const handleEdgeTouchEnd = (event: TouchEvent<HTMLElement>) => {
+    const start = edgeSwipeRef.current;
+    edgeSwipeRef.current = null;
+    if (!start || event.changedTouches.length === 0) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = Math.abs(touch.clientY - start.y);
+
+    if (deltaX > 56 && deltaX > deltaY * 1.4) {
+      backWithTransition("/");
+    }
+  };
+
   /* =======================================================
-     MOBILE TOUCH INTERACTION
+     MOBILE TOUCH INTERACTION (SWIPE DELETE & LONG PRESS)
   ======================================================= */
 
   const clearLongPressTimer = () => {
@@ -940,7 +993,10 @@ export default function NotificationsPage() {
     }, 550);
   };
 
-  const handleTouchMove = (event: TouchEvent<HTMLDivElement>, id: string) => {
+  const handleTouchMove = (
+    event: TouchEvent<HTMLDivElement>,
+    id: string
+  ) => {
     const start = touchStartRef.current;
 
     if (isSelectionMode || !start || start.id !== id) return;
@@ -953,7 +1009,10 @@ export default function NotificationsPage() {
       clearLongPressTimer();
     }
 
-    if (deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
+    if (
+      deltaX < 0 &&
+      Math.abs(deltaX) > Math.abs(deltaY) * 1.15
+    ) {
       start.horizontal = true;
       updateSwipeOffset(id, deltaX);
     }
@@ -1045,13 +1104,15 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     MOBILE SUB-PAGE VIEW (MATCHING 1000206788.png)
+     MOBILE SUB-PAGE VIEW
   ======================================================= */
 
   if (isMobileView) {
     return (
       <main
         style={MOBILE_SCALE_VARS}
+        onTouchStart={handleEdgeTouchStart}
+        onTouchEnd={handleEdgeTouchEnd}
         className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#F8F8FA] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Solid Maroon Header with Curved Sheet Overlap */}
@@ -1097,7 +1158,14 @@ export default function NotificationsPage() {
         {/* Curved White/Off-White Sheet Container */}
         <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(26*var(--u))] bg-[#F8F8FA] pt-[calc(20*var(--u))]">
           <div className="mx-auto w-full max-w-[680px] px-[calc(16*var(--u))]">
-            {notifications.length > 0 ? (
+            {isLoadingList ? (
+              <div className="flex min-h-[55dvh] items-center justify-center">
+                <span
+                  aria-label="Memuat notifikasi"
+                  className="h-7 w-7 animate-spin rounded-full border-[2.5px] border-[#83051C]/20 border-t-[#83051C]"
+                />
+              </div>
+            ) : notifications.length > 0 ? (
               <div className="space-y-[calc(22*var(--u))]">
                 {groupedNotifications.map((group, groupIndex) => (
                   <section key={group.label} className="min-w-0">
@@ -1107,22 +1175,20 @@ export default function NotificationsPage() {
                         {group.label}
                       </h2>
 
-                      {groupIndex === 0 &&
-                        unreadCount > 0 &&
-                        !isSelectionMode && (
-                          <button
-                            type="button"
-                            onClick={handleMarkAllAsRead}
-                            className="shrink-0 text-[calc(13.5*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
-                          >
-                            Baca Semua ({unreadCount})
-                          </button>
-                        )}
+                      {groupIndex === 0 && unreadCount > 0 && !isSelectionMode && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllAsRead}
+                          className="shrink-0 text-[calc(13.5*var(--u))] font-bold text-[#8E001C] transition-opacity active:opacity-70"
+                        >
+                          Baca Semua ({unreadCount})
+                        </button>
+                      )}
                     </div>
 
                     {/* Group Cards */}
                     <div className="space-y-[calc(11*var(--u))]">
-                      {group.items.map((item) => {
+                      {group.items.map((item, itemIndex) => {
                         const isSelected = selectedIds.includes(item.id);
                         const isExiting = exitingIds.includes(item.id);
                         const swipeOffset = swipeOffsets[item.id] ?? 0;
@@ -1133,7 +1199,10 @@ export default function NotificationsPage() {
                         return (
                           <div
                             key={item.id}
-                            className={`notification-row relative overflow-hidden rounded-[calc(18*var(--u))] ${
+                            style={{
+                              animationDelay: `${Math.min(itemIndex * 35, 240)}ms`,
+                            }}
+                            className={`notif-card-reveal notification-row relative overflow-hidden rounded-[calc(18*var(--u))] ${
                               isExiting ? "notification-exit" : ""
                             }`}
                           >
@@ -1161,7 +1230,9 @@ export default function NotificationsPage() {
                                 handleTouchMove(event, item.id)
                               }
                               onTouchEnd={() => handleTouchEnd(item.id)}
-                              onTouchCancel={() => handleTouchCancel(item.id)}
+                              onTouchCancel={() =>
+                                handleTouchCancel(item.id)
+                              }
                               onContextMenu={(event) => event.preventDefault()}
                               className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(14*var(--u))] rounded-[calc(18*var(--u))] px-[calc(15*var(--u))] py-[calc(14*var(--u))] transition-colors ${
                                 isSelected
@@ -1353,6 +1424,10 @@ export default function NotificationsPage() {
         )}
 
         <style jsx>{`
+          .notif-card-reveal {
+            animation: notif-card-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
           .snackbar-enter {
             animation: snackbar-enter 220ms ease-out both;
           }
@@ -1387,6 +1462,18 @@ export default function NotificationsPage() {
             animation: notification-exit 220ms ease-in forwards;
             pointer-events: none;
             overflow: hidden;
+          }
+
+          @keyframes notif-card-in {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 10px, 0);
+            }
+
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
           }
 
           @keyframes snackbar-enter {
@@ -1456,6 +1543,7 @@ export default function NotificationsPage() {
           }
 
           @media (prefers-reduced-motion: reduce) {
+            .notif-card-reveal,
             .snackbar-enter,
             .animate-selection-in,
             .animate-toolbar-in,
@@ -1588,7 +1676,9 @@ export default function NotificationsPage() {
 
                       <Link
                         href={`/notifications/${encodeURIComponent(item.id)}`}
-                        onClick={(event) => handleDetailClick(event, item.id)}
+                        onClick={(event) =>
+                          handleDetailClick(event, item.id)
+                        }
                         className="flex min-w-0 flex-1 items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                       >
                         <div className="min-w-0 flex-1">
@@ -1633,7 +1723,10 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            finishDeletion([item.id], "1 notifikasi dihapus")
+                            finishDeletion(
+                              [item.id],
+                              "1 notifikasi dihapus"
+                            )
                           }
                           title="Hapus notifikasi"
                           aria-label={`Hapus ${item.title}`}
@@ -1685,8 +1778,7 @@ export default function NotificationsPage() {
 
         {notifications.length > 0 && (
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
-            Data notifikasi saat ini merupakan data demo untuk pengujian
-            tampilan.
+            Data notifikasi saat ini merupakan data demo untuk pengujian tampilan.
           </p>
         )}
       </div>
@@ -1705,7 +1797,9 @@ export default function NotificationsPage() {
               className="shrink-0 text-white"
             />
 
-            <span className="truncate text-sm">{snackbar.message}</span>
+            <span className="truncate text-sm">
+              {snackbar.message}
+            </span>
           </div>
 
           <button
