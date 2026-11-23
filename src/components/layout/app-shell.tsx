@@ -324,6 +324,8 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
   const previousPathRef = useRef(pathname);
   const resolveTransitionRef = useRef<(() => void) | null>(null);
   const transitionSafetyTimerRef = useRef<number | null>(null);
+  // true selama View Transition (tombol/in-app maupun gesture OS) sedang berjalan
+  const transitionActiveRef = useRef(false);
 
   const currentPage = getPageInformation(pathname);
 
@@ -356,6 +358,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       // Kunci ke "none" agar CSS fallback tidak pernah jalan dobel setelah View Transition selesai
       setNavigationDirection("none");
       document.documentElement.dataset.navDirection = direction;
+      transitionActiveRef.current = true;
 
       const transition = doc.startViewTransition(
         () =>
@@ -371,12 +374,80 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           })
       );
 
-      transition.finished.finally(() => {
-        delete document.documentElement.dataset.navDirection;
-      });
+      transition.finished
+        .finally(() => {
+          delete document.documentElement.dataset.navDirection;
+          transitionActiveRef.current = false;
+        })
+        .catch(() => {});
     },
     [layoutMeta.isMobile]
   );
+
+  /* -------------------------------------------------------
+     BACK VIA GESTURE / TOMBOL BACK SISTEM ANDROID (popstate)
+     Gesture swipe-back OS tidak lewat backWithTransition(),
+     jadi tanpa ini halaman langsung "lompat". Di sini kita
+     bungkus popstate dengan View Transition yang sama persis
+     dengan tombol back di AppBar.
+  ------------------------------------------------------- */
+  useEffect(() => {
+    // Hanya untuk PWA (standalone) di mode mobile
+    if (!layoutMeta.isMobile || !layoutMeta.isPWA) return;
+
+    const handlePopState = () => {
+      // Sudah dibungkus transition (mis. dari tombol back -> router.back())
+      if (transitionActiveRef.current) return;
+
+      const doc = document as ViewTransitionDoc;
+      if (
+        typeof doc.startViewTransition !== "function" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return; // CSS fallback .page-transition yang menangani
+      }
+
+      const fromPath = previousPathRef.current;
+      const toPath = window.location.pathname;
+      if (fromPath === toPath) return;
+
+      const direction = getNavigationDirection(fromPath, toPath);
+
+      transitionActiveRef.current = true;
+      setNavigationDirection("none");
+      document.documentElement.dataset.navDirection = direction;
+
+      const transition = doc.startViewTransition(
+        () =>
+          new Promise<void>((resolve) => {
+            // Rute baru ternyata sudah ter-commit sebelum snapshot: jangan menahan render
+            if (previousPathRef.current !== fromPath) {
+              resolve();
+              return;
+            }
+
+            resolveTransitionRef.current = resolve;
+            transitionSafetyTimerRef.current = window.setTimeout(() => {
+              if (resolveTransitionRef.current) {
+                resolveTransitionRef.current();
+                resolveTransitionRef.current = null;
+              }
+            }, 600);
+          })
+      );
+
+      transition.finished
+        .finally(() => {
+          delete document.documentElement.dataset.navDirection;
+          transitionActiveRef.current = false;
+        })
+        .catch(() => {});
+    };
+
+    // capture = true supaya jalan SEBELUM listener popstate milik Next.js
+    window.addEventListener("popstate", handlePopState, true);
+    return () => window.removeEventListener("popstate", handlePopState, true);
+  }, [layoutMeta.isMobile, layoutMeta.isPWA]);
 
   const navigateWithTransition = useCallback(
     (href: string, direction: "forward" | "backward" = "forward") => {
