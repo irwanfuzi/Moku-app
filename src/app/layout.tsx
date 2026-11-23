@@ -103,10 +103,10 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${inter.variable} ${plusJakartaSans.variable}`}
+      className={`${inter.variable} ${plusJakartaSans.variable} bg-white`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen antialiased">
+      <body className="min-h-dvh bg-white antialiased">
         <ServiceWorkerRegister />
         <AppShell>{children}</AppShell>
       </body>
