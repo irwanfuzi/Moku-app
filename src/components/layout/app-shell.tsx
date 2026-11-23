@@ -692,27 +692,27 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         }
 
         /* =====================================================
-           SIDE-BY-SIDE VIEW TRANSITION (450ms SMOOTH)
+           SIDE-BY-SIDE VIEW TRANSITION (TIMING ALA FLIP)
         ===================================================== */
         ::view-transition-group(root) {
-          animation-duration: 450ms;
-          animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+          animation-duration: 340ms;
+          animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
         }
 
         html[data-nav-direction="forward"]::view-transition-old(root) {
-          animation: moku-vt-out-left 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-out-left 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
         }
 
         html[data-nav-direction="forward"]::view-transition-new(root) {
-          animation: moku-vt-in-right 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-in-right 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-old(root) {
-          animation: moku-vt-out-right 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-out-right 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-new(root) {
-          animation: moku-vt-in-left 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-in-left 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
         }
 
         @keyframes moku-vt-in-right {
@@ -751,7 +751,7 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
           }
         }
 
-        /* FALLBACK TRANSITION (BROWSER TANPA VIEW TRANSITIONS API) */
+        /* FALLBACK HALUS (SAAT BACK VIA SISTEM OS / POPSTATE) */
         .page-transition {
           min-width: 0;
         }
@@ -761,10 +761,27 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
             cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
+        [data-layout-mode="mobile"]
+          .page-transition[data-page-transition="backward"] {
+          animation: moku-fallback-back 260ms
+            cubic-bezier(0.32, 0.72, 0, 1) both;
+        }
+
         @keyframes moku-desktop-enter {
           from {
             opacity: 0.96;
             transform: translate3d(0, 6px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes moku-fallback-back {
+          from {
+            opacity: 0.92;
+            transform: translate3d(-20px, 0, 0);
           }
           to {
             opacity: 1;
@@ -786,4 +803,4 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       `}</style>
     </AppLayoutContext.Provider>
   );
-    }
+}
