@@ -1,6 +1,8 @@
-import { Redirect, Route } from "react-router-dom";
+import type { CSSProperties } from "react";
+import { Route } from "react-router-dom";
 import {
   IonApp,
+  IonContent,
   IonPage,
   IonRouterOutlet,
   setupIonicReact,
@@ -15,17 +17,21 @@ setupIonicReact({
   swipeBackEnabled: true,
 });
 
+const contentStyle = {
+  "--background": "#F8F8FA",
+} as CSSProperties;
+
 function DashboardDemo() {
   const router = useIonRouter();
 
   return (
     <IonPage>
-      <main className="min-h-dvh bg-[#F8F8FA]">
+      <IonContent fullscreen style={contentStyle}>
         <header className="flex items-center justify-between bg-[#83051C] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+14px)] text-white">
           <h1 className="font-display text-lg font-bold">MOKU</h1>
           <button
             type="button"
-            onClick={() => router.push("/notifications", "forward")}
+            onClick={() => router.push("/notifications", "forward", "push")}
             className="flex h-10 w-10 items-center justify-center rounded-full active:bg-white/15"
             aria-label="Notifikasi"
           >
@@ -44,7 +50,7 @@ function DashboardDemo() {
             </p>
           </div>
         </div>
-      </main>
+      </IonContent>
     </IonPage>
   );
 }
@@ -54,7 +60,7 @@ function NotificationsDemo() {
 
   return (
     <IonPage>
-      <main className="min-h-dvh bg-[#F8F8FA]">
+      <IonContent fullscreen style={contentStyle}>
         <header className="flex items-center gap-3 bg-[#83051C] px-4 pb-5 pt-[calc(env(safe-area-inset-top)+14px)] text-white">
           <button
             type="button"
@@ -77,7 +83,7 @@ function NotificationsDemo() {
             </p>
           </div>
         </div>
-      </main>
+      </IonContent>
     </IonPage>
   );
 }
@@ -86,10 +92,9 @@ export default function App() {
   return (
     <IonApp>
       <IonReactRouter>
-        <IonRouterOutlet>
+        <IonRouterOutlet animated={true}>
           <Route exact path="/" component={DashboardDemo} />
           <Route exact path="/notifications" component={NotificationsDemo} />
-          <Route render={() => <Redirect to="/" />} />
         </IonRouterOutlet>
       </IonReactRouter>
     </IonApp>
