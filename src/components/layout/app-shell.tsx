@@ -426,61 +426,6 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
     }
   }, [pathname]);
 
-  // Tangkap tombol back sistem HP & gestur navigasi layar (popstate)
-  useEffect(() => {
-    const handlePopState = () => {
-      if (resolveTransitionRef.current) return;
-
-      const doc = document as ViewTransitionDoc;
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      if (
-        !layoutMeta.isMobile ||
-        prefersReducedMotion ||
-        typeof doc.startViewTransition !== "function"
-      ) {
-        setUsedViewTransition(false);
-        setNavigationDirection("backward");
-        return;
-      }
-
-      if (transitionSafetyTimerRef.current !== null) {
-        window.clearTimeout(transitionSafetyTimerRef.current);
-        transitionSafetyTimerRef.current = null;
-      }
-
-      setUsedViewTransition(true);
-      setNavigationDirection("backward");
-      document.documentElement.dataset.navDirection = "backward";
-
-      const transition = doc.startViewTransition(
-        () =>
-          new Promise<void>((resolve) => {
-            resolveTransitionRef.current = resolve;
-            transitionSafetyTimerRef.current = window.setTimeout(() => {
-              if (resolveTransitionRef.current) {
-                resolveTransitionRef.current();
-                resolveTransitionRef.current = null;
-              }
-            }, 500);
-          })
-      );
-
-      transition.finished.finally(() => {
-        delete document.documentElement.dataset.navDirection;
-        setUsedViewTransition(false);
-      });
-    };
-
-    window.addEventListener("popstate", handlePopState, true);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState, true);
-    };
-  }, [layoutMeta.isMobile]);
-
   const handleToggleSidebar = useCallback(() => {
     userToggledSidebarRef.current = true;
     setSidebarCollapsed((previous) => !previous);
@@ -747,27 +692,27 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
         }
 
         /* =====================================================
-           SIDE-BY-SIDE VIEW TRANSITION (2 LAYAR BERDAMPINGAN)
+           SIDE-BY-SIDE VIEW TRANSITION (450ms SMOOTH)
         ===================================================== */
         ::view-transition-group(root) {
-          animation-duration: 380ms;
+          animation-duration: 450ms;
           animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         html[data-nav-direction="forward"]::view-transition-old(root) {
-          animation: moku-vt-out-left 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-out-left 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="forward"]::view-transition-new(root) {
-          animation: moku-vt-in-right 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-in-right 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-old(root) {
-          animation: moku-vt-out-right 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-out-right 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         html[data-nav-direction="backward"]::view-transition-new(root) {
-          animation: moku-vt-in-left 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-vt-in-left 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         @keyframes moku-vt-in-right {
@@ -841,4 +786,4 @@ export default function AppShell({ children }: Readonly<AppShellProps>) {
       `}</style>
     </AppLayoutContext.Provider>
   );
-}
+    }
