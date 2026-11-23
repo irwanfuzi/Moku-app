@@ -889,7 +889,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     BACK NAVIGATION & EDGE-SWIPE BACK
+     BACK NAVIGATION & SWIPE-RIGHT BACK
   ======================================================= */
 
   const handleBack = () => {
@@ -904,7 +904,8 @@ export default function NotificationsPage() {
   const handleEdgeTouchStart = (event: TouchEvent<HTMLElement>) => {
     if (isSelectionMode || event.touches.length !== 1) return;
     const touch = event.touches[0];
-    if (touch.clientX <= 32) {
+    // Izinkan swipe kanan dari separuh kiri layar agar tidak dibajak edge-gesture OS Android
+    if (touch.clientX <= window.innerWidth * 0.5) {
       edgeSwipeRef.current = { x: touch.clientX, y: touch.clientY };
     } else {
       edgeSwipeRef.current = null;
@@ -920,7 +921,7 @@ export default function NotificationsPage() {
     const deltaX = touch.clientX - start.x;
     const deltaY = Math.abs(touch.clientY - start.y);
 
-    if (deltaX > 56 && deltaX > deltaY * 1.4) {
+    if (deltaX > 64 && deltaX > deltaY * 1.5) {
       backWithTransition("/");
     }
   };
