@@ -104,7 +104,6 @@ function AnimatedTrashIcon({
         transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      {/* Tutup tong sampah: terangkat naik & miring tipis saat siap hapus */}
       <g
         style={{
           transformOrigin: "12px 6px",
@@ -129,7 +128,6 @@ function AnimatedTrashIcon({
         />
       </g>
 
-      {/* Badan tong sampah */}
       <g
         style={{
           transformOrigin: "12px 15px",
@@ -643,7 +641,6 @@ export default function NotificationsPage() {
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [isClearingAll, setIsClearingAll] = useState(false);
   const [lastSelectedCount, setLastSelectedCount] = useState(1);
 
   const [snackbar, setSnackbar] = useState<{
@@ -780,34 +777,10 @@ export default function NotificationsPage() {
     }
   };
 
-  const clearSelection = useCallback(() => {
-    if (selectedIds.length === 0) {
-      setIsSelectionMode(false);
-      return;
-    }
-
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(8);
-    }
-
-    const currentIds = [...selectedIds];
-    setIsClearingAll(true);
+  const clearSelection = () => {
+    setSelectedIds([]);
     setIsSelectionMode(false);
-
-    /* Lepas seleksi secara bertahap (stagger) agar flip balik ikon asli terasa santai */
-    currentIds.forEach((id, idx) => {
-      const delay = Math.min(idx * 65, 520);
-      scheduleTimer(() => {
-        setSelectedIds((prev) => prev.filter((itemId) => itemId !== id));
-      }, delay);
-    });
-
-    const totalDuration = Math.min(currentIds.length * 65, 520) + 640;
-    scheduleTimer(() => {
-      setSelectedIds([]);
-      setIsClearingAll(false);
-    }, totalDuration);
-  }, [scheduleTimer, selectedIds]);
+  };
 
   const toggleSelectAll = () => {
     if (allNotificationsSelected) {
@@ -815,11 +788,6 @@ export default function NotificationsPage() {
       return;
     }
 
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(8);
-    }
-
-    setIsClearingAll(false);
     setSelectedIds(notifications.map((item) => item.id));
     setIsSelectionMode(true);
   };
@@ -924,7 +892,6 @@ export default function NotificationsPage() {
 
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setIsSelectionMode(false);
-    setIsClearingAll(false);
     setSwipeOffsets({});
     swipeOffsetRef.current = {};
     setActiveSwipeId(null);
@@ -959,7 +926,6 @@ export default function NotificationsPage() {
     if (selectedIds.length === 0) return;
     const idsToDelete = [...selectedIds];
     setIsSelectionMode(false);
-    setIsClearingAll(false);
     animateAndDelete(idsToDelete, `${idsToDelete.length} notifikasi dihapus`);
   };
 
@@ -990,7 +956,6 @@ export default function NotificationsPage() {
     saveNotifications(demoNotifications);
     setSelectedIds([]);
     setIsSelectionMode(false);
-    setIsClearingAll(false);
     setSnackbar(null);
     setSwipeOffsets({});
     swipeOffsetRef.current = {};
@@ -1000,7 +965,7 @@ export default function NotificationsPage() {
   };
 
   const handleBack = () => {
-    if (isSelectionMode || selectedIds.length > 0) {
+    if (isSelectionMode) {
       clearSelection();
       return;
     }
@@ -1127,7 +1092,7 @@ export default function NotificationsPage() {
     event: MouseEvent<HTMLAnchorElement>,
     id: string
   ) => {
-    if (isSelectionMode || selectedIds.length > 0) {
+    if (isSelectionMode) {
       event.preventDefault();
       toggleSelection(id);
       return;
@@ -1302,11 +1267,7 @@ export default function NotificationsPage() {
                                   onContextMenu={(event) =>
                                     event.preventDefault()
                                   }
-                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] ${
-                                    isClearingAll
-                                      ? "transition-colors duration-[620ms] ease-out"
-                                      : "transition-colors duration-700 ease-out"
-                                  } ${
+                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
                                     isSelected
                                       ? "bg-[#FADCE1]"
                                       : !item.isRead
@@ -1321,9 +1282,7 @@ export default function NotificationsPage() {
                                     transition:
                                       activeSwipeId === item.id
                                         ? "background-color 700ms ease-out"
-                                        : isClearingAll
-                                          ? "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 620ms ease-out"
-                                          : "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 700ms ease-out",
+                                        : "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 700ms ease-out",
                                     touchAction: "pan-y",
                                     willChange:
                                       swipeOffset !== 0 || isSlidingOut
@@ -1331,7 +1290,7 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* 3D Flip Icon Button: saat unselect, ikon kategori asli ikut beranimasi muncul kembali */}
+                                  {/* 3D Flip Icon Button: ikon asli & ikon centang sama-sama beranimasi smooth saat select & unselect */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1350,17 +1309,17 @@ export default function NotificationsPage() {
                                     <span
                                       className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
                                         isSelected ? "is-flipped" : ""
-                                      } ${isClearingAll ? "is-clearing" : ""}`}
+                                      }`}
                                     >
                                       {/* Sisi Depan: Ikon Kategori Asli */}
                                       <span
                                         className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
                                       >
                                         <Icon
-                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] ${
-                                            !isSelected
-                                              ? "moku-front-icon-settle"
-                                              : ""
+                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                            isSelected
+                                              ? "scale-75 rotate-[-14deg] opacity-65"
+                                              : "scale-100 rotate-0 opacity-100 delay-150"
                                           }`}
                                           weight="bold"
                                         />
@@ -1369,10 +1328,10 @@ export default function NotificationsPage() {
                                       {/* Sisi Belakang: Centang Marun */}
                                       <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
                                         <Check
-                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-transform duration-300 ease-out ${
+                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                                             isSelected
-                                              ? "scale-100 delay-150"
-                                              : "scale-50"
+                                              ? "scale-100 rotate-0 opacity-100 delay-150"
+                                              : "scale-75 rotate-[14deg] opacity-65"
                                           }`}
                                           weight="bold"
                                         />
@@ -1459,15 +1418,13 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Animasi turun saat Batal Semua lebih santai) */}
+        {/* MOBILE FLOATING SELECTION BAR (Animasi keluar saat batal semua dibuat lebih lambat & mulus) */}
         <div
           aria-hidden={!isFloatingBarVisible}
           className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isClearingAll ? "duration-[540ms]" : "duration-[420ms]"
-          } ${
             isFloatingBarVisible
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-9 scale-95 opacity-0"
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-[420ms]"
+              : "pointer-events-none translate-y-12 scale-[0.97] opacity-0 duration-[650ms]"
           }`}
         >
           <span className="truncate text-xs font-bold text-[#8E001C]">
@@ -1566,12 +1523,8 @@ export default function NotificationsPage() {
           .moku-icon-flip-inner {
             transform-style: preserve-3d;
             -webkit-transform-style: preserve-3d;
-            transition: transform 580ms cubic-bezier(0.22, 1.22, 0.36, 1);
+            transition: transform 580ms cubic-bezier(0.22, 1.18, 0.36, 1);
             will-change: transform;
-          }
-
-          .moku-icon-flip-inner.is-clearing {
-            transition: transform 680ms cubic-bezier(0.22, 1.18, 0.36, 1);
           }
 
           .moku-icon-flip-inner.is-flipped {
@@ -1583,16 +1536,9 @@ export default function NotificationsPage() {
             -webkit-backface-visibility: hidden;
           }
 
-          .moku-icon-face-front {
-            transition: transform 420ms cubic-bezier(0.22, 1.24, 0.36, 1), box-shadow 420ms ease;
-          }
-
-          .moku-icon-flip-inner:not(.is-flipped) .moku-icon-face-front {
-            animation: moku-front-restore 540ms cubic-bezier(0.22, 1.24, 0.36, 1) both;
-          }
-
-          .moku-front-icon-settle {
-            animation: moku-front-glyph-in 560ms cubic-bezier(0.22, 1.26, 0.36, 1) both;
+          .moku-icon-face-front,
+          .moku-icon-face-back {
+            transition: background-color 420ms ease, box-shadow 420ms ease;
           }
 
           .moku-icon-face-back {
@@ -1615,33 +1561,6 @@ export default function NotificationsPage() {
             -webkit-touch-callout: none;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-          }
-
-          @keyframes moku-front-restore {
-            0% {
-              transform: scale(0.84);
-            }
-            60% {
-              transform: scale(1.06);
-            }
-            100% {
-              transform: scale(1);
-            }
-          }
-
-          @keyframes moku-front-glyph-in {
-            0% {
-              opacity: 0.35;
-              transform: scale(0.72) rotate(-14deg);
-            }
-            65% {
-              opacity: 1;
-              transform: scale(1.1) rotate(3deg);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1) rotate(0deg);
-            }
           }
 
           @keyframes notif-card-in {
@@ -1690,13 +1609,13 @@ export default function NotificationsPage() {
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
             .moku-trash-pop,
-            .moku-icon-face-front,
-            .moku-front-icon-settle,
             .snackbar-enter,
             .snackbar-progress {
               animation: none;
             }
-            .moku-icon-flip-inner {
+            .moku-icon-flip-inner,
+            .moku-icon-face-front,
+            .moku-icon-face-back {
               transition: none;
             }
           }
