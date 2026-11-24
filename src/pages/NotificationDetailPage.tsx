@@ -702,8 +702,8 @@ export default function NotificationDetailPage() {
                   </div>
                 </div>
 
-                {/* 2. Deskripsi / Status dengan jarak lebih lega dari blok ikon/judul */}
-                <p className="mt-[calc(32*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#29232A]">
+                {/* 2. Deskripsi / Status */}
+                <p className="mt-[calc(32*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#3F3A42]">
                   {theme.description}
                 </p>
 
@@ -755,7 +755,7 @@ export default function NotificationDetailPage() {
                       />
                     )}
 
-                    <h3 className="font-display text-[calc(15*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
+                    <h3 className="font-display text-[calc(15*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#1E1C21]">
                       {theme.sectionTitle}
                     </h3>
                   </div>
@@ -778,7 +778,7 @@ export default function NotificationDetailPage() {
                             </span>
 
                             <div className="min-w-0 flex-1">
-                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
+                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-semibold leading-[1.25] text-[#1E1C21]">
                                 {entry.primary}
                               </p>
                               <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
@@ -830,7 +830,7 @@ export default function NotificationDetailPage() {
 
                             {isFirstVisitMachine ? (
                               <div className="min-w-0 flex-1">
-                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
+                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-semibold leading-[1.25] text-[#1E1C21]">
                                   {row.label}
                                 </p>
                                 <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
@@ -870,7 +870,7 @@ export default function NotificationDetailPage() {
                                     {row.badge.text}
                                   </span>
                                 ) : (
-                                  <p className="mt-[calc(2*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.3] text-[#171717]">
+                                  <p className="mt-[calc(2*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-semibold leading-[1.3] text-[#1E1C21]">
                                     {row.value}
                                   </p>
                                 )}
@@ -942,11 +942,11 @@ export default function NotificationDetailPage() {
               </span>
             </div>
 
-            <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-[#171717]">
+            <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-[#171717]">
               {toTitleCase(item.title)}
             </h1>
 
-            <p className="mt-3 text-sm leading-relaxed text-[#29232A]">
+            <p className="mt-3 text-sm leading-relaxed text-[#3F3A42]">
               {resolveDetailTheme(item).description}
             </p>
           </article>
