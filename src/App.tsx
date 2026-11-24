@@ -14,6 +14,7 @@ import { IonReactRouter } from "@ionic/react-router";
 import AppShell from "@/components/layout/app-shell";
 import DashboardPage from "@/pages/DashboardPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import NotificationDetailPage from "@/pages/NotificationDetailPage";
 import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
@@ -85,6 +86,18 @@ function NotificationsRoute() {
   );
 }
 
+function NotificationDetailRoute() {
+  return (
+    <IonPage>
+      <IonContent fullscreen scrollEvents={true}>
+        <AppShell>
+          <NotificationDetailPage />
+        </AppShell>
+      </IonContent>
+    </IonPage>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -98,6 +111,11 @@ export default function App() {
           <Route exact path="/" component={DashboardRoute} />
           <Route exact path="/dashboard" component={DashboardRoute} />
           <Route exact path="/notifications" component={NotificationsRoute} />
+          <Route
+            exact
+            path="/notifications/:id"
+            component={NotificationDetailRoute}
+          />
         </IonRouterOutlet>
       </IonReactRouter>
     </IonApp>
