@@ -1444,7 +1444,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Animasi keyframe turun ke bawah saat unselect / batal semua) */}
+        {/* MOBILE FLOATING SELECTION BAR (Pindah ke bawah saja tanpa menghilang) */}
         {shouldRenderBar && (
           <div
             aria-hidden={isBarClosing}
@@ -1622,23 +1622,19 @@ export default function NotificationsPage() {
 
           @keyframes moku-bar-slide-up {
             from {
-              opacity: 0;
-              transform: translate3d(0, 28px, 0) scale(0.96);
+              transform: translate3d(0, 140%, 0);
             }
             to {
-              opacity: 1;
-              transform: translate3d(0, 0, 0) scale(1);
+              transform: translate3d(0, 0, 0);
             }
           }
 
           @keyframes moku-bar-slide-down {
             0% {
-              opacity: 1;
-              transform: translate3d(0, 0, 0) scale(1);
+              transform: translate3d(0, 0, 0);
             }
             100% {
-              opacity: 0;
-              transform: translate3d(0, 44px, 0) scale(0.95);
+              transform: translate3d(0, 140%, 0);
             }
           }
 
@@ -1996,4 +1992,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-}
+      }
