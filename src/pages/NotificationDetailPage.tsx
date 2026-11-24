@@ -11,10 +11,10 @@ import {
   ClipboardText,
   Database,
   FileText,
+  Info,
   Printer,
   Stack,
   Target,
-  TrendUp,
   User,
   Warning,
 } from "@phosphor-icons/react";
@@ -36,7 +36,8 @@ type DetailVariant =
   | "report"
   | "visitCompleted"
   | "weeklyTarget"
-  | "equipmentUpdate";
+  | "equipmentUpdate"
+  | "infoOnly";
 
 interface DetailListEntry {
   id: string;
@@ -52,7 +53,17 @@ interface DetailListEntry {
 interface DetailMetaRow {
   label: string;
   value: string;
-  icon: "calendar" | "target" | "stack" | "chart" | "check" | "printer" | "building" | "user" | "clipboard";
+  icon:
+    | "calendar"
+    | "target"
+    | "stack"
+    | "chart"
+    | "check"
+    | "printer"
+    | "building"
+    | "user"
+    | "clipboard"
+    | "info";
   badge?: {
     text: string;
     tone: "success" | "warning" | "danger" | "info";
@@ -63,10 +74,17 @@ interface DetailMetaRow {
 interface DetailThemeConfig {
   variant: DetailVariant;
   sectionTitle: string;
-  ctaLabel: string;
-  ctaTo: string;
+  ctaLabel?: string;
+  ctaTo?: string;
   description: string;
-  heroIcon: "calendar" | "warning" | "report" | "check" | "target" | "database";
+  heroIcon:
+    | "calendar"
+    | "warning"
+    | "report"
+    | "check"
+    | "target"
+    | "database"
+    | "info";
   heroBg: string;
   heroColor: string;
   outerCardBg: string;
@@ -151,18 +169,20 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
       : null;
 
   // 1. Jadwal Kunjungan Hari Ini
-  if (
-    titleLower.includes("jadwal") ||
-    titleLower.includes("dijadwalkan")
-  ) {
+  if (titleLower.includes("jadwal") || titleLower.includes("dijadwalkan")) {
     const entries: DetailListEntry[] = rawList
       ? rawList.map((entry, idx) => ({
           id: String(entry.id ?? entry.code ?? entry.equipmentNumber ?? idx),
-          primary: String(entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`),
-          secondary: String(entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"),
-          to: entry.code || entry.equipmentNumber
-            ? `/equipment/${encodeURIComponent(String(entry.code ?? entry.equipmentNumber))}`
-            : "/visits",
+          primary: String(
+            entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`
+          ),
+          secondary: String(
+            entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"
+          ),
+          to:
+            entry.code || entry.equipmentNumber
+              ? `/equipment/${encodeURIComponent(String(entry.code ?? entry.equipmentNumber))}`
+              : "/visits",
         }))
       : [
           {
@@ -216,8 +236,12 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     const entries: DetailListEntry[] = rawList
       ? rawList.map((entry, idx) => ({
           id: String(entry.id ?? entry.code ?? entry.equipmentNumber ?? idx),
-          primary: String(entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`),
-          secondary: String(entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"),
+          primary: String(
+            entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`
+          ),
+          secondary: String(
+            entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"
+          ),
           badge: {
             text: String(entry.badge ?? entry.status ?? "Perlu Penanganan"),
             tone: idx % 2 === 0 ? "danger" : "warning",
@@ -405,50 +429,93 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 6. Kunjungan Selesai (default untuk visit / lainnya)
+  // 6. Kunjungan Selesai
+  if (
+    item.type === "visit" ||
+    titleLower.includes("selesai") ||
+    titleLower.includes("dicatat")
+  ) {
+    return {
+      variant: "visitCompleted",
+      sectionTitle: "Detail Kunjungan",
+      ctaLabel: "Lihat Hasil Kunjungan",
+      ctaTo: "/visit-history",
+      description:
+        item.description?.trim() ||
+        (visitType
+          ? `Aktivitas ${visitType} telah diselesaikan oleh teknisi dan tercatat dalam sistem MOKU.`
+          : "Kunjungan ke pelanggan telah diselesaikan oleh teknisi. Data hasil kunjungan sudah tercatat di sistem."),
+      heroIcon: "check",
+      heroBg: "bg-[#DCF5E3]",
+      heroColor: "text-[#14AE47]",
+      outerCardBg: "bg-[#EEF9F1]",
+      sectionIconColor: "text-[#14AE47]",
+      progressColor: "bg-[#14AE47]",
+      listEntries: [],
+      metaRows: [
+        {
+          label: equipment || "MK-004",
+          value: customer || "PT. Citra Jaya",
+          icon: "printer",
+        },
+        {
+          label: "Tanggal Kunjungan",
+          value: formatDateOnly(item),
+          icon: "calendar",
+        },
+        {
+          label: "Teknisi",
+          value: "Budi Santoso",
+          icon: "user",
+        },
+        {
+          label: "Status Kunjungan",
+          value: statusStr || "Selesai",
+          icon: "clipboard",
+          badge: {
+            text: statusStr || "Selesai",
+            tone: "success",
+          },
+        },
+      ],
+    };
+  }
+
+  // 7. Notifikasi Informatif Umum (tanpa tombol CTA)
+  const fallbackRows: DetailMetaRow[] = [];
+  if (equipment) {
+    fallbackRows.push({ label: "Kode Unit", value: equipment, icon: "printer" });
+  }
+  if (customer) {
+    fallbackRows.push({
+      label: "Pelanggan",
+      value: customer,
+      icon: "building",
+    });
+  }
+  if (period) {
+    fallbackRows.push({ label: "Periode", value: period, icon: "calendar" });
+  }
+  fallbackRows.push({
+    label: "Waktu Tercatat",
+    value: formatCompactDateTime(item),
+    icon: "info",
+  });
+
   return {
-    variant: "visitCompleted",
-    sectionTitle: "Detail Kunjungan",
-    ctaLabel: "Lihat Hasil Kunjungan",
-    ctaTo: "/visit-history",
+    variant: "infoOnly",
+    sectionTitle: "Informasi Notifikasi",
     description:
       item.description?.trim() ||
-      (visitType
-        ? `Aktivitas ${visitType} telah diselesaikan oleh teknisi dan tercatat dalam sistem MOKU.`
-        : "Kunjungan ke pelanggan telah diselesaikan oleh teknisi. Data hasil kunjungan sudah tercatat di sistem."),
-    heroIcon: "check",
-    heroBg: "bg-[#DCF5E3]",
-    heroColor: "text-[#14AE47]",
-    outerCardBg: "bg-[#EEF9F1]",
-    sectionIconColor: "text-[#14AE47]",
-    progressColor: "bg-[#14AE47]",
+      "Informasi umum yang tercatat di sistem MOKU untuk referensi operasional Anda.",
+    heroIcon: "info",
+    heroBg: "bg-[#F2F3F6]",
+    heroColor: "text-[#5A555F]",
+    outerCardBg: "bg-[#F6F6F8]",
+    sectionIconColor: "text-[#5A555F]",
+    progressColor: "bg-[#8E001C]",
     listEntries: [],
-    metaRows: [
-      {
-        label: equipment || "MK-004",
-        value: customer || "PT. Citra Jaya",
-        icon: "printer",
-      },
-      {
-        label: "Tanggal Kunjungan",
-        value: formatDateOnly(item),
-        icon: "calendar",
-      },
-      {
-        label: "Teknisi",
-        value: "Budi Santoso",
-        icon: "user",
-      },
-      {
-        label: "Status Kunjungan",
-        value: statusStr || "Selesai",
-        icon: "clipboard",
-        badge: {
-          text: statusStr || "Selesai",
-          tone: "success",
-        },
-      },
-    ],
+    metaRows: fallbackRows,
   };
 }
 
@@ -470,6 +537,8 @@ function HeroIconRenderer({
       return <Target className={className} weight="regular" />;
     case "database":
       return <Database className={className} weight="duotone" />;
+    case "info":
+      return <Info className={className} weight="regular" />;
     case "check":
     default:
       return <CheckCircle className={className} weight="regular" />;
@@ -500,6 +569,8 @@ function MetaRowIcon({
       return <Buildings className={className} weight="regular" />;
     case "user":
       return <User className={className} weight="regular" />;
+    case "info":
+      return <Info className={className} weight="regular" />;
     case "clipboard":
     default:
       return <ClipboardText className={className} weight="regular" />;
@@ -567,6 +638,7 @@ export default function NotificationDetailPage() {
 
   if (isMobileView) {
     const theme = item ? resolveDetailTheme(item) : null;
+    const hasCta = Boolean(theme?.ctaLabel && theme?.ctaTo);
 
     return (
       <main
@@ -668,19 +740,25 @@ export default function NotificationDetailPage() {
                         weight="fill"
                       />
                     )}
+                    {theme.variant === "infoOnly" && (
+                      <Bell
+                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
+                        weight="bold"
+                      />
+                    )}
 
                     <h3 className="font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
                       {theme.sectionTitle}
                     </h3>
                   </div>
 
-                  {/* Varian List Item (Jadwal / Mesin Perlu Perhatian) */}
+                  {/* Varian List Item */}
                   {theme.listEntries.length > 0 && (
                     <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(12*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.listEntries.map((entry) => (
                         <Link
                           key={entry.id}
-                          to={entry.to ?? theme.ctaTo}
+                          to={entry.to ?? theme.ctaTo ?? "/notifications"}
                           className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(11*var(--u))] transition-colors active:bg-[#FAFAFC]"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
@@ -723,7 +801,7 @@ export default function NotificationDetailPage() {
                     </div>
                   )}
 
-                  {/* Varian Detail Key-Value / Progress (Laporan, Kunjungan Selesai, Target Mingguan, Pembaruan) */}
+                  {/* Varian Detail Key-Value / Progress */}
                   {theme.metaRows.length > 0 && (
                     <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(12*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.metaRows.map((row, idx) => {
@@ -797,13 +875,15 @@ export default function NotificationDetailPage() {
                   )}
                 </section>
 
-                {/* Tombol CTA Utama */}
-                <Link
-                  to={theme.ctaTo}
-                  className="mt-[calc(18*var(--u))] flex h-[calc(44*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] font-display text-[calc(13.5*var(--u))] font-bold text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
-                >
-                  {theme.ctaLabel}
-                </Link>
+                {/* Tombol CTA hanya muncul jika relevan dengan jenis notifikasi */}
+                {hasCta && theme.ctaTo && theme.ctaLabel && (
+                  <Link
+                    to={theme.ctaTo}
+                    className="mt-[calc(18*var(--u))] flex h-[calc(44*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] font-display text-[calc(13.5*var(--u))] font-bold text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+                  >
+                    {theme.ctaLabel}
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="rounded-[calc(18*var(--u))] border border-[#EEEEEE] bg-white px-[calc(18*var(--u))] py-[calc(28*var(--u))] text-center">
@@ -873,4 +953,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-    }
+        }
