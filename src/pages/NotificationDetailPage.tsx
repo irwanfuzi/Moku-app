@@ -15,6 +15,7 @@ import {
   Printer,
   Stack,
   Target,
+  TrendUp,
   User,
   Warning,
 } from "@phosphor-icons/react";
@@ -58,6 +59,7 @@ interface DetailMetaRow {
     | "target"
     | "stack"
     | "chart"
+    | "trend"
     | "check"
     | "printer"
     | "building"
@@ -139,7 +141,7 @@ function formatCompactDateTime(item: NotificationItem): string {
       return `${datePart}, ${timePart}`;
     }
   }
-  return item.time ?? "23 Nov 2026, 01:00";
+  return item.time ?? "15 Okt 2025, 08:00";
 }
 
 function formatDateOnly(item: NotificationItem): string {
@@ -159,7 +161,7 @@ function formatDateOnly(item: NotificationItem): string {
       }).format(date);
     }
   }
-  return "23 Nov 2026";
+  return "15 Okt 2025";
 }
 
 function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
@@ -345,7 +347,19 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
   }
 
   if (titleLower.includes("target") || titleLower.includes("mingguan")) {
-    const progressPct = 70;
+    const rawData = data as Record<string, unknown>;
+    const targetVal = Number(rawData.targetVisits ?? 40) || 40;
+    const actualVal = Number(rawData.actualVisits ?? 28) || 28;
+    const progressPct = Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          rawData.progressPercent ?? Math.round((actualVal / targetVal) * 100)
+        )
+      )
+    );
+
     return {
       variant: "weeklyTarget",
       sectionTitle: "Detail Target Mingguan",
@@ -369,18 +383,18 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
         },
         {
           label: "Target Kunjungan",
-          value: "40 Kunjungan",
+          value: `${targetVal} Kunjungan`,
           icon: "target",
         },
         {
           label: "Realisasi Saat Ini",
-          value: "28 Kunjungan",
+          value: `${actualVal} Kunjungan`,
           icon: "stack",
         },
         {
           label: "Progress",
           value: `${progressPct}%`,
-          icon: "chart",
+          icon: "trend",
           progressPercent: progressPct,
         },
       ],
@@ -489,6 +503,7 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
+  // Notifikasi informatif umum: tanpa tombol CTA
   const fallbackRows: DetailMetaRow[] = [];
   if (equipment) {
     fallbackRows.push({ label: "Kode Unit", value: equipment, icon: "printer" });
@@ -568,6 +583,8 @@ function MetaRowIcon({
       return <Stack className={className} weight="regular" />;
     case "chart":
       return <ChartBar className={className} weight="regular" />;
+    case "trend":
+      return <TrendUp className={className} weight="regular" />;
     case "check":
       return <CheckCircle className={className} weight="regular" />;
     case "printer":
@@ -653,7 +670,6 @@ export default function NotificationDetailPage() {
         style={MOBILE_SCALE_VARS}
         className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(44*var(--u)+env(safe-area-inset-bottom))]"
       >
-        {/* Header Marun */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
           <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] pb-[calc(32*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
             <div className="flex min-w-0 items-center gap-[calc(10*var(--u))]">
@@ -676,12 +692,10 @@ export default function NotificationDetailPage() {
           </div>
         </header>
 
-        {/* Sheet Putih Melengkung */}
         <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(20*var(--u))]">
           <div className="mx-auto w-full max-w-[680px]">
             {item && theme ? (
               <div>
-                {/* 1. Ringkasan Atas: Ikon + Judul + Waktu */}
                 <div className="flex items-center gap-[calc(14*var(--u))]">
                   <div
                     className={`flex h-[calc(52*var(--u))] w-[calc(52*var(--u))] shrink-0 items-center justify-center rounded-[calc(15*var(--u))] ${theme.heroBg} ${theme.heroColor}`}
@@ -702,14 +716,12 @@ export default function NotificationDetailPage() {
                   </div>
                 </div>
 
-                {/* 2. Deskripsi / Status */}
-                <p className="mt-[calc(32*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#3F3A42]">
+                <p className="mt-[calc(20*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.48] text-[#3F3A42]">
                   {theme.description}
                 </p>
 
-                {/* 3. Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(24*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
+                  className={`mt-[calc(20*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -760,7 +772,6 @@ export default function NotificationDetailPage() {
                     </h3>
                   </div>
 
-                  {/* Varian List Item */}
                   {theme.listEntries.length > 0 && (
                     <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.listEntries.map((entry) => (
@@ -809,7 +820,6 @@ export default function NotificationDetailPage() {
                     </div>
                   )}
 
-                  {/* Varian Detail Key-Value / Progress */}
                   {theme.metaRows.length > 0 && (
                     <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.metaRows.map((row, idx) => {
@@ -883,7 +893,6 @@ export default function NotificationDetailPage() {
                   )}
                 </section>
 
-                {/* 4. Tombol CTA Utama */}
                 {hasCta && theme.ctaTo && theme.ctaLabel && (
                   <Link
                     to={theme.ctaTo}
