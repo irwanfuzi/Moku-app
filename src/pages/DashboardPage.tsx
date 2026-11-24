@@ -679,6 +679,7 @@ function MobileDashboard() {
   const [isPullDragging, setIsPullDragging] = useState(false);
 
   const mainRef = useRef<HTMLElement | null>(null);
+  const scrollElRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -700,14 +701,21 @@ function MobileDashboard() {
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", MAROON_HEX));
 
-    const getScrollTop = () =>
-      Math.max(
+    let mounted = true;
+    let activeScrollEl: HTMLElement | null = null;
+
+    const getScrollTop = () => {
+      if (scrollElRef.current) {
+        return Math.max(0, scrollElRef.current.scrollTop);
+      }
+      return Math.max(
         0,
         window.scrollY ||
           document.documentElement.scrollTop ||
           document.body.scrollTop ||
           0
       );
+    };
 
     const updateIconProgress = () => {
       rafRef.current = null;
@@ -736,15 +744,33 @@ function MobileDashboard() {
       }
     };
 
-    updateIconProgress();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const ionContent = mainRef.current?.closest("ion-content") as
+      | (HTMLElement & { getScrollElement?: () => Promise<HTMLElement> })
+      | null;
+
+    if (ionContent?.getScrollElement) {
+      ionContent.getScrollElement().then((el) => {
+        if (!mounted || !el) return;
+        scrollElRef.current = el;
+        activeScrollEl = el;
+        el.addEventListener("scroll", onScroll, { passive: true });
+        updateIconProgress();
+      });
+    } else {
+      window.addEventListener("scroll", onScroll, { passive: true });
+      updateIconProgress();
+    }
 
     return () => {
+      mounted = false;
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
       }
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
+      }
+      if (activeScrollEl) {
+        activeScrollEl.removeEventListener("scroll", onScroll);
       }
       window.removeEventListener("scroll", onScroll);
     };
@@ -760,14 +786,18 @@ function MobileDashboard() {
     const el = mainRef.current;
     if (!el || !isPwaMode) return;
 
-    const getScrollTop = () =>
-      Math.max(
+    const getScrollTop = () => {
+      if (scrollElRef.current) {
+        return Math.max(0, scrollElRef.current.scrollTop);
+      }
+      return Math.max(
         0,
         window.scrollY ||
           document.documentElement.scrollTop ||
           document.body.scrollTop ||
           0
       );
+    };
 
     const onTouchStart = (event: globalThis.TouchEvent) => {
       if (isRefreshingRef.current || event.touches.length !== 1) return;
@@ -873,6 +903,85 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
+      {/* Fixed Compact Top Bar: terkunci rapat di atas, tidak bocor saat scroll */}
+      <div
+        style={{
+          backgroundColor: MAROON_HEX,
+          boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
+          transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+          transition: isPullDragging
+            ? "none"
+            : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
+        }}
+        className="fixed inset-x-0 top-0 z-40 w-full will-change-[box-shadow,transform]"
+      >
+        <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
+          <Link
+            to="/"
+            aria-label="MOKU Dashboard"
+            className="relative flex h-[calc(28*var(--u))] items-center"
+          >
+            <img
+              src="/images/moku/brand/moku-logo.png"
+              alt="MOKU"
+              width={180}
+              height={65}
+              style={{
+                opacity: 1 - iconProgress,
+                transform: `scale(${1 - iconProgress * 0.18})`,
+              }}
+              className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
+                isIconSwapped ? "pointer-events-none" : ""
+              }`}
+            />
+
+            <span
+              style={{
+                opacity: iconProgress,
+                transform: `scale(${0.82 + iconProgress * 0.18})`,
+              }}
+              className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
+                isIconSwapped ? "" : "pointer-events-none"
+              }`}
+            >
+              <img
+                src="/images/moku/brand/app-icon.png"
+                alt="Ikon MOKU"
+                width={64}
+                height={64}
+                className="h-full w-full object-contain"
+              />
+            </span>
+          </Link>
+
+          <div className="relative mr-[calc(4*var(--u))] flex h-[calc(28*var(--u))] items-center">
+            <button
+              type="button"
+              onClick={() =>
+                navigateWithTransition("/notifications", "forward")
+              }
+              aria-label={
+                unreadCount > 0
+                  ? `Notifikasi (${unreadCount} belum dibaca)`
+                  : "Notifikasi"
+              }
+              className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors active:bg-white/15"
+            >
+              <Bell
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
+              />
+
+              {unreadCount > 0 && (
+                <span className="absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-[#83051C]">
+                  {badgeText}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="relative mx-auto w-full max-w-[600px]">
         {/* Emblem Pull-to-Refresh MOKU */}
         {isPwaMode && (
@@ -923,85 +1032,6 @@ function MobileDashboard() {
             </div>
           </div>
         )}
-
-        {/* Sticky Compact Top Bar */}
-        <div className="sticky top-0 z-40 h-0 overflow-visible">
-          <div
-            style={{
-              backgroundColor: MAROON_HEX,
-              boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
-              transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
-              transition: isPullDragging
-                ? "none"
-                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
-            }}
-            className="flex w-full items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))] will-change-[box-shadow,transform]"
-          >
-            <Link
-              to="/"
-              aria-label="MOKU Dashboard"
-              className="relative flex h-[calc(28*var(--u))] items-center"
-            >
-              <img
-                src="/images/moku/brand/moku-logo.png"
-                alt="MOKU"
-                width={180}
-                height={65}
-                style={{
-                  opacity: 1 - iconProgress,
-                  transform: `scale(${1 - iconProgress * 0.18})`,
-                }}
-                className={`h-[calc(23*var(--u))] w-auto origin-left object-contain object-left will-change-[opacity,transform] ${
-                  isIconSwapped ? "pointer-events-none" : ""
-                }`}
-              />
-
-              <span
-                style={{
-                  opacity: iconProgress,
-                  transform: `scale(${0.82 + iconProgress * 0.18})`,
-                }}
-                className={`absolute left-0 flex h-[calc(27*var(--u))] w-[calc(27*var(--u))] items-center justify-center will-change-[opacity,transform] ${
-                  isIconSwapped ? "" : "pointer-events-none"
-                }`}
-              >
-                <img
-                  src="/images/moku/brand/app-icon.png"
-                  alt="Ikon MOKU"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-contain"
-                />
-              </span>
-            </Link>
-
-            <div className="relative mr-[calc(4*var(--u))] flex h-[calc(28*var(--u))] items-center">
-              <button
-                type="button"
-                onClick={() =>
-                  navigateWithTransition("/notifications", "forward")
-                }
-                aria-label={
-                  unreadCount > 0
-                    ? `Notifikasi (${unreadCount} belum dibaca)`
-                    : "Notifikasi"
-                }
-                className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors active:bg-white/15"
-              >
-                <Bell
-                  weight="regular"
-                  className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
-                />
-
-                {unreadCount > 0 && (
-                  <span className="absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-[#83051C]">
-                    {badgeText}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Latar belakang marun menerus ke atas */}
         <div
