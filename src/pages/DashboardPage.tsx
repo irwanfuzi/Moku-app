@@ -6,7 +6,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { isPlatform } from "@ionic/react";
 import {
   Bell,
   CalendarBlank,
@@ -53,18 +52,10 @@ const REFRESH_DURATION_MS = 1800;
 
 const ICON_SCROLL_START = 16;
 const ICON_SCROLL_RANGE = 56;
-
 const MAROON_HEX = "#83051C";
-const DARK_MAROON_HEX = "#54000F";
-const WHITE_HEX = "#FFFFFF";
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
-}
-
-function setThemeColor(color: string) {
-  const metas = document.querySelectorAll('meta[name="theme-color"]');
-  metas.forEach((meta) => meta.setAttribute("content", color));
 }
 
 /* =========================================================
@@ -683,14 +674,11 @@ function MobileDashboard() {
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [iconProgress, setIconProgress] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPullDragging, setIsPullDragging] = useState(false);
 
   const mainRef = useRef<HTMLElement | null>(null);
-  const topBarRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLDivElement | null>(null);
   const scrollElRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
@@ -700,7 +688,6 @@ function MobileDashboard() {
   const isRefreshingRef = useRef(false);
 
   const isPwaMode = isPWA || detectStandalonePwa();
-  const isIos = isPlatform("ios");
 
   useEffect(() => {
     pullDistanceRef.current = pullDistance;
@@ -710,21 +697,10 @@ function MobileDashboard() {
     isRefreshingRef.current = isRefreshing;
   }, [isRefreshing]);
 
-  /* Sinkronisasi warna Status Bar (meta theme-color) dengan Top Bar */
   useEffect(() => {
-    const activeColor = isScrolled
-      ? isIos
-        ? DARK_MAROON_HEX
-        : WHITE_HEX
-      : MAROON_HEX;
-    setThemeColor(activeColor);
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    metas.forEach((meta) => meta.setAttribute("content", MAROON_HEX));
 
-    return () => {
-      setThemeColor(MAROON_HEX);
-    };
-  }, [isScrolled, isIos]);
-
-  useEffect(() => {
     let mounted = true;
     let activeScrollEl: HTMLElement | null = null;
 
@@ -741,7 +717,7 @@ function MobileDashboard() {
       );
     };
 
-    const updateScrollState = () => {
+    const updateIconProgress = () => {
       rafRef.current = null;
       const busy =
         isPullingRef.current ||
@@ -750,7 +726,6 @@ function MobileDashboard() {
 
       if (busy) {
         setIconProgress((prev) => (prev !== 0 ? 0 : prev));
-        setIsScrolled((prev) => (prev ? false : prev));
         return;
       }
 
@@ -761,23 +736,11 @@ function MobileDashboard() {
       setIconProgress((prev) =>
         Math.abs(prev - smooth) > 0.004 ? smooth : prev
       );
-
-      /* Deteksi presisi: berubah tepat saat kanvas putih menyentuh batas bawah top bar (0px marun tersisa) */
-      const topBarHeight = topBarRef.current?.offsetHeight ?? 68;
-      const canvasTop = canvasRef.current?.getBoundingClientRect().top;
-      const hasReachedCanvas =
-        typeof canvasTop === "number"
-          ? canvasTop <= topBarHeight + 2
-          : top >= 140;
-
-      setIsScrolled((prev) =>
-        prev !== hasReachedCanvas ? hasReachedCanvas : prev
-      );
     };
 
     const onScroll = () => {
       if (rafRef.current === null) {
-        rafRef.current = window.requestAnimationFrame(updateScrollState);
+        rafRef.current = window.requestAnimationFrame(updateIconProgress);
       }
     };
 
@@ -791,11 +754,11 @@ function MobileDashboard() {
         scrollElRef.current = el;
         activeScrollEl = el;
         el.addEventListener("scroll", onScroll, { passive: true });
-        updateScrollState();
+        updateIconProgress();
       });
     } else {
       window.addEventListener("scroll", onScroll, { passive: true });
-      updateScrollState();
+      updateIconProgress();
     }
 
     return () => {
@@ -816,7 +779,6 @@ function MobileDashboard() {
   useEffect(() => {
     if (isPullingRef.current || pullDistance > 0 || isRefreshing) {
       setIconProgress(0);
-      setIsScrolled(false);
     }
   }, [pullDistance, isRefreshing]);
 
@@ -929,12 +891,6 @@ function MobileDashboard() {
   const emblemScale = isRefreshing ? 0.96 : 0.5 + pullRatio * 0.46;
   const showPwaShimmer = isPwaMode && isRefreshing;
   const isIconSwapped = iconProgress > 0.5;
-  const isLightTopBar = isScrolled && !isIos;
-  const topBarBg = isScrolled
-    ? isIos
-      ? DARK_MAROON_HEX
-      : WHITE_HEX
-    : MAROON_HEX;
   const userName = "Budi Santoso";
   const badgeText = unreadCount > 99 ? "99+" : String(unreadCount);
 
@@ -947,22 +903,17 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Fixed Compact Top Bar: transisi halus 180ms tepat saat kanvas putih menyentuh top bar */}
+      {/* Fixed Compact Top Bar: Marun solid menyatu dengan Status Bar */}
       <div
-        ref={topBarRef}
         style={{
-          backgroundColor: topBarBg,
-          boxShadow: isScrolled
-            ? isLightTopBar
-              ? "0 1px 0 rgba(23, 23, 23, 0.07), 0 4px 12px rgba(23, 23, 23, 0.04)"
-              : "0 4px 14px rgba(45, 0, 10, 0.22)"
-            : "none",
+          backgroundColor: MAROON_HEX,
+          boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
           transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
           transition: isPullDragging
-            ? "background-color 180ms ease-out, box-shadow 180ms ease-out"
-            : "background-color 180ms ease-out, box-shadow 180ms ease-out, transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
+            ? "none"
+            : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
         }}
-        className="fixed inset-x-0 top-0 z-40 w-full will-change-[background-color,box-shadow,transform]"
+        className="fixed inset-x-0 top-0 z-40 w-full will-change-[box-shadow,transform]"
       >
         <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
           <Link
@@ -1014,27 +965,15 @@ function MobileDashboard() {
                   ? `Notifikasi (${unreadCount} belum dibaca)`
                   : "Notifikasi"
               }
-              className={`relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
-                isLightTopBar ? "active:bg-black/5" : "active:bg-white/15"
-              }`}
+              className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors active:bg-white/15"
             >
               <Bell
                 weight="regular"
-                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] transition-colors duration-200 ${
-                  isLightTopBar ? "text-[#171717]" : "text-white"
-                }`}
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white"
               />
 
               {unreadCount > 0 && (
-                <span
-                  className={`absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] transition-all duration-200 ${
-                    isLightTopBar
-                      ? "ring-white"
-                      : isScrolled
-                        ? "ring-[#54000F]"
-                        : "ring-[#83051C]"
-                  }`}
-                >
+                <span className="absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-[#83051C]">
                   {badgeText}
                 </span>
               )}
@@ -1159,10 +1098,7 @@ function MobileDashboard() {
           </header>
 
           {/* Canvas Konten */}
-          <div
-            ref={canvasRef}
-            className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]"
-          >
+          <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
             {/* 1. Status Monitoring Mesin */}
             <section className="min-w-0">
               <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
