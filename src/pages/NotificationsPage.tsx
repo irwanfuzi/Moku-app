@@ -8,7 +8,6 @@ import {
   type MouseEvent,
   type TouchEvent,
 } from "react";
-import { Link } from "react-router-dom";
 
 import { useAppLayout } from "@/components/layout/app-shell";
 
@@ -1123,8 +1122,8 @@ export default function NotificationsPage() {
     updateSwipeOffset(id, 0);
   };
 
-  const handleDetailClick = (
-    event: MouseEvent<HTMLAnchorElement>,
+  const handleItemClick = (
+    event: MouseEvent<HTMLDivElement>,
     id: string
   ) => {
     if (isSelectionMode) {
@@ -1164,7 +1163,6 @@ export default function NotificationsPage() {
         style={MOBILE_SCALE_VARS}
         className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(88*var(--u)+env(safe-area-inset-bottom))]"
       >
-        {/* Solid Maroon Header with Curved Sheet Overlap */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
           <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(30*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(11*var(--u)))]">
             <div className="flex min-w-0 items-center gap-[calc(8*var(--u))]">
@@ -1194,7 +1192,6 @@ export default function NotificationsPage() {
           </div>
         </header>
 
-        {/* Curved White Sheet Container */}
         <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white pt-[calc(16*var(--u))]">
           <div className="mx-auto w-full max-w-[680px]">
             {isLoadingList ? (
@@ -1208,7 +1205,6 @@ export default function NotificationsPage() {
               <div className="space-y-[calc(12*var(--u))]">
                 {groupedNotifications.map((group, groupIndex) => (
                   <section key={group.label} className="min-w-0">
-                    {/* Group Header */}
                     <div className="flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(16*var(--u))] pb-[calc(8*var(--u))] pt-[calc(4*var(--u))]">
                       <h2 className="font-display text-[calc(13.5*var(--u))] font-bold tracking-[-0.02em] text-[#5A555F]">
                         {group.label}
@@ -1230,7 +1226,6 @@ export default function NotificationsPage() {
                       )}
                     </div>
 
-                    {/* Flat List Items separated by thin divider */}
                     <div className="border-t border-[#EFEFF2]">
                       {group.items.map((item, itemIndex) => {
                         const isSelected = selectedIds.includes(item.id);
@@ -1269,7 +1264,6 @@ export default function NotificationsPage() {
                                 }}
                                 className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
                               >
-                                {/* Swipe Delete Background */}
                                 {isSwiping && (
                                   <div
                                     className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
@@ -1291,8 +1285,10 @@ export default function NotificationsPage() {
                                   </div>
                                 )}
 
-                                {/* Flat Row Foreground */}
                                 <div
+                                  onClick={(event) =>
+                                    handleItemClick(event, item.id)
+                                  }
                                   onTouchStart={(event) =>
                                     handleTouchStart(event, item.id)
                                   }
@@ -1306,7 +1302,7 @@ export default function NotificationsPage() {
                                   onContextMenu={(event) =>
                                     event.preventDefault()
                                   }
-                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
+                                  className={`mobile-swipe-foreground relative z-10 flex w-full cursor-pointer items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
                                     isSelected
                                       ? "bg-[#FADCE1]"
                                       : !item.isRead
@@ -1329,7 +1325,6 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* 3D Flip Icon Button */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1350,7 +1345,6 @@ export default function NotificationsPage() {
                                         isSelected ? "is-flipped" : ""
                                       }`}
                                     >
-                                      {/* Sisi Depan: Ikon Kategori Asli */}
                                       <span
                                         className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
                                       >
@@ -1364,7 +1358,6 @@ export default function NotificationsPage() {
                                         />
                                       </span>
 
-                                      {/* Sisi Belakang: Centang Marun */}
                                       <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
                                         <Check
                                           className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -1378,13 +1371,7 @@ export default function NotificationsPage() {
                                     </span>
                                   </button>
 
-                                  <Link
-                                    to={`/notifications/${encodeURIComponent(item.id)}`}
-                                    onClick={(event) =>
-                                      handleDetailClick(event, item.id)
-                                    }
-                                    className="flex min-w-0 flex-1 flex-col outline-none"
-                                  >
+                                  <div className="flex min-w-0 flex-1 flex-col">
                                     <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
                                       <p className="min-w-0 flex-1 truncate font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
                                         {formattedTitle}
@@ -1416,7 +1403,7 @@ export default function NotificationsPage() {
                                         {subtitle}
                                       </p>
                                     )}
-                                  </Link>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1457,7 +1444,6 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR */}
         {shouldRenderBar && (
           <div
             aria-hidden={isBarClosing}
@@ -1519,7 +1505,6 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {/* SNACKBAR */}
         {snackbar && (
           <div
             role="status"
@@ -1817,10 +1802,9 @@ export default function NotificationsPage() {
                           </button>
                         )}
 
-                        <Link
-                          to={`/notifications/${encodeURIComponent(item.id)}`}
-                          onClick={(event) => handleDetailClick(event, item.id)}
-                          className="flex min-w-0 flex-1 items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
+                        <div
+                          onClick={(event) => handleItemClick(event, item.id)}
+                          className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2">
@@ -1851,7 +1835,7 @@ export default function NotificationsPage() {
                           <span className="w-24 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
                             {displayDate}
                           </span>
-                        </Link>
+                        </div>
 
                         <div className="flex w-[76px] shrink-0 items-center justify-end gap-1">
                           {!item.isRead && (
