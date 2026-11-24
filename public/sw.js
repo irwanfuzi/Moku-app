@@ -1,5 +1,6 @@
-
-const CACHE_NAME = "moku-static-v2";
+const swUrl = new URL(self.location.href);
+const BUILD_VERSION = swUrl.searchParams.get("v") || "v2";
+const CACHE_NAME = `moku-static-${BUILD_VERSION}`;
 
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
@@ -31,10 +32,7 @@ self.addEventListener("activate", (event) => {
         cacheNames
           .filter(
             (name) =>
-              (
-                name.startsWith("moku-static-") ||
-                name === "moku-cache-v1"
-              ) &&
+              (name.startsWith("moku-static-") || name === "moku-cache-v1") &&
               name !== CACHE_NAME
           )
           .map((name) => caches.delete(name))
