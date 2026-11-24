@@ -72,12 +72,88 @@ const visitTypeLabels: Record<string, string> = {
   UMC: "Unscheduled Maintenance",
 };
 
-/* Disamakan dengan skala --u Dashboard agar ukuran proporsional */
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
 const SWIPE_DELETE_THRESHOLD = -64;
+
+/* =========================================================
+   CUSTOM ANIMATED TRASH ICON (PHOSPHOR-STYLE, NO CIRCLE)
+========================================================= */
+
+function AnimatedTrashIcon({
+  ready,
+  progress,
+}: {
+  ready: boolean;
+  progress: number;
+}) {
+  const scale = ready ? 1.12 : 0.78 + progress * 0.24;
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white ${
+        ready ? "moku-trash-pop" : ""
+      }`}
+      style={{
+        transform: ready ? undefined : `scale(${scale})`,
+        transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+      }}
+    >
+      {/* Tutup tong sampah: terangkat naik & miring tipis saat siap hapus */}
+      <g
+        style={{
+          transformOrigin: "12px 6px",
+          transform: ready
+            ? "translateY(-2.4px) rotate(-14deg)"
+            : "translateY(0px) rotate(0deg)",
+          transition: "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
+      >
+        <path
+          d="M4.5 6.5H19.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+        />
+        <path
+          d="M9.5 6.5V4.8C9.5 4.08 10.08 3.5 10.8 3.5H13.2C13.92 3.5 14.5 4.08 14.5 4.8V6.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      {/* Badan tong sampah */}
+      <g
+        style={{
+          transformOrigin: "12px 15px",
+          transform: ready ? "translateY(0.8px)" : "translateY(0px)",
+          transition: "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
+      >
+        <path
+          d="M6.5 6.5L7.3 18.6C7.37 19.67 8.26 20.5 9.33 20.5H14.67C15.74 20.5 16.63 19.67 16.7 18.6L17.5 6.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10.2 10.8V16.2M13.8 10.8V16.2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
 
 /* =========================================================
    MOBILE VISUAL HELPERS
@@ -983,7 +1059,6 @@ export default function NotificationsPage() {
       start.horizontal = true;
       const offset = updateSwipeOffset(id, deltaX);
 
-      // Micro haptic feedback saat melewati batas hapus
       if (offset <= SWIPE_DELETE_THRESHOLD && !start.vibrated) {
         start.vibrated = true;
         if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -1057,14 +1132,14 @@ export default function NotificationsPage() {
   }, []);
 
   /* =======================================================
-     MOBILE SUB-PAGE VIEW
+     MOBILE SUB-PAGE VIEW (FLAT LIST + THIN DIVIDER)
   ======================================================= */
 
   if (isMobileView) {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#F8F8FA] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Solid Maroon Header with Curved Sheet Overlap */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
@@ -1106,9 +1181,9 @@ export default function NotificationsPage() {
           </div>
         </header>
 
-        {/* Curved White/Off-White Sheet Container */}
-        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-[#F8F8FA] pt-[calc(18*var(--u))]">
-          <div className="mx-auto w-full max-w-[680px] px-[calc(14*var(--u))]">
+        {/* Curved White Sheet Container */}
+        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white pt-[calc(16*var(--u))]">
+          <div className="mx-auto w-full max-w-[680px]">
             {isLoadingList ? (
               <div className="flex min-h-[55dvh] items-center justify-center">
                 <span
@@ -1117,11 +1192,12 @@ export default function NotificationsPage() {
                 />
               </div>
             ) : notifications.length > 0 ? (
-              <div className="space-y-[calc(18*var(--u))]">
+              <div className="space-y-[calc(12*var(--u))]">
                 {groupedNotifications.map((group, groupIndex) => (
                   <section key={group.label} className="min-w-0">
-                    <div className="mb-[calc(9*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
-                      <h2 className="font-display text-[calc(14*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                    {/* Group Header */}
+                    <div className="flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(16*var(--u))] pb-[calc(8*var(--u))] pt-[calc(4*var(--u))]">
+                      <h2 className="font-display text-[calc(13.5*var(--u))] font-bold tracking-[-0.02em] text-[#5A555F]">
                         {group.label}
                       </h2>
 
@@ -1141,7 +1217,8 @@ export default function NotificationsPage() {
                       )}
                     </div>
 
-                    <div>
+                    {/* Flat List Items separated by thin divider */}
+                    <div className="border-t border-[#EFEFF2]">
                       {group.items.map((item, itemIndex) => {
                         const isSelected = selectedIds.includes(item.id);
                         const isSlidingOut = slidingOutIds.includes(item.id);
@@ -1165,26 +1242,26 @@ export default function NotificationsPage() {
                         return (
                           <div
                             key={item.id}
-                            className={`grid transition-[grid-template-rows,margin,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                               isCollapsing
-                                ? "pointer-events-none mb-0 grid-rows-[0fr] opacity-0"
-                                : "mb-[calc(10*var(--u))] grid-rows-[1fr] opacity-100"
+                                ? "pointer-events-none grid-rows-[0fr] opacity-0"
+                                : "grid-rows-[1fr] opacity-100"
                             }`}
                           >
                             <div className="min-h-0 overflow-hidden">
                               <div
                                 style={{
-                                  animationDelay: `${Math.min(itemIndex * 30, 210)}ms`,
+                                  animationDelay: `${Math.min(itemIndex * 28, 200)}ms`,
                                 }}
-                                className="notif-card-reveal relative overflow-hidden rounded-[calc(16*var(--u))]"
+                                className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
                               >
-                                {/* Swipe Delete Background (inset 1.5px & hanya muncul saat di-swipe agar tidak bocor atas/bawah) */}
+                                {/* Swipe Delete Background (polos tanpa lingkaran, animasi tutup terangkat + pop) */}
                                 {isSwiping && (
                                   <div
-                                    className="absolute inset-[1.5px] z-0 flex items-center justify-end rounded-[calc(15*var(--u))] bg-[#BF0B2C] pr-[calc(20*var(--u))]"
+                                    className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
                                     style={{
                                       opacity: isSlidingOut
-                                        ? 0.92
+                                        ? 0.95
                                         : Math.min(swipeProgress * 1.25, 1),
                                       transition:
                                         activeSwipeId === item.id
@@ -1193,30 +1270,14 @@ export default function NotificationsPage() {
                                     }}
                                     aria-hidden="true"
                                   >
-                                    <span
-                                      className={`flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full transition-all duration-200 ease-out ${
-                                        isReadyToDelete
-                                          ? "notif-trash-ready bg-white/25"
-                                          : "bg-white/10"
-                                      }`}
-                                      style={{
-                                        transform: isReadyToDelete
-                                          ? undefined
-                                          : `scale(${0.68 + swipeProgress * 0.34}) rotate(${-14 + swipeProgress * 14}deg)`,
-                                      }}
-                                    >
-                                      <Trash
-                                        size={20}
-                                        weight={
-                                          isReadyToDelete ? "fill" : "bold"
-                                        }
-                                        className="text-white"
-                                      />
-                                    </span>
+                                    <AnimatedTrashIcon
+                                      ready={isReadyToDelete}
+                                      progress={swipeProgress}
+                                    />
                                   </div>
                                 )}
 
-                                {/* Notification Card Foreground */}
+                                {/* Flat Row Foreground */}
                                 <div
                                   onTouchStart={(event) =>
                                     handleTouchStart(event, item.id)
@@ -1231,13 +1292,13 @@ export default function NotificationsPage() {
                                   onContextMenu={(event) =>
                                     event.preventDefault()
                                   }
-                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] rounded-[calc(16*var(--u))] border px-[calc(13*var(--u))] py-[calc(12*var(--u))] transition-[background-color,border-color,box-shadow] duration-500 ease-out ${
+                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-500 ease-out ${
                                     isSelected
-                                      ? "border-[#8E001C]/40 bg-[#FADCE1]"
+                                      ? "bg-[#FADCE1]"
                                       : !item.isRead
-                                        ? "border-transparent bg-[#FBECEF] shadow-[0_1px_3px_rgba(131,5,28,0.04)]"
-                                        : "border-[#EFEFF2] bg-white shadow-[0_1px_4px_rgba(23,23,23,0.03)]"
-                                  } ${isJustMarkedRead ? "notif-read-pulse" : ""}`}
+                                        ? "bg-[#FDF2F4]"
+                                        : "bg-white"
+                                  } ${isJustMarkedRead ? "notif-read-fade" : ""}`}
                                   style={{
                                     transform: isSlidingOut
                                       ? "translate3d(-105%, 0, 0)"
@@ -1245,8 +1306,8 @@ export default function NotificationsPage() {
                                     opacity: isSlidingOut ? 0 : 1,
                                     transition:
                                       activeSwipeId === item.id
-                                        ? "background-color 450ms ease-out, border-color 450ms ease-out"
-                                        : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease-out, background-color 450ms ease-out, border-color 450ms ease-out",
+                                        ? "background-color 450ms ease-out"
+                                        : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease-out, background-color 450ms ease-out",
                                     touchAction: "pan-y",
                                     willChange:
                                       swipeOffset !== 0 || isSlidingOut
@@ -1310,7 +1371,7 @@ export default function NotificationsPage() {
                                     </div>
 
                                     {subtitle && (
-                                      <p className="mt-[calc(3.5*var(--u))] line-clamp-2 pr-[calc(8*var(--u))] text-[calc(11.5*var(--u))] leading-[1.4] text-[#3F3A42]">
+                                      <p className="mt-[calc(3.5*var(--u))] line-clamp-2 pr-[calc(6*var(--u))] text-[calc(11.5*var(--u))] leading-[1.42] text-[#3F3A42]">
                                         {subtitle}
                                       </p>
                                     )}
@@ -1432,12 +1493,8 @@ export default function NotificationsPage() {
             animation: notif-card-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
 
-          .notif-read-pulse {
-            animation: notif-read-pulse 420ms cubic-bezier(0.22, 1, 0.36, 1);
-          }
-
-          .notif-trash-ready {
-            animation: notif-trash-wiggle 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          .moku-trash-pop {
+            animation: moku-trash-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
           }
 
           .snackbar-enter {
@@ -1469,7 +1526,7 @@ export default function NotificationsPage() {
           @keyframes notif-card-in {
             from {
               opacity: 0;
-              transform: translate3d(0, 10px, 0);
+              transform: translate3d(0, 8px, 0);
             }
             to {
               opacity: 1;
@@ -1477,33 +1534,15 @@ export default function NotificationsPage() {
             }
           }
 
-          @keyframes notif-read-pulse {
+          @keyframes moku-trash-pop {
             0% {
-              transform: scale(1);
+              transform: scale(0.92);
             }
-            35% {
-              transform: scale(0.985);
+            55% {
+              transform: scale(1.22);
             }
             100% {
-              transform: scale(1);
-            }
-          }
-
-          @keyframes notif-trash-wiggle {
-            0% {
-              transform: scale(0.95) rotate(0deg);
-            }
-            30% {
-              transform: scale(1.18) rotate(-12deg);
-            }
-            60% {
-              transform: scale(1.14) rotate(10deg);
-            }
-            82% {
-              transform: scale(1.1) rotate(-4deg);
-            }
-            100% {
-              transform: scale(1.08) rotate(0deg);
+              transform: scale(1.12);
             }
           }
 
@@ -1551,8 +1590,7 @@ export default function NotificationsPage() {
 
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
-            .notif-read-pulse,
-            .notif-trash-ready,
+            .moku-trash-pop,
             .snackbar-enter,
             .animate-selection-in,
             .animate-toolbar-in,
@@ -1879,4 +1917,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-        }
+    }
