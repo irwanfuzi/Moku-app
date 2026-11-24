@@ -25,6 +25,7 @@ import {
   TrendUp,
   Users,
   Warning,
+  X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import {
@@ -119,7 +120,7 @@ const desktopMachineRows = [
     model: "Photocopy A3",
     customer: "PT. Sinar Mandiri",
     status: "Sudah Dikunjungi",
-    lastVisit: "12 Okt 2025",
+    lastVisit: "12 Okt 2026",
   },
   {
     no: 2,
@@ -135,7 +136,7 @@ const desktopMachineRows = [
     model: "Photocopy A4",
     customer: "PT. Prima Solusi",
     status: "Perlu Perhatian",
-    lastVisit: "5 Okt 2025",
+    lastVisit: "5 Okt 2026",
   },
   {
     no: 4,
@@ -143,7 +144,7 @@ const desktopMachineRows = [
     model: "Scanner",
     customer: "PT. Citra Jaya",
     status: "Sudah Dikunjungi",
-    lastVisit: "10 Okt 2025",
+    lastVisit: "10 Okt 2026",
   },
 ];
 
@@ -242,11 +243,11 @@ function QuickAction({
   return (
     <Link
       to={href}
-      className={`flex min-w-0 flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center ${
+      className={`group flex min-w-0 flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center transition-transform duration-150 active:scale-95 ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-none">
+      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-none transition-colors duration-150 group-active:bg-[#730217]">
         {children}
       </span>
       <span className="text-[calc(11.5*var(--u))] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
@@ -265,7 +266,7 @@ function DesktopDashboard() {
   const [statusFilter, setStatusFilter] = useState("Semua Status");
   const [customerFilter, setCustomerFilter] = useState("Semua Pelanggan");
   const [openAction, setOpenAction] = useState<string | null>(null);
-  const [desktopMonth, setDesktopMonth] = useState("Oktober 2025");
+  const [desktopMonth, setDesktopMonth] = useState("Oktober 2026");
 
   const filteredRows = desktopMachineRows.filter((row) => {
     const query = search.trim().toLowerCase();
@@ -312,11 +313,9 @@ function DesktopDashboard() {
               onChange={(event) => setDesktopMonth(event.target.value)}
               className="w-full cursor-pointer bg-transparent text-sm font-semibold text-[#171717] outline-none"
             >
-              <option>September 2025</option>
-              <option>Oktober 2025</option>
-              <option>November 2025</option>
-              <option>Desember 2025</option>
-              <option>Januari 2026</option>
+              {MONTHS.map((month) => (
+                <option key={month}>{month}</option>
+              ))}
             </select>
           </label>
 
@@ -671,7 +670,7 @@ const MOBILE_SCALE_VARS = {
 function MobileDashboard() {
   const { isPWA, navigateWithTransition } = useAppLayout();
   const unreadCount = useUnreadNotificationCount();
-  const [selectedMonth, setSelectedMonth] = useState("Oktober 2025");
+  const [selectedMonth, setSelectedMonth] = useState("Oktober 2026");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [iconProgress, setIconProgress] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -1102,54 +1101,25 @@ function MobileDashboard() {
               <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
                 <SectionTitle>Status Monitoring Mesin</SectionTitle>
 
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowMonthPicker((previous) => !previous)}
-                    aria-expanded={showMonthPicker}
-                    className="flex h-[calc(33*var(--u))] items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)]"
-                  >
-                    <CalendarBlank
-                      weight="bold"
-                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]"
-                    />
-                    <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
-                      {selectedMonth}
-                    </span>
-                    <CaretDown
-                      weight="bold"
-                      className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]"
-                    />
-                  </button>
-
-                  {showMonthPicker && (
-                    <div className="absolute right-0 top-[40px] z-50 w-[210px] overflow-hidden rounded-xl border border-[#EEE7EB] bg-white py-1.5 text-[#29232A] shadow-xl">
-                      <p className="px-4 py-2 text-xs font-semibold text-[#817780]">
-                        Pilih Periode
-                      </p>
-                      {MONTHS.map((month) => (
-                        <button
-                          key={month}
-                          type="button"
-                          onClick={() => {
-                            setSelectedMonth(month);
-                            setShowMonthPicker(false);
-                          }}
-                          className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${
-                            selectedMonth === month
-                              ? "bg-[#FCECEF] font-bold text-[#8E001C]"
-                              : "text-[#51474E]"
-                          }`}
-                        >
-                          {month}
-                          {selectedMonth === month && (
-                            <Check size={16} weight="bold" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMonthPicker(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={showMonthPicker}
+                  className="flex h-[calc(33*var(--u))] shrink-0 items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)] transition-transform duration-150 active:scale-95 active:bg-[#F7F7F9]"
+                >
+                  <CalendarBlank
+                    weight="bold"
+                    className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]"
+                  />
+                  <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
+                    {selectedMonth}
+                  </span>
+                  <CaretDown
+                    weight="bold"
+                    className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]"
+                  />
+                </button>
               </div>
 
               <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
@@ -1349,7 +1319,7 @@ function MobileDashboard() {
             {/* 4. Mesin Perlu Perhatian */}
             <Link
               to="/monitoring"
-              className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)]"
+              className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#F7F7F9]"
             >
               <ShimmerOverlay active={showPwaShimmer} />
               <span
@@ -1384,7 +1354,7 @@ function MobileDashboard() {
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
                 <Link
                   to="/visit-history"
-                  className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032]"
+                  className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032] transition-opacity active:opacity-70"
                 >
                   Lihat Semua
                   <CaretRight
@@ -1450,6 +1420,101 @@ function MobileDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Bottom Sheet Pilih Periode */}
+      {showMonthPicker && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pilih Periode"
+          className="fixed inset-0 z-50 flex items-end justify-center"
+        >
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowMonthPicker(false)}
+            className="moku-sheet-backdrop absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+          />
+
+          {/* Sheet Panel */}
+          <div className="moku-sheet-panel relative z-10 w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pb-[calc(20*var(--u)+env(safe-area-inset-bottom))] pt-[calc(10*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.16)]">
+            <div className="mx-auto mb-[calc(12*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] rounded-full bg-[#DCDCE2]" />
+
+            <div className="mb-[calc(10*var(--u))] flex items-center justify-between">
+              <h3 className="font-display text-[calc(16*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                Pilih Periode
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowMonthPicker(false)}
+                aria-label="Tutup"
+                className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors active:bg-[#F2F2F5]"
+              >
+                <X
+                  weight="bold"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </button>
+            </div>
+
+            <div className="space-y-[calc(6*var(--u))]">
+              {MONTHS.map((month) => {
+                const isActive = selectedMonth === month;
+                return (
+                  <button
+                    key={month}
+                    type="button"
+                    onClick={() => {
+                      setSelectedMonth(month);
+                      setShowMonthPicker(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-[calc(14*var(--u))] px-[calc(14*var(--u))] py-[calc(12*var(--u))] text-left transition-all duration-150 active:scale-[0.985] ${
+                      isActive
+                        ? "bg-[#FCECEF] font-bold text-[#8E001C]"
+                        : "bg-white font-medium text-[#29232A] active:bg-[#F7F7F9]"
+                    }`}
+                  >
+                    <span className="flex items-center gap-[calc(10*var(--u))] text-[calc(14*var(--u))]">
+                      <CalendarBlank
+                        weight={isActive ? "fill" : "regular"}
+                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] ${
+                          isActive ? "text-[#8E001C]" : "text-[#7A7480]"
+                        }`}
+                      />
+                      {month}
+                    </span>
+
+                    {isActive && (
+                      <span className="flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] items-center justify-center rounded-full bg-[#8E001C] text-white">
+                        <Check
+                          weight="bold"
+                          className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
+                        />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .moku-sheet-backdrop {
+          animation: moku-backdrop-in 200ms ease-out both;
+        }
+        .moku-sheet-panel {
+          animation: moku-sheet-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes moku-backdrop-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes moku-sheet-up {
+          from { transform: translate3d(0, 100%, 0); }
+          to { transform: translate3d(0, 0, 0); }
+        }
+      `}</style>
     </main>
   );
 }
