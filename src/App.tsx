@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route } from "react-router-dom";
 import {
   IonApp,
@@ -14,6 +15,10 @@ import AppShell from "@/components/layout/app-shell";
 import DashboardPage from "@/pages/DashboardPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationDetailPage from "@/pages/NotificationDetailPage";
+import {
+  bindAutoUpdateOnResume,
+  enforceLatestBuildCache,
+} from "@/lib/cache-buster";
 
 const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
   const duration = 400;
@@ -94,6 +99,11 @@ function NotificationDetailRoute() {
 }
 
 export default function App() {
+  useEffect(() => {
+    enforceLatestBuildCache().catch(() => {});
+    return bindAutoUpdateOnResume();
+  }, []);
+
   return (
     <IonApp>
       <IonReactRouter>
