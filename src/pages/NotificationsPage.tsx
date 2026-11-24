@@ -101,7 +101,7 @@ function AnimatedTrashIcon({
       }`}
       style={{
         transform: ready ? undefined : `scale(${scale})`,
-        transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+        transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
       {/* Tutup tong sampah: terangkat naik & miring tipis saat siap hapus */}
@@ -111,7 +111,7 @@ function AnimatedTrashIcon({
           transform: ready
             ? "translateY(-2.4px) rotate(-14deg)"
             : "translateY(0px) rotate(0deg)",
-          transition: "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+          transition: "transform 380ms cubic-bezier(0.22, 1.25, 0.36, 1)",
         }}
       >
         <path
@@ -134,7 +134,7 @@ function AnimatedTrashIcon({
         style={{
           transformOrigin: "12px 15px",
           transform: ready ? "translateY(0.8px)" : "translateY(0px)",
-          transition: "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+          transition: "transform 380ms cubic-bezier(0.22, 1.25, 0.36, 1)",
         }}
       >
         <path
@@ -312,7 +312,7 @@ function MokuCheckbox({
         event.stopPropagation();
         onChange();
       }}
-      className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
+      className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
         checked
           ? "border-[#730217] bg-[#730217] text-white"
           : "border-[#D5D7DC] bg-white text-transparent hover:border-[#730217] hover:bg-[#730217]/[0.04]"
@@ -321,7 +321,7 @@ function MokuCheckbox({
       <Check
         size={13}
         weight="bold"
-        className={`transition-all duration-150 ${
+        className={`transition-all duration-200 ${
           checked ? "scale-100 opacity-100" : "scale-75 opacity-0"
         }`}
       />
@@ -684,7 +684,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setIsLoadingList(false);
-    }, 240);
+    }, 260);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -795,7 +795,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     MARK AS READ (SMOOTH STAGGERED ANIMATION)
+     MARK AS READ (SLOW & SMOOTH STAGGERED ANIMATION)
   ======================================================= */
 
   const handleMarkAsRead = (id: string, showSnackbar = false) => {
@@ -808,7 +808,7 @@ export default function NotificationsPage() {
 
     scheduleTimer(() => {
       setMarkingReadIds((prev) => prev.filter((itemId) => itemId !== id));
-    }, 520);
+    }, 760);
 
     if (showSnackbar) {
       setSnackbar({
@@ -827,13 +827,13 @@ export default function NotificationsPage() {
     setMarkingReadIds(targetIds);
 
     unreadTargets.forEach((item, index) => {
-      const delay = Math.min(index * 45, 270);
+      const delay = Math.min(index * 85, 480);
       scheduleTimer(() => {
         markNotificationAsRead(item.id);
       }, delay);
     });
 
-    const totalWaveDuration = Math.min(unreadTargets.length * 45, 270) + 500;
+    const totalWaveDuration = Math.min(unreadTargets.length * 85, 480) + 760;
     scheduleTimer(() => {
       setMarkingReadIds([]);
     }, totalWaveDuration);
@@ -861,7 +861,7 @@ export default function NotificationsPage() {
     setMarkingReadIds(targets.map((item) => item.id));
 
     targets.forEach((item, index) => {
-      const delay = Math.min(index * 45, 220);
+      const delay = Math.min(index * 85, 420);
       scheduleTimer(() => {
         markNotificationAsRead(item.id);
       }, delay);
@@ -869,7 +869,7 @@ export default function NotificationsPage() {
 
     scheduleTimer(() => {
       setMarkingReadIds([]);
-    }, 650);
+    }, 900);
 
     setSnackbar({
       message: `${targets.length} notifikasi ditandai sudah dibaca`,
@@ -884,7 +884,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     SMOOTH DELETE & COLLAPSE ANIMATION
+     SLOW & SMOOTH DELETE + COLLAPSE ANIMATION
   ======================================================= */
 
   const finishDeletion = useCallback((ids: string[], message: string) => {
@@ -914,12 +914,12 @@ export default function NotificationsPage() {
 
       scheduleTimer(() => {
         setCollapsingIds((current) => [...new Set([...current, ...ids])]);
-      }, 140);
+      }, 240);
 
       scheduleTimer(() => {
         finishDeletion(ids, message);
         suppressClickRef.current = false;
-      }, 430);
+      }, 720);
     },
     [finishDeletion, scheduleTimer]
   );
@@ -1136,7 +1136,7 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={handleBack}
                 aria-label={isSelectionMode ? "Batalkan pilihan" : "Kembali"}
-                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors active:bg-white/15"
+                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
               >
                 {isSelectionMode ? (
                   <X
@@ -1183,7 +1183,7 @@ export default function NotificationsPage() {
                           type="button"
                           onClick={handleMarkAllAsRead}
                           disabled={unreadCount === 0}
-                          className={`shrink-0 text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-all duration-300 active:scale-95 active:opacity-70 ${
+                          className={`shrink-0 text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-all duration-500 ease-out active:scale-95 active:opacity-70 ${
                             unreadCount > 0
                               ? "translate-y-0 opacity-100"
                               : "pointer-events-none -translate-y-1 opacity-0"
@@ -1219,7 +1219,7 @@ export default function NotificationsPage() {
                         return (
                           <div
                             key={item.id}
-                            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                               isCollapsing
                                 ? "pointer-events-none grid-rows-[0fr] opacity-0"
                                 : "grid-rows-[1fr] opacity-100"
@@ -1228,7 +1228,7 @@ export default function NotificationsPage() {
                             <div className="min-h-0 overflow-hidden">
                               <div
                                 style={{
-                                  animationDelay: `${Math.min(itemIndex * 28, 200)}ms`,
+                                  animationDelay: `${Math.min(itemIndex * 45, 320)}ms`,
                                 }}
                                 className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
                               >
@@ -1243,7 +1243,7 @@ export default function NotificationsPage() {
                                       transition:
                                         activeSwipeId === item.id
                                           ? "none"
-                                          : "opacity 220ms ease",
+                                          : "opacity 320ms ease",
                                     }}
                                     aria-hidden="true"
                                   >
@@ -1269,7 +1269,7 @@ export default function NotificationsPage() {
                                   onContextMenu={(event) =>
                                     event.preventDefault()
                                   }
-                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-500 ease-out ${
+                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
                                     isSelected
                                       ? "bg-[#FADCE1]"
                                       : !item.isRead
@@ -1283,8 +1283,8 @@ export default function NotificationsPage() {
                                     opacity: isSlidingOut ? 0 : 1,
                                     transition:
                                       activeSwipeId === item.id
-                                        ? "background-color 450ms ease-out"
-                                        : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease-out, background-color 450ms ease-out",
+                                        ? "background-color 700ms ease-out"
+                                        : "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 700ms ease-out",
                                     touchAction: "pan-y",
                                     willChange:
                                       swipeOffset !== 0 || isSlidingOut
@@ -1305,8 +1305,8 @@ export default function NotificationsPage() {
                                         : `Pilih ${item.title}`
                                     }
                                     aria-pressed={isSelected}
-                                    style={{ perspective: "320px" }}
-                                    className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-150 active:scale-90"
+                                    style={{ perspective: "360px" }}
+                                    className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
                                   >
                                     <span
                                       className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
@@ -1326,9 +1326,9 @@ export default function NotificationsPage() {
                                       {/* Sisi Belakang: Centang Marun */}
                                       <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
                                         <Check
-                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-transform duration-200 ${
+                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-transform duration-300 ease-out ${
                                             isSelected
-                                              ? "scale-100 delay-75"
+                                              ? "scale-100 delay-150"
                                               : "scale-50"
                                           }`}
                                           weight="bold"
@@ -1361,7 +1361,7 @@ export default function NotificationsPage() {
                                               ? "Belum dibaca"
                                               : undefined
                                           }
-                                          className={`shrink-0 rounded-full bg-[#FF2D20] transition-all duration-300 ease-out ${
+                                          className={`shrink-0 rounded-full bg-[#FF2D20] transition-all duration-500 ease-out ${
                                             !item.isRead
                                               ? "ml-[calc(5*var(--u))] h-[calc(7.5*var(--u))] w-[calc(7.5*var(--u))] scale-100 opacity-100"
                                               : "ml-0 h-0 w-0 scale-0 opacity-0"
@@ -1416,13 +1416,13 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Animasi masuk & keluar halus) */}
+        {/* MOBILE FLOATING SELECTION BAR (Transisi masuk & keluar lebih santai) */}
         <div
           aria-hidden={!isFloatingBarVisible}
-          className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isFloatingBarVisible
               ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-6 scale-95 opacity-0"
+              : "pointer-events-none translate-y-8 scale-95 opacity-0"
           }`}
         >
           <span className="truncate text-xs font-bold text-[#8E001C]">
@@ -1434,7 +1434,7 @@ export default function NotificationsPage() {
               type="button"
               tabIndex={isFloatingBarVisible ? 0 : -1}
               onClick={toggleSelectAll}
-              className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors active:scale-95 ${
+              className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-200 active:scale-95 ${
                 allNotificationsSelected
                   ? "bg-[#FCECEF] text-[#8E001C]"
                   : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
@@ -1449,7 +1449,7 @@ export default function NotificationsPage() {
               onClick={handleMarkSelectedAsRead}
               aria-label="Tandai sudah dibaca"
               title="Tandai sudah dibaca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors active:bg-[#8E001C]/10"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-200 active:bg-[#8E001C]/10"
             >
               <Checks size={19} weight="bold" />
             </button>
@@ -1460,7 +1460,7 @@ export default function NotificationsPage() {
               onClick={handleDeleteSelected}
               aria-label="Hapus notifikasi"
               title="Hapus notifikasi"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors active:bg-[#BF0B2C]/10"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-200 active:bg-[#BF0B2C]/10"
             >
               <Trash size={19} weight="bold" />
             </button>
@@ -1471,7 +1471,7 @@ export default function NotificationsPage() {
               onClick={clearSelection}
               aria-label="Batalkan pilihan"
               title="Batalkan pilihan"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors active:bg-[#F1F2F5]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-200 active:bg-[#F1F2F5]"
             >
               <X size={19} weight="bold" />
             </button>
@@ -1511,17 +1511,17 @@ export default function NotificationsPage() {
 
         <style>{`
           .notif-card-reveal {
-            animation: notif-card-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation: notif-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
 
           .moku-trash-pop {
-            animation: moku-trash-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            animation: moku-trash-pop 520ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
           }
 
           .moku-icon-flip-inner {
             transform-style: preserve-3d;
             -webkit-transform-style: preserve-3d;
-            transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 560ms cubic-bezier(0.22, 1.22, 0.36, 1);
             will-change: transform;
           }
 
@@ -1539,7 +1539,7 @@ export default function NotificationsPage() {
           }
 
           .snackbar-enter {
-            animation: snackbar-enter 220ms ease-out both;
+            animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
 
           .snackbar-progress {
@@ -1559,7 +1559,7 @@ export default function NotificationsPage() {
           @keyframes notif-card-in {
             from {
               opacity: 0;
-              transform: translate3d(0, 8px, 0);
+              transform: translate3d(0, 10px, 0);
             }
             to {
               opacity: 1;
@@ -1582,7 +1582,7 @@ export default function NotificationsPage() {
           @keyframes snackbar-enter {
             from {
               opacity: 0;
-              transform: translateY(12px);
+              transform: translateY(14px);
             }
             to {
               opacity: 1;
@@ -1692,7 +1692,7 @@ export default function NotificationsPage() {
                 return (
                   <div
                     key={item.id}
-                    className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       isCollapsing
                         ? "pointer-events-none grid-rows-[0fr] opacity-0"
                         : "grid-rows-[1fr] opacity-100"
@@ -1700,7 +1700,7 @@ export default function NotificationsPage() {
                   >
                     <div className="min-h-0 overflow-hidden">
                       <div
-                        className={`group relative flex min-h-[76px] items-center gap-4 px-3 py-4 transition-all duration-300 ${
+                        className={`group relative flex min-h-[76px] items-center gap-4 px-3 py-4 transition-all duration-500 ${
                           isSelected
                             ? "bg-[#730217]/[0.055]"
                             : !item.isRead
@@ -1729,12 +1729,12 @@ export default function NotificationsPage() {
                             className="group/icon relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                           >
                             <span
-                              className={`absolute inset-0 flex items-center justify-center rounded-xl transition-opacity duration-150 group-hover/icon:opacity-0 ${iconColorMap[item.type]}`}
+                              className={`absolute inset-0 flex items-center justify-center rounded-xl transition-opacity duration-200 group-hover/icon:opacity-0 ${iconColorMap[item.type]}`}
                             >
                               <Icon size={20} weight="duotone" />
                             </span>
 
-                            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#730217]/10 text-[#730217] opacity-0 transition-opacity duration-150 group-hover/icon:opacity-100">
+                            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#730217]/10 text-[#730217] opacity-0 transition-opacity duration-200 group-hover/icon:opacity-100">
                               <Check size={19} weight="bold" />
                             </span>
                           </button>
@@ -1756,7 +1756,7 @@ export default function NotificationsPage() {
                                 aria-label={
                                   !item.isRead ? "Belum dibaca" : undefined
                                 }
-                                className={`shrink-0 rounded-full bg-[#730217] transition-all duration-300 ${
+                                className={`shrink-0 rounded-full bg-[#730217] transition-all duration-500 ${
                                   !item.isRead
                                     ? "h-2 w-2 scale-100 opacity-100"
                                     : "h-0 w-0 scale-0 opacity-0"
@@ -1783,7 +1783,7 @@ export default function NotificationsPage() {
                               onClick={() => handleMarkAsRead(item.id, true)}
                               title="Tandai sudah dibaca"
                               aria-label={`Tandai ${item.title} sudah dibaca`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all duration-200 hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                             >
                               <Check size={17} />
                             </button>
@@ -1799,7 +1799,7 @@ export default function NotificationsPage() {
                             }
                             title="Hapus notifikasi"
                             aria-label={`Hapus ${item.title}`}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all duration-200 hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                           >
                             <Trash size={17} />
                           </button>
@@ -1877,11 +1877,11 @@ export default function NotificationsPage() {
 
       <style>{`
         .page-enter {
-          animation: notification-enter 220ms ease-out both;
+          animation: notification-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .snackbar-enter {
-          animation: snackbar-enter 220ms ease-out both;
+          animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .snackbar-progress {
@@ -1891,7 +1891,7 @@ export default function NotificationsPage() {
         @keyframes notification-enter {
           from {
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateY(10px);
           }
           to {
             opacity: 1;
@@ -1902,7 +1902,7 @@ export default function NotificationsPage() {
         @keyframes snackbar-enter {
           from {
             opacity: 0;
-            transform: translateY(12px);
+            transform: translateY(14px);
           }
           to {
             opacity: 1;
@@ -1929,4 +1929,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-        }
+}
