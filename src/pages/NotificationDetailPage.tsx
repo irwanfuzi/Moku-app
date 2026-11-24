@@ -27,7 +27,7 @@ import {
 } from "@/lib/notification-store";
 
 const MOBILE_SCALE_VARS = {
-  "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
+  "--u": "clamp(0.85px, min(0.265vw, 0.12dvh), 1.12px)",
 } as CSSProperties;
 
 type DetailVariant =
@@ -168,7 +168,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
       ? ((data as Record<string, unknown>).machines as Array<Record<string, unknown>>)
       : null;
 
-  // 1. Jadwal Kunjungan Hari Ini
   if (titleLower.includes("jadwal") || titleLower.includes("dijadwalkan")) {
     const entries: DetailListEntry[] = rawList
       ? rawList.map((entry, idx) => ({
@@ -226,7 +225,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 2. Mesin Perlu Perhatian
   if (
     item.type === "monitoring" ||
     titleLower.includes("perhatian") ||
@@ -290,7 +288,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 3. Laporan Bulanan Tersedia
   if (titleLower.includes("laporan") || titleLower.includes("bulanan")) {
     return {
       variant: "report",
@@ -333,7 +330,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 4. Target Kunjungan Mingguan
   if (titleLower.includes("target") || titleLower.includes("mingguan")) {
     const progressPct = 70;
     return {
@@ -377,7 +373,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 5. Pembaruan Data Mesin
   if (
     item.type === "equipment" ||
     item.type === "customer" ||
@@ -429,7 +424,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 6. Kunjungan Selesai
   if (
     item.type === "visit" ||
     titleLower.includes("selesai") ||
@@ -481,7 +475,6 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
     };
   }
 
-  // 7. Notifikasi Informatif Umum (tanpa tombol CTA)
   const fallbackRows: DetailMetaRow[] = [];
   if (equipment) {
     fallbackRows.push({ label: "Kode Unit", value: equipment, icon: "printer" });
@@ -643,17 +636,17 @@ export default function NotificationDetailPage() {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Header Marun */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
-          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(30*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(11*var(--u)))]">
-            <div className="flex min-w-0 items-center gap-[calc(8*var(--u))]">
+          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] pb-[calc(32*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
+            <div className="flex min-w-0 items-center gap-[calc(10*var(--u))]">
               <button
                 type="button"
                 onClick={handleBack}
                 aria-label="Kembali"
-                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
+                className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
               >
                 <ArrowLeft
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -669,7 +662,7 @@ export default function NotificationDetailPage() {
         </header>
 
         {/* Sheet Putih Melengkung */}
-        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(20*var(--u))]">
+        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(22*var(--u))]">
           <div className="mx-auto w-full max-w-[680px]">
             {item && theme ? (
               <div>
@@ -680,28 +673,28 @@ export default function NotificationDetailPage() {
                   >
                     <HeroIconRenderer
                       kind={theme.heroIcon}
-                      className="h-[calc(27*var(--u))] w-[calc(27*var(--u))]"
+                      className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
                     />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[calc(16.5*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
+                    <h2 className="break-words font-display text-[calc(16.5*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
                       {item.title}
                     </h2>
-                    <p className="mt-[calc(3*var(--u))] text-[calc(12*var(--u))] font-medium text-[#6E6873]">
+                    <p className="mt-[calc(4*var(--u))] text-[calc(12.5*var(--u))] font-medium text-[#6E6873]">
                       {formatCompactDateTime(item)}
                     </p>
                   </div>
                 </div>
 
                 {/* Deskripsi */}
-                <p className="mt-[calc(14*var(--u))] text-[calc(12.5*var(--u))] leading-[1.52] text-[#29232A]">
+                <p className="mt-[calc(16*var(--u))] break-words text-[calc(13.5*var(--u))] leading-[1.55] text-[#29232A]">
                   {theme.description}
                 </p>
 
                 {/* Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(18*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
+                  className={`mt-[calc(20*var(--u))] rounded-[calc(18*var(--u))] p-[calc(16*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -747,21 +740,21 @@ export default function NotificationDetailPage() {
                       />
                     )}
 
-                    <h3 className="font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                    <h3 className="font-display text-[calc(15*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
                       {theme.sectionTitle}
                     </h3>
                   </div>
 
                   {/* Varian List Item */}
                   {theme.listEntries.length > 0 && (
-                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(12*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.listEntries.map((entry) => (
                         <Link
                           key={entry.id}
                           to={entry.to ?? theme.ctaTo ?? "/notifications"}
-                          className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(11*var(--u))] transition-colors active:bg-[#FAFAFC]"
+                          className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(12*var(--u))] transition-colors active:bg-[#FAFAFC]"
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
+                          <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
                             <span className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-[calc(11*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
                               <Printer
                                 className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -770,10 +763,10 @@ export default function NotificationDetailPage() {
                             </span>
 
                             <div className="min-w-0 flex-1">
-                              <p className="truncate font-display text-[calc(13.5*var(--u))] font-bold leading-tight text-[#171717]">
+                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
                                 {entry.primary}
                               </p>
-                              <p className="mt-[calc(2*var(--u))] truncate text-[calc(11.5*var(--u))] text-[#5E5863]">
+                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-snug text-[#5E5863]">
                                 {entry.secondary}
                               </p>
                             </div>
@@ -782,10 +775,10 @@ export default function NotificationDetailPage() {
                           <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
                             {entry.badge && (
                               <span
-                                className={`inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(8*var(--u))] py-[calc(3*var(--u))] text-[calc(10.5*var(--u))] font-bold ${badgeToneClass(entry.badge.tone)}`}
+                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3.5*var(--u))] text-[calc(11*var(--u))] font-bold ${badgeToneClass(entry.badge.tone)}`}
                               >
                                 <Warning
-                                  className="h-[calc(11.5*var(--u))] w-[calc(11.5*var(--u))]"
+                                  className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
                                   weight="bold"
                                 />
                                 {entry.badge.text}
@@ -803,7 +796,7 @@ export default function NotificationDetailPage() {
 
                   {/* Varian Detail Key-Value / Progress */}
                   {theme.metaRows.length > 0 && (
-                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(12*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                       {theme.metaRows.map((row, idx) => {
                         const isFirstVisitMachine =
                           theme.variant === "visitCompleted" && idx === 0;
@@ -811,9 +804,9 @@ export default function NotificationDetailPage() {
                         return (
                           <div
                             key={`${row.label}-${idx}`}
-                            className="flex items-center gap-[calc(11*var(--u))] py-[calc(11*var(--u))]"
+                            className="flex items-start gap-[calc(12*var(--u))] py-[calc(12*var(--u))]"
                           >
-                            <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-[calc(10*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
+                            <span className="mt-[calc(1*var(--u))] flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-[calc(10*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
                               <MetaRowIcon
                                 kind={row.icon}
                                 className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
@@ -822,47 +815,47 @@ export default function NotificationDetailPage() {
 
                             {isFirstVisitMachine ? (
                               <div className="min-w-0 flex-1">
-                                <p className="truncate font-display text-[calc(13.5*var(--u))] font-bold leading-tight text-[#171717]">
+                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
                                   {row.label}
                                 </p>
-                                <p className="mt-[calc(2*var(--u))] truncate text-[calc(11.5*var(--u))] text-[#5E5863]">
+                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-snug text-[#5E5863]">
                                   {row.value}
                                 </p>
                               </div>
                             ) : typeof row.progressPercent === "number" ? (
                               <div className="min-w-0 flex-1">
-                                <p className="text-[calc(11*var(--u))] font-medium text-[#5E5863]">
+                                <p className="text-[calc(12*var(--u))] font-medium text-[#5E5863]">
                                   {row.label}
                                 </p>
-                                <div className="mt-[calc(5*var(--u))] flex items-center gap-[calc(10*var(--u))]">
-                                  <div className="h-[calc(7*var(--u))] flex-1 overflow-hidden rounded-full bg-[#E8ECF2]">
+                                <div className="mt-[calc(6*var(--u))] flex items-center gap-[calc(10*var(--u))]">
+                                  <div className="h-[calc(8*var(--u))] flex-1 overflow-hidden rounded-full bg-[#E8ECF2]">
                                     <div
                                       className={`h-full rounded-full ${theme.progressColor}`}
                                       style={{ width: `${row.progressPercent}%` }}
                                     />
                                   </div>
-                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-bold text-[#1D6FE0]">
+                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-bold text-[#1D6FE0]">
                                     {row.value}
                                   </span>
                                 </div>
                               </div>
                             ) : (
                               <div className="min-w-0 flex-1">
-                                <p className="text-[calc(11*var(--u))] font-medium text-[#5E5863]">
+                                <p className="break-words text-[calc(12*var(--u))] font-medium text-[#5E5863]">
                                   {row.label}
                                 </p>
                                 {row.badge ? (
                                   <span
-                                    className={`mt-[calc(4*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11*var(--u))] font-bold ${badgeToneClass(row.badge.tone)}`}
+                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-bold ${badgeToneClass(row.badge.tone)}`}
                                   >
                                     <CheckCircle
-                                      className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
+                                      className="h-[calc(12.5*var(--u))] w-[calc(12.5*var(--u))]"
                                       weight="bold"
                                     />
                                     {row.badge.text}
                                   </span>
                                 ) : (
-                                  <p className="mt-[calc(2*var(--u))] truncate font-display text-[calc(13.5*var(--u))] font-bold leading-tight text-[#171717]">
+                                  <p className="mt-[calc(3*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
                                     {row.value}
                                   </p>
                                 )}
@@ -875,11 +868,12 @@ export default function NotificationDetailPage() {
                   )}
                 </section>
 
-                {/* Tombol CTA hanya muncul jika relevan dengan jenis notifikasi */}
+                {/* Tombol CTA Utama dengan warna tulisan terkunci putih */}
                 {hasCta && theme.ctaTo && theme.ctaLabel && (
                   <Link
                     to={theme.ctaTo}
-                    className="mt-[calc(18*var(--u))] flex h-[calc(44*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] font-display text-[calc(13.5*var(--u))] font-bold text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+                    style={{ color: "#FFFFFF" }}
+                    className="mt-[calc(20*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
                   >
                     {theme.ctaLabel}
                   </Link>
@@ -887,16 +881,17 @@ export default function NotificationDetailPage() {
               </div>
             ) : (
               <div className="rounded-[calc(18*var(--u))] border border-[#EEEEEE] bg-white px-[calc(18*var(--u))] py-[calc(28*var(--u))] text-center">
-                <h2 className="font-display text-[calc(15*var(--u))] font-bold text-[#171717]">
+                <h2 className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]">
                   Notifikasi Tidak Ditemukan
                 </h2>
-                <p className="mt-[calc(4*var(--u))] text-[calc(12*var(--u))] text-[#6E6873]">
+                <p className="mt-[calc(5*var(--u))] text-[calc(13*var(--u))] text-[#6E6873]">
                   Data notifikasi mungkin sudah dihapus atau tautan tidak valid.
                 </p>
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="mt-[calc(14*var(--u))] inline-flex items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] py-[calc(9*var(--u))] text-[calc(12.5*var(--u))] font-semibold text-white"
+                  style={{ color: "#FFFFFF" }}
+                  className="mt-[calc(16*var(--u))] inline-flex items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white"
                 >
                   Kembali ke Notifikasi
                 </button>
@@ -953,4 +948,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-        }
+}
