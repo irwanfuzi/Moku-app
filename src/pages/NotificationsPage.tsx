@@ -1,98 +1,68 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type TouchEvent,
+} from "react";
+import { Link } from "react-router-dom";
+
+import { useAppLayout } from "@/components/layout/app-shell";
+
 import {
   ArrowLeft,
   Bell,
-  Buildings,
   CalendarBlank,
-  CaretRight,
   ChartBar,
+  Check,
   CheckCircle,
-  ClipboardText,
-  Database,
-  FileText,
+  Checks,
   Info,
-  Printer,
-  Stack,
-  Target,
+  Monitor,
+  Trash,
   User,
+  Users,
   Warning,
+  Wrench,
+  X,
 } from "@phosphor-icons/react";
-import { useAppLayout } from "@/components/layout/app-shell";
+
 import {
+  demoNotifications,
   loadNotifications,
-  markNotificationAsRead,
+  saveNotifications,
   subscribeNotifications,
+  deleteNotifications,
+  undoDeleteNotifications,
+  markNotificationAsRead,
   type NotificationItem,
+  type DeletedNotification,
 } from "@/lib/notification-store";
 
-const MOBILE_SCALE_VARS = {
-  "--u": "clamp(0.85px, min(0.265vw, 0.12dvh), 1.12px)",
-} as CSSProperties;
+/* =========================================================
+   CONFIGURATION
+========================================================= */
 
-type DetailVariant =
-  | "schedule"
-  | "attention"
-  | "report"
-  | "visitCompleted"
-  | "weeklyTarget"
-  | "equipmentUpdate"
-  | "infoOnly";
+const iconMap = {
+  visit: Wrench,
+  equipment: Monitor,
+  customer: Users,
+  user: User,
+  monitoring: CheckCircle,
+  general: Bell,
+} satisfies Record<NotificationItem["type"], typeof Bell>;
 
-interface DetailListEntry {
-  id: string;
-  primary: string;
-  secondary: string;
-  badge?: {
-    text: string;
-    tone: "danger" | "warning" | "success" | "info";
-  };
-  to?: string;
-}
-
-interface DetailMetaRow {
-  label: string;
-  value: string;
-  icon:
-    | "calendar"
-    | "target"
-    | "stack"
-    | "chart"
-    | "check"
-    | "printer"
-    | "building"
-    | "user"
-    | "clipboard"
-    | "info";
-  badge?: {
-    text: string;
-    tone: "success" | "warning" | "danger" | "info";
-  };
-  progressPercent?: number;
-}
-
-interface DetailThemeConfig {
-  variant: DetailVariant;
-  sectionTitle: string;
-  ctaLabel?: string;
-  ctaTo?: string;
-  description: string;
-  heroIcon:
-    | "calendar"
-    | "warning"
-    | "report"
-    | "check"
-    | "target"
-    | "database"
-    | "info";
-  heroBg: string;
-  heroColor: string;
-  outerCardBg: string;
-  sectionIconColor: string;
-  progressColor: string;
-  listEntries: DetailListEntry[];
-  metaRows: DetailMetaRow[];
-}
+const iconColorMap = {
+  visit: "bg-primary/10 text-primary",
+  equipment: "bg-orange-50 text-orange-600",
+  customer: "bg-sky-50 text-sky-600",
+  user: "bg-violet-50 text-violet-600",
+  monitoring: "bg-amber-50 text-amber-700",
+  general: "bg-[#F1F2F5] text-gray-600",
+} satisfies Record<NotificationItem["type"], string>;
 
 const visitTypeLabels: Record<string, string> = {
   IND: "Driver Installation",
@@ -101,6 +71,13 @@ const visitTypeLabels: Record<string, string> = {
   PMC: "Preventive Maintenance",
   UMC: "Unscheduled Maintenance",
 };
+
+const MOBILE_SCALE_VARS = {
+  "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
+} as CSSProperties;
+
+const SWIPE_DELETE_THRESHOLD = -64;
+const FLOATING_BAR_EXIT_MS = 950;
 
 function toTitleCase(text: string): string {
   return text
@@ -114,524 +91,616 @@ function toTitleCase(text: string): string {
     .join(" ");
 }
 
-function formatCompactDateTime(item: NotificationItem): string {
-  const raw = item.createdAt;
-  if (raw !== null && raw !== undefined && raw !== "") {
-    const date =
-      raw instanceof Date
-        ? raw
-        : typeof raw === "number"
-          ? new Date(raw)
-          : new Date(String(raw));
-    if (!Number.isNaN(date.getTime())) {
-      const datePart = new Intl.DateTimeFormat("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }).format(date);
-      const timePart = new Intl.DateTimeFormat("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-        .format(date)
-        .replace(".", ":");
-      return `${datePart}, ${timePart}`;
-    }
-  }
-  return item.time ?? "23 Nov 2026, 01:00";
+/* =========================================================
+   CUSTOM ANIMATED TRASH ICON (PHOSPHOR-STYLE, NO CIRCLE)
+========================================================= */
+
+function AnimatedTrashIcon({
+  ready,
+  progress,
+}: {
+  ready: boolean;
+  progress: number;
+}) {
+  const scale = ready ? 1.12 : 0.78 + progress * 0.24;
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white ${
+        ready ? "moku-trash-pop" : ""
+      }`}
+      style={{
+        transform: ready ? undefined : `scale(${scale})`,
+        transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+      }}
+    >
+      <g
+        style={{
+          transformOrigin: "12px 6px",
+          transform: ready
+            ? "translateY(-2.4px) rotate(-14deg)"
+            : "translateY(0px) rotate(0deg)",
+          transition: "transform 380ms cubic-bezier(0.22, 1.25, 0.36, 1)",
+        }}
+      >
+        <path
+          d="M4.5 6.5H19.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+        />
+        <path
+          d="M9.5 6.5V4.8C9.5 4.08 10.08 3.5 10.8 3.5H13.2C13.92 3.5 14.5 4.08 14.5 4.8V6.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      <g
+        style={{
+          transformOrigin: "12px 15px",
+          transform: ready ? "translateY(0.8px)" : "translateY(0px)",
+          transition: "transform 380ms cubic-bezier(0.22, 1.25, 0.36, 1)",
+        }}
+      >
+        <path
+          d="M6.5 6.5L7.3 18.6C7.37 19.67 8.26 20.5 9.33 20.5H14.67C15.74 20.5 16.63 19.67 16.7 18.6L17.5 6.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10.2 10.8V16.2M13.8 10.8V16.2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
 }
 
-function formatDateOnly(item: NotificationItem): string {
-  const raw = item.createdAt;
-  if (raw !== null && raw !== undefined && raw !== "") {
-    const date =
-      raw instanceof Date
-        ? raw
-        : typeof raw === "number"
-          ? new Date(raw)
-          : new Date(String(raw));
-    if (!Number.isNaN(date.getTime())) {
-      return new Intl.DateTimeFormat("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }).format(date);
-    }
-  }
-  return "23 Nov 2026";
-}
+/* =========================================================
+   MOBILE VISUAL HELPERS
+========================================================= */
 
-function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
-  const titleLower = (item.title ?? "").toLowerCase();
-  const data = item.data ?? {};
-  const equipment = data.equipmentNumber ? String(data.equipmentNumber) : "";
-  const customer = data.customerName ? String(data.customerName) : "";
-  const period = data.monitoringPeriod ? String(data.monitoringPeriod) : "";
-  const statusStr = data.status ? String(data.status) : "";
-  const visitType = data.visitType
-    ? visitTypeLabels[String(data.visitType).toUpperCase()] ??
-      String(data.visitType)
-    : "";
+function getMobileBadgeStyle(item: NotificationItem) {
+  const title = item.title?.toLowerCase() ?? "";
 
-  const rawList = Array.isArray((data as Record<string, unknown>).items)
-    ? ((data as Record<string, unknown>).items as Array<Record<string, unknown>>)
-    : Array.isArray((data as Record<string, unknown>).machines)
-      ? ((data as Record<string, unknown>).machines as Array<Record<string, unknown>>)
-      : null;
-
-  if (titleLower.includes("jadwal") || titleLower.includes("dijadwalkan")) {
-    const entries: DetailListEntry[] = rawList
-      ? rawList.map((entry, idx) => ({
-          id: String(entry.id ?? entry.code ?? entry.equipmentNumber ?? idx),
-          primary: String(
-            entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`
-          ),
-          secondary: String(
-            entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"
-          ),
-          to:
-            entry.code || entry.equipmentNumber
-              ? `/equipment/${encodeURIComponent(String(entry.code ?? entry.equipmentNumber))}`
-              : "/visits",
-        }))
-      : [
-          {
-            id: "sched-1",
-            primary: equipment || "MK-001",
-            secondary: customer || "PT. Sinar Mandiri",
-            to: equipment
-              ? `/equipment/${encodeURIComponent(equipment)}`
-              : "/visits",
-          },
-          {
-            id: "sched-2",
-            primary: "MK-004",
-            secondary: "PT. Citra Jaya",
-            to: "/equipment/MK-004",
-          },
-          {
-            id: "sched-3",
-            primary: "MK-007",
-            secondary: "PT. Maju Bersama",
-            to: "/equipment/MK-007",
-          },
-        ];
-
+  if (
+    item.type === "monitoring" ||
+    title.includes("perhatian") ||
+    title.includes("peringatan") ||
+    title.includes("belum dikunjungi")
+  ) {
     return {
-      variant: "schedule",
-      sectionTitle: "Detail Kunjungan",
-      ctaLabel: "Lihat Jadwal Kunjungan",
-      ctaTo: "/visits",
-      description:
-        item.description?.trim() ||
-        `Ada ${entries.length} kunjungan yang dijadwalkan untuk hari ini (${formatDateOnly(item)}). Mohon pastikan kunjungan dilakukan sesuai jadwal yang telah ditentukan.`,
-      heroIcon: "calendar",
-      heroBg: "bg-[#FCECEF]",
-      heroColor: "text-[#DC0E2E]",
-      outerCardBg: "bg-[#FDF2F4]",
-      sectionIconColor: "text-[#DC0E2E]",
-      progressColor: "bg-[#8E001C]",
-      listEntries: entries,
-      metaRows: [],
+      Icon: Warning,
+      circleClass: "bg-[#FCE6D8] text-[#EB6A14]",
     };
   }
 
   if (
-    item.type === "monitoring" ||
-    titleLower.includes("perhatian") ||
-    titleLower.includes("peringatan") ||
-    titleLower.includes("belum dikunjungi")
+    title.includes("jadwal") ||
+    title.includes("dijadwalkan") ||
+    title.includes("mingguan")
   ) {
-    const entries: DetailListEntry[] = rawList
-      ? rawList.map((entry, idx) => ({
-          id: String(entry.id ?? entry.code ?? entry.equipmentNumber ?? idx),
-          primary: String(
-            entry.code ?? entry.equipmentNumber ?? `MK-00${idx + 1}`
-          ),
-          secondary: String(
-            entry.customer ?? entry.customerName ?? "PT. Sinar Mandiri"
-          ),
-          badge: {
-            text: String(entry.badge ?? entry.status ?? "Perlu Penanganan"),
-            tone: idx % 2 === 0 ? "danger" : "warning",
-          },
-          to: "/monitoring",
-        }))
-      : [
-          {
-            id: "attn-1",
-            primary: equipment || "MOKU-002",
-            secondary: customer || "PT Maju Bersama",
-            badge: {
-              text: "Perlu Penanganan",
-              tone: "danger",
-            },
-            to: "/monitoring",
-          },
-          {
-            id: "attn-2",
-            primary: "MK-006",
-            secondary: "PT. Citra Jaya",
-            badge: {
-              text: "Perlu Pengecekan",
-              tone: "warning",
-            },
-            to: "/monitoring",
-          },
-        ];
-
     return {
-      variant: "attention",
-      sectionTitle: "Daftar Mesin Perlu Perhatian",
-      ctaLabel: "Lihat Detail Mesin",
-      ctaTo: "/monitoring",
-      description:
-        item.description?.trim() ||
-        (equipment && statusStr
-          ? `Status kunjungan ${equipment} telah berubah menjadi ${statusStr}.`
-          : `Terdapat ${entries.length} mesin yang terdeteksi memerlukan perhatian segera. Mohon lakukan pengecekan dan tindak lanjut sesuai prosedur.`),
-      heroIcon: "warning",
-      heroBg: "bg-[#FCE6D8]",
-      heroColor: "text-[#EB6A14]",
-      outerCardBg: "bg-[#FDF2F4]",
-      sectionIconColor: "text-[#C81032]",
-      progressColor: "bg-[#8E001C]",
-      listEntries: entries,
-      metaRows: [],
+      Icon: CalendarBlank,
+      circleClass: "bg-[#FADCE1] text-[#DC0E2E]",
     };
   }
 
-  if (titleLower.includes("laporan") || titleLower.includes("bulanan")) {
+  if (
+    title.includes("laporan") ||
+    title.includes("bulanan") ||
+    title.includes("rekap")
+  ) {
     return {
-      variant: "report",
-      sectionTitle: "Detail Laporan",
-      ctaLabel: "Lihat Laporan",
-      ctaTo: "/reports",
-      description:
-        item.description?.trim() ||
-        `Laporan operasional kunjungan bulan ${period || "September 2025"} telah tersedia. Anda dapat melihat ringkasan maupun mengunduh laporan untuk analisis lebih lanjut.`,
-      heroIcon: "report",
-      heroBg: "bg-[#E6F1FD]",
-      heroColor: "text-[#1D6FE0]",
-      outerCardBg: "bg-[#EEF5FD]",
-      sectionIconColor: "text-[#1D6FE0]",
-      progressColor: "bg-[#1D6FE0]",
-      listEntries: [],
-      metaRows: [
-        {
-          label: "Periode Laporan",
-          value: period || "September 2025",
-          icon: "calendar",
-        },
-        {
-          label: "Jenis Laporan",
-          value: "Laporan Operasional Kunjungan",
-          icon: "stack",
-        },
-        {
-          label: "Total Kunjungan",
-          value: "124 Kunjungan",
-          icon: "chart",
-        },
-        {
-          label: "Status",
-          value: "Tersedia",
-          icon: "check",
-          badge: { text: "Tersedia", tone: "success" },
-        },
-      ],
+      Icon: ChartBar,
+      circleClass: "bg-[#FADCE1] text-[#DC0E2E]",
     };
   }
 
-  if (titleLower.includes("target") || titleLower.includes("mingguan")) {
-    const progressPct = 70;
+  if (
+    item.type === "visit" ||
+    title.includes("selesai") ||
+    title.includes("dicatat")
+  ) {
     return {
-      variant: "weeklyTarget",
-      sectionTitle: "Detail Target Mingguan",
-      ctaLabel: "Lihat Rencana Kunjungan",
-      ctaTo: "/visits",
-      description:
-        item.description?.trim() ||
-        "Target kunjungan minggu ini telah ditetapkan. Pastikan seluruh rencana kunjungan dapat diselesaikan sesuai target.",
-      heroIcon: "target",
-      heroBg: "bg-[#E6F1FD]",
-      heroColor: "text-[#1D6FE0]",
-      outerCardBg: "bg-[#EEF5FD]",
-      sectionIconColor: "text-[#1D6FE0]",
-      progressColor: "bg-[#1D6FE0]",
-      listEntries: [],
-      metaRows: [
-        {
-          label: "Periode",
-          value: period || "13 – 19 Okt 2025",
-          icon: "calendar",
-        },
-        {
-          label: "Target Kunjungan",
-          value: "40 Kunjungan",
-          icon: "target",
-        },
-        {
-          label: "Realisasi Saat Ini",
-          value: "28 Kunjungan",
-          icon: "stack",
-        },
-        {
-          label: "Progress",
-          value: `${progressPct}%`,
-          icon: "chart",
-          progressPercent: progressPct,
-        },
-      ],
+      Icon: CheckCircle,
+      circleClass: "bg-[#DCF5E3] text-[#14AE47]",
     };
   }
 
   if (
     item.type === "equipment" ||
     item.type === "customer" ||
-    titleLower.includes("pembaruan") ||
-    titleLower.includes("diperbarui") ||
-    titleLower.includes("ditambahkan")
+    title.includes("pembaruan") ||
+    title.includes("diperbarui") ||
+    title.includes("ditambahkan") ||
+    title.includes("dinonaktifkan")
   ) {
     return {
-      variant: "equipmentUpdate",
-      sectionTitle: "Detail Pembaruan",
-      ctaLabel: "Lihat Detail Perubahan",
-      ctaTo: equipment
-        ? `/equipment/${encodeURIComponent(equipment)}`
-        : "/equipment",
-      description:
-        item.description?.trim() ||
-        "Terdapat pembaruan data mesin pada sistem. Silakan periksa detail perubahan untuk memastikan data sudah sesuai.",
-      heroIcon: "database",
-      heroBg: "bg-[#E6F1FD]",
-      heroColor: "text-[#1D6FE0]",
-      outerCardBg: "bg-[#EEF5FD]",
-      sectionIconColor: "text-[#1D6FE0]",
-      progressColor: "bg-[#1D6FE0]",
-      listEntries: [],
-      metaRows: [
-        {
-          label: "Kode Mesin",
-          value: equipment || "MK-004",
-          icon: "printer",
-        },
-        {
-          label: "Pelanggan",
-          value: customer || "PT. Citra Jaya",
-          icon: "building",
-        },
-        {
-          label: "Jenis Perubahan",
-          value: data.changeDescription
-            ? String(data.changeDescription)
-            : "Pembaruan Informasi Mesin",
-          icon: "stack",
-        },
-        {
-          label: "Tanggal Pembaruan",
-          value: formatCompactDateTime(item),
-          icon: "calendar",
-        },
-      ],
+      Icon: Info,
+      circleClass: "bg-[#DCECFB] text-[#1A7BD6]",
     };
   }
-
-  if (
-    item.type === "visit" ||
-    titleLower.includes("selesai") ||
-    titleLower.includes("dicatat")
-  ) {
-    return {
-      variant: "visitCompleted",
-      sectionTitle: "Detail Kunjungan",
-      ctaLabel: "Lihat Hasil Kunjungan",
-      ctaTo: "/visit-history",
-      description:
-        item.description?.trim() ||
-        (visitType
-          ? `Aktivitas ${visitType} telah diselesaikan oleh teknisi dan tercatat dalam sistem MOKU.`
-          : "Kunjungan ke pelanggan telah diselesaikan oleh teknisi. Data hasil kunjungan sudah tercatat di sistem."),
-      heroIcon: "check",
-      heroBg: "bg-[#DCF5E3]",
-      heroColor: "text-[#14AE47]",
-      outerCardBg: "bg-[#EEF9F1]",
-      sectionIconColor: "text-[#14AE47]",
-      progressColor: "bg-[#14AE47]",
-      listEntries: [],
-      metaRows: [
-        {
-          label: equipment || "MK-004",
-          value: customer || "PT. Citra Jaya",
-          icon: "printer",
-        },
-        {
-          label: "Tanggal Kunjungan",
-          value: formatDateOnly(item),
-          icon: "calendar",
-        },
-        {
-          label: "Teknisi",
-          value: "Budi Santoso",
-          icon: "user",
-        },
-        {
-          label: "Status Kunjungan",
-          value: statusStr || "Selesai",
-          icon: "clipboard",
-          badge: {
-            text: statusStr || "Selesai",
-            tone: "success",
-          },
-        },
-      ],
-    };
-  }
-
-  const fallbackRows: DetailMetaRow[] = [];
-  if (equipment) {
-    fallbackRows.push({ label: "Kode Unit", value: equipment, icon: "printer" });
-  }
-  if (customer) {
-    fallbackRows.push({
-      label: "Pelanggan",
-      value: customer,
-      icon: "building",
-    });
-  }
-  if (period) {
-    fallbackRows.push({ label: "Periode", value: period, icon: "calendar" });
-  }
-  fallbackRows.push({
-    label: "Waktu Tercatat",
-    value: formatCompactDateTime(item),
-    icon: "info",
-  });
 
   return {
-    variant: "infoOnly",
-    sectionTitle: "Informasi Notifikasi",
-    description:
-      item.description?.trim() ||
-      "Informasi umum yang tercatat di sistem MOKU untuk referensi operasional Anda.",
-    heroIcon: "info",
-    heroBg: "bg-[#F2F3F6]",
-    heroColor: "text-[#5A555F]",
-    outerCardBg: "bg-[#F6F6F8]",
-    sectionIconColor: "text-[#5A555F]",
-    progressColor: "bg-[#8E001C]",
-    listEntries: [],
-    metaRows: fallbackRows,
+    Icon: iconMap[item.type] ?? Bell,
+    circleClass: "bg-[#FADCE1] text-[#8E001C]",
   };
 }
 
-function HeroIconRenderer({
-  kind,
-  className,
-}: {
-  kind: DetailThemeConfig["heroIcon"];
-  className: string;
-}) {
-  switch (kind) {
-    case "calendar":
-      return <CalendarBlank className={className} weight="regular" />;
-    case "warning":
-      return <Warning className={className} weight="regular" />;
-    case "report":
-      return <FileText className={className} weight="regular" />;
-    case "target":
-      return <Target className={className} weight="regular" />;
-    case "database":
-      return <Database className={className} weight="duotone" />;
-    case "info":
-      return <Info className={className} weight="regular" />;
-    case "check":
-    default:
-      return <CheckCircle className={className} weight="regular" />;
-  }
+function parseNotificationDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  const date =
+    value instanceof Date
+      ? value
+      : typeof value === "number"
+        ? new Date(value)
+        : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function MetaRowIcon({
-  kind,
-  className,
-}: {
-  kind: DetailMetaRow["icon"];
-  className: string;
-}) {
-  switch (kind) {
-    case "calendar":
-      return <CalendarBlank className={className} weight="regular" />;
-    case "target":
-      return <Target className={className} weight="regular" />;
-    case "stack":
-      return <Stack className={className} weight="regular" />;
-    case "chart":
-      return <ChartBar className={className} weight="regular" />;
-    case "check":
-      return <CheckCircle className={className} weight="regular" />;
-    case "printer":
-      return <Printer className={className} weight="regular" />;
-    case "building":
-      return <Buildings className={className} weight="regular" />;
-    case "user":
-      return <User className={className} weight="regular" />;
-    case "info":
-      return <Info className={className} weight="regular" />;
-    case "clipboard":
-    default:
-      return <ClipboardText className={className} weight="regular" />;
-  }
-}
-
-function badgeToneClass(tone: "danger" | "warning" | "success" | "info") {
-  switch (tone) {
-    case "danger":
-      return "bg-[#FADCE1] text-[#DC0E2E]";
-    case "warning":
-      return "bg-[#FDE9D7] text-[#E06D10]";
-    case "success":
-      return "bg-[#DCF5E3] text-[#14AE47]";
-    case "info":
-    default:
-      return "bg-[#E6F1FD] text-[#1D6FE0]";
-  }
-}
-
-export default function NotificationDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const { isMobile, isReady, backWithTransition } = useAppLayout();
-
-  const decodedId = useMemo(() => {
-    if (!id) return "";
-    try {
-      return decodeURIComponent(id);
-    } catch {
-      return id;
+function getMobileGroupLabel(item: NotificationItem): string {
+  const date = parseNotificationDate(item.createdAt);
+  if (!date) {
+    const raw = (item.time ?? "").toLowerCase();
+    if (raw.includes("kemarin")) return "Kemarin";
+    if (raw.includes(":") || raw.includes("hari ini") || raw.includes("baru")) {
+      return "Hari Ini";
     }
-  }, [id]);
+    return item.time || "Hari Ini";
+  }
+
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+  const startOfItem = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  ).getTime();
+
+  const diffDays = Math.round((startOfToday - startOfItem) / 86_400_000);
+
+  if (diffDays === 0) return "Hari Ini";
+  if (diffDays === 1) return "Kemarin";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatMobileTime(item: NotificationItem): string {
+  const date = parseNotificationDate(item.createdAt);
+  if (date) {
+    return new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+      .format(date)
+      .replace(".", ":");
+  }
+  return item.time ?? "";
+}
+
+/* =========================================================
+   CHECKBOX
+========================================================= */
+
+function MokuCheckbox({
+  checked,
+  onChange,
+  label,
+  className = "",
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={(event) => {
+        event.stopPropagation();
+        onChange();
+      }}
+      className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
+        checked
+          ? "border-[#730217] bg-[#730217] text-white"
+          : "border-[#D5D7DC] bg-white text-transparent hover:border-[#730217] hover:bg-[#730217]/[0.04]"
+      } ${className}`}
+    >
+      <Check
+        size={13}
+        weight="bold"
+        className={`transition-all duration-200 ${
+          checked ? "scale-100 opacity-100" : "scale-75 opacity-0"
+        }`}
+      />
+    </button>
+  );
+}
+
+/* =========================================================
+   DATE FORMATTER (DESKTOP)
+========================================================= */
+
+function formatNotificationDate(value: unknown, fallback?: string) {
+  if (value === null || value === undefined || value === "") {
+    return fallback ?? "";
+  }
+
+  const date =
+    value instanceof Date
+      ? value
+      : typeof value === "number"
+        ? new Date(value)
+        : new Date(String(value));
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback ?? "";
+  }
+
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+
+  const isSameYear = date.getFullYear() === now.getFullYear();
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    ...(isSameYear ? {} : { year: "numeric" }),
+  }).format(date);
+}
+
+/* =========================================================
+   NOTIFICATION DESCRIPTION
+========================================================= */
+
+function getNotificationSubtitle(item: NotificationItem): string {
+  const data = item.data;
+  const title = item.title?.toLowerCase() ?? "";
+
+  const equipment = data?.equipmentNumber ? String(data.equipmentNumber) : "";
+  const customer = data?.customerName ? String(data.customerName) : "";
+  const activityDescription = data?.activityDescription
+    ? String(data.activityDescription).trim()
+    : "";
+  const changeDescription = data?.changeDescription
+    ? String(data.changeDescription).trim()
+    : "";
+  const monitoringPeriod = data?.monitoringPeriod
+    ? String(data.monitoringPeriod).trim()
+    : "";
+
+  const appendEquipment = (description: string) => {
+    if (!equipment) return description;
+
+    if (description.toLowerCase().includes(equipment.toLowerCase())) {
+      return description;
+    }
+
+    return `${description} (${equipment})`;
+  };
+
+  if (activityDescription) {
+    return appendEquipment(activityDescription);
+  }
+
+  if (changeDescription) {
+    return appendEquipment(changeDescription);
+  }
+
+  if (item.type === "visit") {
+    const visitType = data?.visitType
+      ? String(data.visitType).toUpperCase()
+      : "";
+
+    const visitLabel = visitTypeLabels[visitType];
+
+    if (visitLabel && equipment) {
+      return `${visitLabel} unit ${equipment} telah dicatat.`;
+    }
+
+    if (visitLabel) {
+      return `Aktivitas ${visitLabel} telah dicatat dalam sistem.`;
+    }
+
+    if (equipment) {
+      return `Aktivitas kunjungan unit ${equipment} telah dicatat.`;
+    }
+  }
+
+  if (item.type === "equipment" && equipment) {
+    if (
+      title.includes("ditambahkan") ||
+      title.includes("penambahan") ||
+      title.includes("berhasil didaftarkan")
+    ) {
+      return `Equipment ${equipment} berhasil ditambahkan ke sistem monitoring.`;
+    }
+
+    if (
+      title.includes("diperbarui") ||
+      title.includes("perubahan") ||
+      title.includes("diubah")
+    ) {
+      return `Informasi equipment ${equipment} berhasil diperbarui.`;
+    }
+
+    if (title.includes("dinonaktifkan") || title.includes("nonaktif")) {
+      return `Status equipment ${equipment} telah diubah menjadi Inactive.`;
+    }
+
+    if (title.includes("dihapus")) {
+      return `Data equipment ${equipment} telah dihapus dari sistem.`;
+    }
+
+    return `Informasi equipment ${equipment} tersedia dalam sistem monitoring.`;
+  }
+
+  if (item.type === "customer" && customer) {
+    if (
+      title.includes("ditambahkan") ||
+      title.includes("penambahan") ||
+      title.includes("didaftarkan")
+    ) {
+      return `Pelanggan ${customer} berhasil ditambahkan ke sistem.`;
+    }
+
+    if (
+      title.includes("diperbarui") ||
+      title.includes("perubahan") ||
+      title.includes("diubah")
+    ) {
+      return `Informasi pelanggan ${customer} berhasil diperbarui.`;
+    }
+
+    if (title.includes("dihapus")) {
+      return `Data pelanggan ${customer} telah dihapus dari sistem.`;
+    }
+
+    return `Informasi pelanggan ${customer} tercatat dalam sistem.`;
+  }
+
+  if (item.type === "monitoring") {
+    const status = data?.status ? String(data.status).toLowerCase() : "";
+
+    const isNotVisited =
+      status.includes("not visited") || status.includes("belum dikunjungi");
+
+    if (isNotVisited && equipment && monitoringPeriod) {
+      return `Unit ${equipment} belum memiliki kunjungan pada periode ${monitoringPeriod}.`;
+    }
+
+    if (isNotVisited && equipment) {
+      return `Unit ${equipment} belum memiliki catatan kunjungan pada periode monitoring ini.`;
+    }
+
+    if (equipment && monitoringPeriod) {
+      return `Status monitoring unit ${equipment} diperbarui untuk periode ${monitoringPeriod}.`;
+    }
+
+    if (equipment) {
+      return `Status monitoring unit ${equipment} telah diperbarui.`;
+    }
+  }
+
+  if (item.type === "user") {
+    if (title.includes("ditambahkan") || title.includes("didaftarkan")) {
+      return "Pengguna baru berhasil didaftarkan ke sistem MOKU.";
+    }
+
+    if (title.includes("diperbarui") || title.includes("diubah")) {
+      return "Informasi akun pengguna berhasil diperbarui.";
+    }
+  }
+
+  const description = item.description?.trim();
+
+  if (description && description.toLowerCase() !== title.trim()) {
+    return description;
+  }
+
+  if (equipment && customer) {
+    return `Informasi unit ${equipment} milik ${customer} tercatat dalam sistem.`;
+  }
+
+  if (equipment) {
+    return `Informasi unit ${equipment} tercatat dalam sistem monitoring.`;
+  }
+
+  if (customer) {
+    return `Informasi pelanggan ${customer} tercatat dalam sistem.`;
+  }
+
+  return "";
+}
+
+/* =========================================================
+   EMPTY STATE WATERMARK
+========================================================= */
+
+function EmptyNotificationWatermark() {
+  return (
+    <svg
+      viewBox="0 0 360 280"
+      aria-hidden="true"
+      className="h-auto w-[240px] sm:w-[280px] md:w-[330px]"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M45 166C29 120 67 75 112 75C143 75 157 91 183 76C220 54 269 79 298 113C330 151 304 202 266 215C218 232 164 211 121 221C83 230 54 205 45 166Z"
+        fill="#F8F0F1"
+      />
+      <g opacity="0.55">
+        <circle cx="76" cy="96" r="5" fill="#F28C0F" />
+        <circle cx="288" cy="111" r="5" fill="#BF0B2C" />
+        <path
+          d="M102 55L106 65L116 69L106 73L102 83L98 73L88 69L98 65L102 55Z"
+          fill="#F28C0F"
+        />
+        <path
+          d="M274 64L278 73L287 77L278 81L274 90L270 81L261 77L270 73L274 64Z"
+          fill="#BF0B2C"
+        />
+      </g>
+      <g opacity="0.34">
+        <path
+          d="M180 47C145 47 118 74 118 108C118 151 180 205 180 205C180 205 242 151 242 108C242 74 215 47 180 47Z"
+          fill="#730217"
+        />
+        <path
+          d="M180 63C154 63 134 83 134 109C134 139 180 180 180 180C180 180 226 139 226 109C226 83 206 63 180 63Z"
+          fill="#F8F0F1"
+        />
+      </g>
+      <g opacity="0.52">
+        <rect x="145" y="93" width="70" height="52" rx="17" fill="#730217" />
+        <rect x="154" y="104" width="52" height="31" rx="10" fill="#F2F2F2" />
+        <rect x="165" y="112" width="6" height="13" rx="3" fill="#730217" />
+        <rect x="189" y="112" width="6" height="13" rx="3" fill="#730217" />
+        <path
+          d="M151 95C151 78 163 68 180 68C197 68 209 78 209 95H151Z"
+          fill="#BF0B2C"
+        />
+        <path d="M173 79L180 74L187 79V88H173V79Z" fill="#FFFFFF" />
+        <path
+          d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
+          fill="#F28C0F"
+        />
+        <rect x="132" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
+        <rect x="215" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
+      </g>
+      <g opacity="0.4">
+        <rect
+          x="64"
+          y="158"
+          width="44"
+          height="34"
+          rx="8"
+          fill="white"
+          stroke="#DCC8CC"
+          strokeWidth="2"
+        />
+        <path
+          d="M75 170H96M75 178H91"
+          stroke="#BF0B2C"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <circle cx="276" cy="177" r="20" fill="#F28C0F" />
+        <path
+          d="M267 177L273 183L285 170"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+      <ellipse
+        cx="180"
+        cy="238"
+        rx="94"
+        ry="9"
+        fill="#EADDE0"
+        opacity="0.55"
+      />
+    </svg>
+  );
+}
+
+/* =========================================================
+   NOTIFICATIONS PAGE
+========================================================= */
+
+export default function NotificationsPage() {
+  const { isMobile, isReady, backWithTransition } = useAppLayout();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
     typeof window !== "undefined" ? loadNotifications() : []
   );
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [lastSelectedCount, setLastSelectedCount] = useState(1);
+  const [shouldRenderBar, setShouldRenderBar] = useState(false);
+  const [isBarClosing, setIsBarClosing] = useState(false);
 
-  useEffect(() => {
-    const sync = () => setNotifications(loadNotifications());
-    sync();
-    return subscribeNotifications(sync);
-  }, []);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    deleted: DeletedNotification[];
+    readUndo?: { id: string; isRead: boolean }[];
+  } | null>(null);
 
-  const item = useMemo(
-    () => notifications.find((entry) => entry.id === decodedId) ?? null,
-    [notifications, decodedId]
-  );
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
+  const [slidingOutIds, setSlidingOutIds] = useState<string[]>([]);
+  const [collapsingIds, setCollapsingIds] = useState<string[]>([]);
+  const [markingReadIds, setMarkingReadIds] = useState<string[]>([]);
+  const [isLoadingList, setIsLoadingList] = useState(true);
 
-  useEffect(() => {
-    if (!item || item.isRead) return;
-    markNotificationAsRead(item.id);
-  }, [item]);
+  const touchStartRef = useRef<{
+    id: string;
+    x: number;
+    y: number;
+    horizontal: boolean;
+    vibrated: boolean;
+  } | null>(null);
+
+  const swipeOffsetRef = useRef<Record<string, number>>({});
+  const activeTimersRef = useRef<number[]>([]);
+  const barExitTimerRef = useRef<number | null>(null);
+  const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
+
+  const scheduleTimer = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      activeTimersRef.current = activeTimersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    activeTimersRef.current.push(id);
+    return id;
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsLoadingList(false);
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -639,328 +708,1302 @@ export default function NotificationDetailPage() {
     metas.forEach((meta) => meta.setAttribute("content", "#83051C"));
   }, [isMobileView]);
 
-  const handleBack = () => {
-    backWithTransition("/notifications");
+  useEffect(() => {
+    const syncNotifications = () => {
+      const latest = loadNotifications();
+
+      setNotifications(latest);
+
+      setSelectedIds((current) =>
+        current.filter((id) => latest.some((item) => item.id === id))
+      );
+    };
+
+    syncNotifications();
+
+    return subscribeNotifications(syncNotifications);
+  }, []);
+
+  useEffect(() => {
+    if (!snackbar) return;
+
+    const timeout = window.setTimeout(() => {
+      setSnackbar(null);
+    }, 5000);
+
+    return () => window.clearTimeout(timeout);
+  }, [snackbar]);
+
+  const unreadCount = useMemo(
+    () => notifications.filter((item) => !item.isRead).length,
+    [notifications]
+  );
+
+  const groupedNotifications = useMemo(() => {
+    const groups: { label: string; items: NotificationItem[] }[] = [];
+    const indexByLabel = new Map<string, number>();
+
+    notifications.forEach((item) => {
+      const label = getMobileGroupLabel(item);
+      const existingIndex = indexByLabel.get(label);
+      if (existingIndex === undefined) {
+        indexByLabel.set(label, groups.length);
+        groups.push({ label, items: [item] });
+      } else {
+        groups[existingIndex].items.push(item);
+      }
+    });
+
+    return groups;
+  }, [notifications]);
+
+  const selectedCount = selectedIds.length;
+  const isFloatingBarVisible = isSelectionMode && selectedCount > 0;
+
+  useEffect(() => {
+    if (selectedCount > 0) {
+      setLastSelectedCount(selectedCount);
+    }
+  }, [selectedCount]);
+
+  useEffect(() => {
+    if (barExitTimerRef.current !== null) {
+      window.clearTimeout(barExitTimerRef.current);
+      barExitTimerRef.current = null;
+    }
+
+    if (isFloatingBarVisible) {
+      setShouldRenderBar(true);
+      setIsBarClosing(false);
+    } else if (shouldRenderBar) {
+      setIsBarClosing(true);
+      barExitTimerRef.current = window.setTimeout(() => {
+        setShouldRenderBar(false);
+        setIsBarClosing(false);
+        barExitTimerRef.current = null;
+      }, FLOATING_BAR_EXIT_MS);
+    }
+  }, [isFloatingBarVisible, shouldRenderBar]);
+
+  const allNotificationsSelected =
+    notifications.length > 0 &&
+    notifications.every((item) => selectedIds.includes(item.id));
+
+  const toggleSelection = (id: string) => {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter((selectedId) => selectedId !== id)
+      : [...selectedIds, id];
+
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
+
+    setSelectedIds(next);
+    setIsSelectionMode(next.length > 0);
   };
 
-  if (isMobileView) {
-    const theme = item ? resolveDetailTheme(item) : null;
-    const hasCta = Boolean(theme?.ctaLabel && theme?.ctaTo);
-    const formattedTitle = item ? toTitleCase(item.title) : "";
+  const enterSelectionMode = (id?: string) => {
+    setIsSelectionMode(true);
 
+    if (id) {
+      setSelectedIds((current) =>
+        current.includes(id) ? current : [...current, id]
+      );
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+  };
+
+  const toggleSelectAll = () => {
+    if (allNotificationsSelected) {
+      clearSelection();
+      return;
+    }
+
+    setSelectedIds(notifications.map((item) => item.id));
+    setIsSelectionMode(true);
+  };
+
+  /* =======================================================
+     MARK AS READ (SLOW & SMOOTH STAGGERED ANIMATION)
+  ======================================================= */
+
+  const handleMarkAsRead = (id: string, showSnackbar = false) => {
+    const target = notifications.find((item) => item.id === id);
+
+    if (!target || target.isRead) return;
+
+    setMarkingReadIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    markNotificationAsRead(id);
+
+    scheduleTimer(() => {
+      setMarkingReadIds((prev) => prev.filter((itemId) => itemId !== id));
+    }, 760);
+
+    if (showSnackbar) {
+      setSnackbar({
+        message: "1 notifikasi ditandai sudah dibaca",
+        deleted: [],
+        readUndo: [{ id, isRead: false }],
+      });
+    }
+  };
+
+  const handleMarkAllAsRead = () => {
+    const unreadTargets = notifications.filter((item) => !item.isRead);
+    if (unreadTargets.length === 0) return;
+
+    const targetIds = unreadTargets.map((item) => item.id);
+    setMarkingReadIds(targetIds);
+
+    unreadTargets.forEach((item, index) => {
+      const delay = Math.min(index * 85, 480);
+      scheduleTimer(() => {
+        markNotificationAsRead(item.id);
+      }, delay);
+    });
+
+    const totalWaveDuration = Math.min(unreadTargets.length * 85, 480) + 760;
+    scheduleTimer(() => {
+      setMarkingReadIds([]);
+    }, totalWaveDuration);
+
+    setSnackbar({
+      message: `${unreadTargets.length} notifikasi ditandai sudah dibaca`,
+      deleted: [],
+      readUndo: unreadTargets.map((item) => ({
+        id: item.id,
+        isRead: item.isRead,
+      })),
+    });
+  };
+
+  const handleMarkSelectedAsRead = () => {
+    const targets = notifications.filter(
+      (item) => selectedIds.includes(item.id) && !item.isRead
+    );
+
+    if (targets.length === 0) {
+      clearSelection();
+      return;
+    }
+
+    setMarkingReadIds(targets.map((item) => item.id));
+
+    targets.forEach((item, index) => {
+      const delay = Math.min(index * 85, 420);
+      scheduleTimer(() => {
+        markNotificationAsRead(item.id);
+      }, delay);
+    });
+
+    scheduleTimer(() => {
+      setMarkingReadIds([]);
+    }, 900);
+
+    setSnackbar({
+      message: `${targets.length} notifikasi ditandai sudah dibaca`,
+      deleted: [],
+      readUndo: targets.map((item) => ({
+        id: item.id,
+        isRead: item.isRead,
+      })),
+    });
+
+    clearSelection();
+  };
+
+  /* =======================================================
+     SLOW & SMOOTH DELETE + COLLAPSE ANIMATION
+  ======================================================= */
+
+  const finishDeletion = useCallback((ids: string[], message: string) => {
+    const deleted = deleteNotifications(ids);
+
+    if (deleted.length === 0) return;
+
+    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+    setIsSelectionMode(false);
+    setSwipeOffsets({});
+    swipeOffsetRef.current = {};
+    setActiveSwipeId(null);
+    setSlidingOutIds((current) => current.filter((id) => !ids.includes(id)));
+    setCollapsingIds((current) => current.filter((id) => !ids.includes(id)));
+
+    setSnackbar({
+      message,
+      deleted,
+    });
+  }, []);
+
+  const animateAndDelete = useCallback(
+    (ids: string[], message: string) => {
+      if (ids.length === 0) return;
+
+      setSlidingOutIds((current) => [...new Set([...current, ...ids])]);
+
+      scheduleTimer(() => {
+        setCollapsingIds((current) => [...new Set([...current, ...ids])]);
+      }, 240);
+
+      scheduleTimer(() => {
+        finishDeletion(ids, message);
+        suppressClickRef.current = false;
+      }, 720);
+    },
+    [finishDeletion, scheduleTimer]
+  );
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    const idsToDelete = [...selectedIds];
+    setIsSelectionMode(false);
+    animateAndDelete(idsToDelete, `${idsToDelete.length} notifikasi dihapus`);
+  };
+
+  const handleUndo = () => {
+    if (!snackbar) return;
+
+    if (snackbar.deleted.length > 0) {
+      undoDeleteNotifications(snackbar.deleted);
+    }
+
+    if (snackbar.readUndo && snackbar.readUndo.length > 0) {
+      const undoMap = new Map(
+        snackbar.readUndo.map((item) => [item.id, item.isRead])
+      );
+
+      const latest = loadNotifications().map((item) => ({
+        ...item,
+        isRead: undoMap.has(item.id) ? undoMap.get(item.id)! : item.isRead,
+      }));
+
+      saveNotifications(latest);
+    }
+
+    setSnackbar(null);
+  };
+
+  const handleResetDemo = () => {
+    saveNotifications(demoNotifications);
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+    setSnackbar(null);
+    setSwipeOffsets({});
+    swipeOffsetRef.current = {};
+    setActiveSwipeId(null);
+    setSlidingOutIds([]);
+    setCollapsingIds([]);
+  };
+
+  const handleBack = () => {
+    if (isSelectionMode) {
+      clearSelection();
+      return;
+    }
+
+    backWithTransition("/");
+  };
+
+  /* =======================================================
+     SMOOTH SWIPE TO DELETE (MOBILE)
+  ======================================================= */
+
+  const updateSwipeOffset = (id: string, rawDeltaX: number) => {
+    let nextOffset = Math.min(0, rawDeltaX);
+    if (nextOffset < -88) {
+      nextOffset = -88 + (nextOffset + 88) * 0.35;
+    }
+    nextOffset = Math.max(-150, nextOffset);
+
+    swipeOffsetRef.current = {
+      ...swipeOffsetRef.current,
+      [id]: nextOffset,
+    };
+
+    setSwipeOffsets((current) => ({
+      ...current,
+      [id]: nextOffset,
+    }));
+
+    return nextOffset;
+  };
+
+  const closeOtherSwipes = (activeId: string) => {
+    const nextOffsets = { ...swipeOffsetRef.current };
+
+    Object.keys(nextOffsets).forEach((id) => {
+      if (id !== activeId) {
+        nextOffsets[id] = 0;
+      }
+    });
+
+    swipeOffsetRef.current = nextOffsets;
+    setSwipeOffsets(nextOffsets);
+  };
+
+  const handleTouchStart = (
+    event: TouchEvent<HTMLDivElement>,
+    id: string
+  ) => {
+    if (isSelectionMode || slidingOutIds.includes(id)) return;
+
+    const touch = event.touches[0];
+
+    closeOtherSwipes(id);
+    setActiveSwipeId(id);
+
+    touchStartRef.current = {
+      id,
+      x: touch.clientX,
+      y: touch.clientY,
+      horizontal: false,
+      vibrated: false,
+    };
+
+    suppressClickRef.current = false;
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>, id: string) => {
+    const start = touchStartRef.current;
+
+    if (isSelectionMode || !start || start.id !== id) return;
+
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (
+      start.horizontal ||
+      (deltaX < -6 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1)
+    ) {
+      start.horizontal = true;
+      const offset = updateSwipeOffset(id, deltaX);
+
+      if (offset <= SWIPE_DELETE_THRESHOLD && !start.vibrated) {
+        start.vibrated = true;
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(12);
+        }
+      } else if (offset > SWIPE_DELETE_THRESHOLD + 8 && start.vibrated) {
+        start.vibrated = false;
+      }
+    }
+  };
+
+  const handleTouchEnd = (id: string) => {
+    const start = touchStartRef.current;
+
+    if (!start || start.id !== id || isSelectionMode) {
+      touchStartRef.current = null;
+      setActiveSwipeId(null);
+      return;
+    }
+
+    const offset = swipeOffsetRef.current[id] ?? 0;
+
+    touchStartRef.current = null;
+    setActiveSwipeId(null);
+
+    if (start.horizontal && offset <= SWIPE_DELETE_THRESHOLD) {
+      suppressClickRef.current = true;
+      animateAndDelete([id], "1 notifikasi dihapus");
+      return;
+    }
+
+    updateSwipeOffset(id, 0);
+  };
+
+  const handleTouchCancel = (id: string) => {
+    touchStartRef.current = null;
+    setActiveSwipeId(null);
+    updateSwipeOffset(id, 0);
+  };
+
+  const handleDetailClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    id: string
+  ) => {
+    if (isSelectionMode) {
+      event.preventDefault();
+      toggleSelection(id);
+      return;
+    }
+
+    if (suppressClickRef.current) {
+      event.preventDefault();
+      suppressClickRef.current = false;
+      return;
+    }
+
+    handleMarkAsRead(id, false);
+  };
+
+  useEffect(() => {
+    return () => {
+      activeTimersRef.current.forEach((timerId) =>
+        window.clearTimeout(timerId)
+      );
+      activeTimersRef.current = [];
+      if (barExitTimerRef.current !== null) {
+        window.clearTimeout(barExitTimerRef.current);
+      }
+    };
+  }, []);
+
+  /* =======================================================
+     MOBILE SUB-PAGE VIEW (FLAT LIST + THIN DIVIDER)
+  ======================================================= */
+
+  if (isMobileView) {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(44*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(88*var(--u)+env(safe-area-inset-bottom))]"
       >
-        {/* Header Marun */}
+        {/* Solid Maroon Header with Curved Sheet Overlap */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
-          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] pb-[calc(32*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
-            <div className="flex min-w-0 items-center gap-[calc(10*var(--u))]">
+          <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(30*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(11*var(--u)))]">
+            <div className="flex min-w-0 items-center gap-[calc(8*var(--u))]">
               <button
                 type="button"
                 onClick={handleBack}
-                aria-label="Kembali"
-                className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
+                aria-label={isSelectionMode ? "Batalkan pilihan" : "Kembali"}
+                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
               >
-                <ArrowLeft
-                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  weight="bold"
-                />
+                {isSelectionMode ? (
+                  <X
+                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                    weight="bold"
+                  />
+                ) : (
+                  <ArrowLeft
+                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                    weight="bold"
+                  />
+                )}
               </button>
 
               <h1 className="truncate font-display text-[calc(17.5*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
-                Detail Notifikasi
+                {isSelectionMode ? `${selectedCount} Dipilih` : "Notifikasi"}
               </h1>
             </div>
           </div>
         </header>
 
-        {/* Sheet Putih Melengkung */}
-        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(20*var(--u))]">
+        {/* Curved White Sheet Container */}
+        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white pt-[calc(16*var(--u))]">
           <div className="mx-auto w-full max-w-[680px]">
-            {item && theme ? (
-              <div>
-                {/* 1. Ringkasan Atas: Ikon + Judul + Waktu */}
-                <div className="flex items-center gap-[calc(14*var(--u))]">
-                  <div
-                    className={`flex h-[calc(52*var(--u))] w-[calc(52*var(--u))] shrink-0 items-center justify-center rounded-[calc(15*var(--u))] ${theme.heroBg} ${theme.heroColor}`}
-                  >
-                    <HeroIconRenderer
-                      kind={theme.heroIcon}
-                      className="h-[calc(27*var(--u))] w-[calc(27*var(--u))]"
-                    />
-                  </div>
+            {isLoadingList ? (
+              <div className="flex min-h-[55dvh] items-center justify-center">
+                <span
+                  aria-label="Memuat notifikasi"
+                  className="h-7 w-7 animate-spin rounded-full border-[2.5px] border-[#83051C]/20 border-t-[#83051C]"
+                />
+              </div>
+            ) : notifications.length > 0 ? (
+              <div className="space-y-[calc(12*var(--u))]">
+                {groupedNotifications.map((group, groupIndex) => (
+                  <section key={group.label} className="min-w-0">
+                    {/* Group Header */}
+                    <div className="flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(16*var(--u))] pb-[calc(8*var(--u))] pt-[calc(4*var(--u))]">
+                      <h2 className="font-display text-[calc(13.5*var(--u))] font-bold tracking-[-0.02em] text-[#5A555F]">
+                        {group.label}
+                      </h2>
 
-                  <div className="min-w-0 flex-1">
-                    <h2 className="break-words font-display text-[calc(16.5*var(--u))] font-bold leading-[1.22] tracking-[-0.02em] text-[#171717]">
-                      {formattedTitle}
-                    </h2>
-                    <p className="mt-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
-                      {formatCompactDateTime(item)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 2. Deskripsi / Status dengan jarak lebih lega dari blok ikon/judul */}
-                <p className="mt-[calc(24*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#29232A]">
-                  {theme.description}
-                </p>
-
-                {/* 3. Kartu Seksi Berwarna Lembut */}
-                <section
-                  className={`mt-[calc(22*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
-                >
-                  <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
-                    {theme.variant === "schedule" && (
-                      <CalendarBlank
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="bold"
-                      />
-                    )}
-                    {theme.variant === "attention" && (
-                      <Printer
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="fill"
-                      />
-                    )}
-                    {theme.variant === "report" && (
-                      <FileText
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="bold"
-                      />
-                    )}
-                    {theme.variant === "visitCompleted" && (
-                      <ClipboardText
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="bold"
-                      />
-                    )}
-                    {theme.variant === "weeklyTarget" && (
-                      <ChartBar
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="bold"
-                      />
-                    )}
-                    {theme.variant === "equipmentUpdate" && (
-                      <Database
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="fill"
-                      />
-                    )}
-                    {theme.variant === "infoOnly" && (
-                      <Bell
-                        className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 ${theme.sectionIconColor}`}
-                        weight="bold"
-                      />
-                    )}
-
-                    <h3 className="font-display text-[calc(15*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
-                      {theme.sectionTitle}
-                    </h3>
-                  </div>
-
-                  {/* Varian List Item */}
-                  {theme.listEntries.length > 0 && (
-                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                      {theme.listEntries.map((entry) => (
-                        <Link
-                          key={entry.id}
-                          to={entry.to ?? theme.ctaTo ?? "/notifications"}
-                          className="flex min-h-[calc(52*var(--u))] items-center justify-between gap-[calc(10*var(--u))] py-[calc(11*var(--u))] transition-colors active:bg-[#FAFAFC]"
+                      {groupIndex === 0 && !isSelectionMode && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllAsRead}
+                          disabled={unreadCount === 0}
+                          className={`shrink-0 text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-all duration-500 ease-out active:scale-95 active:opacity-70 ${
+                            unreadCount > 0
+                              ? "translate-y-0 opacity-100"
+                              : "pointer-events-none -translate-y-1 opacity-0"
+                          }`}
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
-                            <span className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-[calc(11*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
-                              <Printer
-                                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                                weight="regular"
-                              />
-                            </span>
-
-                            <div className="min-w-0 flex-1">
-                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
-                                {entry.primary}
-                              </p>
-                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
-                                {entry.secondary}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
-                            {entry.badge && (
-                              <span
-                                className={`inline-flex items-center gap-[calc(5*var(--u))] whitespace-nowrap rounded-full px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-[calc(11*var(--u))] font-semibold leading-none ${badgeToneClass(entry.badge.tone)}`}
-                              >
-                                <Warning
-                                  className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
-                                  weight="bold"
-                                />
-                                {entry.badge.text}
-                              </span>
-                            )}
-                            <CaretRight
-                              className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#5E5863]"
-                              weight="bold"
-                            />
-                          </div>
-                        </Link>
-                      ))}
+                          Baca Semua ({unreadCount})
+                        </button>
+                      )}
                     </div>
-                  )}
 
-                  {/* Varian Detail Key-Value / Progress */}
-                  {theme.metaRows.length > 0 && (
-                    <div className="divide-y divide-[#EFEFF2] rounded-[calc(14*var(--u))] bg-white px-[calc(14*var(--u))] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                      {theme.metaRows.map((row, idx) => {
-                        const isFirstVisitMachine =
-                          theme.variant === "visitCompleted" && idx === 0;
+                    {/* Flat List Items separated by thin divider */}
+                    <div className="border-t border-[#EFEFF2]">
+                      {group.items.map((item, itemIndex) => {
+                        const isSelected = selectedIds.includes(item.id);
+                        const isSlidingOut = slidingOutIds.includes(item.id);
+                        const isCollapsing = collapsingIds.includes(item.id);
+                        const isJustMarkedRead = markingReadIds.includes(
+                          item.id
+                        );
+                        const swipeOffset = swipeOffsets[item.id] ?? 0;
+                        const isSwiping = swipeOffset < -1 || isSlidingOut;
+                        const swipeProgress = Math.min(
+                          1,
+                          Math.abs(swipeOffset) /
+                            Math.abs(SWIPE_DELETE_THRESHOLD)
+                        );
+                        const isReadyToDelete =
+                          swipeOffset <= SWIPE_DELETE_THRESHOLD || isSlidingOut;
+                        const formattedTitle = toTitleCase(item.title);
+                        const subtitle = getNotificationSubtitle(item);
+                        const displayTime = formatMobileTime(item);
+                        const { Icon, circleClass } = getMobileBadgeStyle(item);
 
                         return (
                           <div
-                            key={`${row.label}-${idx}`}
-                            className="flex min-h-[calc(52*var(--u))] items-center gap-[calc(12*var(--u))] py-[calc(11*var(--u))]"
+                            key={item.id}
+                            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                              isCollapsing
+                                ? "pointer-events-none grid-rows-[0fr] opacity-0"
+                                : "grid-rows-[1fr] opacity-100"
+                            }`}
                           >
-                            <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-[calc(10*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
-                              <MetaRowIcon
-                                kind={row.icon}
-                                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                              />
-                            </span>
-
-                            {isFirstVisitMachine ? (
-                              <div className="min-w-0 flex-1">
-                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
-                                  {row.label}
-                                </p>
-                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
-                                  {row.value}
-                                </p>
-                              </div>
-                            ) : typeof row.progressPercent === "number" ? (
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[calc(12*var(--u))] font-normal leading-[1.25] text-[#6E6873]">
-                                  {row.label}
-                                </p>
-                                <div className="mt-[calc(6*var(--u))] flex items-center gap-[calc(10*var(--u))]">
-                                  <div className="h-[calc(8*var(--u))] flex-1 overflow-hidden rounded-full bg-[#E8ECF2]">
-                                    <div
-                                      className={`h-full rounded-full ${theme.progressColor}`}
-                                      style={{ width: `${row.progressPercent}%` }}
+                            <div className="min-h-0 overflow-hidden">
+                              <div
+                                style={{
+                                  animationDelay: `${Math.min(itemIndex * 45, 320)}ms`,
+                                }}
+                                className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
+                              >
+                                {/* Swipe Delete Background */}
+                                {isSwiping && (
+                                  <div
+                                    className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
+                                    style={{
+                                      opacity: isSlidingOut
+                                        ? 0.95
+                                        : Math.min(swipeProgress * 1.25, 1),
+                                      transition:
+                                        activeSwipeId === item.id
+                                          ? "none"
+                                          : "opacity 320ms ease",
+                                    }}
+                                    aria-hidden="true"
+                                  >
+                                    <AnimatedTrashIcon
+                                      ready={isReadyToDelete}
+                                      progress={swipeProgress}
                                     />
                                   </div>
-                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none text-[#1D6FE0]">
-                                    {row.value}
-                                  </span>
+                                )}
+
+                                {/* Flat Row Foreground */}
+                                <div
+                                  onTouchStart={(event) =>
+                                    handleTouchStart(event, item.id)
+                                  }
+                                  onTouchMove={(event) =>
+                                    handleTouchMove(event, item.id)
+                                  }
+                                  onTouchEnd={() => handleTouchEnd(item.id)}
+                                  onTouchCancel={() =>
+                                    handleTouchCancel(item.id)
+                                  }
+                                  onContextMenu={(event) =>
+                                    event.preventDefault()
+                                  }
+                                  className={`mobile-swipe-foreground relative z-10 flex w-full items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
+                                    isSelected
+                                      ? "bg-[#FADCE1]"
+                                      : !item.isRead
+                                        ? "bg-[#FDF2F4]"
+                                        : "bg-white"
+                                  } ${isJustMarkedRead ? "notif-read-fade" : ""}`}
+                                  style={{
+                                    transform: isSlidingOut
+                                      ? "translate3d(-105%, 0, 0)"
+                                      : `translate3d(${swipeOffset}px, 0, 0)`,
+                                    opacity: isSlidingOut ? 0 : 1,
+                                    transition:
+                                      activeSwipeId === item.id
+                                        ? "background-color 700ms ease-out"
+                                        : "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 700ms ease-out",
+                                    touchAction: "pan-y",
+                                    willChange:
+                                      swipeOffset !== 0 || isSlidingOut
+                                        ? "transform, opacity"
+                                        : "auto",
+                                  }}
+                                >
+                                  {/* 3D Flip Icon Button */}
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleSelection(item.id);
+                                    }}
+                                    aria-label={
+                                      isSelected
+                                        ? `Batalkan pilih ${formattedTitle}`
+                                        : `Pilih ${formattedTitle}`
+                                    }
+                                    aria-pressed={isSelected}
+                                    style={{ perspective: "420px" }}
+                                    className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
+                                  >
+                                    <span
+                                      className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
+                                        isSelected ? "is-flipped" : ""
+                                      }`}
+                                    >
+                                      {/* Sisi Depan: Ikon Kategori Asli */}
+                                      <span
+                                        className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
+                                      >
+                                        <Icon
+                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                            isSelected
+                                              ? "scale-75 rotate-[-14deg] opacity-60"
+                                              : "scale-100 rotate-0 opacity-100 delay-[240ms]"
+                                          }`}
+                                          weight="bold"
+                                        />
+                                      </span>
+
+                                      {/* Sisi Belakang: Centang Marun */}
+                                      <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
+                                        <Check
+                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                            isSelected
+                                              ? "scale-100 rotate-0 opacity-100 delay-[240ms]"
+                                              : "scale-75 rotate-[14deg] opacity-60"
+                                          }`}
+                                          weight="bold"
+                                        />
+                                      </span>
+                                    </span>
+                                  </button>
+
+                                  <Link
+                                    to={`/notifications/${encodeURIComponent(item.id)}`}
+                                    onClick={(event) =>
+                                      handleDetailClick(event, item.id)
+                                    }
+                                    className="flex min-w-0 flex-1 flex-col outline-none"
+                                  >
+                                    <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
+                                      <p className="min-w-0 flex-1 truncate font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
+                                        {formattedTitle}
+                                      </p>
+
+                                      <div className="flex shrink-0 items-center pt-[calc(1.5*var(--u))]">
+                                        <span className="whitespace-nowrap text-[calc(11*var(--u))] font-medium tabular-nums text-[#5A555F]">
+                                          {displayTime}
+                                        </span>
+
+                                        <span
+                                          aria-hidden={item.isRead}
+                                          aria-label={
+                                            !item.isRead
+                                              ? "Belum dibaca"
+                                              : undefined
+                                          }
+                                          className={`shrink-0 rounded-full bg-[#FF2D20] transition-all duration-500 ease-out ${
+                                            !item.isRead
+                                              ? "ml-[calc(5*var(--u))] h-[calc(7.5*var(--u))] w-[calc(7.5*var(--u))] scale-100 opacity-100"
+                                              : "ml-0 h-0 w-0 scale-0 opacity-0"
+                                          }`}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {subtitle && (
+                                      <p className="mt-[calc(3.5*var(--u))] line-clamp-2 pr-[calc(6*var(--u))] text-[calc(11.5*var(--u))] leading-[1.42] text-[#3F3A42]">
+                                        {subtitle}
+                                      </p>
+                                    )}
+                                  </Link>
                                 </div>
                               </div>
-                            ) : (
-                              <div className="min-w-0 flex-1">
-                                <p className="break-words text-[calc(12*var(--u))] font-normal leading-[1.25] text-[#6E6873]">
-                                  {row.label}
-                                </p>
-                                {row.badge ? (
-                                  <span
-                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(5*var(--u))] rounded-full px-[calc(10*var(--u))] py-[calc(3.5*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none ${badgeToneClass(row.badge.tone)}`}
-                                  >
-                                    <CheckCircle
-                                      className="h-[calc(12.5*var(--u))] w-[calc(12.5*var(--u))]"
-                                      weight="bold"
-                                    />
-                                    {row.badge.text}
-                                  </span>
-                                ) : (
-                                  <p className="mt-[calc(2*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.3] text-[#171717]">
-                                    {row.value}
-                                  </p>
-                                )}
-                              </div>
-                            )}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-                  )}
-                </section>
-
-                {/* 4. Tombol CTA Utama */}
-                {hasCta && theme.ctaTo && theme.ctaLabel && (
-                  <Link
-                    to={theme.ctaTo}
-                    style={{ color: "#FFFFFF" }}
-                    className="mt-[calc(20*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold leading-none text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
-                  >
-                    {theme.ctaLabel}
-                  </Link>
-                )}
+                  </section>
+                ))}
               </div>
             ) : (
-              <div className="rounded-[calc(18*var(--u))] border border-[#EEEEEE] bg-white px-[calc(18*var(--u))] py-[calc(28*var(--u))] text-center">
-                <h2 className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]">
-                  Notifikasi Tidak Ditemukan
-                </h2>
-                <p className="mt-[calc(5*var(--u))] text-[calc(13*var(--u))] text-[#6E6873]">
-                  Data notifikasi mungkin sudah dihapus atau tautan tidak valid.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  style={{ color: "#FFFFFF" }}
-                  className="mt-[calc(16*var(--u))] inline-flex items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white"
-                >
-                  Kembali ke Notifikasi
-                </button>
+              <div className="relative flex min-h-[calc(68dvh)] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="opacity-[0.17]">
+                    <EmptyNotificationWatermark />
+                  </div>
+                </div>
+
+                <div className="relative z-10 mt-20 flex flex-col items-center">
+                  <h2 className="font-display text-base font-bold tracking-tight text-[#730217]">
+                    Belum Ada Notifikasi
+                  </h2>
+
+                  <p className="mt-2 max-w-xs text-xs leading-relaxed text-[#5E5863]">
+                    Aktivitas dan informasi terbaru akan muncul di sini.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleResetDemo}
+                    className="mt-5 rounded-xl bg-[#8E001C] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#730217]"
+                  >
+                    Muat Data Demo
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* MOBILE FLOATING SELECTION BAR */}
+        {shouldRenderBar && (
+          <div
+            aria-hidden={isBarClosing}
+            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl ${
+              isBarClosing ? "moku-bar-exit pointer-events-none" : "moku-bar-enter"
+            }`}
+          >
+            <span className="truncate text-xs font-bold text-[#8E001C]">
+              {selectedCount > 0 ? selectedCount : lastSelectedCount} dipilih
+            </span>
+
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={toggleSelectAll}
+                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-200 active:scale-95 ${
+                  allNotificationsSelected
+                    ? "bg-[#FCECEF] text-[#8E001C]"
+                    : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
+                }`}
+              >
+                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
+              </button>
+
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={handleMarkSelectedAsRead}
+                aria-label="Tandai sudah dibaca"
+                title="Tandai sudah dibaca"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-200 active:bg-[#8E001C]/10"
+              >
+                <Checks size={19} weight="bold" />
+              </button>
+
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={handleDeleteSelected}
+                aria-label="Hapus notifikasi"
+                title="Hapus notifikasi"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-200 active:bg-[#BF0B2C]/10"
+              >
+                <Trash size={19} weight="bold" />
+              </button>
+
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={clearSelection}
+                aria-label="Batalkan pilihan"
+                title="Batalkan pilihan"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-200 active:bg-[#F1F2F5]"
+              >
+                <X size={19} weight="bold" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SNACKBAR */}
+        {snackbar && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="snackbar-enter fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <CheckCircle
+                size={19}
+                weight="fill"
+                className="shrink-0 text-white"
+              />
+
+              <span className="truncate text-xs font-medium sm:text-sm">
+                {snackbar.message}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              URUNGKAN
+            </button>
+
+            <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] bg-[#F28C0F]" />
+          </div>
+        )}
+
+        <style>{`
+          .notif-card-reveal {
+            animation: notif-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          .moku-trash-pop {
+            animation: moku-trash-pop 520ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+          }
+
+          .moku-icon-flip-inner {
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            transition: transform 820ms cubic-bezier(0.22, 1.15, 0.36, 1);
+            will-change: transform;
+          }
+
+          .moku-icon-flip-inner.is-flipped {
+            transform: rotateY(180deg);
+          }
+
+          .moku-icon-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+          }
+
+          .moku-icon-face-front,
+          .moku-icon-face-back {
+            transition: background-color 560ms ease, box-shadow 560ms ease;
+          }
+
+          .moku-icon-face-back {
+            transform: rotateY(180deg);
+          }
+
+          .moku-bar-enter {
+            animation: moku-bar-slide-up 480ms cubic-bezier(0.22, 1.15, 0.36, 1) both;
+          }
+
+          .moku-bar-exit {
+            animation: moku-bar-slide-down 950ms cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+          }
+
+          .snackbar-enter {
+            animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          .snackbar-progress {
+            animation: snackbar-countdown 5s linear forwards;
+          }
+
+          .mobile-swipe-foreground {
+            box-sizing: border-box;
+            background-clip: padding-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+          }
+
+          @keyframes notif-card-in {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 10px, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
+          }
+
+          @keyframes moku-trash-pop {
+            0% {
+              transform: scale(0.92);
+            }
+            55% {
+              transform: scale(1.22);
+            }
+            100% {
+              transform: scale(1.12);
+            }
+          }
+
+          @keyframes moku-bar-slide-up {
+            from {
+              transform: translate3d(0, 140%, 0);
+            }
+            to {
+              transform: translate3d(0, 0, 0);
+            }
+          }
+
+          @keyframes moku-bar-slide-down {
+            0% {
+              transform: translate3d(0, 0, 0);
+            }
+            100% {
+              transform: translate3d(0, 140%, 0);
+            }
+          }
+
+          @keyframes snackbar-enter {
+            from {
+              opacity: 0;
+              transform: translateY(14px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes snackbar-countdown {
+            from {
+              width: 100%;
+            }
+            to {
+              width: 0%;
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .notif-card-reveal,
+            .moku-trash-pop,
+            .moku-bar-enter,
+            .moku-bar-exit,
+            .snackbar-enter,
+            .snackbar-progress {
+              animation: none;
+            }
+            .moku-icon-flip-inner,
+            .moku-icon-face-front,
+            .moku-icon-face-back {
+              transition: none;
+            }
+          }
+        `}</style>
       </main>
     );
   }
 
+  /* =======================================================
+     DESKTOP VIEW
+  ======================================================= */
+
   return (
     <main className="min-h-screen w-full min-w-0 bg-white">
-      <div className="mx-auto w-full max-w-4xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[#730217] transition hover:bg-[#F8F2F4]"
-        >
-          <ArrowLeft size={18} weight="bold" />
-          Kembali ke Notifikasi
-        </button>
+      <div className="page-enter mx-auto w-full max-w-6xl px-4 pb-8 pt-3 sm:px-6 sm:pt-5 lg:px-8">
+        {isSelectionMode && notifications.length > 0 && (
+          <div className="mb-3 flex min-h-11 items-center justify-between rounded-lg border border-[#730217]/15 bg-[#730217]/[0.035] px-3">
+            <div className="flex items-center gap-3">
+              <MokuCheckbox
+                checked={allNotificationsSelected}
+                onChange={toggleSelectAll}
+                label={
+                  allNotificationsSelected
+                    ? "Batalkan pilih semua"
+                    : "Pilih semua"
+                }
+              />
 
-        {item ? (
-          <article className="mt-4 rounded-2xl border border-[#ECECEF] bg-white p-6 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCECEF] px-3 py-1 text-xs font-semibold text-[#8E001C]">
-                <CalendarBlank size={14} weight="bold" />
-                {item.type}
-              </span>
-              <span className="text-xs font-medium text-[#6E6873]">
-                {formatCompactDateTime(item)}
+              <span className="text-xs font-medium text-[#730217]">
+                {selectedCount} dipilih
               </span>
             </div>
 
-            <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-[#171717]">
-              {toTitleCase(item.title)}
-            </h1>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleMarkSelectedAsRead}
+                title="Tandai sudah dibaca"
+                aria-label="Tandai sudah dibaca"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#730217] transition-colors hover:bg-[#730217]/10"
+              >
+                <Check size={19} />
+              </button>
 
-            <p className="mt-3 text-sm leading-relaxed text-[#29232A]">
-              {resolveDetailTheme(item).description}
-            </p>
-          </article>
-        ) : (
-          <div className="mt-4 rounded-2xl border border-[#ECECEF] bg-white p-8 text-center">
-            <h1 className="font-display text-lg font-bold text-[#171717]">
-              Notifikasi Tidak Ditemukan
-            </h1>
-            <p className="mt-1 text-sm text-[#6E6873]">
-              Item notifikasi yang diminta tidak tersedia.
-            </p>
+              <button
+                type="button"
+                onClick={handleDeleteSelected}
+                title="Hapus notifikasi"
+                aria-label="Hapus notifikasi"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#BF0B2C] transition-colors hover:bg-[#BF0B2C]/10"
+              >
+                <Trash size={19} />
+              </button>
+
+              <button
+                type="button"
+                onClick={clearSelection}
+                title="Batalkan pilihan"
+                aria-label="Batalkan pilihan"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-foreground"
+              >
+                <X size={19} />
+              </button>
+            </div>
           </div>
         )}
+
+        <section>
+          {notifications.length > 0 ? (
+            <div className="divide-y divide-[#ECEDEF]">
+              {notifications.map((item) => {
+                const Icon = iconMap[item.type];
+                const isSelected = selectedIds.includes(item.id);
+                const isSlidingOut = slidingOutIds.includes(item.id);
+                const isCollapsing = collapsingIds.includes(item.id);
+                const formattedTitle = toTitleCase(item.title);
+                const subtitle = getNotificationSubtitle(item);
+
+                const displayDate = formatNotificationDate(
+                  item.createdAt,
+                  item.time
+                );
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isCollapsing
+                        ? "pointer-events-none grid-rows-[0fr] opacity-0"
+                        : "grid-rows-[1fr] opacity-100"
+                    }`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <div
+                        className={`group relative flex min-h-[76px] items-center gap-4 px-3 py-4 transition-all duration-500 ${
+                          isSelected
+                            ? "bg-[#730217]/[0.055]"
+                            : !item.isRead
+                              ? "bg-[#730217]/[0.018] hover:bg-[#F8F4F5]"
+                              : "bg-white hover:bg-[#F7F7F8]"
+                        }`}
+                        style={{
+                          transform: isSlidingOut
+                            ? "translate3d(-32px, 0, 0)"
+                            : "translate3d(0, 0, 0)",
+                          opacity: isSlidingOut ? 0 : 1,
+                        }}
+                      >
+                        {isSelectionMode ? (
+                          <MokuCheckbox
+                            checked={isSelected}
+                            onChange={() => toggleSelection(item.id)}
+                            label={`Pilih ${formattedTitle}`}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => enterSelectionMode(item.id)}
+                            aria-label={`Pilih ${formattedTitle}`}
+                            title="Pilih notifikasi"
+                            className="group/icon relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
+                          >
+                            <span
+                              className={`absolute inset-0 flex items-center justify-center rounded-xl transition-opacity duration-200 group-hover/icon:opacity-0 ${iconColorMap[item.type]}`}
+                            >
+                              <Icon size={20} weight="duotone" />
+                            </span>
+
+                            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#730217]/10 text-[#730217] opacity-0 transition-opacity duration-200 group-hover/icon:opacity-100">
+                              <Check size={19} weight="bold" />
+                            </span>
+                          </button>
+                        )}
+
+                        <Link
+                          to={`/notifications/${encodeURIComponent(item.id)}`}
+                          onClick={(event) => handleDetailClick(event, item.id)}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="truncate text-sm font-semibold text-foreground">
+                                {formattedTitle}
+                              </span>
+
+                              <span
+                                aria-hidden={item.isRead}
+                                aria-label={
+                                  !item.isRead ? "Belum dibaca" : undefined
+                                }
+                                className={`shrink-0 rounded-full bg-[#730217] transition-all duration-500 ${
+                                  !item.isRead
+                                    ? "h-2 w-2 scale-100 opacity-100"
+                                    : "h-0 w-0 scale-0 opacity-0"
+                                }`}
+                              />
+                            </div>
+
+                            {subtitle && (
+                              <p className="mt-1 line-clamp-1 text-[13px] leading-[18px] text-muted-foreground">
+                                {subtitle}
+                              </p>
+                            )}
+                          </div>
+
+                          <span className="w-24 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
+                            {displayDate}
+                          </span>
+                        </Link>
+
+                        <div className="flex w-[76px] shrink-0 items-center justify-end gap-1">
+                          {!item.isRead && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkAsRead(item.id, true)}
+                              title="Tandai sudah dibaca"
+                              aria-label={`Tandai ${formattedTitle} sudah dibaca`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all duration-200 hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                            >
+                              <Check size={17} />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              animateAndDelete(
+                                [item.id],
+                                "1 notifikasi dihapus"
+                              )
+                            }
+                            title="Hapus notifikasi"
+                            aria-label={`Hapus ${formattedTitle}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all duration-200 hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                          >
+                            <Trash size={17} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="relative flex min-h-[440px] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="opacity-[0.17]">
+                  <EmptyNotificationWatermark />
+                </div>
+              </div>
+
+              <div className="relative z-10 mt-24 flex flex-col items-center">
+                <h2 className="text-lg font-semibold tracking-tight text-[#730217]">
+                  Belum Ada Notifikasi
+                </h2>
+
+                <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                  Aktivitas dan informasi terbaru akan muncul di sini.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleResetDemo}
+                  className="mt-5 rounded-lg bg-[#730217] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5D0012]"
+                >
+                  Muat 15 Data Demo
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {notifications.length > 0 && (
+          <p className="mt-4 text-center text-[11px] text-muted-foreground">
+            Data notifikasi saat ini merupakan data demo untuk pengujian
+            tampilan.
+          </p>
+        )}
       </div>
+
+      {snackbar && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="snackbar-enter fixed bottom-6 left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <CheckCircle
+              size={19}
+              weight="fill"
+              className="shrink-0 text-white"
+            />
+
+            <span className="truncate text-sm">{snackbar.message}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            URUNGKAN
+          </button>
+
+          <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] bg-[#F28C0F]" />
+        </div>
+      )}
+
+      <style>{`
+        .page-enter {
+          animation: notification-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .snackbar-enter {
+          animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .snackbar-progress {
+          animation: snackbar-countdown 5s linear forwards;
+        }
+
+        @keyframes notification-enter {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes snackbar-enter {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes snackbar-countdown {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .page-enter,
+          .snackbar-enter,
+          .snackbar-progress {
+            animation: none;
+          }
+        }
+      `}</style>
     </main>
   );
 }
