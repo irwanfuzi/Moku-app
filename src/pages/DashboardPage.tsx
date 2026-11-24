@@ -836,12 +836,10 @@ function MobileDashboard() {
         setIsPullDragging(true);
         const damped = MAX_PULL * (1 - Math.exp(-deltaY / 135));
         setPullDistance(damped);
-      } else if (deltaY < -4) {
+      } else {
         isPullingRef.current = false;
         touchStartYRef.current = null;
         setIsPullDragging(false);
-        setPullDistance(0);
-      } else {
         setPullDistance(0);
       }
     };
@@ -903,18 +901,11 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Sticky Compact Top Bar: transparan di puncak agar aksen header penuh sampai status bar, lalu memudar jadi marun solid saat di-scroll */}
+      {/* Sticky Compact Top Bar: dikunci permanen di top-0 tanpa transform agar tidak pernah terpisah dari status bar */}
       <div
         style={{
           backgroundColor: `rgba(131, 5, 28, ${iconProgress})`,
           boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
-          transform:
-            isPwaMode && pullDistance > 0
-              ? `translate3d(0, ${pullDistance}px, 0)`
-              : undefined,
-          transition: isPullDragging
-            ? "none"
-            : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
         }}
         className="sticky top-0 z-40 w-full"
       >
@@ -996,9 +987,9 @@ function MobileDashboard() {
               transform: `translate3d(0, ${emblemTranslateY}px, 0) scale(${emblemScale})`,
               transition: isPullDragging
                 ? "none"
-                : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1), opacity 240ms ease",
+                : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
             }}
-            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)-calc(2*var(--u)))] z-50 flex justify-center will-change-[transform,opacity]"
+            className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(42*var(--u)))] z-50 flex justify-center will-change-[transform,opacity]"
           >
             <div className="relative flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(45,0,10,0.28)]">
               <span
@@ -1043,7 +1034,7 @@ function MobileDashboard() {
           className="pointer-events-none absolute inset-x-0 -top-[180px] h-[calc(400*var(--u)+env(safe-area-inset-top))] bg-[#83051C]"
         />
 
-        {/* Konten bergerak elastis menyatu dengan header merah saat ditarik */}
+        {/* Konten bergerak elastis saat ditarik, balik mulus tanpa overshoot */}
         <div
           style={{
             transform:
@@ -1052,7 +1043,7 @@ function MobileDashboard() {
                 : undefined,
             transition: isPullDragging
               ? "none"
-              : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
+              : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
           className="relative"
         >
