@@ -586,6 +586,7 @@ export default function NotificationsPage() {
     x: number;
     y: number;
     horizontal: boolean;
+    vibrated: boolean;
   } | null>(null);
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
@@ -738,7 +739,6 @@ export default function NotificationsPage() {
     const targetIds = unreadTargets.map((item) => item.id);
     setMarkingReadIds(targetIds);
 
-    // Tandai dibaca bertahap (wave effect) agar perubahan warna & titik merah terasa mulus
     unreadTargets.forEach((item, index) => {
       const delay = Math.min(index * 45, 270);
       scheduleTimer(() => {
@@ -823,15 +823,12 @@ export default function NotificationsPage() {
     (ids: string[], message: string) => {
       if (ids.length === 0) return;
 
-      // Tahap 1: Geser kartu keluar ke kiri & pudarkan
       setSlidingOutIds((current) => [...new Set([...current, ...ids])]);
 
-      // Tahap 2: Tutup ruang vertikal secara halus (grid row collapse)
       scheduleTimer(() => {
         setCollapsingIds((current) => [...new Set([...current, ...ids])]);
       }, 140);
 
-      // Tahap 3: Hapus dari store setelah animasi selesai
       scheduleTimer(() => {
         finishDeletion(ids, message);
         suppressClickRef.current = false;
@@ -903,7 +900,6 @@ export default function NotificationsPage() {
   };
 
   const updateSwipeOffset = (id: string, rawDeltaX: number) => {
-    // Elastis (rubber-band) jika ditarik melewati -88px agar terasa lembut
     let nextOffset = Math.min(0, rawDeltaX);
     if (nextOffset < -88) {
       nextOffset = -88 + (nextOffset + 88) * 0.35;
@@ -919,6 +915,8 @@ export default function NotificationsPage() {
       ...current,
       [id]: nextOffset,
     }));
+
+    return nextOffset;
   };
 
   const closeOtherSwipes = (activeId: string) => {
@@ -950,6 +948,7 @@ export default function NotificationsPage() {
       x: touch.clientX,
       y: touch.clientY,
       horizontal: false,
+      vibrated: false,
     };
 
     suppressClickRef.current = false;
@@ -982,7 +981,17 @@ export default function NotificationsPage() {
       (deltaX < -6 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1)
     ) {
       start.horizontal = true;
-      updateSwipeOffset(id, deltaX);
+      const offset = updateSwipeOffset(id, deltaX);
+
+      // Micro haptic feedback saat melewati batas hapus
+      if (offset <= SWIPE_DELETE_THRESHOLD && !start.vibrated) {
+        start.vibrated = true;
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(12);
+        }
+      } else if (offset > SWIPE_DELETE_THRESHOLD + 8 && start.vibrated) {
+        start.vibrated = false;
+      }
     }
   };
 
@@ -1141,13 +1150,14 @@ export default function NotificationsPage() {
                           item.id
                         );
                         const swipeOffset = swipeOffsets[item.id] ?? 0;
+                        const isSwiping = swipeOffset < -1 || isSlidingOut;
                         const swipeProgress = Math.min(
                           1,
                           Math.abs(swipeOffset) /
                             Math.abs(SWIPE_DELETE_THRESHOLD)
                         );
                         const isReadyToDelete =
-                          swipeOffset <= SWIPE_DELETE_THRESHOLD;
+                          swipeOffset <= SWIPE_DELETE_THRESHOLD || isSlidingOut;
                         const subtitle = getNotificationSubtitle(item);
                         const displayTime = formatMobileTime(item);
                         const { Icon, circleClass } = getMobileBadgeStyle(item);
@@ -1168,35 +1178,43 @@ export default function NotificationsPage() {
                                 }}
                                 className="notif-card-reveal relative overflow-hidden rounded-[calc(16*var(--u))]"
                               >
-                                {/* Swipe Delete Background */}
-                                <div
-                                  className="absolute inset-0 z-0 flex items-center justify-end rounded-[calc(16*var(--u))] bg-[#BF0B2C] pr-[calc(24*var(--u))]"
-                                  style={{
-                                    opacity: isSlidingOut
-                                      ? 0.9
-                                      : Math.min(swipeProgress * 1.15, 1),
-                                    transition:
-                                      activeSwipeId === item.id
-                                        ? "none"
-                                        : "opacity 220ms ease",
-                                  }}
-                                  aria-hidden="true"
-                                >
-                                  <Trash
-                                    size={20}
-                                    weight="bold"
-                                    className="text-white"
+                                {/* Swipe Delete Background (inset 1.5px & hanya muncul saat di-swipe agar tidak bocor atas/bawah) */}
+                                {isSwiping && (
+                                  <div
+                                    className="absolute inset-[1.5px] z-0 flex items-center justify-end rounded-[calc(15*var(--u))] bg-[#BF0B2C] pr-[calc(20*var(--u))]"
                                     style={{
-                                      transform: `scale(${
-                                        isReadyToDelete
-                                          ? 1.18
-                                          : 0.72 + swipeProgress * 0.35
-                                      })`,
+                                      opacity: isSlidingOut
+                                        ? 0.92
+                                        : Math.min(swipeProgress * 1.25, 1),
                                       transition:
-                                        "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+                                        activeSwipeId === item.id
+                                          ? "none"
+                                          : "opacity 220ms ease",
                                     }}
-                                  />
-                                </div>
+                                    aria-hidden="true"
+                                  >
+                                    <span
+                                      className={`flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full transition-all duration-200 ease-out ${
+                                        isReadyToDelete
+                                          ? "notif-trash-ready bg-white/25"
+                                          : "bg-white/10"
+                                      }`}
+                                      style={{
+                                        transform: isReadyToDelete
+                                          ? undefined
+                                          : `scale(${0.68 + swipeProgress * 0.34}) rotate(${-14 + swipeProgress * 14}deg)`,
+                                      }}
+                                    >
+                                      <Trash
+                                        size={20}
+                                        weight={
+                                          isReadyToDelete ? "fill" : "bold"
+                                        }
+                                        className="text-white"
+                                      />
+                                    </span>
+                                  </div>
+                                )}
 
                                 {/* Notification Card Foreground */}
                                 <div
@@ -1418,6 +1436,10 @@ export default function NotificationsPage() {
             animation: notif-read-pulse 420ms cubic-bezier(0.22, 1, 0.36, 1);
           }
 
+          .notif-trash-ready {
+            animation: notif-trash-wiggle 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
           .snackbar-enter {
             animation: snackbar-enter 220ms ease-out both;
           }
@@ -1467,6 +1489,24 @@ export default function NotificationsPage() {
             }
           }
 
+          @keyframes notif-trash-wiggle {
+            0% {
+              transform: scale(0.95) rotate(0deg);
+            }
+            30% {
+              transform: scale(1.18) rotate(-12deg);
+            }
+            60% {
+              transform: scale(1.14) rotate(10deg);
+            }
+            82% {
+              transform: scale(1.1) rotate(-4deg);
+            }
+            100% {
+              transform: scale(1.08) rotate(0deg);
+            }
+          }
+
           @keyframes snackbar-enter {
             from {
               opacity: 0;
@@ -1512,6 +1552,7 @@ export default function NotificationsPage() {
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
             .notif-read-pulse,
+            .notif-trash-ready,
             .snackbar-enter,
             .animate-selection-in,
             .animate-toolbar-in,
@@ -1838,4 +1879,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-}
+        }
