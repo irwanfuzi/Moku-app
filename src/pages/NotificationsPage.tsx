@@ -77,6 +77,7 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const SWIPE_DELETE_THRESHOLD = -64;
+const FLOATING_BAR_EXIT_MS = 950;
 
 /* =========================================================
    CUSTOM ANIMATED TRASH ICON (PHOSPHOR-STYLE, NO CIRCLE)
@@ -642,6 +643,8 @@ export default function NotificationsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [lastSelectedCount, setLastSelectedCount] = useState(1);
+  const [shouldRenderBar, setShouldRenderBar] = useState(false);
+  const [isBarClosing, setIsBarClosing] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
     message: string;
@@ -666,6 +669,7 @@ export default function NotificationsPage() {
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
   const activeTimersRef = useRef<number[]>([]);
+  const barExitTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
@@ -749,6 +753,25 @@ export default function NotificationsPage() {
       setLastSelectedCount(selectedCount);
     }
   }, [selectedCount]);
+
+  useEffect(() => {
+    if (barExitTimerRef.current !== null) {
+      window.clearTimeout(barExitTimerRef.current);
+      barExitTimerRef.current = null;
+    }
+
+    if (isFloatingBarVisible) {
+      setShouldRenderBar(true);
+      setIsBarClosing(false);
+    } else if (shouldRenderBar) {
+      setIsBarClosing(true);
+      barExitTimerRef.current = window.setTimeout(() => {
+        setShouldRenderBar(false);
+        setIsBarClosing(false);
+        barExitTimerRef.current = null;
+      }, FLOATING_BAR_EXIT_MS);
+    }
+  }, [isFloatingBarVisible, shouldRenderBar]);
 
   const allNotificationsSelected =
     notifications.length > 0 &&
@@ -1113,6 +1136,9 @@ export default function NotificationsPage() {
         window.clearTimeout(timerId)
       );
       activeTimersRef.current = [];
+      if (barExitTimerRef.current !== null) {
+        window.clearTimeout(barExitTimerRef.current);
+      }
     };
   }, []);
 
@@ -1290,7 +1316,7 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* 3D Flip Icon Button: durasi lebih lambat & santai saat select & unselect */}
+                                  {/* 3D Flip Icon Button: ikon asli & ikon centang sama-sama beranimasi smooth saat select & unselect */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1418,67 +1444,67 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Animasi keluar saat batal semua sangat lambat & halus) */}
-        <div
-          aria-hidden={!isFloatingBarVisible}
-          className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isFloatingBarVisible
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-[560ms]"
-              : "pointer-events-none translate-y-16 scale-[0.96] opacity-0 duration-[900ms]"
-          }`}
-        >
-          <span className="truncate text-xs font-bold text-[#8E001C]">
-            {selectedCount > 0 ? selectedCount : lastSelectedCount} dipilih
-          </span>
+        {/* MOBILE FLOATING SELECTION BAR (Animasi keyframe turun ke bawah saat unselect / batal semua) */}
+        {shouldRenderBar && (
+          <div
+            aria-hidden={isBarClosing}
+            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl ${
+              isBarClosing ? "moku-bar-exit pointer-events-none" : "moku-bar-enter"
+            }`}
+          >
+            <span className="truncate text-xs font-bold text-[#8E001C]">
+              {selectedCount > 0 ? selectedCount : lastSelectedCount} dipilih
+            </span>
 
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              tabIndex={isFloatingBarVisible ? 0 : -1}
-              onClick={toggleSelectAll}
-              className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-200 active:scale-95 ${
-                allNotificationsSelected
-                  ? "bg-[#FCECEF] text-[#8E001C]"
-                  : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
-              }`}
-            >
-              {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={toggleSelectAll}
+                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-200 active:scale-95 ${
+                  allNotificationsSelected
+                    ? "bg-[#FCECEF] text-[#8E001C]"
+                    : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
+                }`}
+              >
+                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
+              </button>
 
-            <button
-              type="button"
-              tabIndex={isFloatingBarVisible ? 0 : -1}
-              onClick={handleMarkSelectedAsRead}
-              aria-label="Tandai sudah dibaca"
-              title="Tandai sudah dibaca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-200 active:bg-[#8E001C]/10"
-            >
-              <Checks size={19} weight="bold" />
-            </button>
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={handleMarkSelectedAsRead}
+                aria-label="Tandai sudah dibaca"
+                title="Tandai sudah dibaca"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-200 active:bg-[#8E001C]/10"
+              >
+                <Checks size={19} weight="bold" />
+              </button>
 
-            <button
-              type="button"
-              tabIndex={isFloatingBarVisible ? 0 : -1}
-              onClick={handleDeleteSelected}
-              aria-label="Hapus notifikasi"
-              title="Hapus notifikasi"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-200 active:bg-[#BF0B2C]/10"
-            >
-              <Trash size={19} weight="bold" />
-            </button>
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={handleDeleteSelected}
+                aria-label="Hapus notifikasi"
+                title="Hapus notifikasi"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-200 active:bg-[#BF0B2C]/10"
+              >
+                <Trash size={19} weight="bold" />
+              </button>
 
-            <button
-              type="button"
-              tabIndex={isFloatingBarVisible ? 0 : -1}
-              onClick={clearSelection}
-              aria-label="Batalkan pilihan"
-              title="Batalkan pilihan"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-200 active:bg-[#F1F2F5]"
-            >
-              <X size={19} weight="bold" />
-            </button>
+              <button
+                type="button"
+                disabled={isBarClosing}
+                onClick={clearSelection}
+                aria-label="Batalkan pilihan"
+                title="Batalkan pilihan"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-200 active:bg-[#F1F2F5]"
+              >
+                <X size={19} weight="bold" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* SNACKBAR */}
         {snackbar && (
@@ -1545,6 +1571,14 @@ export default function NotificationsPage() {
             transform: rotateY(180deg);
           }
 
+          .moku-bar-enter {
+            animation: moku-bar-slide-up 480ms cubic-bezier(0.22, 1.15, 0.36, 1) both;
+          }
+
+          .moku-bar-exit {
+            animation: moku-bar-slide-down 950ms cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+          }
+
           .snackbar-enter {
             animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
@@ -1586,6 +1620,28 @@ export default function NotificationsPage() {
             }
           }
 
+          @keyframes moku-bar-slide-up {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 28px, 0) scale(0.96);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0) scale(1);
+            }
+          }
+
+          @keyframes moku-bar-slide-down {
+            0% {
+              opacity: 1;
+              transform: translate3d(0, 0, 0) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translate3d(0, 44px, 0) scale(0.95);
+            }
+          }
+
           @keyframes snackbar-enter {
             from {
               opacity: 0;
@@ -1609,6 +1665,8 @@ export default function NotificationsPage() {
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
             .moku-trash-pop,
+            .moku-bar-enter,
+            .moku-bar-exit,
             .snackbar-enter,
             .snackbar-progress {
               animation: none;
