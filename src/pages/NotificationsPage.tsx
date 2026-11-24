@@ -79,6 +79,18 @@ const MOBILE_SCALE_VARS = {
 const SWIPE_DELETE_THRESHOLD = -64;
 const FLOATING_BAR_EXIT_MS = 950;
 
+function toTitleCase(text: string): string {
+  return text
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return word;
+      if (word.length <= 4 && word === word.toUpperCase()) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 /* =========================================================
    CUSTOM ANIMATED TRASH ICON (PHOSPHOR-STYLE, NO CIRCLE)
 ========================================================= */
@@ -1236,6 +1248,7 @@ export default function NotificationsPage() {
                         );
                         const isReadyToDelete =
                           swipeOffset <= SWIPE_DELETE_THRESHOLD || isSlidingOut;
+                        const formattedTitle = toTitleCase(item.title);
                         const subtitle = getNotificationSubtitle(item);
                         const displayTime = formatMobileTime(item);
                         const { Icon, circleClass } = getMobileBadgeStyle(item);
@@ -1316,7 +1329,7 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* 3D Flip Icon Button: ikon asli & ikon centang sama-sama beranimasi smooth saat select & unselect */}
+                                  {/* 3D Flip Icon Button */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1325,8 +1338,8 @@ export default function NotificationsPage() {
                                     }}
                                     aria-label={
                                       isSelected
-                                        ? `Batalkan pilih ${item.title}`
-                                        : `Pilih ${item.title}`
+                                        ? `Batalkan pilih ${formattedTitle}`
+                                        : `Pilih ${formattedTitle}`
                                     }
                                     aria-pressed={isSelected}
                                     style={{ perspective: "420px" }}
@@ -1374,7 +1387,7 @@ export default function NotificationsPage() {
                                   >
                                     <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
                                       <p className="min-w-0 flex-1 truncate font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
-                                        {item.title}
+                                        {formattedTitle}
                                       </p>
 
                                       <div className="flex shrink-0 items-center pt-[calc(1.5*var(--u))]">
@@ -1444,7 +1457,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Pindah ke bawah saja tanpa menghilang) */}
+        {/* MOBILE FLOATING SELECTION BAR */}
         {shouldRenderBar && (
           <div
             aria-hidden={isBarClosing}
@@ -1745,6 +1758,7 @@ export default function NotificationsPage() {
                 const isSelected = selectedIds.includes(item.id);
                 const isSlidingOut = slidingOutIds.includes(item.id);
                 const isCollapsing = collapsingIds.includes(item.id);
+                const formattedTitle = toTitleCase(item.title);
                 const subtitle = getNotificationSubtitle(item);
 
                 const displayDate = formatNotificationDate(
@@ -1781,13 +1795,13 @@ export default function NotificationsPage() {
                           <MokuCheckbox
                             checked={isSelected}
                             onChange={() => toggleSelection(item.id)}
-                            label={`Pilih ${item.title}`}
+                            label={`Pilih ${formattedTitle}`}
                           />
                         ) : (
                           <button
                             type="button"
                             onClick={() => enterSelectionMode(item.id)}
-                            aria-label={`Pilih ${item.title}`}
+                            aria-label={`Pilih ${formattedTitle}`}
                             title="Pilih notifikasi"
                             className="group/icon relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                           >
@@ -1811,7 +1825,7 @@ export default function NotificationsPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2">
                               <span className="truncate text-sm font-semibold text-foreground">
-                                {item.title}
+                                {formattedTitle}
                               </span>
 
                               <span
@@ -1845,7 +1859,7 @@ export default function NotificationsPage() {
                               type="button"
                               onClick={() => handleMarkAsRead(item.id, true)}
                               title="Tandai sudah dibaca"
-                              aria-label={`Tandai ${item.title} sudah dibaca`}
+                              aria-label={`Tandai ${formattedTitle} sudah dibaca`}
                               className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all duration-200 hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                             >
                               <Check size={17} />
@@ -1861,7 +1875,7 @@ export default function NotificationsPage() {
                               )
                             }
                             title="Hapus notifikasi"
-                            aria-label={`Hapus ${item.title}`}
+                            aria-label={`Hapus ${formattedTitle}`}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all duration-200 hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                           >
                             <Trash size={17} />
@@ -1992,4 +2006,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-      }
+          }
