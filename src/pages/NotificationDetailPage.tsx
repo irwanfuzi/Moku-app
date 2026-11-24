@@ -102,6 +102,18 @@ const visitTypeLabels: Record<string, string> = {
   UMC: "Unscheduled Maintenance",
 };
 
+function toTitleCase(text: string): string {
+  return text
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return word;
+      if (word.length <= 4 && word === word.toUpperCase()) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 function formatCompactDateTime(item: NotificationItem): string {
   const raw = item.createdAt;
   if (raw !== null && raw !== undefined && raw !== "") {
@@ -127,7 +139,7 @@ function formatCompactDateTime(item: NotificationItem): string {
       return `${datePart}, ${timePart}`;
     }
   }
-  return item.time ?? "15 Okt 2025, 11:20";
+  return item.time ?? "23 Nov 2026, 01:00";
 }
 
 function formatDateOnly(item: NotificationItem): string {
@@ -147,7 +159,7 @@ function formatDateOnly(item: NotificationItem): string {
       }).format(date);
     }
   }
-  return "15 Okt 2025";
+  return "23 Nov 2026";
 }
 
 function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
@@ -249,10 +261,10 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
       : [
           {
             id: "attn-1",
-            primary: equipment || "MK-003",
-            secondary: customer || "PT. Sinar Mandiri",
+            primary: equipment || "MOKU-002",
+            secondary: customer || "PT Maju Bersama",
             badge: {
-              text: statusStr || "Perlu Penanganan",
+              text: "Perlu Penanganan",
               tone: "danger",
             },
             to: "/monitoring",
@@ -276,7 +288,9 @@ function resolveDetailTheme(item: NotificationItem): DetailThemeConfig {
       ctaTo: "/monitoring",
       description:
         item.description?.trim() ||
-        `Terdapat ${entries.length} mesin yang terdeteksi memerlukan perhatian segera. Mohon lakukan pengecekan dan tindak lanjut sesuai prosedur.`,
+        (equipment && statusStr
+          ? `Status kunjungan ${equipment} telah berubah menjadi ${statusStr}.`
+          : `Terdapat ${entries.length} mesin yang terdeteksi memerlukan perhatian segera. Mohon lakukan pengecekan dan tindak lanjut sesuai prosedur.`),
       heroIcon: "warning",
       heroBg: "bg-[#FCE6D8]",
       heroColor: "text-[#EB6A14]",
@@ -632,11 +646,12 @@ export default function NotificationDetailPage() {
   if (isMobileView) {
     const theme = item ? resolveDetailTheme(item) : null;
     const hasCta = Boolean(theme?.ctaLabel && theme?.ctaTo);
+    const formattedTitle = item ? toTitleCase(item.title) : "";
 
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(44*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Header Marun */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
@@ -679,22 +694,22 @@ export default function NotificationDetailPage() {
 
                   <div className="min-w-0 flex-1">
                     <h2 className="break-words font-display text-[calc(16.5*var(--u))] font-bold leading-[1.22] tracking-[-0.02em] text-[#171717]">
-                      {item.title}
+                      {formattedTitle}
                     </h2>
-                    <p className="mt-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-medium leading-[1.3] text-[#6E6873]">
+                    <p className="mt-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
                       {formatCompactDateTime(item)}
                     </p>
                   </div>
                 </div>
 
-                {/* 2. Deskripsi */}
-                <p className="mt-[calc(14*var(--u))] break-words text-[calc(13.5*var(--u))] leading-[1.45] text-[#29232A]">
+                {/* 2. Deskripsi dengan jarak dari blok ikon/judul */}
+                <p className="mt-[calc(18*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#29232A]">
                   {theme.description}
                 </p>
 
                 {/* 3. Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(18*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
+                  className={`mt-[calc(20*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -766,7 +781,7 @@ export default function NotificationDetailPage() {
                               <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
                                 {entry.primary}
                               </p>
-                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-[1.3] text-[#5E5863]">
+                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
                                 {entry.secondary}
                               </p>
                             </div>
@@ -775,7 +790,7 @@ export default function NotificationDetailPage() {
                           <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
                             {entry.badge && (
                               <span
-                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3*var(--u))] text-[calc(11*var(--u))] font-bold leading-none ${badgeToneClass(entry.badge.tone)}`}
+                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3*var(--u))] text-[calc(11*var(--u))] font-semibold leading-none ${badgeToneClass(entry.badge.tone)}`}
                               >
                                 <Warning
                                   className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
@@ -818,13 +833,13 @@ export default function NotificationDetailPage() {
                                 <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] text-[#171717]">
                                   {row.label}
                                 </p>
-                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-[1.3] text-[#5E5863]">
+                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] font-normal leading-[1.3] text-[#6E6873]">
                                   {row.value}
                                 </p>
                               </div>
                             ) : typeof row.progressPercent === "number" ? (
                               <div className="min-w-0 flex-1">
-                                <p className="text-[calc(12*var(--u))] font-medium leading-[1.25] text-[#5E5863]">
+                                <p className="text-[calc(12*var(--u))] font-normal leading-[1.25] text-[#6E6873]">
                                   {row.label}
                                 </p>
                                 <div className="mt-[calc(6*var(--u))] flex items-center gap-[calc(10*var(--u))]">
@@ -834,19 +849,19 @@ export default function NotificationDetailPage() {
                                       style={{ width: `${row.progressPercent}%` }}
                                     />
                                   </div>
-                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-bold leading-none text-[#1D6FE0]">
+                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none text-[#1D6FE0]">
                                     {row.value}
                                   </span>
                                 </div>
                               </div>
                             ) : (
                               <div className="min-w-0 flex-1">
-                                <p className="break-words text-[calc(12*var(--u))] font-medium leading-[1.25] text-[#5E5863]">
+                                <p className="break-words text-[calc(12*var(--u))] font-normal leading-[1.25] text-[#6E6873]">
                                   {row.label}
                                 </p>
                                 {row.badge ? (
                                   <span
-                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-bold leading-none ${badgeToneClass(row.badge.tone)}`}
+                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none ${badgeToneClass(row.badge.tone)}`}
                                   >
                                     <CheckCircle
                                       className="h-[calc(12.5*var(--u))] w-[calc(12.5*var(--u))]"
@@ -928,7 +943,7 @@ export default function NotificationDetailPage() {
             </div>
 
             <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-[#171717]">
-              {item.title}
+              {toTitleCase(item.title)}
             </h1>
 
             <p className="mt-3 text-sm leading-relaxed text-[#29232A]">
@@ -948,4 +963,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-          }
+                       }
