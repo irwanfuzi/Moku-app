@@ -1290,7 +1290,7 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* 3D Flip Icon Button: ikon asli & ikon centang sama-sama beranimasi smooth saat select & unselect */}
+                                  {/* 3D Flip Icon Button: durasi lebih lambat & santai saat select & unselect */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1303,7 +1303,7 @@ export default function NotificationsPage() {
                                         : `Pilih ${item.title}`
                                     }
                                     aria-pressed={isSelected}
-                                    style={{ perspective: "380px" }}
+                                    style={{ perspective: "420px" }}
                                     className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
                                   >
                                     <span
@@ -1316,10 +1316,10 @@ export default function NotificationsPage() {
                                         className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
                                       >
                                         <Icon
-                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                                             isSelected
-                                              ? "scale-75 rotate-[-14deg] opacity-65"
-                                              : "scale-100 rotate-0 opacity-100 delay-150"
+                                              ? "scale-75 rotate-[-14deg] opacity-60"
+                                              : "scale-100 rotate-0 opacity-100 delay-[240ms]"
                                           }`}
                                           weight="bold"
                                         />
@@ -1328,10 +1328,10 @@ export default function NotificationsPage() {
                                       {/* Sisi Belakang: Centang Marun */}
                                       <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
                                         <Check
-                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                                             isSelected
-                                              ? "scale-100 rotate-0 opacity-100 delay-150"
-                                              : "scale-75 rotate-[14deg] opacity-65"
+                                              ? "scale-100 rotate-0 opacity-100 delay-[240ms]"
+                                              : "scale-75 rotate-[14deg] opacity-60"
                                           }`}
                                           weight="bold"
                                         />
@@ -1418,13 +1418,13 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Animasi keluar saat batal semua dibuat lebih lambat & mulus) */}
+        {/* MOBILE FLOATING SELECTION BAR (Animasi keluar saat batal semua sangat lambat & halus) */}
         <div
           aria-hidden={!isFloatingBarVisible}
           className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isFloatingBarVisible
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-[420ms]"
-              : "pointer-events-none translate-y-12 scale-[0.97] opacity-0 duration-[650ms]"
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-[560ms]"
+              : "pointer-events-none translate-y-16 scale-[0.96] opacity-0 duration-[900ms]"
           }`}
         >
           <span className="truncate text-xs font-bold text-[#8E001C]">
@@ -1523,7 +1523,7 @@ export default function NotificationsPage() {
           .moku-icon-flip-inner {
             transform-style: preserve-3d;
             -webkit-transform-style: preserve-3d;
-            transition: transform 580ms cubic-bezier(0.22, 1.18, 0.36, 1);
+            transition: transform 820ms cubic-bezier(0.22, 1.15, 0.36, 1);
             will-change: transform;
           }
 
@@ -1538,7 +1538,7 @@ export default function NotificationsPage() {
 
           .moku-icon-face-front,
           .moku-icon-face-back {
-            transition: background-color 420ms ease, box-shadow 420ms ease;
+            transition: background-color 560ms ease, box-shadow 560ms ease;
           }
 
           .moku-icon-face-back {
