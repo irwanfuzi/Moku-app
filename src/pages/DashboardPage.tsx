@@ -1221,35 +1221,35 @@ function MobileDashboard() {
                 </div>
               </div>
 
-              <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
+              <MobileCard className="relative mt-[calc(8*var(--u))] overflow-hidden px-[calc(14*var(--u))] py-[calc(11*var(--u))]">
                 <ShimmerOverlay active={showPwaShimmer} />
                 <div className="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-center gap-[calc(10*var(--u))]">
                   <div className="min-w-0 border-r border-[#EAEAEF] pr-[calc(9*var(--u))]">
                     <p className="font-display text-[calc(42*var(--u))] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#111111]">
                       32
                     </p>
-                    <p className="mt-[calc(5*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
+                    <p className="mt-[calc(4*var(--u))] whitespace-nowrap text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
                       Total Kunjungan
                     </p>
                   </div>
 
                   <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[4px]">
                     <div className="min-w-0">
-                      <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3.5*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
+                      <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
                         <TrendUp
                           weight="bold"
                           className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
                         />{" "}
                         +14%
                       </span>
-                      <p className="mt-[calc(5*var(--u))] text-[calc(11.5*var(--u))] leading-[1.35] text-[#3F3A42]">
+                      <p className="mt-[calc(4*var(--u))] text-[calc(11.5*var(--u))] leading-[1.3] text-[#3F3A42]">
                         Dibanding bulan lalu
                         <br />
                         (28 kunjungan)
                       </p>
                     </div>
 
-                    <div className="flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
+                    <div className="-my-[calc(8*var(--u))] flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
                       <img
                         src="/images/moku/illustrations/dashboard-activity.png"
                         alt="Ilustrasi checklist kunjungan"
@@ -1261,8 +1261,8 @@ function MobileDashboard() {
                   </div>
                 </div>
 
-                <div className="mt-[calc(8*var(--u))]">
-                  <div className="mb-[calc(4.5*var(--u))] flex items-center justify-between">
+                <div className="mt-[calc(5*var(--u))]">
+                  <div className="mb-[calc(3*var(--u))] flex items-center justify-between">
                     <p className="text-[calc(12.5*var(--u))] font-bold text-[#171717]">
                       Pencapaian Target
                     </p>
