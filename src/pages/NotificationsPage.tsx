@@ -643,6 +643,7 @@ export default function NotificationsPage() {
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [lastSelectedCount, setLastSelectedCount] = useState(1);
 
   const [snackbar, setSnackbar] = useState<{
     message: string;
@@ -743,6 +744,13 @@ export default function NotificationsPage() {
   }, [notifications]);
 
   const selectedCount = selectedIds.length;
+  const isFloatingBarVisible = isSelectionMode && selectedCount > 0;
+
+  useEffect(() => {
+    if (selectedCount > 0) {
+      setLastSelectedCount(selectedCount);
+    }
+  }, [selectedCount]);
 
   const allNotificationsSelected =
     notifications.length > 0 &&
@@ -752,6 +760,10 @@ export default function NotificationsPage() {
     const next = selectedIds.includes(id)
       ? selectedIds.filter((selectedId) => selectedId !== id)
       : [...selectedIds, id];
+
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
 
     setSelectedIds(next);
     setIsSelectionMode(next.length > 0);
@@ -1280,7 +1292,7 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {/* Tap langsung di ikon untuk memilih tanpa perlu tekan lama */}
+                                  {/* 3D Flip Icon Button (Select & Unselect) */}
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1293,23 +1305,36 @@ export default function NotificationsPage() {
                                         : `Pilih ${item.title}`
                                     }
                                     aria-pressed={isSelected}
-                                    className={`mt-[calc(1*var(--u))] flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-90 ${
-                                      isSelected
-                                        ? "animate-selection-in bg-[#8E001C] text-white shadow-sm"
-                                        : circleClass
-                                    }`}
+                                    style={{ perspective: "320px" }}
+                                    className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-150 active:scale-90"
                                   >
-                                    {isSelected ? (
-                                      <Check
-                                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                                        weight="bold"
-                                      />
-                                    ) : (
-                                      <Icon
-                                        className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                                        weight="bold"
-                                      />
-                                    )}
+                                    <span
+                                      className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
+                                        isSelected ? "is-flipped" : ""
+                                      }`}
+                                    >
+                                      {/* Sisi Depan: Ikon Kategori */}
+                                      <span
+                                        className={`moku-icon-face absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
+                                      >
+                                        <Icon
+                                          className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                                          weight="bold"
+                                        />
+                                      </span>
+
+                                      {/* Sisi Belakang: Centang Marun */}
+                                      <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
+                                        <Check
+                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-transform duration-200 ${
+                                            isSelected
+                                              ? "scale-100 delay-75"
+                                              : "scale-50"
+                                          }`}
+                                          weight="bold"
+                                        />
+                                      </span>
+                                    </span>
                                   </button>
 
                                   <Link
@@ -1391,58 +1416,67 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR (Pilih Semua digabung di sini) */}
-        {isSelectionMode && selectedCount > 0 && (
-          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl">
-            <span className="truncate text-xs font-bold text-[#8E001C]">
-              {selectedCount} dipilih
-            </span>
+        {/* MOBILE FLOATING SELECTION BAR (Animasi masuk & keluar halus) */}
+        <div
+          aria-hidden={!isFloatingBarVisible}
+          className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isFloatingBarVisible
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none translate-y-6 scale-95 opacity-0"
+          }`}
+        >
+          <span className="truncate text-xs font-bold text-[#8E001C]">
+            {selectedCount > 0 ? selectedCount : lastSelectedCount} dipilih
+          </span>
 
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors active:scale-95 ${
-                  allNotificationsSelected
-                    ? "bg-[#FCECEF] text-[#8E001C]"
-                    : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
-                }`}
-              >
-                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
-              </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              tabIndex={isFloatingBarVisible ? 0 : -1}
+              onClick={toggleSelectAll}
+              className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors active:scale-95 ${
+                allNotificationsSelected
+                  ? "bg-[#FCECEF] text-[#8E001C]"
+                  : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
+              }`}
+            >
+              {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
+            </button>
 
-              <button
-                type="button"
-                onClick={handleMarkSelectedAsRead}
-                aria-label="Tandai sudah dibaca"
-                title="Tandai sudah dibaca"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors active:bg-[#8E001C]/10"
-              >
-                <Checks size={19} weight="bold" />
-              </button>
+            <button
+              type="button"
+              tabIndex={isFloatingBarVisible ? 0 : -1}
+              onClick={handleMarkSelectedAsRead}
+              aria-label="Tandai sudah dibaca"
+              title="Tandai sudah dibaca"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors active:bg-[#8E001C]/10"
+            >
+              <Checks size={19} weight="bold" />
+            </button>
 
-              <button
-                type="button"
-                onClick={handleDeleteSelected}
-                aria-label="Hapus notifikasi"
-                title="Hapus notifikasi"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors active:bg-[#BF0B2C]/10"
-              >
-                <Trash size={19} weight="bold" />
-              </button>
+            <button
+              type="button"
+              tabIndex={isFloatingBarVisible ? 0 : -1}
+              onClick={handleDeleteSelected}
+              aria-label="Hapus notifikasi"
+              title="Hapus notifikasi"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors active:bg-[#BF0B2C]/10"
+            >
+              <Trash size={19} weight="bold" />
+            </button>
 
-              <button
-                type="button"
-                onClick={clearSelection}
-                aria-label="Batalkan pilihan"
-                title="Batalkan pilihan"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors active:bg-[#F1F2F5]"
-              >
-                <X size={19} weight="bold" />
-              </button>
-            </div>
+            <button
+              type="button"
+              tabIndex={isFloatingBarVisible ? 0 : -1}
+              onClick={clearSelection}
+              aria-label="Batalkan pilihan"
+              title="Batalkan pilihan"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors active:bg-[#F1F2F5]"
+            >
+              <X size={19} weight="bold" />
+            </button>
           </div>
-        )}
+        </div>
 
         {/* SNACKBAR */}
         {snackbar && (
@@ -1484,20 +1518,32 @@ export default function NotificationsPage() {
             animation: moku-trash-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
           }
 
+          .moku-icon-flip-inner {
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform;
+          }
+
+          .moku-icon-flip-inner.is-flipped {
+            transform: rotateY(180deg);
+          }
+
+          .moku-icon-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+          }
+
+          .moku-icon-face-back {
+            transform: rotateY(180deg);
+          }
+
           .snackbar-enter {
             animation: snackbar-enter 220ms ease-out both;
           }
 
           .snackbar-progress {
             animation: snackbar-countdown 5s linear forwards;
-          }
-
-          .animate-selection-in {
-            animation: selection-in 180ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-          }
-
-          .animate-toolbar-in {
-            animation: toolbar-in 180ms ease-out both;
           }
 
           .mobile-swipe-foreground {
@@ -1553,36 +1599,15 @@ export default function NotificationsPage() {
             }
           }
 
-          @keyframes selection-in {
-            from {
-              opacity: 0.6;
-              transform: scale(0.78);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-
-          @keyframes toolbar-in {
-            from {
-              opacity: 0;
-              transform: translateY(8px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
             .moku-trash-pop,
             .snackbar-enter,
-            .animate-selection-in,
-            .animate-toolbar-in,
             .snackbar-progress {
               animation: none;
+            }
+            .moku-icon-flip-inner {
+              transition: none;
             }
           }
         `}</style>
@@ -1904,4 +1929,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-          }
+        }
