@@ -231,6 +231,19 @@ body::-webkit-scrollbar,
   background: transparent !important;
 }
 
+/* Hilangkan garis scrollbar di dalam Shadow DOM Ionic */
+ion-content::part(scroll) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+ion-content::part(scroll)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 html,
 body {
   overflow-x: clip;
