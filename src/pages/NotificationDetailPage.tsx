@@ -702,14 +702,14 @@ export default function NotificationDetailPage() {
                   </div>
                 </div>
 
-                {/* 2. Deskripsi dengan jarak dari blok ikon/judul */}
-                <p className="mt-[calc(18*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#29232A]">
+                {/* 2. Deskripsi / Status dengan jarak lebih lega dari blok ikon/judul */}
+                <p className="mt-[calc(24*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#29232A]">
                   {theme.description}
                 </p>
 
                 {/* 3. Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(20*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
+                  className={`mt-[calc(22*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -790,7 +790,7 @@ export default function NotificationDetailPage() {
                           <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
                             {entry.badge && (
                               <span
-                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3*var(--u))] text-[calc(11*var(--u))] font-semibold leading-none ${badgeToneClass(entry.badge.tone)}`}
+                                className={`inline-flex items-center gap-[calc(5*var(--u))] whitespace-nowrap rounded-full px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-[calc(11*var(--u))] font-semibold leading-none ${badgeToneClass(entry.badge.tone)}`}
                               >
                                 <Warning
                                   className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
@@ -861,7 +861,7 @@ export default function NotificationDetailPage() {
                                 </p>
                                 {row.badge ? (
                                   <span
-                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none ${badgeToneClass(row.badge.tone)}`}
+                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(5*var(--u))] rounded-full px-[calc(10*var(--u))] py-[calc(3.5*var(--u))] text-[calc(11.5*var(--u))] font-semibold leading-none ${badgeToneClass(row.badge.tone)}`}
                                   >
                                     <CheckCircle
                                       className="h-[calc(12.5*var(--u))] w-[calc(12.5*var(--u))]"
@@ -888,7 +888,7 @@ export default function NotificationDetailPage() {
                   <Link
                     to={theme.ctaTo}
                     style={{ color: "#FFFFFF" }}
-                    className="mt-[calc(18*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold leading-none text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+                    className="mt-[calc(20*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold leading-none text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
                   >
                     {theme.ctaLabel}
                   </Link>
@@ -963,4 +963,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-                       }
+}
