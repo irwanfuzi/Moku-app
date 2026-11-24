@@ -963,4 +963,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-}
+                                }
