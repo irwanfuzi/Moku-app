@@ -636,7 +636,7 @@ export default function NotificationDetailPage() {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(44*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Header Marun */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
@@ -662,10 +662,10 @@ export default function NotificationDetailPage() {
         </header>
 
         {/* Sheet Putih Melengkung */}
-        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(22*var(--u))]">
+        <div className="relative z-40 -mt-[calc(20*var(--u))] min-h-[calc(100dvh-calc(68*var(--u)))] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pt-[calc(20*var(--u))]">
           <div className="mx-auto w-full max-w-[680px]">
             {item && theme ? (
-              <div>
+              <div className="space-y-[calc(16*var(--u))]">
                 {/* Ringkasan Atas: Ikon + Judul + Waktu */}
                 <div className="flex items-center gap-[calc(14*var(--u))]">
                   <div
@@ -681,20 +681,20 @@ export default function NotificationDetailPage() {
                     <h2 className="break-words font-display text-[calc(16.5*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
                       {item.title}
                     </h2>
-                    <p className="mt-[calc(4*var(--u))] text-[calc(12.5*var(--u))] font-medium text-[#6E6873]">
+                    <p className="mt-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-medium leading-normal text-[#6E6873]">
                       {formatCompactDateTime(item)}
                     </p>
                   </div>
                 </div>
 
                 {/* Deskripsi */}
-                <p className="mt-[calc(16*var(--u))] break-words text-[calc(13.5*var(--u))] leading-[1.55] text-[#29232A]">
+                <p className="break-words text-[calc(13.5*var(--u))] leading-[1.55] text-[#29232A]">
                   {theme.description}
                 </p>
 
                 {/* Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(20*var(--u))] rounded-[calc(18*var(--u))] p-[calc(16*var(--u))] ${theme.outerCardBg}`}
+                  className={`rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -740,7 +740,7 @@ export default function NotificationDetailPage() {
                       />
                     )}
 
-                    <h3 className="font-display text-[calc(15*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
+                    <h3 className="font-display text-[calc(15*var(--u))] font-bold leading-[1.25] tracking-[-0.02em] text-[#171717]">
                       {theme.sectionTitle}
                     </h3>
                   </div>
@@ -752,7 +752,7 @@ export default function NotificationDetailPage() {
                         <Link
                           key={entry.id}
                           to={entry.to ?? theme.ctaTo ?? "/notifications"}
-                          className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(12*var(--u))] transition-colors active:bg-[#FAFAFC]"
+                          className="flex min-h-[calc(52*var(--u))] items-center justify-between gap-[calc(10*var(--u))] py-[calc(11*var(--u))] transition-colors active:bg-[#FAFAFC]"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
                             <span className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-[calc(11*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
@@ -763,10 +763,10 @@ export default function NotificationDetailPage() {
                             </span>
 
                             <div className="min-w-0 flex-1">
-                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
+                              <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.3] text-[#171717]">
                                 {entry.primary}
                               </p>
-                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-snug text-[#5E5863]">
+                              <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-[1.35] text-[#5E5863]">
                                 {entry.secondary}
                               </p>
                             </div>
@@ -775,7 +775,7 @@ export default function NotificationDetailPage() {
                           <div className="flex shrink-0 items-center gap-[calc(6*var(--u))]">
                             {entry.badge && (
                               <span
-                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3.5*var(--u))] text-[calc(11*var(--u))] font-bold ${badgeToneClass(entry.badge.tone)}`}
+                                className={`inline-flex items-center gap-[calc(4*var(--u))] whitespace-nowrap rounded-full px-[calc(8*var(--u))] py-[calc(3*var(--u))] text-[calc(11*var(--u))] font-bold leading-none ${badgeToneClass(entry.badge.tone)}`}
                               >
                                 <Warning
                                   className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
@@ -804,9 +804,9 @@ export default function NotificationDetailPage() {
                         return (
                           <div
                             key={`${row.label}-${idx}`}
-                            className="flex items-start gap-[calc(12*var(--u))] py-[calc(12*var(--u))]"
+                            className="flex min-h-[calc(52*var(--u))] items-center gap-[calc(12*var(--u))] py-[calc(11*var(--u))]"
                           >
-                            <span className="mt-[calc(1*var(--u))] flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-[calc(10*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
+                            <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-[calc(10*var(--u))] bg-[#F2F2F5] text-[#4A464E]">
                               <MetaRowIcon
                                 kind={row.icon}
                                 className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
@@ -815,16 +815,16 @@ export default function NotificationDetailPage() {
 
                             {isFirstVisitMachine ? (
                               <div className="min-w-0 flex-1">
-                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
+                                <p className="break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.3] text-[#171717]">
                                   {row.label}
                                 </p>
-                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-snug text-[#5E5863]">
+                                <p className="mt-[calc(2*var(--u))] break-words text-[calc(12.5*var(--u))] leading-[1.35] text-[#5E5863]">
                                   {row.value}
                                 </p>
                               </div>
                             ) : typeof row.progressPercent === "number" ? (
                               <div className="min-w-0 flex-1">
-                                <p className="text-[calc(12*var(--u))] font-medium text-[#5E5863]">
+                                <p className="text-[calc(12*var(--u))] font-medium leading-[1.3] text-[#5E5863]">
                                   {row.label}
                                 </p>
                                 <div className="mt-[calc(6*var(--u))] flex items-center gap-[calc(10*var(--u))]">
@@ -834,19 +834,19 @@ export default function NotificationDetailPage() {
                                       style={{ width: `${row.progressPercent}%` }}
                                     />
                                   </div>
-                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-bold text-[#1D6FE0]">
+                                  <span className="shrink-0 rounded-full bg-[#E6F1FD] px-[calc(8*var(--u))] py-[calc(2.5*var(--u))] text-[calc(11.5*var(--u))] font-bold leading-none text-[#1D6FE0]">
                                     {row.value}
                                   </span>
                                 </div>
                               </div>
                             ) : (
                               <div className="min-w-0 flex-1">
-                                <p className="break-words text-[calc(12*var(--u))] font-medium text-[#5E5863]">
+                                <p className="break-words text-[calc(12*var(--u))] font-medium leading-[1.3] text-[#5E5863]">
                                   {row.label}
                                 </p>
                                 {row.badge ? (
                                   <span
-                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-bold ${badgeToneClass(row.badge.tone)}`}
+                                    className={`mt-[calc(5*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11.5*var(--u))] font-bold leading-none ${badgeToneClass(row.badge.tone)}`}
                                   >
                                     <CheckCircle
                                       className="h-[calc(12.5*var(--u))] w-[calc(12.5*var(--u))]"
@@ -855,7 +855,7 @@ export default function NotificationDetailPage() {
                                     {row.badge.text}
                                   </span>
                                 ) : (
-                                  <p className="mt-[calc(3*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-bold leading-snug text-[#171717]">
+                                  <p className="mt-[calc(2*var(--u))] break-words font-display text-[calc(13.5*var(--u))] font-bold leading-[1.35] text-[#171717]">
                                     {row.value}
                                   </p>
                                 )}
@@ -873,7 +873,7 @@ export default function NotificationDetailPage() {
                   <Link
                     to={theme.ctaTo}
                     style={{ color: "#FFFFFF" }}
-                    className="mt-[calc(20*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+                    className="flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(14*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(11*var(--u))] text-center font-display text-[calc(14*var(--u))] font-bold leading-none text-white transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
                   >
                     {theme.ctaLabel}
                   </Link>
