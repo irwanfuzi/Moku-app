@@ -1269,32 +1269,32 @@ function MobileDashboard() {
           className="relative"
         >
           {/* Header Banner */}
-          <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-visible bg-[#83051C] text-white">
-            <div className="pointer-events-none absolute inset-x-0 -top-[180px] bottom-0 bg-[linear-gradient(180deg,#83051C_0%,#83051C_48%,#760217_76%,#54000F_100%)]" />
-
+          <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-hidden bg-[#83051C] text-white">
+            {/* Gradasi dasar marun yang lebih halus tanpa banding tajam */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-[2] overflow-hidden opacity-[0.045] mix-blend-overlay"
+              className="pointer-events-none absolute inset-x-0 -top-[180px] bottom-0"
               style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+                background:
+                  "linear-gradient(180deg, #83051C 0%, #83051C 52%, #750317 80%, #660113 100%)",
               }}
             />
 
-            <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
-              <div
-                aria-hidden="true"
-                className="absolute -right-[52px] -top-[42px] h-[250px] w-[250px] rounded-full border border-white/[0.08]"
-              />
-              <div
-                aria-hidden="true"
-                className="absolute -right-[108px] -top-[98px] h-[360px] w-[360px] rounded-full border border-white/[0.05]"
-              />
-              <div
-                aria-hidden="true"
-                className="absolute bottom-[8px] right-[18px] h-[120px] w-[120px] rounded-full bg-[#D9163A]/20 blur-2xl"
-              />
-            </div>
+            {/* Ambient radial glow lembut tepat di belakang robot (tidak kepotong blur box) */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-[2]"
+              style={{
+                background:
+                  "radial-gradient(circle at 82% 66%, rgba(255, 110, 130, 0.16) 0%, rgba(217, 22, 58, 0.10) 34%, rgba(131, 5, 28, 0) 68%)",
+              }}
+            />
+
+            {/* Satu aksen lengkung sangat halus di pojok kanan atas */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-[84px] -top-[74px] z-[3] h-[290px] w-[290px] rounded-full border border-white/[0.055]"
+            />
 
             <div className="absolute left-[calc(18*var(--u))] top-[calc(env(safe-area-inset-top)+calc(92*var(--u)))] z-20 w-[calc(100%-calc(36*var(--u)))] pr-[calc(126*var(--u))]">
               <h1 className="whitespace-nowrap font-display text-[calc(19.5*var(--u))] font-bold leading-[1.2] tracking-[-0.03em] text-white">
@@ -1312,7 +1312,7 @@ function MobileDashboard() {
                 width={420}
                 height={420}
                 draggable={false}
-                className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
+                className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_8px_16px_rgba(45,0,10,0.22)]"
               />
             </div>
           </header>
@@ -1338,7 +1338,9 @@ function MobileDashboard() {
                   }`}
                 >
                   <CalendarBlank
-                    weight={isPeriodChipOpen || isMonthJustChanged ? "fill" : "bold"}
+                    weight={
+                      isPeriodChipOpen || isMonthJustChanged ? "fill" : "bold"
+                    }
                     className={`h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 transition-[color,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       isPeriodChipOpen || isMonthJustChanged
                         ? "scale-105 text-[#8E001C]"
