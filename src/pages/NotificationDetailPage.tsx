@@ -703,13 +703,13 @@ export default function NotificationDetailPage() {
                 </div>
 
                 {/* 2. Deskripsi / Status dengan jarak lebih lega dari blok ikon/judul */}
-                <p className="mt-[calc(24*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#29232A]">
+                <p className="mt-[calc(32*var(--u))] break-words text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#29232A]">
                   {theme.description}
                 </p>
 
                 {/* 3. Kartu Seksi Berwarna Lembut */}
                 <section
-                  className={`mt-[calc(22*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
+                  className={`mt-[calc(24*var(--u))] rounded-[calc(18*var(--u))] p-[calc(14*var(--u))] ${theme.outerCardBg}`}
                 >
                   <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(8*var(--u))] px-[calc(2*var(--u))]">
                     {theme.variant === "schedule" && (
@@ -963,4 +963,4 @@ export default function NotificationDetailPage() {
       </div>
     </main>
   );
-                                }
+                  }
