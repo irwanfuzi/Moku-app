@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
   type CSSProperties,
   type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
 import {
@@ -52,6 +54,11 @@ const MAX_PULL = 136;
 const REFRESH_HOLD = 68;
 const REFRESH_DURATION_MS = 1800;
 
+const SHEET_DRAG_SLOP_PX = 6;
+const SHEET_DISMISS_DISTANCE_PX = 84;
+const SHEET_DISMISS_VELOCITY_PX_MS = 0.55;
+const SHEET_CLOSE_DURATION_MS = 240;
+
 const ICON_SCROLL_START = 16;
 const ICON_SCROLL_RANGE = 56;
 const MAROON_HEX = "#83051C";
@@ -62,6 +69,12 @@ function clamp01(v: number) {
 
 function blockContextMenu(event: MouseEvent<HTMLElement>) {
   event.preventDefault();
+}
+
+function triggerHaptic(duration = 8) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(duration);
+  }
 }
 
 /* =========================================================
@@ -678,7 +691,12 @@ function MobileDashboard() {
   const { isPWA, navigateWithTransition } = useAppLayout();
   const unreadCount = useUnreadNotificationCount();
   const [selectedMonth, setSelectedMonth] = useState("Oktober 2026");
+  const [isMonthJustChanged, setIsMonthJustChanged] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [isSheetClosing, setIsSheetClosing] = useState(false);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
+
   const [iconProgress, setIconProgress] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -688,12 +706,190 @@ function MobileDashboard() {
   const scrollElRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
+  const sheetCloseTimerRef = useRef<number | null>(null);
+  const monthPulseTimerRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
+  const showMonthPickerRef = useRef(false);
+
+  const sheetDragRef = useRef<{
+    pointerId: number | null;
+    startY: number;
+    lastY: number;
+    lastTime: number;
+    velocity: number;
+    hasDragged: boolean;
+  }>({
+    pointerId: null,
+    startY: 0,
+    lastY: 0,
+    lastTime: 0,
+    velocity: 0,
+    hasDragged: false,
+  });
 
   const isPwaMode = isPWA || detectStandalonePwa();
+
+  const openMonthPicker = useCallback(() => {
+    triggerHaptic(6);
+    if (sheetCloseTimerRef.current !== null) {
+      window.clearTimeout(sheetCloseTimerRef.current);
+      sheetCloseTimerRef.current = null;
+    }
+    setIsSheetClosing(false);
+    setSheetDragY(0);
+    setIsSheetDragging(false);
+    setShowMonthPicker(true);
+  }, []);
+
+  const closeMonthPicker = useCallback(() => {
+    if (!showMonthPicker || isSheetClosing) return;
+    setIsSheetDragging(false);
+    setIsSheetClosing(true);
+
+    if (sheetCloseTimerRef.current !== null) {
+      window.clearTimeout(sheetCloseTimerRef.current);
+    }
+    sheetCloseTimerRef.current = window.setTimeout(() => {
+      setShowMonthPicker(false);
+      setIsSheetClosing(false);
+      setSheetDragY(0);
+      sheetCloseTimerRef.current = null;
+    }, SHEET_CLOSE_DURATION_MS);
+  }, [showMonthPicker, isSheetClosing]);
+
+  const handleSelectMonth = useCallback(
+    (month: string) => {
+      triggerHaptic(8);
+      if (month !== selectedMonth) {
+        setSelectedMonth(month);
+        setIsMonthJustChanged(true);
+
+        if (monthPulseTimerRef.current !== null) {
+          window.clearTimeout(monthPulseTimerRef.current);
+        }
+        monthPulseTimerRef.current = window.setTimeout(() => {
+          setIsMonthJustChanged(false);
+          monthPulseTimerRef.current = null;
+        }, 520);
+      }
+      closeMonthPicker();
+    },
+    [selectedMonth, closeMonthPicker]
+  );
+
+  const handleSheetPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (isSheetClosing) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+
+      sheetDragRef.current = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        lastY: event.clientY,
+        lastTime: performance.now(),
+        velocity: 0,
+        hasDragged: false,
+      };
+    },
+    [isSheetClosing]
+  );
+
+  const handleSheetPointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = sheetDragRef.current;
+      if (drag.pointerId !== event.pointerId) return;
+
+      const rawDeltaY = event.clientY - drag.startY;
+      const now = performance.now();
+      const dt = Math.max(1, now - drag.lastTime);
+      drag.velocity = (event.clientY - drag.lastY) / dt;
+      drag.lastY = event.clientY;
+      drag.lastTime = now;
+
+      if (!drag.hasDragged) {
+        if (Math.abs(rawDeltaY) < SHEET_DRAG_SLOP_PX) return;
+        drag.hasDragged = true;
+        setIsSheetDragging(true);
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // Abaikan jika pointer capture tidak didukung
+        }
+      }
+
+      if (rawDeltaY >= 0) {
+        setSheetDragY(rawDeltaY);
+      } else {
+        setSheetDragY(rawDeltaY * 0.16);
+      }
+    },
+    []
+  );
+
+  const handleSheetPointerEnd = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = sheetDragRef.current;
+      if (drag.pointerId !== event.pointerId) return;
+
+      const wasDragged = drag.hasDragged;
+      const currentVelocity = drag.velocity;
+      const finalDeltaY = Math.max(0, event.clientY - drag.startY);
+
+      if (
+        wasDragged &&
+        event.currentTarget.hasPointerCapture(event.pointerId)
+      ) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      drag.pointerId = null;
+      drag.hasDragged = false;
+
+      if (!wasDragged) return;
+
+      setIsSheetDragging(false);
+
+      const shouldDismiss =
+        finalDeltaY >= SHEET_DISMISS_DISTANCE_PX ||
+        (finalDeltaY > 28 && currentVelocity >= SHEET_DISMISS_VELOCITY_PX_MS);
+
+      if (shouldDismiss) {
+        closeMonthPicker();
+      } else {
+        setSheetDragY(0);
+      }
+    },
+    [closeMonthPicker]
+  );
+
+  useEffect(() => {
+    showMonthPickerRef.current = showMonthPicker;
+  }, [showMonthPicker]);
+
+  useEffect(() => {
+    if (!showMonthPicker) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeMonthPicker();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showMonthPicker, closeMonthPicker]);
+
+  useEffect(() => {
+    return () => {
+      if (sheetCloseTimerRef.current !== null) {
+        window.clearTimeout(sheetCloseTimerRef.current);
+      }
+      if (monthPulseTimerRef.current !== null) {
+        window.clearTimeout(monthPulseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     pullDistanceRef.current = pullDistance;
@@ -806,7 +1002,13 @@ function MobileDashboard() {
     };
 
     const onTouchStart = (event: globalThis.TouchEvent) => {
-      if (isRefreshingRef.current || event.touches.length !== 1) return;
+      if (
+        showMonthPickerRef.current ||
+        isRefreshingRef.current ||
+        event.touches.length !== 1
+      ) {
+        return;
+      }
       if (getScrollTop() <= 0) {
         touchStartYRef.current = event.touches[0].clientY;
         isPullingRef.current = true;
@@ -818,6 +1020,7 @@ function MobileDashboard() {
 
     const onTouchMove = (event: globalThis.TouchEvent) => {
       if (
+        showMonthPickerRef.current ||
         !isPullingRef.current ||
         touchStartYRef.current === null ||
         isRefreshingRef.current
@@ -897,6 +1100,12 @@ function MobileDashboard() {
   const isIconSwapped = iconProgress > 0.5;
   const userName = "Budi Santoso";
   const badgeText = unreadCount > 99 ? "99+" : String(unreadCount);
+
+  const isPeriodChipOpen = showMonthPicker && !isSheetClosing;
+  const positiveSheetDrag = Math.max(0, sheetDragY);
+  const sheetBackdropOpacity = isSheetClosing
+    ? 0
+    : Math.max(0.1, 0.45 - positiveSheetDrag / 520);
 
   return (
     <main
@@ -1117,21 +1326,44 @@ function MobileDashboard() {
 
                 <button
                   type="button"
-                  onClick={() => setShowMonthPicker(true)}
+                  onClick={openMonthPicker}
                   aria-haspopup="dialog"
-                  aria-expanded={showMonthPicker}
-                  className="flex h-[calc(33*var(--u))] shrink-0 items-center gap-[calc(5*var(--u))] rounded-full border border-[#E6E6EA] bg-white px-[calc(11*var(--u))] shadow-[0_1px_2px_rgba(41,35,42,0.02)] transition-transform duration-150 active:scale-95 active:bg-[#F7F7F9]"
+                  aria-expanded={isPeriodChipOpen}
+                  className={`group flex h-[calc(33*var(--u))] shrink-0 items-center gap-[calc(5*var(--u))] overflow-hidden rounded-full border px-[calc(11*var(--u))] transition-[transform,background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.94] ${
+                    isPeriodChipOpen
+                      ? "border-[#8E001C]/35 bg-[#FDF2F4] ring-2 ring-[#8E001C]/10 shadow-[0_2px_8px_rgba(142,0,28,0.08)]"
+                      : isMonthJustChanged
+                        ? "moku-chip-confirm border-[#8E001C]/30 bg-[#FDF2F4] shadow-[0_2px_8px_rgba(142,0,28,0.07)]"
+                        : "border-[#E6E6EA] bg-white shadow-[0_1px_2px_rgba(41,35,42,0.02)] active:bg-[#F7F7F9]"
+                  }`}
                 >
                   <CalendarBlank
-                    weight="bold"
-                    className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#171717]"
+                    weight={isPeriodChipOpen || isMonthJustChanged ? "fill" : "bold"}
+                    className={`h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 transition-[color,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isPeriodChipOpen || isMonthJustChanged
+                        ? "scale-105 text-[#8E001C]"
+                        : "text-[#171717] group-active:scale-90"
+                    }`}
                   />
-                  <span className="whitespace-nowrap text-[calc(11.5*var(--u))] font-bold text-[#171717]">
+                  <span
+                    key={selectedMonth}
+                    className={`moku-month-swap whitespace-nowrap text-[calc(11.5*var(--u))] font-bold transition-colors duration-200 ${
+                      isPeriodChipOpen || isMonthJustChanged
+                        ? "text-[#8E001C]"
+                        : "text-[#171717]"
+                    }`}
+                  >
                     {selectedMonth}
                   </span>
                   <CaretDown
                     weight="bold"
-                    className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 text-[#171717]"
+                    className={`h-[calc(13*var(--u))] w-[calc(13*var(--u))] shrink-0 transition-[transform,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isPeriodChipOpen
+                        ? "rotate-180 text-[#8E001C]"
+                        : isMonthJustChanged
+                          ? "rotate-0 text-[#8E001C]"
+                          : "rotate-0 text-[#171717]"
+                    }`}
                   />
                 </button>
               </div>
@@ -1440,7 +1672,7 @@ function MobileDashboard() {
         </div>
       </div>
 
-      {/* Bottom Sheet Pilih Periode */}
+      {/* Bottom Sheet Pilih Periode (Swipe/Drag to Dismiss) */}
       {showMonthPicker && (
         <div
           role="dialog"
@@ -1450,13 +1682,46 @@ function MobileDashboard() {
         >
           {/* Backdrop */}
           <div
-            onClick={() => setShowMonthPicker(false)}
-            className="moku-sheet-backdrop absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+            onClick={closeMonthPicker}
+            style={{
+              opacity: sheetBackdropOpacity,
+              transition: isSheetDragging
+                ? "none"
+                : `opacity ${SHEET_CLOSE_DURATION_MS}ms ease-out`,
+            }}
+            className={`absolute inset-0 bg-black backdrop-blur-[1px] ${
+              !isSheetDragging && !isSheetClosing && sheetDragY === 0
+                ? "moku-sheet-backdrop"
+                : ""
+            }`}
           />
 
           {/* Sheet Panel */}
-          <div className="moku-sheet-panel relative z-10 w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pb-[calc(20*var(--u)+env(safe-area-inset-bottom))] pt-[calc(10*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.16)]">
-            <div className="mx-auto mb-[calc(12*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] rounded-full bg-[#DCDCE2]" />
+          <div
+            onPointerDown={handleSheetPointerDown}
+            onPointerMove={handleSheetPointerMove}
+            onPointerUp={handleSheetPointerEnd}
+            onPointerCancel={handleSheetPointerEnd}
+            style={{
+              touchAction: "none",
+              transform: isSheetClosing
+                ? "translate3d(0, 100%, 0)"
+                : `translate3d(0, ${sheetDragY}px, 0)`,
+              transition: isSheetDragging
+                ? "none"
+                : isSheetClosing
+                  ? `transform ${SHEET_CLOSE_DURATION_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`
+                  : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform",
+            }}
+            className={`relative z-10 w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pb-[calc(20*var(--u)+env(safe-area-inset-bottom))] pt-[calc(10*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.16)] ${
+              !isSheetDragging && !isSheetClosing && sheetDragY === 0
+                ? "moku-sheet-panel"
+                : ""
+            }`}
+          >
+            {/* Drag Handle */}
+            <div className="mx-auto mb-[calc(12*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] cursor-grab rounded-full bg-[#DCDCE2] active:cursor-grabbing" />
 
             <div className="mb-[calc(10*var(--u))] flex items-center justify-between">
               <h3 className="font-display text-[calc(16*var(--u))] font-bold tracking-[-0.02em] text-[#171717]">
@@ -1464,7 +1729,7 @@ function MobileDashboard() {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowMonthPicker(false)}
+                onClick={closeMonthPicker}
                 aria-label="Tutup"
                 className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors active:bg-[#F2F2F5]"
               >
@@ -1482,10 +1747,7 @@ function MobileDashboard() {
                   <button
                     key={month}
                     type="button"
-                    onClick={() => {
-                      setSelectedMonth(month);
-                      setShowMonthPicker(false);
-                    }}
+                    onClick={() => handleSelectMonth(month)}
                     className={`flex w-full items-center justify-between rounded-[calc(14*var(--u))] px-[calc(14*var(--u))] py-[calc(12*var(--u))] text-left transition-all duration-150 active:scale-[0.985] ${
                       isActive
                         ? "bg-[#FCECEF] font-bold text-[#8E001C]"
@@ -1525,13 +1787,42 @@ function MobileDashboard() {
         .moku-sheet-panel {
           animation: moku-sheet-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
+        .moku-chip-confirm {
+          animation: moku-chip-pop 420ms cubic-bezier(0.22, 1.28, 0.36, 1) both;
+        }
+        .moku-month-swap {
+          animation: moku-month-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
         @keyframes moku-backdrop-in {
           from { opacity: 0; }
-          to { opacity: 1; }
+          to { opacity: 0.45; }
         }
         @keyframes moku-sheet-up {
           from { transform: translate3d(0, 100%, 0); }
           to { transform: translate3d(0, 0, 0); }
+        }
+        @keyframes moku-chip-pop {
+          0% { transform: scale(0.95); }
+          45% { transform: scale(1.035); }
+          100% { transform: scale(1); }
+        }
+        @keyframes moku-month-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 5px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .moku-sheet-backdrop,
+          .moku-sheet-panel,
+          .moku-chip-confirm,
+          .moku-month-swap {
+            animation: none;
+          }
         }
       `}</style>
     </main>
