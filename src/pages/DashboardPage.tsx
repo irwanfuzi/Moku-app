@@ -53,7 +53,7 @@ const REFRESH_DURATION_MS = 1800;
 
 const ICON_SCROLL_START = 16;
 const ICON_SCROLL_RANGE = 56;
-const TOPBAR_COLOR_THRESHOLD = 52;
+const TOPBAR_COLOR_THRESHOLD = 120;
 
 const MAROON_HEX = "#83051C";
 const DARK_MAROON_HEX = "#54000F";
@@ -709,7 +709,7 @@ function MobileDashboard() {
     isRefreshingRef.current = isRefreshing;
   }, [isRefreshing]);
 
-  /* Sinkronisasi warna Status Bar (meta theme-color) serentak dengan Top Bar */
+  /* Sinkronisasi warna Status Bar (meta theme-color) serentak (0ms) dengan Top Bar */
   useEffect(() => {
     const activeColor = isScrolled
       ? isIos
@@ -938,7 +938,7 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Fixed Compact Top Bar: menyatu dengan Status Bar & berubah warna serentak */}
+      {/* Fixed Compact Top Bar: tanpa transisi background-color agar serentak 0ms dengan Status Bar */}
       <div
         style={{
           backgroundColor: topBarBg,
@@ -949,10 +949,10 @@ function MobileDashboard() {
             : "none",
           transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
           transition: isPullDragging
-            ? "background-color 180ms ease, box-shadow 180ms ease"
-            : "background-color 180ms ease, box-shadow 180ms ease, transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
+            ? "none"
+            : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
         }}
-        className="fixed inset-x-0 top-0 z-40 w-full will-change-[background-color,box-shadow,transform]"
+        className="fixed inset-x-0 top-0 z-40 w-full will-change-[transform]"
       >
         <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
           <Link
@@ -1004,20 +1004,20 @@ function MobileDashboard() {
                   ? `Notifikasi (${unreadCount} belum dibaca)`
                   : "Notifikasi"
               }
-              className={`relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors ${
+              className={`relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full ${
                 isLightTopBar ? "active:bg-black/5" : "active:bg-white/15"
               }`}
             >
               <Bell
                 weight="regular"
-                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] transition-colors duration-200 ${
+                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] ${
                   isLightTopBar ? "text-[#171717]" : "text-white"
                 }`}
               />
 
               {unreadCount > 0 && (
                 <span
-                  className={`absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] transition-all duration-200 ${
+                  className={`absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ${
                     isLightTopBar
                       ? "ring-white"
                       : isScrolled
