@@ -1233,7 +1233,7 @@ function MobileDashboard() {
                     </p>
                   </div>
 
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[4px]">
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] items-center gap-[4px]">
                     <div className="min-w-0">
                       <span className="inline-flex items-center gap-[4px] rounded-full bg-[#DCFCE7] px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#15803D]">
                         <TrendUp
@@ -1249,13 +1249,13 @@ function MobileDashboard() {
                       </p>
                     </div>
 
-                    <div className="-my-[calc(8*var(--u))] flex h-[calc(82*var(--u))] w-full max-w-[calc(88*var(--u))] items-center justify-center justify-self-end">
+                    <div className="-my-[calc(12*var(--u))] flex h-[calc(94*var(--u))] w-full max-w-[calc(104*var(--u))] items-center justify-center justify-self-end">
                       <img
                         src="/images/moku/illustrations/dashboard-activity.png"
                         alt="Ilustrasi checklist kunjungan"
                         width={240}
                         height={240}
-                        className="h-full w-full object-contain"
+                        className="h-full w-full scale-110 object-contain"
                       />
                     </div>
                   </div>
