@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import {
@@ -57,6 +58,10 @@ const MAROON_HEX = "#83051C";
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
+}
+
+function blockContextMenu(event: MouseEvent<HTMLElement>) {
+  event.preventDefault();
 }
 
 /* =========================================================
@@ -243,7 +248,9 @@ function QuickAction({
   return (
     <Link
       to={href}
-      className={`group flex min-w-0 flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center transition-transform duration-150 active:scale-95 ${
+      onContextMenu={blockContextMenu}
+      draggable={false}
+      className={`group flex min-w-0 select-none flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center [-webkit-touch-callout:none] [-webkit-user-select:none] transition-transform duration-150 active:scale-95 ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
@@ -894,13 +901,14 @@ function MobileDashboard() {
   return (
     <main
       ref={mainRef}
+      onContextMenu={blockContextMenu}
       style={{
         ...MOBILE_SCALE_VARS,
         overscrollBehaviorY: isPwaMode ? "none" : "auto",
       }}
-      className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full select-none bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))] [-webkit-touch-callout:none] [-webkit-user-select:none]"
     >
-      {/* Sticky Compact Top Bar: dikunci permanen di top-0 tanpa transform agar tidak pernah terpisah dari status bar */}
+      {/* Sticky Compact Top Bar */}
       <div
         style={{
           backgroundColor: `rgba(131, 5, 28, ${iconProgress})`,
@@ -911,14 +919,17 @@ function MobileDashboard() {
         <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
           <Link
             to="/"
+            onContextMenu={blockContextMenu}
+            draggable={false}
             aria-label="MOKU Dashboard"
-            className="relative flex h-[calc(28*var(--u))] items-center"
+            className="relative flex h-[calc(28*var(--u))] items-center [-webkit-touch-callout:none]"
           >
             <img
               src="/images/moku/brand/moku-logo.png"
               alt="MOKU"
               width={180}
               height={65}
+              draggable={false}
               style={{
                 opacity: 1 - iconProgress,
                 transform: `scale(${1 - iconProgress * 0.18})`,
@@ -942,6 +953,7 @@ function MobileDashboard() {
                 alt="Ikon MOKU"
                 width={64}
                 height={64}
+                draggable={false}
                 className="h-full w-full object-contain"
               />
             </span>
@@ -1015,6 +1027,7 @@ function MobileDashboard() {
                   alt="Memuat ulang MOKU"
                   width={56}
                   height={56}
+                  draggable={false}
                   style={{
                     transform: isRefreshing
                       ? undefined
@@ -1089,6 +1102,7 @@ function MobileDashboard() {
                 alt="Ilustrasi robot MOKU membawa printer"
                 width={420}
                 height={420}
+                draggable={false}
                 className="h-full w-full -scale-x-100 object-contain object-bottom drop-shadow-[0_10px_18px_rgba(45,0,10,0.28)]"
               />
             </div>
@@ -1223,6 +1237,7 @@ function MobileDashboard() {
                         alt="Ilustrasi checklist kunjungan"
                         width={240}
                         height={240}
+                        draggable={false}
                         className="h-full w-full scale-110 object-contain"
                       />
                     </div>
@@ -1319,7 +1334,9 @@ function MobileDashboard() {
             {/* 4. Mesin Perlu Perhatian */}
             <Link
               to="/monitoring"
-              className="relative flex min-h-[calc(68*var(--u))] min-w-0 items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#F7F7F9]"
+              onContextMenu={blockContextMenu}
+              draggable={false}
+              className="relative flex min-h-[calc(68*var(--u))] min-w-0 select-none items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)] [-webkit-touch-callout:none] [-webkit-user-select:none] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#F7F7F9]"
             >
               <ShimmerOverlay active={showPwaShimmer} />
               <span
@@ -1354,7 +1371,9 @@ function MobileDashboard() {
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
                 <Link
                   to="/visit-history"
-                  className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032] transition-opacity active:opacity-70"
+                  onContextMenu={blockContextMenu}
+                  draggable={false}
+                  className="flex shrink-0 select-none items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032] [-webkit-touch-callout:none] transition-opacity active:opacity-70"
                 >
                   Lihat Semua
                   <CaretRight
