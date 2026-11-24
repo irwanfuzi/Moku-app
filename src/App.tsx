@@ -59,7 +59,7 @@ setupIonicReact({
 function DashboardRoute() {
   return (
     <IonPage>
-      <IonContent fullscreen>
+      <IonContent fullscreen scrollEvents={true}>
         <AppShell>
           <DashboardPage />
         </AppShell>
@@ -71,7 +71,7 @@ function DashboardRoute() {
 function NotificationsRoute() {
   return (
     <IonPage>
-      <IonContent fullscreen>
+      <IonContent fullscreen scrollEvents={true}>
         <AppShell>
           <NotificationsPage />
         </AppShell>
