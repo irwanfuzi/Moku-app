@@ -666,7 +666,6 @@ export default function NotificationsPage() {
   } | null>(null);
 
   const swipeOffsetRef = useRef<Record<string, number>>({});
-  const longPressTimerRef = useRef<number | null>(null);
   const activeTimersRef = useRef<number[]>([]);
   const suppressClickRef = useRef(false);
 
@@ -965,15 +964,8 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     SMOOTH SWIPE TO DELETE & LONG PRESS (MOBILE)
+     SMOOTH SWIPE TO DELETE (MOBILE)
   ======================================================= */
-
-  const clearLongPressTimer = () => {
-    if (longPressTimerRef.current !== null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
 
   const updateSwipeOffset = (id: string, rawDeltaX: number) => {
     let nextOffset = Math.min(0, rawDeltaX);
@@ -1028,15 +1020,6 @@ export default function NotificationsPage() {
     };
 
     suppressClickRef.current = false;
-    clearLongPressTimer();
-
-    longPressTimerRef.current = window.setTimeout(() => {
-      enterSelectionMode(id);
-      suppressClickRef.current = true;
-      touchStartRef.current = null;
-      updateSwipeOffset(id, 0);
-      setActiveSwipeId(null);
-    }, 550);
   };
 
   const handleTouchMove = (event: TouchEvent<HTMLDivElement>, id: string) => {
@@ -1047,10 +1030,6 @@ export default function NotificationsPage() {
     const touch = event.touches[0];
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
-
-    if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
-      clearLongPressTimer();
-    }
 
     if (
       start.horizontal ||
@@ -1071,8 +1050,6 @@ export default function NotificationsPage() {
   };
 
   const handleTouchEnd = (id: string) => {
-    clearLongPressTimer();
-
     const start = touchStartRef.current;
 
     if (!start || start.id !== id || isSelectionMode) {
@@ -1096,7 +1073,6 @@ export default function NotificationsPage() {
   };
 
   const handleTouchCancel = (id: string) => {
-    clearLongPressTimer();
     touchStartRef.current = null;
     setActiveSwipeId(null);
     updateSwipeOffset(id, 0);
@@ -1123,7 +1099,6 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     return () => {
-      clearLongPressTimer();
       activeTimersRef.current.forEach((timerId) =>
         window.clearTimeout(timerId)
       );
@@ -1139,7 +1114,7 @@ export default function NotificationsPage() {
     return (
       <main
         style={MOBILE_SCALE_VARS}
-        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
+        className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(88*var(--u)+env(safe-area-inset-bottom))]"
       >
         {/* Solid Maroon Header with Curved Sheet Overlap */}
         <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
@@ -1168,16 +1143,6 @@ export default function NotificationsPage() {
                 {isSelectionMode ? `${selectedCount} Dipilih` : "Notifikasi"}
               </h1>
             </div>
-
-            {notifications.length > 0 && isSelectionMode && (
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className="shrink-0 rounded-full bg-white/15 px-[calc(11*var(--u))] py-[calc(4.5*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-white transition active:bg-white/25"
-              >
-                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
-              </button>
-            )}
           </div>
         </header>
 
@@ -1255,7 +1220,7 @@ export default function NotificationsPage() {
                                 }}
                                 className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
                               >
-                                {/* Swipe Delete Background (polos tanpa lingkaran, animasi tutup terangkat + pop) */}
+                                {/* Swipe Delete Background */}
                                 {isSwiping && (
                                   <div
                                     className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
@@ -1315,27 +1280,37 @@ export default function NotificationsPage() {
                                         : "auto",
                                   }}
                                 >
-                                  {isSelectionMode ? (
-                                    <div className="mt-[calc(1*var(--u))] flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 animate-selection-in items-center justify-center">
-                                      <MokuCheckbox
-                                        checked={isSelected}
-                                        onChange={() =>
-                                          toggleSelection(item.id)
-                                        }
-                                        label={`Pilih ${item.title}`}
-                                        className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] rounded-[6px]"
+                                  {/* Tap langsung di ikon untuk memilih tanpa perlu tekan lama */}
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleSelection(item.id);
+                                    }}
+                                    aria-label={
+                                      isSelected
+                                        ? `Batalkan pilih ${item.title}`
+                                        : `Pilih ${item.title}`
+                                    }
+                                    aria-pressed={isSelected}
+                                    className={`mt-[calc(1*var(--u))] flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-90 ${
+                                      isSelected
+                                        ? "animate-selection-in bg-[#8E001C] text-white shadow-sm"
+                                        : circleClass
+                                    }`}
+                                  >
+                                    {isSelected ? (
+                                      <Check
+                                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                                        weight="bold"
                                       />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className={`mt-[calc(1*var(--u))] flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 items-center justify-center rounded-full ${circleClass}`}
-                                    >
+                                    ) : (
                                       <Icon
                                         className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
                                         weight="bold"
                                       />
-                                    </div>
-                                  )}
+                                    )}
+                                  </button>
 
                                   <Link
                                     to={`/notifications/${encodeURIComponent(item.id)}`}
@@ -1416,20 +1391,32 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* MOBILE FLOATING SELECTION BAR */}
+        {/* MOBILE FLOATING SELECTION BAR (Pilih Semua digabung di sini) */}
         {isSelectionMode && selectedCount > 0 && (
-          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between rounded-2xl border border-[#E8E9ED] bg-white px-4 py-2.5 shadow-xl">
-            <span className="text-xs font-bold text-[#8E001C]">
+          <div className="fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] animate-toolbar-in items-center justify-between gap-2 rounded-2xl border border-[#E8E9ED] bg-white px-3.5 py-2.5 shadow-xl">
+            <span className="truncate text-xs font-bold text-[#8E001C]">
               {selectedCount} dipilih
             </span>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors active:scale-95 ${
+                  allNotificationsSelected
+                    ? "bg-[#FCECEF] text-[#8E001C]"
+                    : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
+                }`}
+              >
+                {allNotificationsSelected ? "Batal Semua" : "Pilih Semua"}
+              </button>
+
               <button
                 type="button"
                 onClick={handleMarkSelectedAsRead}
                 aria-label="Tandai sudah dibaca"
                 title="Tandai sudah dibaca"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors hover:bg-[#8E001C]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors active:bg-[#8E001C]/10"
               >
                 <Checks size={19} weight="bold" />
               </button>
@@ -1439,7 +1426,7 @@ export default function NotificationsPage() {
                 onClick={handleDeleteSelected}
                 aria-label="Hapus notifikasi"
                 title="Hapus notifikasi"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors hover:bg-[#BF0B2C]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors active:bg-[#BF0B2C]/10"
               >
                 <Trash size={19} weight="bold" />
               </button>
@@ -1449,7 +1436,7 @@ export default function NotificationsPage() {
                 onClick={clearSelection}
                 aria-label="Batalkan pilihan"
                 title="Batalkan pilihan"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors hover:bg-[#F1F2F5]"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors active:bg-[#F1F2F5]"
               >
                 <X size={19} weight="bold" />
               </button>
@@ -1506,7 +1493,7 @@ export default function NotificationsPage() {
           }
 
           .animate-selection-in {
-            animation: selection-in 180ms ease-out both;
+            animation: selection-in 180ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
           }
 
           .animate-toolbar-in {
@@ -1568,8 +1555,8 @@ export default function NotificationsPage() {
 
           @keyframes selection-in {
             from {
-              opacity: 0;
-              transform: scale(0.7);
+              opacity: 0.6;
+              transform: scale(0.78);
             }
             to {
               opacity: 1;
@@ -1917,4 +1904,4 @@ export default function NotificationsPage() {
       `}</style>
     </main>
   );
-    }
+}
