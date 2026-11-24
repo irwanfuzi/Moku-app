@@ -53,7 +53,6 @@ const REFRESH_DURATION_MS = 1800;
 
 const ICON_SCROLL_START = 16;
 const ICON_SCROLL_RANGE = 56;
-const TOPBAR_COLOR_THRESHOLD = 120;
 
 const MAROON_HEX = "#83051C";
 const DARK_MAROON_HEX = "#54000F";
@@ -690,6 +689,8 @@ function MobileDashboard() {
   const [isPullDragging, setIsPullDragging] = useState(false);
 
   const mainRef = useRef<HTMLElement | null>(null);
+  const topBarRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const scrollElRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
@@ -709,7 +710,7 @@ function MobileDashboard() {
     isRefreshingRef.current = isRefreshing;
   }, [isRefreshing]);
 
-  /* Sinkronisasi warna Status Bar (meta theme-color) serentak (0ms) dengan Top Bar */
+  /* Sinkronisasi warna Status Bar (meta theme-color) dengan Top Bar */
   useEffect(() => {
     const activeColor = isScrolled
       ? isIos
@@ -760,10 +761,18 @@ function MobileDashboard() {
       setIconProgress((prev) =>
         Math.abs(prev - smooth) > 0.004 ? smooth : prev
       );
-      setIsScrolled((prev) => {
-        const next = top >= TOPBAR_COLOR_THRESHOLD;
-        return prev !== next ? next : prev;
-      });
+
+      /* Deteksi presisi: berubah tepat saat kanvas putih menyentuh batas bawah top bar (0px marun tersisa) */
+      const topBarHeight = topBarRef.current?.offsetHeight ?? 68;
+      const canvasTop = canvasRef.current?.getBoundingClientRect().top;
+      const hasReachedCanvas =
+        typeof canvasTop === "number"
+          ? canvasTop <= topBarHeight + 2
+          : top >= 140;
+
+      setIsScrolled((prev) =>
+        prev !== hasReachedCanvas ? hasReachedCanvas : prev
+      );
     };
 
     const onScroll = () => {
@@ -938,8 +947,9 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Fixed Compact Top Bar: tanpa transisi background-color agar serentak 0ms dengan Status Bar */}
+      {/* Fixed Compact Top Bar: transisi halus 180ms tepat saat kanvas putih menyentuh top bar */}
       <div
+        ref={topBarRef}
         style={{
           backgroundColor: topBarBg,
           boxShadow: isScrolled
@@ -949,10 +959,10 @@ function MobileDashboard() {
             : "none",
           transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
           transition: isPullDragging
-            ? "none"
-            : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
+            ? "background-color 180ms ease-out, box-shadow 180ms ease-out"
+            : "background-color 180ms ease-out, box-shadow 180ms ease-out, transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
         }}
-        className="fixed inset-x-0 top-0 z-40 w-full will-change-[transform]"
+        className="fixed inset-x-0 top-0 z-40 w-full will-change-[background-color,box-shadow,transform]"
       >
         <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
           <Link
@@ -1004,20 +1014,20 @@ function MobileDashboard() {
                   ? `Notifikasi (${unreadCount} belum dibaca)`
                   : "Notifikasi"
               }
-              className={`relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full ${
+              className={`relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
                 isLightTopBar ? "active:bg-black/5" : "active:bg-white/15"
               }`}
             >
               <Bell
                 weight="regular"
-                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] ${
+                className={`h-[calc(22*var(--u))] w-[calc(22*var(--u))] transition-colors duration-200 ${
                   isLightTopBar ? "text-[#171717]" : "text-white"
                 }`}
               />
 
               {unreadCount > 0 && (
                 <span
-                  className={`absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] ${
+                  className={`absolute -right-[calc(1*var(--u))] top-[calc(1*var(--u))] flex h-[calc(16*var(--u))] min-w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#FF3B30] px-[calc(4*var(--u))] text-[calc(9.5*var(--u))] font-bold leading-none tabular-nums text-white ring-[1.5px] transition-all duration-200 ${
                     isLightTopBar
                       ? "ring-white"
                       : isScrolled
@@ -1149,7 +1159,10 @@ function MobileDashboard() {
           </header>
 
           {/* Canvas Konten */}
-          <div className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]">
+          <div
+            ref={canvasRef}
+            className="relative z-20 -mt-[calc(28*var(--u))] flex flex-col gap-[calc(14*var(--u))] rounded-t-[calc(24*var(--u))] bg-[#FAFAFC] px-[calc(14*var(--u))] pt-[calc(15*var(--u))]"
+          >
             {/* 1. Status Monitoring Mesin */}
             <section className="min-w-0">
               <div className="flex min-w-0 items-center justify-between gap-[calc(8*var(--u))] px-[2px]">
