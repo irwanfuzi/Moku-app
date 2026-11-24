@@ -903,17 +903,20 @@ function MobileDashboard() {
       }}
       className="min-h-dvh w-full bg-[#FAFAFC] pb-[calc(72*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Fixed Compact Top Bar: Marun solid menyatu dengan Status Bar */}
+      {/* Sticky Compact Top Bar: transparan di puncak agar aksen header penuh sampai status bar, lalu memudar jadi marun solid saat di-scroll */}
       <div
         style={{
-          backgroundColor: MAROON_HEX,
+          backgroundColor: `rgba(131, 5, 28, ${iconProgress})`,
           boxShadow: `0 4px 14px rgba(45, 0, 10, ${iconProgress * 0.18})`,
-          transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+          transform:
+            isPwaMode && pullDistance > 0
+              ? `translate3d(0, ${pullDistance}px, 0)`
+              : undefined,
           transition: isPullDragging
             ? "none"
             : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
         }}
-        className="fixed inset-x-0 top-0 z-40 w-full will-change-[box-shadow,transform]"
+        className="sticky top-0 z-40 w-full"
       >
         <div className="mx-auto flex w-full max-w-[600px] items-center justify-between px-[calc(18*var(--u))] pb-[calc(6*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(5*var(--u)))]">
           <Link
@@ -982,7 +985,8 @@ function MobileDashboard() {
         </div>
       </div>
 
-      <div className="relative mx-auto w-full max-w-[600px]">
+      {/* Konten ditarik ke atas menempel tepat di belakang top bar & status bar */}
+      <div className="relative mx-auto -mt-[calc(39*var(--u)+env(safe-area-inset-top))] w-full max-w-[600px]">
         {/* Emblem Pull-to-Refresh MOKU */}
         {isPwaMode && (
           <div
@@ -1042,12 +1046,15 @@ function MobileDashboard() {
         {/* Konten bergerak elastis menyatu dengan header merah saat ditarik */}
         <div
           style={{
-            transform: isPwaMode ? `translateY(${pullDistance}px)` : undefined,
+            transform:
+              isPwaMode && pullDistance > 0
+                ? `translate3d(0, ${pullDistance}px, 0)`
+                : undefined,
             transition: isPullDragging
               ? "none"
               : "transform 380ms cubic-bezier(0.22, 1.12, 0.36, 1)",
           }}
-          className="relative will-change-transform"
+          className="relative"
         >
           {/* Header Banner */}
           <header className="relative isolate h-[calc(206*var(--u)+env(safe-area-inset-top))] overflow-visible bg-[#83051C] text-white">
