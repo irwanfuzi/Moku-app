@@ -34,6 +34,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import { saveVisitRecord, type VisitTypeCode } from "@/lib/visit-store";
 
 /* =========================================================
    DATA & CONSTANTS
@@ -43,10 +44,11 @@ interface MachineOption {
   code: string;
   model: string;
   customer: string;
+  location: string;
 }
 
 interface VisitTypeOption {
-  code: string;
+  code: VisitTypeCode;
   title: string;
   description: string;
   icon: "laptop" | "printer" | "package" | "wrench" | "gear";
@@ -59,11 +61,36 @@ interface SavedVisitSummary {
 }
 
 const MACHINE_OPTIONS: MachineOption[] = [
-  { code: "MK-001", model: "iR-ADV DX C3826i", customer: "PT. Sinar Mandiri" },
-  { code: "MK-002", model: "imageRUNNER 2625i", customer: "CV. Sukses Abadi" },
-  { code: "MK-003", model: "iR-ADV 4745i", customer: "PT. Prima Solusi" },
-  { code: "MK-004", model: "iR-ADV C5535i", customer: "PT. Citra Jaya" },
-  { code: "MK-007", model: "iR-ADV C5550i", customer: "PT. Maju Bersama" },
+  {
+    code: "MK-001",
+    model: "iR-ADV DX C3826i",
+    customer: "PT. Sinar Mandiri",
+    location: "Jl. Jend. Sudirman Kav. 52, Jakarta Selatan",
+  },
+  {
+    code: "MK-002",
+    model: "imageRUNNER 2625i",
+    customer: "CV. Sukses Abadi",
+    location: "Jl. M.H. Thamrin No. 18, Jakarta Pusat",
+  },
+  {
+    code: "MK-003",
+    model: "iR-ADV 4745i",
+    customer: "PT. Prima Solusi",
+    location: "Jl. HR. Rasuna Said Blok X-5, Jakarta Selatan",
+  },
+  {
+    code: "MK-004",
+    model: "iR-ADV C5535i",
+    customer: "PT. Citra Jaya",
+    location: "Jl. Gatot Subroto No. 123, Jakarta Selatan",
+  },
+  {
+    code: "MK-007",
+    model: "iR-ADV C5550i",
+    customer: "PT. Maju Bersama",
+    location: "Jl. Letjen S. Parman Kav. 28, Jakarta Barat",
+  },
 ];
 
 const VISIT_TYPE_OPTIONS: VisitTypeOption[] = [
@@ -159,12 +186,12 @@ function generateVisitNumber(isoDate: string): string {
       const storageKey = `${VISIT_SEQ_STORAGE_PREFIX}${compactDate}`;
       const rawLastSeq = window.localStorage.getItem(storageKey);
       const parsedLastSeq = rawLastSeq ? parseInt(rawLastSeq, 10) : 0;
-      nextSeq = Number.isFinite(parsedLastSeq) && parsedLastSeq >= 0
-        ? parsedLastSeq + 1
-        : 1;
+      nextSeq =
+        Number.isFinite(parsedLastSeq) && parsedLastSeq >= 0
+          ? parsedLastSeq + 1
+          : 1;
       window.localStorage.setItem(storageKey, String(nextSeq));
     } catch {
-      // Fallback jika localStorage tidak tersedia
       nextSeq = Math.floor((Date.now() % 999) + 1);
     }
   }
@@ -666,7 +693,7 @@ export default function CreateVisitPage() {
     useState(initialMachineCode);
   const [machineSearch, setMachineSearch] = useState("");
   const [visitDate, setVisitDate] = useState(getTodayIsoDate);
-  const [visitType, setVisitType] = useState("");
+  const [visitType, setVisitType] = useState<VisitTypeCode | "">("");
   const [activityDesc, setActivityDesc] = useState("");
   const [technicianNotes, setTechnicianNotes] = useState("");
 
@@ -803,7 +830,7 @@ export default function CreateVisitPage() {
     }, 150);
   };
 
-  const handleChooseVisitType = (code: string) => {
+  const handleChooseVisitType = (code: VisitTypeCode) => {
     triggerHaptic(8);
     setVisitType(code);
     if (errorSnackbar) dismissErrorSnackbar();
@@ -822,7 +849,7 @@ export default function CreateVisitPage() {
     if (isSubmitting) return;
 
     if (
-      !selectedMachineCode ||
+      !selectedMachine ||
       !visitDate ||
       !visitType ||
       !activityDesc.trim()
@@ -844,11 +871,28 @@ export default function CreateVisitPage() {
     }, 520);
 
     const t2 = window.setTimeout(() => {
+      const visitNumber = generateVisitNumber(visitDate);
+
+      saveVisitRecord({
+        visitNumber,
+        visitDate,
+        status: "Selesai",
+        machineCode: selectedMachine.code,
+        machineModel: selectedMachine.model,
+        customerName: selectedMachine.customer,
+        location: selectedMachine.location,
+        technicianName: recordedBy,
+        visitTypeCode: visitType,
+        activityDescription: activityDesc.trim(),
+        technicianNotes: technicianNotes.trim(),
+        createdAt: new Date().toISOString(),
+      });
+
       scrollToTopSmooth();
       setSavedVisit({
-        visitNumber: generateVisitNumber(visitDate),
+        visitNumber,
         visitDate,
-        machineCode: selectedMachineCode,
+        machineCode: selectedMachine.code,
       });
       setIsSubmitting(false);
       setIsFormExiting(false);
@@ -935,7 +979,12 @@ export default function CreateVisitPage() {
           <div className="moku-success-step-4 mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
             <button
               type="button"
-              onClick={() => navigateWithTransition("/visit-history", "forward")}
+              onClick={() =>
+                navigateWithTransition(
+                  `/visits/detail/${encodeURIComponent(savedVisit.visitNumber)}`,
+                  "forward"
+                )
+              }
               style={{ color: "#FFFFFF" }}
               className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
             >
@@ -1405,7 +1454,7 @@ export default function CreateVisitPage() {
         </div>
       </ElasticBottomSheet>
 
-      {/* Snackbar Error State (dengan smooth exit) */}
+      {/* Snackbar Error State */}
       {errorSnackbar &&
         typeof document !== "undefined" &&
         createPortal(
