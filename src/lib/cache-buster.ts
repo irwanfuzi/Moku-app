@@ -1,22 +1,22 @@
 declare const __APP_BUILD_VERSION__: string;
 
 const VERSION_STORAGE_KEY = "moku_app_build_version";
-const RELOAD_GUARD_KEY = "moku_cache_reloaded_for";
 
-async function clearBrowserCachesAndWorkers(): Promise<void> {
-  if (typeof window === "undefined") return;
+async function clearOldBrowserCaches(): Promise<void> {
+  if (typeof window === "undefined" || !("caches" in window)) return;
 
-  if ("caches" in window) {
-    const cacheKeys = await window.caches.keys();
-    await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
-  }
+  const currentVersion =
+    typeof __APP_BUILD_VERSION__ !== "undefined"
+      ? String(__APP_BUILD_VERSION__)
+      : "v2";
+  const activeCacheName = `moku-static-${currentVersion}`;
 
-  if ("serviceWorker" in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(
-      registrations.map((registration) => registration.unregister())
-    );
-  }
+  const cacheKeys = await window.caches.keys();
+  await Promise.all(
+    cacheKeys
+      .filter((key) => key !== activeCacheName)
+      .map((key) => window.caches.delete(key))
+  );
 }
 
 async function registerVersionedServiceWorker(version: string): Promise<void> {
@@ -41,21 +41,11 @@ export async function enforceLatestBuildCache(): Promise<void> {
 
   try {
     const previousVersion = window.localStorage.getItem(VERSION_STORAGE_KEY);
-    const alreadyReloadedForVersion =
-      window.sessionStorage.getItem(RELOAD_GUARD_KEY) === currentVersion;
 
-    if (previousVersion && previousVersion !== currentVersion) {
+    if (previousVersion !== currentVersion) {
       window.localStorage.setItem(VERSION_STORAGE_KEY, currentVersion);
-
-      if (!alreadyReloadedForVersion) {
-        window.sessionStorage.setItem(RELOAD_GUARD_KEY, currentVersion);
-        await clearBrowserCachesAndWorkers();
-        await registerVersionedServiceWorker(currentVersion);
-        window.location.reload();
-        return;
-      }
-    } else {
-      window.localStorage.setItem(VERSION_STORAGE_KEY, currentVersion);
+      // Bersihkan cache lama di background tanpa window.location.reload()
+      await clearOldBrowserCaches();
     }
 
     await registerVersionedServiceWorker(currentVersion);
