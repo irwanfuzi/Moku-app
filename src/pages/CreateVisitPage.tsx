@@ -207,96 +207,11 @@ function triggerHaptic(duration = 8) {
 }
 
 /* =========================================================
-   FUZZY SEARCH & HIGHLIGHT HELPERS
+   SEARCH & HIGHLIGHT HELPERS
 ========================================================= */
 
 function normalizeSearch(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function levenshteinDistance(a: string, b: string): number {
-  if (a === b) return 0;
-  if (!a.length) return b.length;
-  if (!b.length) return a.length;
-
-  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  const curr = new Array<number>(b.length + 1);
-
-  for (let i = 1; i <= a.length; i++) {
-    curr[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
-    }
-    for (let j = 0; j <= b.length; j++) prev[j] = curr[j];
-  }
-  return prev[b.length];
-}
-
-function getMachineMatchScore(
-  machine: MachineOption,
-  rawQuery: string
-): { score: number; isFuzzy: boolean } {
-  const q = rawQuery.trim().toLowerCase();
-  if (!q) return { score: 1, isFuzzy: false };
-
-  const normQ = normalizeSearch(q);
-  const fields = [machine.code, machine.customer, machine.model];
-  const lowerFields = fields.map((f) => f.toLowerCase());
-  const normFields = fields.map(normalizeSearch);
-
-  // 1. Exact / Substring match (prioritas tertinggi)
-  if (lowerFields[0] === q || normFields[0] === normQ) {
-    return { score: 100, isFuzzy: false };
-  }
-  if (
-    lowerFields.some((f) => f.startsWith(q)) ||
-    normFields.some((f) => f.startsWith(normQ))
-  ) {
-    return { score: 85, isFuzzy: false };
-  }
-  if (
-    lowerFields.some((f) => f.includes(q)) ||
-    (normQ.length >= 2 && normFields.some((f) => f.includes(normQ)))
-  ) {
-    return { score: 70, isFuzzy: false };
-  }
-
-  // 2. Error tolerance (typo per kata)
-  const queryWords = q.split(/\s+/).filter(Boolean);
-  const targetWords = lowerFields
-    .join(" ")
-    .split(/[\s.,-]+/)
-    .filter(Boolean);
-
-  let fuzzyHits = 0;
-  let totalPenalty = 0;
-
-  for (const qw of queryWords) {
-    if (qw.length < 2) continue;
-    const maxDist = qw.length <= 3 ? 1 : 2;
-    let bestDist = Infinity;
-
-    for (const tw of targetWords) {
-      if (tw.includes(qw)) {
-        bestDist = 0;
-        break;
-      }
-      const dist = levenshteinDistance(qw, tw.slice(0, qw.length + 1));
-      if (dist < bestDist) bestDist = dist;
-    }
-
-    if (bestDist <= maxDist) {
-      fuzzyHits += 1;
-      totalPenalty += bestDist;
-    }
-  }
-
-  if (fuzzyHits > 0 && fuzzyHits >= Math.ceil(queryWords.length * 0.5)) {
-    return { score: Math.max(10, 50 - totalPenalty * 8), isFuzzy: true };
-  }
-
-  return { score: 0, isFuzzy: false };
 }
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -852,27 +767,34 @@ export default function CreateVisitPage() {
     [visitType]
   );
 
-  const machineSearchResult = useMemo(() => {
-    const q = machineSearch.trim();
-    if (!q) {
-      return {
-        items: MACHINE_OPTIONS,
-        isFuzzyOnly: false,
-      };
-    }
+  const filteredMachines = useMemo(() => {
+    const q = machineSearch.trim().toLowerCase();
+    if (!q) return MACHINE_OPTIONS;
 
-    const scored = MACHINE_OPTIONS.map((machine) => ({
-      machine,
-      ...getMachineMatchScore(machine, q),
-    }))
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score);
+    const normQ = normalizeSearch(q);
 
-    const hasExact = scored.some((item) => !item.isFuzzy);
-    return {
-      items: scored.map((item) => item.machine),
-      isFuzzyOnly: scored.length > 0 && !hasExact,
-    };
+    return MACHINE_OPTIONS.filter((m) => {
+      const code = m.code.toLowerCase();
+      const customer = m.customer.toLowerCase();
+      const model = m.model.toLowerCase();
+
+      return (
+        code.includes(q) ||
+        customer.includes(q) ||
+        model.includes(q) ||
+        (normQ.length >= 2 &&
+          (normalizeSearch(m.code).includes(normQ) ||
+            normalizeSearch(m.model).includes(normQ)))
+      );
+    }).sort((a, b) => {
+      const aStarts =
+        a.code.toLowerCase().startsWith(q) ||
+        a.customer.toLowerCase().startsWith(q);
+      const bStarts =
+        b.code.toLowerCase().startsWith(q) ||
+        b.customer.toLowerCase().startsWith(q);
+      return Number(bStarts) - Number(aStarts);
+    });
   }, [machineSearch]);
 
   const isMobileView = !isReady || isMobile;
@@ -1436,7 +1358,7 @@ export default function CreateVisitPage() {
         </form>
       )}
 
-      {/* Bottom Sheet Pilih Mesin (Error Tolerance + Fixed Height) */}
+      {/* Bottom Sheet Pilih Mesin (Live Suggestion + Fixed Height) */}
       <ElasticBottomSheet
         isOpen={showMachineSheet}
         title="Pilih Mesin"
@@ -1479,21 +1401,11 @@ export default function CreateVisitPage() {
           )}
         </div>
 
-        {/* Info Error Tolerance (tampil jika hasil dari koreksi typo) */}
-        {machineSearchResult.isFuzzyOnly && (
-          <p className="mb-[calc(6*var(--u))] px-[calc(4*var(--u))] text-[calc(11.5*var(--u))] text-[#6E6873]">
-            Menampilkan hasil yang mendekati{" "}
-            <span className="font-semibold text-[#171717]">
-              “{machineSearch.trim()}”
-            </span>
-          </p>
-        )}
-
-        {/* Daftar Mesin dengan Tinggi Tetap (Anti Memendek) */}
+        {/* Daftar Mesin dengan Tinggi Tetap (Anti Memendek & Tanpa Garis Kedip) */}
         <div className="h-[min(46dvh,calc(310*var(--u)))] overflow-y-auto overscroll-contain">
-          {machineSearchResult.items.length > 0 ? (
-            <div className="divide-y divide-[#EFEFF2]">
-              {machineSearchResult.items.map((machine) => {
+          {filteredMachines.length > 0 ? (
+            <div className="space-y-[calc(4*var(--u))]">
+              {filteredMachines.map((machine) => {
                 const isActive = selectedMachineCode === machine.code;
                 return (
                   <button
