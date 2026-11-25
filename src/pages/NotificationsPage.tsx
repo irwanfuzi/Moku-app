@@ -558,6 +558,7 @@ export default function NotificationsPage() {
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   const [lastSelectedCount, setLastSelectedCount] = useState(1);
   const [shouldRenderBar, setShouldRenderBar] = useState(false);
   const [isBarClosing, setIsBarClosing] = useState(false);
@@ -821,7 +822,7 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     SLOW & SMOOTH DELETE + COLLAPSE ANIMATION
+     SMOOTH DELETE + COLLAPSE ANIMATION
   ======================================================= */
 
   const finishDeletion = useCallback((ids: string[], message: string) => {
@@ -831,6 +832,7 @@ export default function NotificationsPage() {
 
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setIsSelectionMode(false);
+    setIsClearingAll(false);
     setSwipeOffsets({});
     swipeOffsetRef.current = {};
     setActiveSwipeId(null);
@@ -844,28 +846,51 @@ export default function NotificationsPage() {
   }, []);
 
   const animateAndDelete = useCallback(
-    (ids: string[], message: string) => {
+    (ids: string[], message: string, isSwipe = false) => {
       if (ids.length === 0) return;
 
+      const deletingAll = ids.length >= notifications.length && !isSwipe;
+
+      // Hapus semua: fade-out seluruh list beserta header tanggal sekaligus
+      if (deletingAll) {
+        setIsClearingAll(true);
+        scheduleTimer(() => {
+          finishDeletion(ids, message);
+          suppressClickRef.current = false;
+        }, 380);
+        return;
+      }
+
+      // Swipe 1 item atau hapus sebagian lewat checkbox
       setSlidingOutIds((current) => [...new Set([...current, ...ids])]);
 
-      scheduleTimer(() => {
-        setCollapsingIds((current) => [...new Set([...current, ...ids])]);
-      }, 240);
+      scheduleTimer(
+        () => {
+          setCollapsingIds((current) => [...new Set([...current, ...ids])]);
+        },
+        isSwipe ? 220 : 120
+      );
 
-      scheduleTimer(() => {
-        finishDeletion(ids, message);
-        suppressClickRef.current = false;
-      }, 720);
+      scheduleTimer(
+        () => {
+          finishDeletion(ids, message);
+          suppressClickRef.current = false;
+        },
+        isSwipe ? 660 : 520
+      );
     },
-    [finishDeletion, scheduleTimer]
+    [finishDeletion, notifications.length, scheduleTimer]
   );
 
   const handleDeleteSelected = () => {
     if (selectedIds.length === 0) return;
     const idsToDelete = [...selectedIds];
     setIsSelectionMode(false);
-    animateAndDelete(idsToDelete, `${idsToDelete.length} notifikasi dihapus`);
+    animateAndDelete(
+      idsToDelete,
+      `${idsToDelete.length} notifikasi dihapus`,
+      false
+    );
   };
 
   const handleUndo = () => {
@@ -941,7 +966,7 @@ export default function NotificationsPage() {
     event: TouchEvent<HTMLDivElement>,
     id: string
   ) => {
-    if (isSelectionMode || slidingOutIds.includes(id)) return;
+    if (isSelectionMode || slidingOutIds.includes(id) || isClearingAll) return;
 
     const touch = event.touches[0];
 
@@ -1002,7 +1027,7 @@ export default function NotificationsPage() {
 
     if (start.horizontal && offset <= SWIPE_DELETE_THRESHOLD) {
       suppressClickRef.current = true;
-      animateAndDelete([id], "1 notifikasi dihapus");
+      animateAndDelete([id], "1 notifikasi dihapus", true);
       return;
     }
 
@@ -1019,6 +1044,11 @@ export default function NotificationsPage() {
     event: MouseEvent<HTMLDivElement>,
     id: string
   ) => {
+    if (isClearingAll) {
+      event.preventDefault();
+      return;
+    }
+
     if (isSelectionMode) {
       event.preventDefault();
       toggleSelection(id);
@@ -1095,220 +1125,248 @@ export default function NotificationsPage() {
                 />
               </div>
             ) : notifications.length > 0 ? (
-              <div className="space-y-[calc(12*var(--u))]">
-                {groupedNotifications.map((group, groupIndex) => (
-                  <section key={group.label} className="min-w-0">
-                    <div className="flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(16*var(--u))] pb-[calc(8*var(--u))] pt-[calc(4*var(--u))]">
-                      <h2 className="font-display text-[calc(13.5*var(--u))] font-bold tracking-[-0.02em] text-[#5A555F]">
-                        {group.label}
-                      </h2>
+              <div
+                className={`space-y-[calc(12*var(--u))] transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isClearingAll
+                    ? "pointer-events-none translate-y-[10px] scale-[0.985] opacity-0"
+                    : "translate-y-0 scale-100 opacity-100"
+                }`}
+              >
+                {groupedNotifications.map((group, groupIndex) => {
+                  const isGroupCollapsing = group.items.every((item) =>
+                    collapsingIds.includes(item.id)
+                  );
 
-                      {groupIndex === 0 && !isSelectionMode && (
-                        <button
-                          type="button"
-                          onClick={handleMarkAllAsRead}
-                          disabled={unreadCount === 0}
-                          className={`shrink-0 text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-all duration-500 ease-out active:scale-95 active:opacity-70 ${
-                            unreadCount > 0
-                              ? "translate-y-0 opacity-100"
-                              : "pointer-events-none -translate-y-1 opacity-0"
-                          }`}
-                        >
-                          Baca Semua ({unreadCount})
-                        </button>
-                      )}
-                    </div>
+                  return (
+                    <div
+                      key={group.label}
+                      className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        isGroupCollapsing
+                          ? "pointer-events-none grid-rows-[0fr] opacity-0"
+                          : "grid-rows-[1fr] opacity-100"
+                      }`}
+                    >
+                      <section className="min-h-0 min-w-0 overflow-hidden">
+                        <div className="flex items-center justify-between gap-[calc(8*var(--u))] px-[calc(16*var(--u))] pb-[calc(8*var(--u))] pt-[calc(4*var(--u))]">
+                          <h2 className="font-display text-[calc(13.5*var(--u))] font-bold tracking-[-0.02em] text-[#5A555F]">
+                            {group.label}
+                          </h2>
 
-                    <div className="border-t border-[#EFEFF2]">
-                      {group.items.map((item, itemIndex) => {
-                        const isSelected = selectedIds.includes(item.id);
-                        const isSlidingOut = slidingOutIds.includes(item.id);
-                        const isCollapsing = collapsingIds.includes(item.id);
-                        const isJustMarkedRead = markingReadIds.includes(
-                          item.id
-                        );
-                        const swipeOffset = swipeOffsets[item.id] ?? 0;
-                        const isSwiping = swipeOffset < -1 || isSlidingOut;
-                        const swipeProgress = Math.min(
-                          1,
-                          Math.abs(swipeOffset) /
-                            Math.abs(SWIPE_DELETE_THRESHOLD)
-                        );
-                        const isReadyToDelete =
-                          swipeOffset <= SWIPE_DELETE_THRESHOLD || isSlidingOut;
-                        const formattedTitle = toTitleCase(item.title);
-                        const subtitle = getNotificationSubtitle(item);
-                        const displayTime = formatMobileTime(item);
-                        const { Icon, circleClass } = getMobileBadgeStyle(item);
+                          {groupIndex === 0 && !isSelectionMode && (
+                            <button
+                              type="button"
+                              onClick={handleMarkAllAsRead}
+                              disabled={unreadCount === 0}
+                              className={`shrink-0 text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-all duration-500 ease-out active:scale-95 active:opacity-70 ${
+                                unreadCount > 0
+                                  ? "translate-y-0 opacity-100"
+                                  : "pointer-events-none -translate-y-1 opacity-0"
+                              }`}
+                            >
+                              Baca Semua ({unreadCount})
+                            </button>
+                          )}
+                        </div>
 
-                        return (
-                          <div
-                            key={item.id}
-                            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                              isCollapsing
-                                ? "pointer-events-none grid-rows-[0fr] opacity-0"
-                                : "grid-rows-[1fr] opacity-100"
-                            }`}
-                          >
-                            <div className="min-h-0 overflow-hidden">
+                        <div className="border-t border-[#EFEFF2]">
+                          {group.items.map((item, itemIndex) => {
+                            const isSelected = selectedIds.includes(item.id);
+                            const isSlidingOut = slidingOutIds.includes(item.id);
+                            const isCollapsing = collapsingIds.includes(item.id);
+                            const isJustMarkedRead = markingReadIds.includes(
+                              item.id
+                            );
+                            const swipeOffset = swipeOffsets[item.id] ?? 0;
+                            const isSwiping = swipeOffset < -1;
+                            const swipeProgress = Math.min(
+                              1,
+                              Math.abs(swipeOffset) /
+                                Math.abs(SWIPE_DELETE_THRESHOLD)
+                            );
+                            const isReadyToDelete =
+                              swipeOffset <= SWIPE_DELETE_THRESHOLD ||
+                              (isSwiping && isSlidingOut);
+                            const formattedTitle = toTitleCase(item.title);
+                            const subtitle = getNotificationSubtitle(item);
+                            const displayTime = formatMobileTime(item);
+                            const { Icon, circleClass } =
+                              getMobileBadgeStyle(item);
+
+                            return (
                               <div
-                                style={{
-                                  animationDelay: `${Math.min(itemIndex * 45, 320)}ms`,
-                                }}
-                                className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
+                                key={item.id}
+                                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                  isCollapsing
+                                    ? "pointer-events-none grid-rows-[0fr] opacity-0"
+                                    : "grid-rows-[1fr] opacity-100"
+                                }`}
                               >
-                                {isSwiping && (
+                                <div className="min-h-0 overflow-hidden">
                                   <div
-                                    className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
                                     style={{
-                                      opacity: isSlidingOut
-                                        ? 0.95
-                                        : Math.min(swipeProgress * 1.25, 1),
-                                      transition:
-                                        activeSwipeId === item.id
-                                          ? "none"
-                                          : "opacity 320ms ease",
+                                      animationDelay: `${Math.min(itemIndex * 45, 320)}ms`,
                                     }}
-                                    aria-hidden="true"
+                                    className="notif-card-reveal relative overflow-hidden border-b border-[#EFEFF2]"
                                   >
-                                    <AnimatedTrashIcon
-                                      ready={isReadyToDelete}
-                                      progress={swipeProgress}
-                                    />
-                                  </div>
-                                )}
-
-                                <div
-                                  onClick={(event) =>
-                                    handleItemClick(event, item.id)
-                                  }
-                                  onTouchStart={(event) =>
-                                    handleTouchStart(event, item.id)
-                                  }
-                                  onTouchMove={(event) =>
-                                    handleTouchMove(event, item.id)
-                                  }
-                                  onTouchEnd={() => handleTouchEnd(item.id)}
-                                  onTouchCancel={() =>
-                                    handleTouchCancel(item.id)
-                                  }
-                                  onContextMenu={(event) =>
-                                    event.preventDefault()
-                                  }
-                                  className={`mobile-swipe-foreground relative z-10 flex w-full cursor-pointer items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
-                                    isSelected
-                                      ? "bg-[#FADCE1]"
-                                      : !item.isRead
-                                        ? "bg-[#FDF2F4]"
-                                        : "bg-white"
-                                  } ${isJustMarkedRead ? "notif-read-fade" : ""}`}
-                                  style={{
-                                    transform: isSlidingOut
-                                      ? "translate3d(-105%, 0, 0)"
-                                      : `translate3d(${swipeOffset}px, 0, 0)`,
-                                    opacity: isSlidingOut ? 0 : 1,
-                                    transition:
-                                      activeSwipeId === item.id
-                                        ? "background-color 700ms ease-out"
-                                        : "transform 440ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease-out, background-color 700ms ease-out",
-                                    touchAction: "pan-y",
-                                    willChange:
-                                      swipeOffset !== 0 || isSlidingOut
-                                        ? "transform, opacity"
-                                        : "auto",
-                                  }}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      toggleSelection(item.id);
-                                    }}
-                                    aria-label={
-                                      isSelected
-                                        ? `Batalkan pilih ${formattedTitle}`
-                                        : `Pilih ${formattedTitle}`
-                                    }
-                                    aria-pressed={isSelected}
-                                    style={{ perspective: "420px" }}
-                                    className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
-                                  >
-                                    <span
-                                      className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
-                                        isSelected ? "is-flipped" : ""
-                                      }`}
-                                    >
-                                      <span
-                                        className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
+                                    {isSwiping && (
+                                      <div
+                                        className="absolute inset-0 z-0 flex items-center justify-end bg-[#BF0B2C] pr-[calc(24*var(--u))]"
+                                        style={{
+                                          opacity: isSlidingOut
+                                            ? 0.95
+                                            : Math.min(
+                                                swipeProgress * 1.25,
+                                                1
+                                              ),
+                                          transition:
+                                            activeSwipeId === item.id
+                                              ? "none"
+                                              : "opacity 320ms ease",
+                                        }}
+                                        aria-hidden="true"
                                       >
-                                        <Icon
-                                          className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                                            isSelected
-                                              ? "scale-75 rotate-[-14deg] opacity-60"
-                                              : "scale-100 rotate-0 opacity-100 delay-[240ms]"
-                                          }`}
-                                          weight="bold"
-                                        />
-                                      </span>
-
-                                      <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
-                                        <Check
-                                          className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                                            isSelected
-                                              ? "scale-100 rotate-0 opacity-100 delay-[240ms]"
-                                              : "scale-75 rotate-[14deg] opacity-60"
-                                          }`}
-                                          weight="bold"
-                                        />
-                                      </span>
-                                    </span>
-                                  </button>
-
-                                  <div className="flex min-w-0 flex-1 flex-col">
-                                    <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
-                                      <p className="min-w-0 flex-1 truncate font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
-                                        {formattedTitle}
-                                      </p>
-
-                                      <div className="flex shrink-0 items-center pt-[calc(1.5*var(--u))]">
-                                        <span className="whitespace-nowrap text-[calc(11*var(--u))] font-medium tabular-nums text-[#5A555F]">
-                                          {displayTime}
-                                        </span>
-
-                                        <span
-                                          aria-hidden={item.isRead}
-                                          aria-label={
-                                            !item.isRead
-                                              ? "Belum dibaca"
-                                              : undefined
-                                          }
-                                          className={`shrink-0 rounded-full bg-[#FF2D20] transition-all duration-500 ease-out ${
-                                            !item.isRead
-                                              ? "ml-[calc(5*var(--u))] h-[calc(7.5*var(--u))] w-[calc(7.5*var(--u))] scale-100 opacity-100"
-                                              : "ml-0 h-0 w-0 scale-0 opacity-0"
-                                          }`}
+                                        <AnimatedTrashIcon
+                                          ready={isReadyToDelete}
+                                          progress={swipeProgress}
                                         />
                                       </div>
-                                    </div>
-
-                                    {subtitle && (
-                                      <p className="mt-[calc(3.5*var(--u))] line-clamp-2 pr-[calc(6*var(--u))] text-[calc(11.5*var(--u))] leading-[1.42] text-[#3F3A42]">
-                                        {subtitle}
-                                      </p>
                                     )}
+
+                                    <div
+                                      onClick={(event) =>
+                                        handleItemClick(event, item.id)
+                                      }
+                                      onTouchStart={(event) =>
+                                        handleTouchStart(event, item.id)
+                                      }
+                                      onTouchMove={(event) =>
+                                        handleTouchMove(event, item.id)
+                                      }
+                                      onTouchEnd={() => handleTouchEnd(item.id)}
+                                      onTouchCancel={() =>
+                                        handleTouchCancel(item.id)
+                                      }
+                                      onContextMenu={(event) =>
+                                        event.preventDefault()
+                                      }
+                                      className={`mobile-swipe-foreground relative z-10 flex w-full cursor-pointer items-start gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] transition-colors duration-700 ease-out ${
+                                        isSelected
+                                          ? "bg-[#FADCE1]"
+                                          : !item.isRead
+                                            ? "bg-[#FDF2F4]"
+                                            : "bg-white"
+                                      } ${isJustMarkedRead ? "notif-read-fade" : ""}`}
+                                      style={{
+                                        transform: isSlidingOut
+                                          ? isSwiping
+                                            ? "translate3d(-105%, 0, 0)"
+                                            : "translate3d(0, 0, 0) scale(0.98)"
+                                          : `translate3d(${swipeOffset}px, 0, 0)`,
+                                        opacity: isSlidingOut ? 0 : 1,
+                                        transition:
+                                          activeSwipeId === item.id
+                                            ? "background-color 700ms ease-out"
+                                            : "transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 340ms ease-out, background-color 700ms ease-out",
+                                        touchAction: "pan-y",
+                                        willChange:
+                                          swipeOffset !== 0 || isSlidingOut
+                                            ? "transform, opacity"
+                                            : "auto",
+                                      }}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          toggleSelection(item.id);
+                                        }}
+                                        aria-label={
+                                          isSelected
+                                            ? `Batalkan pilih ${formattedTitle}`
+                                            : `Pilih ${formattedTitle}`
+                                        }
+                                        aria-pressed={isSelected}
+                                        style={{ perspective: "420px" }}
+                                        className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
+                                      >
+                                        <span
+                                          className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
+                                            isSelected ? "is-flipped" : ""
+                                          }`}
+                                        >
+                                          <span
+                                            className={`moku-icon-face moku-icon-face-front absolute inset-0 flex items-center justify-center rounded-full ${circleClass}`}
+                                          >
+                                            <Icon
+                                              className={`h-[calc(20*var(--u))] w-[calc(20*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                                isSelected
+                                                  ? "scale-75 rotate-[-14deg] opacity-60"
+                                                  : "scale-100 rotate-0 opacity-100 delay-[240ms]"
+                                              }`}
+                                              weight="bold"
+                                            />
+                                          </span>
+
+                                          <span className="moku-icon-face moku-icon-face-back absolute inset-0 flex items-center justify-center rounded-full bg-[#8E001C] text-white shadow-sm">
+                                            <Check
+                                              className={`h-[calc(19*var(--u))] w-[calc(19*var(--u))] transition-all duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                                isSelected
+                                                  ? "scale-100 rotate-0 opacity-100 delay-[240ms]"
+                                                  : "scale-75 rotate-[14deg] opacity-60"
+                                              }`}
+                                              weight="bold"
+                                            />
+                                          </span>
+                                        </span>
+                                      </button>
+
+                                      <div className="flex min-w-0 flex-1 flex-col">
+                                        <div className="flex items-start justify-between gap-[calc(8*var(--u))]">
+                                          <p className="min-w-0 flex-1 truncate font-display text-[calc(13.5*var(--u))] font-bold leading-[1.25] tracking-[-0.015em] text-[#171717]">
+                                            {formattedTitle}
+                                          </p>
+
+                                          <div className="flex shrink-0 items-center pt-[calc(1.5*var(--u))]">
+                                            <span className="whitespace-nowrap text-[calc(11*var(--u))] font-medium tabular-nums text-[#5A555F]">
+                                              {displayTime}
+                                            </span>
+
+                                            <span
+                                              aria-hidden={item.isRead}
+                                              aria-label={
+                                                !item.isRead
+                                                  ? "Belum dibaca"
+                                                  : undefined
+                                              }
+                                              className={`shrink-0 rounded-full bg-[#FF2D20] transition-all duration-500 ease-out ${
+                                                !item.isRead
+                                                  ? "ml-[calc(5*var(--u))] h-[calc(7.5*var(--u))] w-[calc(7.5*var(--u))] scale-100 opacity-100"
+                                                  : "ml-0 h-0 w-0 scale-0 opacity-0"
+                                              }`}
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {subtitle && (
+                                          <p className="mt-[calc(3.5*var(--u))] line-clamp-2 pr-[calc(6*var(--u))] text-[calc(11.5*var(--u))] leading-[1.42] text-[#3F3A42]">
+                                            {subtitle}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      </section>
                     </div>
-                  </section>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <div className="flex min-h-[calc(72dvh)] flex-col items-center justify-center px-[calc(24*var(--u))] pb-[calc(44*var(--u))] text-center">
+              <div className="moku-empty-enter flex min-h-[calc(72dvh)] flex-col items-center justify-center px-[calc(24*var(--u))] pb-[calc(44*var(--u))] text-center">
                 <img
                   src="/images/moku/illustrations/notifikasi-lonceng.png"
                   alt="Belum ada notifikasi"
@@ -1426,6 +1484,10 @@ export default function NotificationsPage() {
             animation: notif-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
 
+          .moku-empty-enter {
+            animation: moku-empty-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
           .moku-trash-pop {
             animation: moku-trash-pop 520ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
           }
@@ -1492,6 +1554,17 @@ export default function NotificationsPage() {
             }
           }
 
+          @keyframes moku-empty-in {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 12px, 0) scale(0.96);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0) scale(1);
+            }
+          }
+
           @keyframes moku-trash-pop {
             0% {
               transform: scale(0.92);
@@ -1544,6 +1617,7 @@ export default function NotificationsPage() {
 
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
+            .moku-empty-enter,
             .moku-trash-pop,
             .moku-bar-enter,
             .moku-bar-exit,
@@ -1623,7 +1697,13 @@ export default function NotificationsPage() {
 
         <section>
           {notifications.length > 0 ? (
-            <div className="divide-y divide-[#ECEDEF]">
+            <div
+              className={`divide-y divide-[#ECEDEF] transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                isClearingAll
+                  ? "pointer-events-none translate-y-2 scale-[0.99] opacity-0"
+                  : "translate-y-0 scale-100 opacity-100"
+              }`}
+            >
               {notifications.map((item) => {
                 const Icon = iconMap[item.type];
                 const isSelected = selectedIds.includes(item.id);
@@ -1741,7 +1821,8 @@ export default function NotificationsPage() {
                             onClick={() =>
                               animateAndDelete(
                                 [item.id],
-                                "1 notifikasi dihapus"
+                                "1 notifikasi dihapus",
+                                false
                               )
                             }
                             title="Hapus notifikasi"
@@ -1758,7 +1839,7 @@ export default function NotificationsPage() {
               })}
             </div>
           ) : (
-            <div className="flex min-h-[440px] flex-col items-center justify-center px-5 py-10 text-center">
+            <div className="moku-empty-enter flex min-h-[440px] flex-col items-center justify-center px-5 py-10 text-center">
               <img
                 src="/images/moku/illustrations/notifikasi-lonceng.png"
                 alt="Belum ada notifikasi"
@@ -1820,6 +1901,10 @@ export default function NotificationsPage() {
           animation: notification-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
+        .moku-empty-enter {
+          animation: moku-empty-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
         .snackbar-enter {
           animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
@@ -1836,6 +1921,17 @@ export default function NotificationsPage() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes moku-empty-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 12px, 0) scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
           }
         }
 
@@ -1861,6 +1957,7 @@ export default function NotificationsPage() {
 
         @media (prefers-reduced-motion: reduce) {
           .page-enter,
+          .moku-empty-enter,
           .snackbar-enter,
           .snackbar-progress {
             animation: none;
