@@ -16,6 +16,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import CreateVisitPage from "@/pages/CreateVisitPage";
 import VisitDetailPage from "@/pages/VisitDetailPage";
+import EditVisitPage from "@/pages/EditVisitPage";
 import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
@@ -111,6 +112,18 @@ function VisitDetailRoute() {
   );
 }
 
+function EditVisitRoute() {
+  return (
+    <IonPage>
+      <IonContent fullscreen scrollEvents={true}>
+        <AppShell>
+          <EditVisitPage />
+        </AppShell>
+      </IonContent>
+    </IonPage>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -130,6 +143,11 @@ export default function App() {
             exact
             path="/visits/detail/:visitNumber"
             component={VisitDetailRoute}
+          />
+          <Route
+            exact
+            path="/visits/edit/:visitNumber"
+            component={EditVisitRoute}
           />
           <Route exact path="/visit-detail" component={VisitDetailRoute} />
         </IonRouterOutlet>
