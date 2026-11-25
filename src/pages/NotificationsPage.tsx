@@ -75,7 +75,8 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const SWIPE_DELETE_THRESHOLD = -64;
-const FLOATING_BAR_EXIT_MS = 950;
+const FLOATING_BAR_EXIT_MS = 420;
+const SNACKBAR_EXIT_MS = 320;
 const EMPTY_BELL_SRC = "/images/moku/illustrations/notifikasi-lonceng.png";
 
 function toTitleCase(text: string): string {
@@ -91,7 +92,7 @@ function toTitleCase(text: string): string {
 }
 
 /* =========================================================
-   CUSTOM ANIMATED TRASH ICON (PHOSPHOR-STYLE, NO CIRCLE)
+   CUSTOM ANIMATED TRASH ICON
 ========================================================= */
 
 function AnimatedTrashIcon({
@@ -322,7 +323,7 @@ function MokuCheckbox({
         event.stopPropagation();
         onChange();
       }}
-      className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
+      className={`group flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-[260ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30 focus-visible:ring-offset-2 ${
         checked
           ? "border-[#730217] bg-[#730217] text-white"
           : "border-[#D5D7DC] bg-white text-transparent hover:border-[#730217] hover:bg-[#730217]/[0.04]"
@@ -331,7 +332,7 @@ function MokuCheckbox({
       <Check
         size={13}
         weight="bold"
-        className={`transition-all duration-200 ${
+        className={`transition-all duration-[260ms] ${
           checked ? "scale-100 opacity-100" : "scale-75 opacity-0"
         }`}
       />
@@ -565,10 +566,12 @@ export default function NotificationsPage() {
   const [isBarClosing, setIsBarClosing] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
+    id: number;
     message: string;
     deleted: DeletedNotification[];
     readUndo?: { id: string; isRead: boolean }[];
   } | null>(null);
+  const [isSnackbarClosing, setIsSnackbarClosing] = useState(false);
 
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
@@ -588,6 +591,8 @@ export default function NotificationsPage() {
   const swipeOffsetRef = useRef<Record<string, number>>({});
   const activeTimersRef = useRef<number[]>([]);
   const barExitTimerRef = useRef<number | null>(null);
+  const snackbarAutoTimerRef = useRef<number | null>(null);
+  const snackbarExitTimerRef = useRef<number | null>(null);
   const suppressClickRef = useRef(false);
 
   const isMobileView = !isReady || isMobile;
@@ -601,7 +606,47 @@ export default function NotificationsPage() {
     return id;
   }, []);
 
-  // Preload ilustrasi empty state agar tidak pop-in saat daftar kosong
+  const dismissSnackbar = useCallback(() => {
+    if (snackbarAutoTimerRef.current !== null) {
+      window.clearTimeout(snackbarAutoTimerRef.current);
+      snackbarAutoTimerRef.current = null;
+    }
+    setIsSnackbarClosing(true);
+    if (snackbarExitTimerRef.current !== null) {
+      window.clearTimeout(snackbarExitTimerRef.current);
+    }
+    snackbarExitTimerRef.current = window.setTimeout(() => {
+      setSnackbar(null);
+      setIsSnackbarClosing(false);
+      snackbarExitTimerRef.current = null;
+    }, SNACKBAR_EXIT_MS);
+  }, []);
+
+  const showSnackbar = useCallback(
+    (payload: {
+      message: string;
+      deleted: DeletedNotification[];
+      readUndo?: { id: string; isRead: boolean }[];
+    }) => {
+      if (snackbarAutoTimerRef.current !== null) {
+        window.clearTimeout(snackbarAutoTimerRef.current);
+        snackbarAutoTimerRef.current = null;
+      }
+      if (snackbarExitTimerRef.current !== null) {
+        window.clearTimeout(snackbarExitTimerRef.current);
+        snackbarExitTimerRef.current = null;
+      }
+
+      setIsSnackbarClosing(false);
+      setSnackbar({ id: Date.now(), ...payload });
+
+      snackbarAutoTimerRef.current = window.setTimeout(() => {
+        dismissSnackbar();
+      }, 5000);
+    },
+    [dismissSnackbar]
+  );
+
   useEffect(() => {
     const img = new Image();
     img.src = EMPTY_BELL_SRC;
@@ -623,28 +668,15 @@ export default function NotificationsPage() {
   useEffect(() => {
     const syncNotifications = () => {
       const latest = loadNotifications();
-
       setNotifications(latest);
-
       setSelectedIds((current) =>
         current.filter((id) => latest.some((item) => item.id === id))
       );
     };
 
     syncNotifications();
-
     return subscribeNotifications(syncNotifications);
   }, []);
-
-  useEffect(() => {
-    if (!snackbar) return;
-
-    const timeout = window.setTimeout(() => {
-      setSnackbar(null);
-    }, 5000);
-
-    return () => window.clearTimeout(timeout);
-  }, [snackbar]);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.isRead).length,
@@ -740,10 +772,10 @@ export default function NotificationsPage() {
   };
 
   /* =======================================================
-     MARK AS READ (SLOW & SMOOTH STAGGERED ANIMATION)
+     MARK AS READ
   ======================================================= */
 
-  const handleMarkAsRead = (id: string, showSnackbar = false) => {
+  const handleMarkAsRead = (id: string, shouldShowSnackbar = false) => {
     const target = notifications.find((item) => item.id === id);
 
     if (!target || target.isRead) return;
@@ -755,8 +787,8 @@ export default function NotificationsPage() {
       setMarkingReadIds((prev) => prev.filter((itemId) => itemId !== id));
     }, 760);
 
-    if (showSnackbar) {
-      setSnackbar({
+    if (shouldShowSnackbar) {
+      showSnackbar({
         message: "1 notifikasi ditandai sudah dibaca",
         deleted: [],
         readUndo: [{ id, isRead: false }],
@@ -783,7 +815,7 @@ export default function NotificationsPage() {
       setMarkingReadIds([]);
     }, totalWaveDuration);
 
-    setSnackbar({
+    showSnackbar({
       message: `${unreadTargets.length} notifikasi ditandai sudah dibaca`,
       deleted: [],
       readUndo: unreadTargets.map((item) => ({
@@ -816,7 +848,7 @@ export default function NotificationsPage() {
       setMarkingReadIds([]);
     }, 900);
 
-    setSnackbar({
+    showSnackbar({
       message: `${targets.length} notifikasi ditandai sudah dibaca`,
       deleted: [],
       readUndo: targets.map((item) => ({
@@ -832,25 +864,28 @@ export default function NotificationsPage() {
      SMOOTH DELETE + COLLAPSE ANIMATION
   ======================================================= */
 
-  const finishDeletion = useCallback((ids: string[], message: string) => {
-    const deleted = deleteNotifications(ids);
+  const finishDeletion = useCallback(
+    (ids: string[], message: string) => {
+      const deleted = deleteNotifications(ids);
 
-    if (deleted.length === 0) return;
+      if (deleted.length === 0) return;
 
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setIsSelectionMode(false);
-    setIsClearingAll(false);
-    setSwipeOffsets({});
-    swipeOffsetRef.current = {};
-    setActiveSwipeId(null);
-    setSlidingOutIds((current) => current.filter((id) => !ids.includes(id)));
-    setCollapsingIds((current) => current.filter((id) => !ids.includes(id)));
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setIsSelectionMode(false);
+      setIsClearingAll(false);
+      setSwipeOffsets({});
+      swipeOffsetRef.current = {};
+      setActiveSwipeId(null);
+      setSlidingOutIds((current) => current.filter((id) => !ids.includes(id)));
+      setCollapsingIds((current) => current.filter((id) => !ids.includes(id)));
 
-    setSnackbar({
-      message,
-      deleted,
-    });
-  }, []);
+      showSnackbar({
+        message,
+        deleted,
+      });
+    },
+    [showSnackbar]
+  );
 
   const animateAndDelete = useCallback(
     (ids: string[], message: string, isSwipe = false) => {
@@ -918,7 +953,7 @@ export default function NotificationsPage() {
       saveNotifications(latest);
     }
 
-    setSnackbar(null);
+    dismissSnackbar();
   };
 
   const handleBack = () => {
@@ -1078,11 +1113,17 @@ export default function NotificationsPage() {
       if (barExitTimerRef.current !== null) {
         window.clearTimeout(barExitTimerRef.current);
       }
+      if (snackbarAutoTimerRef.current !== null) {
+        window.clearTimeout(snackbarAutoTimerRef.current);
+      }
+      if (snackbarExitTimerRef.current !== null) {
+        window.clearTimeout(snackbarExitTimerRef.current);
+      }
     };
   }, []);
 
   /* =======================================================
-     MOBILE SUB-PAGE VIEW (FLAT LIST + THIN DIVIDER)
+     MOBILE SUB-PAGE VIEW
   ======================================================= */
 
   if (isMobileView) {
@@ -1098,7 +1139,7 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={handleBack}
                 aria-label={isSelectionMode ? "Batalkan pilihan" : "Kembali"}
-                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
+                className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-[260ms] active:bg-white/15"
               >
                 {isSelectionMode ? (
                   <X
@@ -1292,7 +1333,7 @@ export default function NotificationsPage() {
                                         }
                                         aria-pressed={isSelected}
                                         style={{ perspective: "420px" }}
-                                        className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-200 active:scale-90"
+                                        className="mt-[calc(1*var(--u))] h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 rounded-full transition-transform duration-[260ms] active:scale-90"
                                       >
                                         <span
                                           className={`moku-icon-flip-inner relative block h-full w-full rounded-full ${
@@ -1409,7 +1450,7 @@ export default function NotificationsPage() {
                 type="button"
                 disabled={isBarClosing}
                 onClick={toggleSelectAll}
-                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-200 active:scale-95 ${
+                className={`mr-1 rounded-xl px-2.5 py-1.5 text-[11.5px] font-bold transition-colors duration-[260ms] active:scale-95 ${
                   allNotificationsSelected
                     ? "bg-[#FCECEF] text-[#8E001C]"
                     : "bg-[#F4F4F6] text-[#29232A] active:bg-[#EAEAEF]"
@@ -1424,7 +1465,7 @@ export default function NotificationsPage() {
                 onClick={handleMarkSelectedAsRead}
                 aria-label="Tandai sudah dibaca"
                 title="Tandai sudah dibaca"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-200 active:bg-[#8E001C]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8E001C] transition-colors duration-[260ms] active:bg-[#8E001C]/10"
               >
                 <Checks size={19} weight="bold" />
               </button>
@@ -1435,7 +1476,7 @@ export default function NotificationsPage() {
                 onClick={handleDeleteSelected}
                 aria-label="Hapus notifikasi"
                 title="Hapus notifikasi"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-200 active:bg-[#BF0B2C]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#BF0B2C] transition-colors duration-[260ms] active:bg-[#BF0B2C]/10"
               >
                 <Trash size={19} weight="bold" />
               </button>
@@ -1446,7 +1487,7 @@ export default function NotificationsPage() {
                 onClick={clearSelection}
                 aria-label="Batalkan pilihan"
                 title="Batalkan pilihan"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-200 active:bg-[#F1F2F5]"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#5E5863] transition-colors duration-[260ms] active:bg-[#F1F2F5]"
               >
                 <X size={19} weight="bold" />
               </button>
@@ -1456,9 +1497,14 @@ export default function NotificationsPage() {
 
         {snackbar && (
           <div
+            key={snackbar.id}
             role="status"
             aria-live="polite"
-            className="snackbar-enter fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-50 mx-auto flex max-w-[640px] items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl ${
+              isSnackbarClosing
+                ? "snackbar-exit pointer-events-none"
+                : "snackbar-enter"
+            }`}
           >
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <CheckCircle
@@ -1475,12 +1521,12 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={handleUndo}
-              className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors duration-[260ms] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               URUNGKAN
             </button>
 
-            <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] bg-[#F28C0F]" />
+            <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] w-full origin-left bg-[#F28C0F]" />
           </div>
         )}
 
@@ -1531,19 +1577,24 @@ export default function NotificationsPage() {
           }
 
           .moku-bar-enter {
-            animation: moku-bar-slide-up 480ms cubic-bezier(0.22, 1.15, 0.36, 1) both;
+            animation: moku-bar-slide-up 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
           }
 
           .moku-bar-exit {
-            animation: moku-bar-slide-down 950ms cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+            animation: moku-bar-slide-down 420ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
           }
 
           .snackbar-enter {
-            animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation: snackbar-enter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          }
+
+          .snackbar-exit {
+            animation: snackbar-exit 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
           }
 
           .snackbar-progress {
             animation: snackbar-countdown 5s linear forwards;
+            will-change: transform;
           }
 
           .mobile-swipe-foreground {
@@ -1603,39 +1654,54 @@ export default function NotificationsPage() {
 
           @keyframes moku-bar-slide-up {
             from {
-              transform: translate3d(0, 140%, 0);
+              opacity: 0;
+              transform: translate3d(0, 120%, 0);
             }
             to {
+              opacity: 1;
               transform: translate3d(0, 0, 0);
             }
           }
 
           @keyframes moku-bar-slide-down {
-            0% {
+            from {
+              opacity: 1;
               transform: translate3d(0, 0, 0);
             }
-            100% {
-              transform: translate3d(0, 140%, 0);
+            to {
+              opacity: 0;
+              transform: translate3d(0, 120%, 0);
             }
           }
 
           @keyframes snackbar-enter {
             from {
               opacity: 0;
-              transform: translateY(14px);
+              transform: translate3d(0, 16px, 0);
             }
             to {
               opacity: 1;
-              transform: translateY(0);
+              transform: translate3d(0, 0, 0);
+            }
+          }
+
+          @keyframes snackbar-exit {
+            from {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
+            to {
+              opacity: 0;
+              transform: translate3d(0, 16px, 0);
             }
           }
 
           @keyframes snackbar-countdown {
             from {
-              width: 100%;
+              transform: scaleX(1);
             }
             to {
-              width: 0%;
+              transform: scaleX(0);
             }
           }
 
@@ -1648,6 +1714,7 @@ export default function NotificationsPage() {
             .moku-bar-enter,
             .moku-bar-exit,
             .snackbar-enter,
+            .snackbar-exit,
             .snackbar-progress {
               animation: none;
             }
@@ -1696,7 +1763,7 @@ export default function NotificationsPage() {
                 onClick={handleMarkSelectedAsRead}
                 title="Tandai sudah dibaca"
                 aria-label="Tandai sudah dibaca"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#730217] transition-colors hover:bg-[#730217]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#730217] transition-colors duration-[260ms] hover:bg-[#730217]/10"
               >
                 <Check size={19} />
               </button>
@@ -1706,7 +1773,7 @@ export default function NotificationsPage() {
                 onClick={handleDeleteSelected}
                 title="Hapus notifikasi"
                 aria-label="Hapus notifikasi"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#BF0B2C] transition-colors hover:bg-[#BF0B2C]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#BF0B2C] transition-colors duration-[260ms] hover:bg-[#BF0B2C]/10"
               >
                 <Trash size={19} />
               </button>
@@ -1716,7 +1783,7 @@ export default function NotificationsPage() {
                 onClick={clearSelection}
                 title="Batalkan pilihan"
                 aria-label="Batalkan pilihan"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#F1F2F5] hover:text-foreground"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-[260ms] hover:bg-[#F1F2F5] hover:text-foreground"
               >
                 <X size={19} />
               </button>
@@ -1786,12 +1853,12 @@ export default function NotificationsPage() {
                             className="group/icon relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#730217]/30"
                           >
                             <span
-                              className={`absolute inset-0 flex items-center justify-center rounded-xl transition-opacity duration-200 group-hover/icon:opacity-0 ${iconColorMap[item.type]}`}
+                              className={`absolute inset-0 flex items-center justify-center rounded-xl transition-opacity duration-[260ms] group-hover/icon:opacity-0 ${iconColorMap[item.type]}`}
                             >
                               <Icon size={20} weight="duotone" />
                             </span>
 
-                            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#730217]/10 text-[#730217] opacity-0 transition-opacity duration-200 group-hover/icon:opacity-100">
+                            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#730217]/10 text-[#730217] opacity-0 transition-opacity duration-[260ms] group-hover/icon:opacity-100">
                               <Check size={19} weight="bold" />
                             </span>
                           </button>
@@ -1839,7 +1906,7 @@ export default function NotificationsPage() {
                               onClick={() => handleMarkAsRead(item.id, true)}
                               title="Tandai sudah dibaca"
                               aria-label={`Tandai ${formattedTitle} sudah dibaca`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all duration-200 hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#730217] opacity-0 transition-all duration-[260ms] hover:bg-[#730217]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                             >
                               <Check size={17} />
                             </button>
@@ -1856,7 +1923,7 @@ export default function NotificationsPage() {
                             }
                             title="Hapus notifikasi"
                             aria-label={`Hapus ${formattedTitle}`}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all duration-200 hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#BF0B2C] opacity-0 transition-all duration-[260ms] hover:bg-[#BF0B2C]/10 group-hover:opacity-100 group-focus-within:opacity-100"
                           >
                             <Trash size={17} />
                           </button>
@@ -1899,9 +1966,14 @@ export default function NotificationsPage() {
 
       {snackbar && (
         <div
+          key={snackbar.id}
           role="status"
           aria-live="polite"
-          className="snackbar-enter fixed bottom-6 left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+          className={`fixed bottom-6 left-4 right-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl ${
+            isSnackbarClosing
+              ? "snackbar-exit pointer-events-none"
+              : "snackbar-enter"
+          }`}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <CheckCircle
@@ -1916,18 +1988,18 @@ export default function NotificationsPage() {
           <button
             type="button"
             onClick={handleUndo}
-            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="shrink-0 rounded-md px-2 py-1.5 text-xs font-bold tracking-wide text-white transition-colors duration-[260ms] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
             URUNGKAN
           </button>
 
-          <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] bg-[#F28C0F]" />
+          <div className="snackbar-progress absolute bottom-0 left-0 h-[3px] w-full origin-left bg-[#F28C0F]" />
         </div>
       )}
 
       <style>{`
         .page-enter {
-          animation: notification-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: notification-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .moku-empty-img {
@@ -1943,21 +2015,26 @@ export default function NotificationsPage() {
         }
 
         .snackbar-enter {
-          animation: snackbar-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: snackbar-enter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .snackbar-exit {
+          animation: snackbar-exit 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
         }
 
         .snackbar-progress {
           animation: snackbar-countdown 5s linear forwards;
+          will-change: transform;
         }
 
         @keyframes notification-enter {
           from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translate3d(0, 10px, 0);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate3d(0, 0, 0);
           }
         }
 
@@ -1986,20 +2063,31 @@ export default function NotificationsPage() {
         @keyframes snackbar-enter {
           from {
             opacity: 0;
-            transform: translateY(14px);
+            transform: translate3d(0, 16px, 0);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes snackbar-exit {
+          from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            opacity: 0;
+            transform: translate3d(0, 16px, 0);
           }
         }
 
         @keyframes snackbar-countdown {
           from {
-            width: 100%;
+            transform: scaleX(1);
           }
           to {
-            width: 0%;
+            transform: scaleX(0);
           }
         }
 
@@ -2009,6 +2097,7 @@ export default function NotificationsPage() {
           .moku-empty-title,
           .moku-empty-desc,
           .snackbar-enter,
+          .snackbar-exit,
           .snackbar-progress {
             animation: none;
           }
