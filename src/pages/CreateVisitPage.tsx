@@ -182,52 +182,68 @@ function VisitTypeIcon({
 }
 
 /* =========================================================
-   SUCCESS ILLUSTRATION (CRISP VECTOR)
+   SUCCESS ILLUSTRATION (CHOREOGRAPHED VECTOR ANIMATION)
 ========================================================= */
 
 function VisitSuccessIllustration() {
   return (
-    <div className="moku-success-icon relative flex flex-col items-center justify-center">
+    <div className="relative flex flex-col items-center justify-center">
       <svg
         viewBox="0 0 140 128"
         fill="none"
         aria-hidden="true"
-        className="h-[calc(132*var(--u))] w-[calc(146*var(--u))]"
+        className="h-[calc(132*var(--u))] w-[calc(146*var(--u))] overflow-visible"
       >
         {/* Bayangan lembut di bawah lingkaran */}
-        <ellipse cx="66" cy="116" rx="34" ry="5.5" fill="#E3F5E7" />
+        <ellipse
+          cx="66"
+          cy="116"
+          rx="34"
+          ry="5.5"
+          fill="#E3F5E7"
+          className="moku-success-shadow"
+        />
 
         {/* Lingkaran hijau lembut */}
-        <circle cx="66" cy="64" r="40" fill="#D5F2DC" />
+        <circle
+          cx="66"
+          cy="64"
+          r="40"
+          fill="#D5F2DC"
+          className="moku-success-circle"
+        />
 
-        {/* Tanda centang hijau */}
+        {/* Tanda centang hijau (stroke-draw halus) */}
         <path
           d="M49 64.5L60.8 76L84 52"
           stroke="#1E9E3E"
           strokeWidth="8.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="moku-success-check"
         />
 
         {/* 3 garis aksen di kanan atas */}
-        <path
-          d="M100 22L103 13"
-          stroke="#1E9E3E"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M110 29L118 22"
-          stroke="#1E9E3E"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M114 39L123 37"
-          stroke="#1E9E3E"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-        />
+        <g className="moku-success-rays">
+          <path
+            d="M100 22L103 13"
+            stroke="#1E9E3E"
+            strokeWidth="4.2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M110 29L118 22"
+            stroke="#1E9E3E"
+            strokeWidth="4.2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M114 39L123 37"
+            stroke="#1E9E3E"
+            strokeWidth="4.2"
+            strokeLinecap="round"
+          />
+        </g>
       </svg>
     </div>
   );
@@ -638,9 +654,13 @@ export default function CreateVisitPage() {
     title: string;
     description: string;
   } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormExiting, setIsFormExiting] = useState(false);
   const [savedVisit, setSavedVisit] = useState<SavedVisitSummary | null>(null);
 
+  const mainRef = useRef<HTMLElement | null>(null);
   const selectDelayRef = useRef<number | null>(null);
+  const submitTimersRef = useRef<number[]>([]);
   const recordedBy = "Budi Santoso";
 
   const selectedMachine = useMemo(
@@ -686,7 +706,20 @@ export default function CreateVisitPage() {
       if (selectDelayRef.current !== null) {
         window.clearTimeout(selectDelayRef.current);
       }
+      submitTimersRef.current.forEach((id) => window.clearTimeout(id));
+      submitTimersRef.current = [];
     };
+  }, []);
+
+  const scrollToTopSmooth = useCallback(() => {
+    const ionContent = mainRef.current?.closest("ion-content") as
+      | (HTMLElement & { scrollToTop?: (duration?: number) => Promise<void> })
+      | null;
+    if (ionContent?.scrollToTop) {
+      ionContent.scrollToTop(0).catch(() => {});
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
   }, []);
 
   const handleBack = useCallback(() => {
@@ -723,6 +756,7 @@ export default function CreateVisitPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
     if (
       !selectedMachineCode ||
@@ -739,16 +773,33 @@ export default function CreateVisitPage() {
     }
 
     setErrorSnackbar(null);
-    triggerHaptic(12);
-    setSavedVisit({
-      visitNumber: generateVisitNumber(visitDate),
-      visitDate,
-      machineCode: selectedMachineCode,
-    });
+    triggerHaptic(10);
+    setIsSubmitting(true);
+
+    // Fase 1: tampilkan spinner "Menyimpan..." di tombol
+    const t1 = window.setTimeout(() => {
+      setIsFormExiting(true);
+    }, 520);
+
+    // Fase 2: setelah form fade-out mulus, tampilkan halaman sukses
+    const t2 = window.setTimeout(() => {
+      scrollToTopSmooth();
+      setSavedVisit({
+        visitNumber: generateVisitNumber(visitDate),
+        visitDate,
+        machineCode: selectedMachineCode,
+      });
+      setIsSubmitting(false);
+      setIsFormExiting(false);
+      triggerHaptic(14);
+    }, 840);
+
+    submitTimersRef.current.push(t1, t2);
   };
 
   return (
     <main
+      ref={mainRef}
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(108*var(--u)+env(safe-area-inset-bottom))]"
     >
@@ -775,19 +826,19 @@ export default function CreateVisitPage() {
 
       {/* Success Page State */}
       {savedVisit ? (
-        <section className="moku-success-enter mx-auto flex min-h-[calc(100dvh-calc(140*var(--u)))] w-full max-w-[680px] flex-col items-center justify-center px-[calc(20*var(--u))] py-[calc(24*var(--u))] text-center">
+        <section className="mx-auto flex min-h-[calc(100dvh-calc(140*var(--u)))] w-full max-w-[680px] flex-col items-center justify-center px-[calc(20*var(--u))] py-[calc(24*var(--u))] text-center">
           <VisitSuccessIllustration />
 
-          <h2 className="mt-[calc(20*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
+          <h2 className="moku-success-step-1 mt-[calc(20*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
             Kunjungan Berhasil Disimpan
           </h2>
 
-          <p className="mt-[calc(11*var(--u))] max-w-[calc(270*var(--u))] text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#6E6873]">
+          <p className="moku-success-step-2 mt-[calc(11*var(--u))] max-w-[calc(270*var(--u))] text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#6E6873]">
             Data kunjungan telah berhasil disimpan ke sistem.
           </p>
 
           {/* Kartu Ringkasan Kunjungan */}
-          <div className="mt-[calc(24*var(--u))] w-full divide-y divide-[#F0E4E7] rounded-[calc(16*var(--u))] bg-[#FDF7F8] px-[calc(16*var(--u))] text-left">
+          <div className="moku-success-step-3 mt-[calc(24*var(--u))] w-full divide-y divide-[#F0E4E7] rounded-[calc(16*var(--u))] bg-[#FDF7F8] px-[calc(16*var(--u))] text-left">
             <div className="flex items-center gap-[calc(14*var(--u))] py-[calc(14*var(--u))]">
               <CalendarBlank
                 weight="regular"
@@ -820,7 +871,7 @@ export default function CreateVisitPage() {
           </div>
 
           {/* Tombol Aksi */}
-          <div className="mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
+          <div className="moku-success-step-4 mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
             <button
               type="button"
               onClick={() => navigateWithTransition("/visit-history", "forward")}
@@ -852,7 +903,11 @@ export default function CreateVisitPage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="mx-auto w-full max-w-[680px] space-y-[calc(16*var(--u))] px-[calc(16*var(--u))] pt-[calc(18*var(--u))]"
+          className={`mx-auto w-full max-w-[680px] space-y-[calc(16*var(--u))] px-[calc(16*var(--u))] pt-[calc(18*var(--u))] transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isFormExiting
+              ? "pointer-events-none -translate-y-[10px] scale-[0.99] opacity-0"
+              : "translate-y-0 scale-100 opacity-100"
+          }`}
         >
           {/* 1. Nomor Mesin * */}
           <div>
@@ -861,12 +916,13 @@ export default function CreateVisitPage() {
             </label>
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => {
                 triggerHaptic(6);
                 setMachineSearch("");
                 setShowMachineSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showMachineSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -948,11 +1004,12 @@ export default function CreateVisitPage() {
             </label>
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => {
                 triggerHaptic(6);
                 setShowDateSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showDateSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -984,11 +1041,12 @@ export default function CreateVisitPage() {
             </label>
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => {
                 triggerHaptic(6);
                 setShowVisitTypeSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showVisitTypeSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -1041,6 +1099,7 @@ export default function CreateVisitPage() {
                 <textarea
                   id="activity-desc-input"
                   rows={3}
+                  disabled={isSubmitting}
                   maxLength={MAX_TEXT_LENGTH}
                   value={activityDesc}
                   onChange={(e) => {
@@ -1049,7 +1108,7 @@ export default function CreateVisitPage() {
                   }}
                   placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
                 />
               </div>
 
@@ -1076,12 +1135,13 @@ export default function CreateVisitPage() {
                 <textarea
                   id="tech-notes-input"
                   rows={3}
+                  disabled={isSubmitting}
                   maxLength={MAX_TEXT_LENGTH}
                   value={technicianNotes}
                   onChange={(e) => setTechnicianNotes(e.target.value)}
                   placeholder="Tambahkan catatan jika diperlukan..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
                 />
               </div>
 
@@ -1111,10 +1171,21 @@ export default function CreateVisitPage() {
           <div className="pt-[calc(8*var(--u))]">
             <button
               type="submit"
+              disabled={isSubmitting}
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-bold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-[transform,background-color,opacity] duration-200 active:scale-[0.985] active:bg-[#730217] disabled:opacity-85"
             >
-              Simpan Kunjungan
+              {isSubmitting ? (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="h-[calc(17*var(--u))] w-[calc(17*var(--u))] animate-spin rounded-full border-[2px] border-white/30 border-t-white"
+                  />
+                  Menyimpan...
+                </>
+              ) : (
+                "Simpan Kunjungan"
+              )}
             </button>
           </div>
         </form>
@@ -1322,11 +1393,34 @@ export default function CreateVisitPage() {
         .moku-snack-enter {
           animation: moku-snack-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .moku-success-enter {
-          animation: moku-success-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        .moku-success-shadow {
+          transform-origin: 66px 116px;
+          animation: moku-shadow-in 700ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
         }
-        .moku-success-icon {
-          animation: moku-icon-pop 520ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+        .moku-success-circle {
+          transform-origin: 66px 64px;
+          animation: moku-circle-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .moku-success-check {
+          stroke-dasharray: 56;
+          stroke-dashoffset: 56;
+          animation: moku-check-draw 560ms cubic-bezier(0.22, 1, 0.36, 1) 280ms forwards;
+        }
+        .moku-success-rays {
+          transform-origin: 102px 34px;
+          animation: moku-rays-in 480ms cubic-bezier(0.16, 1, 0.3, 1) 560ms both;
+        }
+        .moku-success-step-1 {
+          animation: moku-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+        }
+        .moku-success-step-2 {
+          animation: moku-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) 310ms both;
+        }
+        .moku-success-step-3 {
+          animation: moku-fade-up 640ms cubic-bezier(0.16, 1, 0.3, 1) 400ms both;
+        }
+        .moku-success-step-4 {
+          animation: moku-fade-up 640ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
         }
         @keyframes moku-snack-up {
           from {
@@ -1338,35 +1432,70 @@ export default function CreateVisitPage() {
             transform: translate3d(0, 0, 0);
           }
         }
-        @keyframes moku-success-in {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 14px, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-        @keyframes moku-icon-pop {
+        @keyframes moku-circle-in {
           0% {
             opacity: 0;
-            transform: scale(0.75);
+            transform: scale(0.68);
           }
           65% {
             opacity: 1;
-            transform: scale(1.06);
+            transform: scale(1.03);
           }
           100% {
             opacity: 1;
             transform: scale(1);
           }
         }
+        @keyframes moku-shadow-in {
+          from {
+            opacity: 0;
+            transform: scaleX(0.5);
+          }
+          to {
+            opacity: 1;
+            transform: scaleX(1);
+          }
+        }
+        @keyframes moku-check-draw {
+          from {
+            stroke-dashoffset: 56;
+          }
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        @keyframes moku-rays-in {
+          from {
+            opacity: 0;
+            transform: scale(0.65) translate3d(-4px, 4px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-fade-up {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 12px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
         @media (prefers-reduced-motion: reduce) {
           .moku-snack-enter,
-          .moku-success-enter,
-          .moku-success-icon {
+          .moku-success-shadow,
+          .moku-success-circle,
+          .moku-success-check,
+          .moku-success-rays,
+          .moku-success-step-1,
+          .moku-success-step-2,
+          .moku-success-step-3,
+          .moku-success-step-4 {
             animation: none;
+            stroke-dashoffset: 0;
           }
         }
       `}</style>
