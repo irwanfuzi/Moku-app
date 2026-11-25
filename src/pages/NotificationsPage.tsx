@@ -30,7 +30,6 @@ import {
 } from "@phosphor-icons/react";
 
 import {
-  demoNotifications,
   loadNotifications,
   saveNotifications,
   subscribeNotifications,
@@ -548,100 +547,6 @@ function getNotificationSubtitle(item: NotificationItem): string {
 }
 
 /* =========================================================
-   EMPTY STATE WATERMARK
-========================================================= */
-
-function EmptyNotificationWatermark() {
-  return (
-    <svg
-      viewBox="0 0 360 280"
-      aria-hidden="true"
-      className="h-auto w-[240px] sm:w-[280px] md:w-[330px]"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M45 166C29 120 67 75 112 75C143 75 157 91 183 76C220 54 269 79 298 113C330 151 304 202 266 215C218 232 164 211 121 221C83 230 54 205 45 166Z"
-        fill="#F8F0F1"
-      />
-      <g opacity="0.55">
-        <circle cx="76" cy="96" r="5" fill="#F28C0F" />
-        <circle cx="288" cy="111" r="5" fill="#BF0B2C" />
-        <path
-          d="M102 55L106 65L116 69L106 73L102 83L98 73L88 69L98 65L102 55Z"
-          fill="#F28C0F"
-        />
-        <path
-          d="M274 64L278 73L287 77L278 81L274 90L270 81L261 77L270 73L274 64Z"
-          fill="#BF0B2C"
-        />
-      </g>
-      <g opacity="0.34">
-        <path
-          d="M180 47C145 47 118 74 118 108C118 151 180 205 180 205C180 205 242 151 242 108C242 74 215 47 180 47Z"
-          fill="#730217"
-        />
-        <path
-          d="M180 63C154 63 134 83 134 109C134 139 180 180 180 180C180 180 226 139 226 109C226 83 206 63 180 63Z"
-          fill="#F8F0F1"
-        />
-      </g>
-      <g opacity="0.52">
-        <rect x="145" y="93" width="70" height="52" rx="17" fill="#730217" />
-        <rect x="154" y="104" width="52" height="31" rx="10" fill="#F2F2F2" />
-        <rect x="165" y="112" width="6" height="13" rx="3" fill="#730217" />
-        <rect x="189" y="112" width="6" height="13" rx="3" fill="#730217" />
-        <path
-          d="M151 95C151 78 163 68 180 68C197 68 209 78 209 95H151Z"
-          fill="#BF0B2C"
-        />
-        <path d="M173 79L180 74L187 79V88H173V79Z" fill="#FFFFFF" />
-        <path
-          d="M148 94H212C217 94 221 98 221 102V105H139V102C139 98 143 94 148 94Z"
-          fill="#F28C0F"
-        />
-        <rect x="132" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
-        <rect x="215" y="105" width="13" height="28" rx="6" fill="#F28C0F" />
-      </g>
-      <g opacity="0.4">
-        <rect
-          x="64"
-          y="158"
-          width="44"
-          height="34"
-          rx="8"
-          fill="white"
-          stroke="#DCC8CC"
-          strokeWidth="2"
-        />
-        <path
-          d="M75 170H96M75 178H91"
-          stroke="#BF0B2C"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <circle cx="276" cy="177" r="20" fill="#F28C0F" />
-        <path
-          d="M267 177L273 183L285 170"
-          stroke="white"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </g>
-      <ellipse
-        cx="180"
-        cy="238"
-        rx="94"
-        ry="9"
-        fill="#EADDE0"
-        opacity="0.55"
-      />
-    </svg>
-  );
-}
-
-/* =========================================================
    NOTIFICATIONS PAGE
 ========================================================= */
 
@@ -984,18 +889,6 @@ export default function NotificationsPage() {
     }
 
     setSnackbar(null);
-  };
-
-  const handleResetDemo = () => {
-    saveNotifications(demoNotifications);
-    setSelectedIds([]);
-    setIsSelectionMode(false);
-    setSnackbar(null);
-    setSwipeOffsets({});
-    swipeOffsetRef.current = {};
-    setActiveSwipeId(null);
-    setSlidingOutIds([]);
-    setCollapsingIds([]);
   };
 
   const handleBack = () => {
@@ -1415,30 +1308,23 @@ export default function NotificationsPage() {
                 ))}
               </div>
             ) : (
-              <div className="relative flex min-h-[calc(68dvh)] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="opacity-[0.17]">
-                    <EmptyNotificationWatermark />
-                  </div>
-                </div>
+              <div className="flex min-h-[calc(72dvh)] flex-col items-center justify-center px-[calc(24*var(--u))] pb-[calc(44*var(--u))] text-center">
+                <img
+                  src="/images/moku/illustrations/notifikasi-lonceng.png"
+                  alt="Belum ada notifikasi"
+                  width={220}
+                  height={220}
+                  draggable={false}
+                  className="h-auto w-[calc(190*var(--u))] max-w-[220px] select-none object-contain opacity-40 grayscale-[20%]"
+                />
 
-                <div className="relative z-10 mt-20 flex flex-col items-center">
-                  <h2 className="font-display text-base font-bold tracking-tight text-[#730217]">
-                    Belum Ada Notifikasi
-                  </h2>
+                <h2 className="mt-[calc(14*var(--u))] font-display text-[calc(17*var(--u))] font-bold tracking-[-0.02em] text-[#171717]/45">
+                  Belum Ada Notifikasi
+                </h2>
 
-                  <p className="mt-2 max-w-xs text-xs leading-relaxed text-[#5E5863]">
-                    Aktivitas dan informasi terbaru akan muncul di sini.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={handleResetDemo}
-                    className="mt-5 rounded-xl bg-[#8E001C] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#730217]"
-                  >
-                    Muat Data Demo
-                  </button>
-                </div>
+                <p className="mt-[calc(6*var(--u))] max-w-[calc(260*var(--u))] text-[calc(13*var(--u))] font-normal leading-[1.45] text-[#6E6873]/60">
+                  Saat ini tidak ada notifikasi untuk Anda.
+                </p>
               </div>
             )}
           </div>
@@ -1872,30 +1758,23 @@ export default function NotificationsPage() {
               })}
             </div>
           ) : (
-            <div className="relative flex min-h-[440px] flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="opacity-[0.17]">
-                  <EmptyNotificationWatermark />
-                </div>
-              </div>
+            <div className="flex min-h-[440px] flex-col items-center justify-center px-5 py-10 text-center">
+              <img
+                src="/images/moku/illustrations/notifikasi-lonceng.png"
+                alt="Belum ada notifikasi"
+                width={200}
+                height={200}
+                draggable={false}
+                className="h-auto w-[180px] select-none object-contain opacity-40 grayscale-[20%]"
+              />
 
-              <div className="relative z-10 mt-24 flex flex-col items-center">
-                <h2 className="text-lg font-semibold tracking-tight text-[#730217]">
-                  Belum Ada Notifikasi
-                </h2>
+              <h2 className="mt-4 font-display text-lg font-bold tracking-tight text-[#171717]/45">
+                Belum Ada Notifikasi
+              </h2>
 
-                <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                  Aktivitas dan informasi terbaru akan muncul di sini.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleResetDemo}
-                  className="mt-5 rounded-lg bg-[#730217] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5D0012]"
-                >
-                  Muat 15 Data Demo
-                </button>
-              </div>
+              <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-[#6E6873]/60">
+                Saat ini tidak ada notifikasi untuk Anda.
+              </p>
             </div>
           )}
         </section>
