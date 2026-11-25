@@ -206,6 +206,117 @@ function triggerHaptic(duration = 8) {
   }
 }
 
+/* =========================================================
+   FUZZY SEARCH & HIGHLIGHT HELPERS
+========================================================= */
+
+function normalizeSearch(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  const curr = new Array<number>(b.length + 1);
+
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    for (let j = 0; j <= b.length; j++) prev[j] = curr[j];
+  }
+  return prev[b.length];
+}
+
+function getMachineMatchScore(
+  machine: MachineOption,
+  rawQuery: string
+): { score: number; isFuzzy: boolean } {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return { score: 1, isFuzzy: false };
+
+  const normQ = normalizeSearch(q);
+  const fields = [machine.code, machine.customer, machine.model];
+  const lowerFields = fields.map((f) => f.toLowerCase());
+  const normFields = fields.map(normalizeSearch);
+
+  // 1. Exact / Substring match (prioritas tertinggi)
+  if (lowerFields[0] === q || normFields[0] === normQ) {
+    return { score: 100, isFuzzy: false };
+  }
+  if (
+    lowerFields.some((f) => f.startsWith(q)) ||
+    normFields.some((f) => f.startsWith(normQ))
+  ) {
+    return { score: 85, isFuzzy: false };
+  }
+  if (
+    lowerFields.some((f) => f.includes(q)) ||
+    (normQ.length >= 2 && normFields.some((f) => f.includes(normQ)))
+  ) {
+    return { score: 70, isFuzzy: false };
+  }
+
+  // 2. Error tolerance (typo per kata)
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  const targetWords = lowerFields
+    .join(" ")
+    .split(/[\s.,-]+/)
+    .filter(Boolean);
+
+  let fuzzyHits = 0;
+  let totalPenalty = 0;
+
+  for (const qw of queryWords) {
+    if (qw.length < 2) continue;
+    const maxDist = qw.length <= 3 ? 1 : 2;
+    let bestDist = Infinity;
+
+    for (const tw of targetWords) {
+      if (tw.includes(qw)) {
+        bestDist = 0;
+        break;
+      }
+      const dist = levenshteinDistance(qw, tw.slice(0, qw.length + 1));
+      if (dist < bestDist) bestDist = dist;
+    }
+
+    if (bestDist <= maxDist) {
+      fuzzyHits += 1;
+      totalPenalty += bestDist;
+    }
+  }
+
+  if (fuzzyHits > 0 && fuzzyHits >= Math.ceil(queryWords.length * 0.5)) {
+    return { score: Math.max(10, 50 - totalPenalty * 8), isFuzzy: true };
+  }
+
+  return { score: 0, isFuzzy: false };
+}
+
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="rounded-[3px] bg-[#FCECEF] px-[2px] text-[#8E001C]">
+        {text.slice(idx, idx + q.length)}
+      </mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
 function VisitTypeIcon({
   kind,
   className,
@@ -741,15 +852,27 @@ export default function CreateVisitPage() {
     [visitType]
   );
 
-  const filteredMachines = useMemo(() => {
-    const q = machineSearch.trim().toLowerCase();
-    if (!q) return MACHINE_OPTIONS;
-    return MACHINE_OPTIONS.filter(
-      (m) =>
-        m.code.toLowerCase().includes(q) ||
-        m.customer.toLowerCase().includes(q) ||
-        m.model.toLowerCase().includes(q)
-    );
+  const machineSearchResult = useMemo(() => {
+    const q = machineSearch.trim();
+    if (!q) {
+      return {
+        items: MACHINE_OPTIONS,
+        isFuzzyOnly: false,
+      };
+    }
+
+    const scored = MACHINE_OPTIONS.map((machine) => ({
+      machine,
+      ...getMachineMatchScore(machine, q),
+    }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const hasExact = scored.some((item) => !item.isFuzzy);
+    return {
+      items: scored.map((item) => item.machine),
+      isFuzzyOnly: scored.length > 0 && !hasExact,
+    };
   }, [machineSearch]);
 
   const isMobileView = !isReady || isMobile;
@@ -1313,12 +1436,13 @@ export default function CreateVisitPage() {
         </form>
       )}
 
-      {/* Bottom Sheet Pilih Mesin */}
+      {/* Bottom Sheet Pilih Mesin (Autosuggest + Error Tolerance + Fixed Height) */}
       <ElasticBottomSheet
         isOpen={showMachineSheet}
         title="Pilih Mesin"
         onClose={() => setShowMachineSheet(false)}
       >
+        {/* Input Pencarian */}
         <div
           data-no-sheet-drag="true"
           className="mb-[calc(10*var(--u))] flex h-[calc(42*var(--u))] items-center gap-[calc(9*var(--u))] rounded-[calc(12*var(--u))] border border-[#E2E2E8] bg-[#FAFAFC] px-[calc(12*var(--u))] transition-colors duration-[260ms] focus-within:border-[#8E001C] focus-within:bg-white"
@@ -1331,7 +1455,7 @@ export default function CreateVisitPage() {
             type="text"
             value={machineSearch}
             onChange={(e) => setMachineSearch(e.target.value)}
-            placeholder="Cari nomor mesin atau pelanggan"
+            placeholder="Cari nomor mesin, model, atau pelanggan"
             style={NO_OUTLINE_STYLE}
             className="w-full border-0 bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
           />
@@ -1340,7 +1464,7 @@ export default function CreateVisitPage() {
               type="button"
               onClick={() => setMachineSearch("")}
               aria-label="Hapus pencarian"
-              className="flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#E8E8EE] text-[#5A555F]"
+              className="flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#E8E8EE] text-[#5A555F] transition-transform duration-[240ms] active:scale-90"
             >
               <X
                 weight="bold"
@@ -1350,55 +1474,113 @@ export default function CreateVisitPage() {
           )}
         </div>
 
-        <div className="max-h-[48dvh] divide-y divide-[#EFEFF2] overflow-y-auto">
-          {filteredMachines.length > 0 ? (
-            filteredMachines.map((machine) => {
-              const isActive = selectedMachineCode === machine.code;
-              return (
-                <button
-                  key={machine.code}
-                  type="button"
-                  onClick={() => handleChooseMachine(machine.code)}
-                  className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(12*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-[260ms] ${
-                    isActive
-                      ? "bg-[#FCECEF]"
-                      : "bg-white active:bg-[#F7F7F9]"
-                  }`}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
-                    <Printer
-                      weight="regular"
-                      className={`h-[calc(21*var(--u))] w-[calc(21*var(--u))] shrink-0 ${
-                        isActive ? "text-[#8E001C]" : "text-[#29232A]"
-                      }`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`truncate font-display text-[calc(14*var(--u))] font-bold leading-tight ${
-                          isActive ? "text-[#8E001C]" : "text-[#171717]"
-                        }`}
-                      >
-                        {machine.code}
-                      </p>
-                      <p className="mt-[calc(2*var(--u))] truncate text-[calc(12.5*var(--u))] font-normal text-[#6E6873]">
-                        {machine.customer}
-                      </p>
-                    </div>
-                  </div>
+        {/* Autosuggest Chips (tampil saat belum mengetik) */}
+        {!machineSearch.trim() && (
+          <div className="mb-[calc(10*var(--u))] flex items-center gap-[calc(6*var(--u))] overflow-x-auto pb-[calc(2*var(--u))] [scrollbar-width:none]">
+            <span className="shrink-0 text-[calc(11*var(--u))] font-medium text-[#8E8994]">
+              Cepat:
+            </span>
+            {MACHINE_OPTIONS.slice(0, 4).map((item) => (
+              <button
+                key={`suggest-${item.code}`}
+                type="button"
+                onClick={() => {
+                  triggerHaptic(6);
+                  setMachineSearch(item.code);
+                }}
+                className="shrink-0 rounded-full border border-[#E6E6EC] bg-[#FAFAFC] px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-[#4A454F] transition-colors duration-[260ms] active:border-[#8E001C] active:bg-[#FCECEF] active:text-[#8E001C]"
+              >
+                {item.code}
+              </button>
+            ))}
+          </div>
+        )}
 
-                  {isActive && (
-                    <Check
-                      weight="bold"
-                      className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#8E001C]"
-                    />
-                  )}
-                </button>
-              );
-            })
+        {/* Info Error Tolerance (tampil jika hasil dari koreksi typo) */}
+        {machineSearchResult.isFuzzyOnly && (
+          <p className="mb-[calc(6*var(--u))] px-[calc(4*var(--u))] text-[calc(11.5*var(--u))] text-[#6E6873]">
+            Menampilkan hasil yang mendekati{" "}
+            <span className="font-semibold text-[#171717]">
+              “{machineSearch.trim()}”
+            </span>
+          </p>
+        )}
+
+        {/* Daftar Mesin dengan Tinggi Tetap (Anti Memendek) */}
+        <div className="h-[min(46dvh,calc(310*var(--u)))] overflow-y-auto overscroll-contain">
+          {machineSearchResult.items.length > 0 ? (
+            <div className="divide-y divide-[#EFEFF2]">
+              {machineSearchResult.items.map((machine) => {
+                const isActive = selectedMachineCode === machine.code;
+                return (
+                  <button
+                    key={machine.code}
+                    type="button"
+                    onClick={() => handleChooseMachine(machine.code)}
+                    className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(12*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-[260ms] ${
+                      isActive
+                        ? "bg-[#FCECEF]"
+                        : "bg-white active:bg-[#F7F7F9]"
+                    }`}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
+                      <Printer
+                        weight="regular"
+                        className={`h-[calc(21*var(--u))] w-[calc(21*var(--u))] shrink-0 ${
+                          isActive ? "text-[#8E001C]" : "text-[#29232A]"
+                        }`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`truncate font-display text-[calc(14*var(--u))] font-bold leading-tight ${
+                            isActive ? "text-[#8E001C]" : "text-[#171717]"
+                          }`}
+                        >
+                          <HighlightMatch
+                            text={machine.code}
+                            query={machineSearch}
+                          />
+                        </p>
+                        <p className="mt-[calc(2*var(--u))] truncate text-[calc(12.5*var(--u))] font-normal text-[#6E6873]">
+                          <HighlightMatch
+                            text={machine.customer}
+                            query={machineSearch}
+                          />{" "}
+                          •{" "}
+                          <HighlightMatch
+                            text={machine.model}
+                            query={machineSearch}
+                          />
+                        </p>
+                      </div>
+                    </div>
+
+                    {isActive && (
+                      <Check
+                        weight="bold"
+                        className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#8E001C]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           ) : (
-            <p className="py-[calc(24*var(--u))] text-center text-[calc(13*var(--u))] text-[#6E6873]">
-              Mesin atau pelanggan tidak ditemukan.
-            </p>
+            <div className="flex h-full flex-col items-center justify-center px-[calc(16*var(--u))] text-center">
+              <p className="text-[calc(13*var(--u))] font-medium text-[#4A454F]">
+                “{machineSearch.trim()}” tidak ditemukan
+              </p>
+              <p className="mt-[calc(4*var(--u))] text-[calc(11.5*var(--u))] text-[#8E8994]">
+                Coba ketik kode mesin seperti MK-001 atau nama pelanggan.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMachineSearch("")}
+                className="mt-[calc(12*var(--u))] rounded-full bg-[#FCECEF] px-[calc(14*var(--u))] py-[calc(6*var(--u))] text-[calc(12*var(--u))] font-bold text-[#8E001C] transition-transform duration-[260ms] active:scale-95"
+              >
+                Tampilkan Semua Mesin
+              </button>
+            </div>
           )}
         </div>
       </ElasticBottomSheet>
