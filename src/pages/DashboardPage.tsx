@@ -423,7 +423,6 @@ function MonthPickerSheet({
     if (selectDelayRef.current !== null) {
       window.clearTimeout(selectDelayRef.current);
     }
-    // Jeda singkat agar perpindahan centang terlihat sebelum sheet meluncur turun
     selectDelayRef.current = window.setTimeout(() => {
       onClose();
       selectDelayRef.current = null;
@@ -456,7 +455,7 @@ function MonthPickerSheet({
         className="fixed inset-0 bg-black backdrop-blur-[1.5px]"
       />
 
-      {/* Sheet Panel */}
+      {/* Sheet Panel (satu elemen utuh tanpa ::after agar tidak ada garis subpixel saat ditarik ke atas) */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -474,7 +473,7 @@ function MonthPickerSheet({
               : `transform ${SHEET_TRANSITION_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`,
           willChange: "transform",
         }}
-        className="relative z-10 w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pb-[calc(22*var(--u)+env(safe-area-inset-bottom))] pt-[calc(10*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.18)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[120px] after:bg-white"
+        className="relative z-10 -mb-[100px] w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(18*var(--u))] pb-[calc(122px+env(safe-area-inset-bottom))] pt-[calc(10*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.18)]"
       >
         {/* Drag Handle */}
         <div className="mx-auto mb-[calc(12*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] cursor-grab rounded-full bg-[#DCDCE2] active:cursor-grabbing" />
@@ -992,7 +991,6 @@ function MobileDashboard() {
         if (monthPulseTimerRef.current !== null) {
           window.clearTimeout(monthPulseTimerRef.current);
         }
-        // Tahan warna marun lembut sampai sheet selesai turun, lalu pudar halus ke putih
         monthPulseTimerRef.current = window.setTimeout(() => {
           setIsMonthJustChanged(false);
           monthPulseTimerRef.current = null;
