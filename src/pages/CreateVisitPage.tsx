@@ -192,7 +192,7 @@ function VisitSuccessIllustration() {
         viewBox="0 0 140 128"
         fill="none"
         aria-hidden="true"
-        className="h-[calc(112*var(--u))] w-[calc(124*var(--u))]"
+        className="h-[calc(132*var(--u))] w-[calc(146*var(--u))]"
       >
         {/* Bayangan lembut di bawah lingkaran */}
         <ellipse cx="66" cy="116" rx="34" ry="5.5" fill="#E3F5E7" />
@@ -778,16 +778,16 @@ export default function CreateVisitPage() {
         <section className="moku-success-enter mx-auto flex min-h-[calc(100dvh-calc(140*var(--u)))] w-full max-w-[680px] flex-col items-center justify-center px-[calc(20*var(--u))] py-[calc(24*var(--u))] text-center">
           <VisitSuccessIllustration />
 
-          <h2 className="mt-[calc(16*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
+          <h2 className="mt-[calc(20*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
             Kunjungan Berhasil Disimpan
           </h2>
 
-          <p className="mt-[calc(8*var(--u))] max-w-[calc(270*var(--u))] text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#5E5863]">
+          <p className="mt-[calc(11*var(--u))] max-w-[calc(270*var(--u))] text-[calc(13.5*var(--u))] font-normal leading-[1.5] text-[#6E6873]">
             Data kunjungan telah berhasil disimpan ke sistem.
           </p>
 
           {/* Kartu Ringkasan Kunjungan */}
-          <div className="mt-[calc(22*var(--u))] w-full divide-y divide-[#F0E4E7] rounded-[calc(16*var(--u))] bg-[#FDF7F8] px-[calc(16*var(--u))] text-left">
+          <div className="mt-[calc(24*var(--u))] w-full divide-y divide-[#F0E4E7] rounded-[calc(16*var(--u))] bg-[#FDF7F8] px-[calc(16*var(--u))] text-left">
             <div className="flex items-center gap-[calc(14*var(--u))] py-[calc(14*var(--u))]">
               <CalendarBlank
                 weight="regular"
@@ -825,7 +825,7 @@ export default function CreateVisitPage() {
               type="button"
               onClick={() => navigateWithTransition("/visit-history", "forward")}
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
             >
               <FileText
                 weight="regular"
@@ -837,7 +837,7 @@ export default function CreateVisitPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
             >
               <ArrowLeft
                 weight="bold"
