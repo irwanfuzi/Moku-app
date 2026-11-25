@@ -103,6 +103,11 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
+const NO_OUTLINE_STYLE: CSSProperties = {
+  outline: "none",
+  boxShadow: "none",
+};
+
 function toIsoDate(year: number, monthIndex: number, day: number): string {
   const y = String(year);
   const m = String(monthIndex + 1).padStart(2, "0");
@@ -669,7 +674,7 @@ export default function CreateVisitPage() {
       triggerHaptic(16);
       setErrorSnackbar({
         title: "Data Belum Lengkap",
-        description: "Lengkapi semua kolom wajib sebelum menyimpan kunjungan.",
+        description: "Lengkapi semua kolom wajib sebelum menyimpan.",
       });
       return;
     }
@@ -910,7 +915,8 @@ export default function CreateVisitPage() {
                   if (errorSnackbar) setErrorSnackbar(null);
                 }}
                 placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
-                className="w-full resize-none bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994]"
+                style={NO_OUTLINE_STYLE}
+                className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
               />
             </div>
 
@@ -941,7 +947,8 @@ export default function CreateVisitPage() {
                 value={technicianNotes}
                 onChange={(e) => setTechnicianNotes(e.target.value)}
                 placeholder="Tambahkan catatan jika diperlukan..."
-                className="w-full resize-none bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994]"
+                style={NO_OUTLINE_STYLE}
+                className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
               />
             </div>
 
@@ -988,7 +995,7 @@ export default function CreateVisitPage() {
       >
         <div
           data-no-sheet-drag="true"
-          className="mb-[calc(10*var(--u))] flex h-[calc(42*var(--u))] items-center gap-[calc(9*var(--u))] rounded-[calc(12*var(--u))] border border-[#E2E2E8] bg-[#FAFAFC] px-[calc(12*var(--u))] focus-within:border-[#8E001C] focus-within:bg-white"
+          className="mb-[calc(10*var(--u))] flex h-[calc(42*var(--u))] items-center gap-[calc(9*var(--u))] rounded-[calc(12*var(--u))] border border-[#E2E2E8] bg-[#FAFAFC] px-[calc(12*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:bg-white"
         >
           <MagnifyingGlass
             weight="regular"
@@ -999,7 +1006,8 @@ export default function CreateVisitPage() {
             value={machineSearch}
             onChange={(e) => setMachineSearch(e.target.value)}
             placeholder="Cari nomor mesin atau pelanggan..."
-            className="w-full bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994]"
+            style={NO_OUTLINE_STYLE}
+            className="w-full border-0 bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
           />
           {machineSearch && (
             <button
@@ -1008,7 +1016,10 @@ export default function CreateVisitPage() {
               aria-label="Hapus pencarian"
               className="flex h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#E8E8EE] text-[#5A555F]"
             >
-              <X weight="bold" className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]" />
+              <X
+                weight="bold"
+                className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
+              />
             </button>
           )}
         </div>
@@ -1129,7 +1140,7 @@ export default function CreateVisitPage() {
         </div>
       </ElasticBottomSheet>
 
-      {/* Snackbar Error State (Portal agar selalu tampil di atas bottom navbar) */}
+      {/* Snackbar Error State (lebih ramping & proporsional) */}
       {errorSnackbar &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1137,23 +1148,23 @@ export default function CreateVisitPage() {
             style={MOBILE_SCALE_VARS}
             role="alert"
             aria-live="assertive"
-            className="moku-snack-enter fixed bottom-[calc(84px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center justify-between gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(14*var(--u))] bg-[#22252A] py-[calc(13*var(--u))] pl-[calc(16*var(--u))] pr-[calc(12*var(--u))] text-white shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+            className="moku-snack-enter fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center justify-between gap-[calc(10*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] bg-[#22252A] py-[calc(10*var(--u))] pl-[calc(14*var(--u))] pr-[calc(10*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)]"
           >
             <span
               aria-hidden="true"
-              className="absolute inset-y-0 left-0 w-[calc(4.5*var(--u))] bg-[#DC0E2E]"
+              className="absolute inset-y-0 left-0 w-[calc(4*var(--u))] bg-[#DC0E2E]"
             />
 
-            <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
+            <div className="flex min-w-0 flex-1 items-center gap-[calc(10*var(--u))]">
               <WarningCircle
                 weight="regular"
-                className="h-[calc(26*var(--u))] w-[calc(26*var(--u))] shrink-0 text-[#DC0E2E]"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 text-[#DC0E2E]"
               />
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[calc(14*var(--u))] font-bold leading-tight text-white">
+                <p className="font-display text-[calc(13*var(--u))] font-bold leading-tight text-white">
                   {errorSnackbar.title}
                 </p>
-                <p className="mt-[calc(2*var(--u))] text-[calc(12*var(--u))] font-normal leading-[1.35] text-[#B8BCC4]">
+                <p className="mt-[calc(1.5*var(--u))] truncate text-[calc(11.5*var(--u))] font-normal leading-tight text-[#B8BCC4]">
                   {errorSnackbar.description}
                 </p>
               </div>
@@ -1163,11 +1174,11 @@ export default function CreateVisitPage() {
               type="button"
               onClick={() => setErrorSnackbar(null)}
               aria-label="Tutup peringatan"
-              className="flex h-[calc(28*var(--u))] w-[calc(28*var(--u))] shrink-0 items-center justify-center rounded-full text-white/80 transition-colors active:bg-white/10"
+              className="flex h-[calc(26*var(--u))] w-[calc(26*var(--u))] shrink-0 items-center justify-center rounded-full text-white/80 transition-colors active:bg-white/10"
             >
               <X
                 weight="bold"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
+                className="h-[calc(14*var(--u))] w-[calc(14*var(--u))]"
               />
             </button>
           </div>,
@@ -1182,10 +1193,10 @@ export default function CreateVisitPage() {
             style={MOBILE_SCALE_VARS}
             role="status"
             aria-live="polite"
-            className="moku-snack-enter fixed bottom-[calc(84px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-2.5 rounded-[13px] bg-[#730217] px-4 py-3 text-white shadow-xl"
+            className="moku-snack-enter fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-2.5 rounded-[12px] bg-[#730217] px-4 py-2.5 text-white shadow-xl"
           >
             <CheckCircle
-              size={19}
+              size={18}
               weight="fill"
               className="shrink-0 text-white"
             />
@@ -1213,4 +1224,4 @@ export default function CreateVisitPage() {
       `}</style>
     </main>
   );
-              }
+}
