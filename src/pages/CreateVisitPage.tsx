@@ -104,6 +104,7 @@ const MAX_TEXT_LENGTH = 500;
 const SHEET_TRANSITION_MS = 420;
 const SHEET_UNMOUNT_MS = 460;
 const SNACKBAR_EXIT_MS = 320;
+const VISIT_SEQ_STORAGE_PREFIX = "moku_visit_seq_";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -151,7 +152,25 @@ function formatMonthYear(year: number, monthIndex: number): string {
 
 function generateVisitNumber(isoDate: string): string {
   const compactDate = (isoDate || getTodayIsoDate()).replace(/-/g, "");
-  return `KJ-${compactDate}-001`;
+  let nextSeq = 1;
+
+  if (typeof window !== "undefined") {
+    try {
+      const storageKey = `${VISIT_SEQ_STORAGE_PREFIX}${compactDate}`;
+      const rawLastSeq = window.localStorage.getItem(storageKey);
+      const parsedLastSeq = rawLastSeq ? parseInt(rawLastSeq, 10) : 0;
+      nextSeq = Number.isFinite(parsedLastSeq) && parsedLastSeq >= 0
+        ? parsedLastSeq + 1
+        : 1;
+      window.localStorage.setItem(storageKey, String(nextSeq));
+    } catch {
+      // Fallback jika localStorage tidak tersedia
+      nextSeq = Math.floor((Date.now() % 999) + 1);
+    }
+  }
+
+  const paddedSeq = String(nextSeq).padStart(3, "0");
+  return `KJ-${compactDate}-${paddedSeq}`;
 }
 
 function triggerHaptic(duration = 8) {
