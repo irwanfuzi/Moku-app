@@ -103,6 +103,7 @@ const WEEKDAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const MAX_TEXT_LENGTH = 500;
 const SHEET_TRANSITION_MS = 420;
 const SHEET_UNMOUNT_MS = 460;
+const SNACKBAR_EXIT_MS = 320;
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -194,7 +195,6 @@ function VisitSuccessIllustration() {
         aria-hidden="true"
         className="h-[calc(132*var(--u))] w-[calc(146*var(--u))] overflow-visible"
       >
-        {/* Bayangan lembut di bawah lingkaran */}
         <ellipse
           cx="66"
           cy="116"
@@ -204,7 +204,6 @@ function VisitSuccessIllustration() {
           className="moku-success-shadow"
         />
 
-        {/* Lingkaran hijau lembut */}
         <circle
           cx="66"
           cy="64"
@@ -213,7 +212,6 @@ function VisitSuccessIllustration() {
           className="moku-success-circle"
         />
 
-        {/* Tanda centang hijau (stroke-draw halus) */}
         <path
           d="M49 64.5L60.8 76L84 52"
           stroke="#1E9E3E"
@@ -223,7 +221,6 @@ function VisitSuccessIllustration() {
           className="moku-success-check"
         />
 
-        {/* 3 garis aksen di kanan atas */}
         <g className="moku-success-rays">
           <path
             d="M100 22L103 13"
@@ -439,7 +436,7 @@ function ElasticBottomSheet({
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors duration-200 active:bg-[#F2F2F5]"
+            className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors duration-[260ms] active:bg-[#F2F2F5]"
           >
             <X
               weight="bold"
@@ -535,6 +532,8 @@ function CalendarBottomSheet({
     }, 150);
   };
 
+  const monthKey = `${viewYear}-${viewMonth}`;
+
   return (
     <ElasticBottomSheet
       isOpen={isOpen}
@@ -546,7 +545,7 @@ function CalendarBottomSheet({
           type="button"
           onClick={handlePrevMonth}
           aria-label="Bulan sebelumnya"
-          className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-[#29232A] transition-colors active:bg-white"
+          className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-[#29232A] transition-colors duration-[260ms] active:bg-white"
         >
           <CaretLeft
             weight="bold"
@@ -554,7 +553,10 @@ function CalendarBottomSheet({
           />
         </button>
 
-        <span className="font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+        <span
+          key={`label-${monthKey}`}
+          className="moku-cal-fade font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]"
+        >
           {formatMonthYear(viewYear, viewMonth)}
         </span>
 
@@ -562,7 +564,7 @@ function CalendarBottomSheet({
           type="button"
           onClick={handleNextMonth}
           aria-label="Bulan berikutnya"
-          className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-[#29232A] transition-colors active:bg-white"
+          className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] items-center justify-center rounded-full text-[#29232A] transition-colors duration-[260ms] active:bg-white"
         >
           <CaretRight
             weight="bold"
@@ -582,7 +584,10 @@ function CalendarBottomSheet({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-y-[calc(4*var(--u))] text-center">
+      <div
+        key={`grid-${monthKey}`}
+        className="moku-cal-fade grid grid-cols-7 gap-y-[calc(4*var(--u))] text-center"
+      >
         {daysGrid.map((cell) => {
           if (cell.day === null) {
             return <div key={cell.iso} className="h-[calc(38*var(--u))]" />;
@@ -596,7 +601,7 @@ function CalendarBottomSheet({
               key={cell.iso}
               type="button"
               onClick={() => handlePickDate(cell.iso)}
-              className={`mx-auto flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full text-[calc(13.5*var(--u))] transition-all duration-200 active:scale-90 ${
+              className={`mx-auto flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full text-[calc(13.5*var(--u))] transition-all duration-[260ms] active:scale-90 ${
                 isSelected
                   ? "bg-[#8E001C] font-bold text-white shadow-[0_3px_10px_rgba(142,0,28,0.28)]"
                   : isToday
@@ -614,7 +619,7 @@ function CalendarBottomSheet({
         <button
           type="button"
           onClick={() => handlePickDate(todayIso)}
-          className="rounded-full bg-[#FCECEF] px-[calc(14*var(--u))] py-[calc(7*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-transform active:scale-95"
+          className="rounded-full bg-[#FCECEF] px-[calc(14*var(--u))] py-[calc(7*var(--u))] text-[calc(12.5*var(--u))] font-bold text-[#8E001C] transition-transform duration-[260ms] active:scale-95"
         >
           Pilih Hari Ini
         </button>
@@ -651,9 +656,11 @@ export default function CreateVisitPage() {
   const [showVisitTypeSheet, setShowVisitTypeSheet] = useState(false);
 
   const [errorSnackbar, setErrorSnackbar] = useState<{
+    id: number;
     title: string;
     description: string;
   } | null>(null);
+  const [isErrorClosing, setIsErrorClosing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormExiting, setIsFormExiting] = useState(false);
   const [savedVisit, setSavedVisit] = useState<SavedVisitSummary | null>(null);
@@ -661,6 +668,8 @@ export default function CreateVisitPage() {
   const mainRef = useRef<HTMLElement | null>(null);
   const selectDelayRef = useRef<number | null>(null);
   const submitTimersRef = useRef<number[]>([]);
+  const errorAutoTimerRef = useRef<number | null>(null);
+  const errorExitTimerRef = useRef<number | null>(null);
   const recordedBy = "Budi Santoso";
 
   const selectedMachine = useMemo(
@@ -687,6 +696,43 @@ export default function CreateVisitPage() {
 
   const isMobileView = !isReady || isMobile;
 
+  const dismissErrorSnackbar = useCallback(() => {
+    if (errorAutoTimerRef.current !== null) {
+      window.clearTimeout(errorAutoTimerRef.current);
+      errorAutoTimerRef.current = null;
+    }
+    setIsErrorClosing(true);
+    if (errorExitTimerRef.current !== null) {
+      window.clearTimeout(errorExitTimerRef.current);
+    }
+    errorExitTimerRef.current = window.setTimeout(() => {
+      setErrorSnackbar(null);
+      setIsErrorClosing(false);
+      errorExitTimerRef.current = null;
+    }, SNACKBAR_EXIT_MS);
+  }, []);
+
+  const triggerErrorSnackbar = useCallback(
+    (title: string, description: string) => {
+      if (errorAutoTimerRef.current !== null) {
+        window.clearTimeout(errorAutoTimerRef.current);
+        errorAutoTimerRef.current = null;
+      }
+      if (errorExitTimerRef.current !== null) {
+        window.clearTimeout(errorExitTimerRef.current);
+        errorExitTimerRef.current = null;
+      }
+
+      setIsErrorClosing(false);
+      setErrorSnackbar({ id: Date.now(), title, description });
+
+      errorAutoTimerRef.current = window.setTimeout(() => {
+        dismissErrorSnackbar();
+      }, 4200);
+    },
+    [dismissErrorSnackbar]
+  );
+
   useEffect(() => {
     if (!isMobileView) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
@@ -694,17 +740,15 @@ export default function CreateVisitPage() {
   }, [isMobileView]);
 
   useEffect(() => {
-    if (!errorSnackbar) return;
-    const timer = window.setTimeout(() => {
-      setErrorSnackbar(null);
-    }, 4200);
-    return () => window.clearTimeout(timer);
-  }, [errorSnackbar]);
-
-  useEffect(() => {
     return () => {
       if (selectDelayRef.current !== null) {
         window.clearTimeout(selectDelayRef.current);
+      }
+      if (errorAutoTimerRef.current !== null) {
+        window.clearTimeout(errorAutoTimerRef.current);
+      }
+      if (errorExitTimerRef.current !== null) {
+        window.clearTimeout(errorExitTimerRef.current);
       }
       submitTimersRef.current.forEach((id) => window.clearTimeout(id));
       submitTimersRef.current = [];
@@ -729,7 +773,7 @@ export default function CreateVisitPage() {
   const handleChooseMachine = (code: string) => {
     triggerHaptic(8);
     setSelectedMachineCode(code);
-    setErrorSnackbar(null);
+    if (errorSnackbar) dismissErrorSnackbar();
 
     if (selectDelayRef.current !== null) {
       window.clearTimeout(selectDelayRef.current);
@@ -743,7 +787,7 @@ export default function CreateVisitPage() {
   const handleChooseVisitType = (code: string) => {
     triggerHaptic(8);
     setVisitType(code);
-    setErrorSnackbar(null);
+    if (errorSnackbar) dismissErrorSnackbar();
 
     if (selectDelayRef.current !== null) {
       window.clearTimeout(selectDelayRef.current);
@@ -765,23 +809,21 @@ export default function CreateVisitPage() {
       !activityDesc.trim()
     ) {
       triggerHaptic(16);
-      setErrorSnackbar({
-        title: "Data Belum Lengkap",
-        description: "Lengkapi semua kolom wajib sebelum menyimpan.",
-      });
+      triggerErrorSnackbar(
+        "Data Belum Lengkap",
+        "Lengkapi semua kolom wajib sebelum menyimpan."
+      );
       return;
     }
 
-    setErrorSnackbar(null);
+    if (errorSnackbar) dismissErrorSnackbar();
     triggerHaptic(10);
     setIsSubmitting(true);
 
-    // Fase 1: tampilkan spinner "Menyimpan..." di tombol
     const t1 = window.setTimeout(() => {
       setIsFormExiting(true);
     }, 520);
 
-    // Fase 2: setelah form fade-out mulus, tampilkan halaman sukses
     const t2 = window.setTimeout(() => {
       scrollToTopSmooth();
       setSavedVisit({
@@ -810,7 +852,7 @@ export default function CreateVisitPage() {
             type="button"
             onClick={handleBack}
             aria-label="Kembali"
-            className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-200 active:bg-white/15"
+            className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-[260ms] active:bg-white/15"
           >
             <ArrowLeft
               className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -876,7 +918,7 @@ export default function CreateVisitPage() {
               type="button"
               onClick={() => navigateWithTransition("/visit-history", "forward")}
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
             >
               <FileText
                 weight="regular"
@@ -888,7 +930,7 @@ export default function CreateVisitPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
             >
               <ArrowLeft
                 weight="bold"
@@ -922,7 +964,7 @@ export default function CreateVisitPage() {
                 setMachineSearch("");
                 setShowMachineSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-[260ms] active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showMachineSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -1009,7 +1051,7 @@ export default function CreateVisitPage() {
                 triggerHaptic(6);
                 setShowDateSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-[260ms] active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showDateSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -1027,7 +1069,7 @@ export default function CreateVisitPage() {
 
               <CalendarBlank
                 weight="regular"
-                className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 transition-colors duration-200 ${
+                className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 transition-colors duration-[260ms] ${
                   showDateSheet ? "text-[#8E001C]" : "text-[#29232A]"
                 }`}
               />
@@ -1046,7 +1088,7 @@ export default function CreateVisitPage() {
                 triggerHaptic(6);
                 setShowVisitTypeSheet(true);
               }}
-              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] disabled:opacity-70 ${
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-[260ms] active:bg-[#FAFAFC] disabled:opacity-70 ${
                 showVisitTypeSheet
                   ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
                   : "border-[#DEDEE4]"
@@ -1090,7 +1132,7 @@ export default function CreateVisitPage() {
             >
               Deskripsi Aktivitas <span className="text-[#DC0E2E]">*</span>
             </label>
-            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
+            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-[260ms] focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
               <div className="flex items-start gap-[calc(11*var(--u))]">
                 <FileText
                   weight="regular"
@@ -1104,7 +1146,7 @@ export default function CreateVisitPage() {
                   value={activityDesc}
                   onChange={(e) => {
                     setActivityDesc(e.target.value);
-                    if (errorSnackbar) setErrorSnackbar(null);
+                    if (errorSnackbar) dismissErrorSnackbar();
                   }}
                   placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
                   style={NO_OUTLINE_STYLE}
@@ -1126,7 +1168,7 @@ export default function CreateVisitPage() {
             >
               Catatan Teknisi
             </label>
-            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
+            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-[260ms] focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
               <div className="flex items-start gap-[calc(11*var(--u))]">
                 <ChatText
                   weight="regular"
@@ -1173,7 +1215,7 @@ export default function CreateVisitPage() {
               type="submit"
               disabled={isSubmitting}
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-[transform,background-color,opacity] duration-200 active:scale-[0.985] active:bg-[#730217] disabled:opacity-85"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-[transform,background-color,opacity] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217] disabled:opacity-85"
             >
               {isSubmitting ? (
                 <>
@@ -1191,7 +1233,7 @@ export default function CreateVisitPage() {
         </form>
       )}
 
-      {/* Bottom Sheet Pilih Mesin (dengan Pencarian + Ikon Printer) */}
+      {/* Bottom Sheet Pilih Mesin */}
       <ElasticBottomSheet
         isOpen={showMachineSheet}
         title="Pilih Mesin"
@@ -1199,7 +1241,7 @@ export default function CreateVisitPage() {
       >
         <div
           data-no-sheet-drag="true"
-          className="mb-[calc(10*var(--u))] flex h-[calc(42*var(--u))] items-center gap-[calc(9*var(--u))] rounded-[calc(12*var(--u))] border border-[#E2E2E8] bg-[#FAFAFC] px-[calc(12*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:bg-white"
+          className="mb-[calc(10*var(--u))] flex h-[calc(42*var(--u))] items-center gap-[calc(9*var(--u))] rounded-[calc(12*var(--u))] border border-[#E2E2E8] bg-[#FAFAFC] px-[calc(12*var(--u))] transition-colors duration-[260ms] focus-within:border-[#8E001C] focus-within:bg-white"
         >
           <MagnifyingGlass
             weight="regular"
@@ -1237,7 +1279,7 @@ export default function CreateVisitPage() {
                   key={machine.code}
                   type="button"
                   onClick={() => handleChooseMachine(machine.code)}
-                  className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(12*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-200 ${
+                  className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(12*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-[260ms] ${
                     isActive
                       ? "bg-[#FCECEF]"
                       : "bg-white active:bg-[#F7F7F9]"
@@ -1287,12 +1329,12 @@ export default function CreateVisitPage() {
         selectedDate={visitDate}
         onSelect={(iso) => {
           setVisitDate(iso);
-          setErrorSnackbar(null);
+          if (errorSnackbar) dismissErrorSnackbar();
         }}
         onClose={() => setShowDateSheet(false)}
       />
 
-      {/* Bottom Sheet Pilih Jenis Kunjungan (dengan Ikon & Deskripsi) */}
+      {/* Bottom Sheet Pilih Jenis Kunjungan */}
       <ElasticBottomSheet
         isOpen={showVisitTypeSheet}
         title="Pilih Jenis Kunjungan"
@@ -1306,7 +1348,7 @@ export default function CreateVisitPage() {
                 key={option.code}
                 type="button"
                 onClick={() => handleChooseVisitType(option.code)}
-                className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(8*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-200 ${
+                className={`flex w-full items-center justify-between gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] px-[calc(8*var(--u))] py-[calc(11*var(--u))] text-left transition-colors duration-[260ms] ${
                   isActive ? "bg-[#FCECEF]/70" : "bg-white active:bg-[#F7F7F9]"
                 }`}
               >
@@ -1344,15 +1386,20 @@ export default function CreateVisitPage() {
         </div>
       </ElasticBottomSheet>
 
-      {/* Snackbar Error State */}
+      {/* Snackbar Error State (dengan smooth exit) */}
       {errorSnackbar &&
         typeof document !== "undefined" &&
         createPortal(
           <div
+            key={errorSnackbar.id}
             style={MOBILE_SCALE_VARS}
             role="alert"
             aria-live="assertive"
-            className="moku-snack-enter fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center justify-between gap-[calc(10*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] bg-[#22252A] py-[calc(10*var(--u))] pl-[calc(14*var(--u))] pr-[calc(10*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)]"
+            className={`fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center justify-between gap-[calc(10*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] bg-[#22252A] py-[calc(10*var(--u))] pl-[calc(14*var(--u))] pr-[calc(10*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+              isErrorClosing
+                ? "moku-snack-exit pointer-events-none"
+                : "moku-snack-enter"
+            }`}
           >
             <span
               aria-hidden="true"
@@ -1376,9 +1423,9 @@ export default function CreateVisitPage() {
 
             <button
               type="button"
-              onClick={() => setErrorSnackbar(null)}
+              onClick={dismissErrorSnackbar}
               aria-label="Tutup peringatan"
-              className="flex h-[calc(26*var(--u))] w-[calc(26*var(--u))] shrink-0 items-center justify-center rounded-full text-white/80 transition-colors active:bg-white/10"
+              className="flex h-[calc(26*var(--u))] w-[calc(26*var(--u))] shrink-0 items-center justify-center rounded-full text-white/80 transition-colors duration-[260ms] active:bg-white/10"
             >
               <X
                 weight="bold"
@@ -1391,7 +1438,13 @@ export default function CreateVisitPage() {
 
       <style>{`
         .moku-snack-enter {
-          animation: moku-snack-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-snack-up 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .moku-snack-exit {
+          animation: moku-snack-down 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
+        .moku-cal-fade {
+          animation: moku-cal-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .moku-success-shadow {
           transform-origin: 66px 116px;
@@ -1425,7 +1478,27 @@ export default function CreateVisitPage() {
         @keyframes moku-snack-up {
           from {
             opacity: 0;
-            transform: translate3d(0, 14px, 0);
+            transform: translate3d(0, 16px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-snack-down {
+          from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            opacity: 0;
+            transform: translate3d(0, 16px, 0);
+          }
+        }
+        @keyframes moku-cal-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 5px, 0);
           }
           to {
             opacity: 1;
@@ -1486,6 +1559,8 @@ export default function CreateVisitPage() {
         }
         @media (prefers-reduced-motion: reduce) {
           .moku-snack-enter,
+          .moku-snack-exit,
+          .moku-cal-fade,
           .moku-success-shadow,
           .moku-success-circle,
           .moku-success-check,
