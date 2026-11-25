@@ -76,6 +76,7 @@ const MOBILE_SCALE_VARS = {
 
 const SWIPE_DELETE_THRESHOLD = -64;
 const FLOATING_BAR_EXIT_MS = 950;
+const EMPTY_BELL_SRC = "/images/moku/illustrations/notifikasi-lonceng.png";
 
 function toTitleCase(text: string): string {
   return text
@@ -600,6 +601,12 @@ export default function NotificationsPage() {
     return id;
   }, []);
 
+  // Preload ilustrasi empty state agar tidak pop-in saat daftar kosong
+  useEffect(() => {
+    const img = new Image();
+    img.src = EMPTY_BELL_SRC;
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setIsLoadingList(false);
@@ -851,17 +858,15 @@ export default function NotificationsPage() {
 
       const deletingAll = ids.length >= notifications.length && !isSwipe;
 
-      // Hapus semua: fade-out seluruh list beserta header tanggal sekaligus
       if (deletingAll) {
         setIsClearingAll(true);
         scheduleTimer(() => {
           finishDeletion(ids, message);
           suppressClickRef.current = false;
-        }, 380);
+        }, 420);
         return;
       }
 
-      // Swipe 1 item atau hapus sebagian lewat checkbox
       setSlidingOutIds((current) => [...new Set([...current, ...ids])]);
 
       scheduleTimer(
@@ -1126,7 +1131,7 @@ export default function NotificationsPage() {
               </div>
             ) : notifications.length > 0 ? (
               <div
-                className={`space-y-[calc(12*var(--u))] transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`space-y-[calc(12*var(--u))] transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isClearingAll
                     ? "pointer-events-none translate-y-[10px] scale-[0.985] opacity-0"
                     : "translate-y-0 scale-100 opacity-100"
@@ -1366,21 +1371,21 @@ export default function NotificationsPage() {
                 })}
               </div>
             ) : (
-              <div className="moku-empty-enter flex min-h-[calc(72dvh)] flex-col items-center justify-center px-[calc(24*var(--u))] pb-[calc(44*var(--u))] text-center">
+              <div className="flex min-h-[calc(72dvh)] flex-col items-center justify-center px-[calc(24*var(--u))] pb-[calc(44*var(--u))] text-center">
                 <img
-                  src="/images/moku/illustrations/notifikasi-lonceng.png"
+                  src={EMPTY_BELL_SRC}
                   alt="Belum ada notifikasi"
                   width={220}
                   height={220}
                   draggable={false}
-                  className="h-auto w-[calc(190*var(--u))] max-w-[220px] select-none object-contain opacity-40 grayscale-[20%]"
+                  className="moku-empty-img h-auto w-[calc(190*var(--u))] max-w-[220px] select-none object-contain grayscale-[20%]"
                 />
 
-                <h2 className="mt-[calc(14*var(--u))] font-display text-[calc(17*var(--u))] font-bold tracking-[-0.02em] text-[#171717]/45">
+                <h2 className="moku-empty-title mt-[calc(14*var(--u))] font-display text-[calc(17*var(--u))] font-bold tracking-[-0.02em] text-[#171717]/45">
                   Belum Ada Notifikasi
                 </h2>
 
-                <p className="mt-[calc(6*var(--u))] max-w-[calc(260*var(--u))] text-[calc(13*var(--u))] font-normal leading-[1.45] text-[#6E6873]/60">
+                <p className="moku-empty-desc mt-[calc(6*var(--u))] max-w-[calc(260*var(--u))] text-[calc(13*var(--u))] font-normal leading-[1.45] text-[#6E6873]/60">
                   Saat ini tidak ada notifikasi untuk Anda.
                 </p>
               </div>
@@ -1484,8 +1489,16 @@ export default function NotificationsPage() {
             animation: notif-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
 
-          .moku-empty-enter {
-            animation: moku-empty-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          .moku-empty-img {
+            animation: moku-empty-img-in 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          }
+
+          .moku-empty-title {
+            animation: moku-empty-text-in 620ms cubic-bezier(0.16, 1, 0.3, 1) 110ms both;
+          }
+
+          .moku-empty-desc {
+            animation: moku-empty-text-in 620ms cubic-bezier(0.16, 1, 0.3, 1) 190ms both;
           }
 
           .moku-trash-pop {
@@ -1554,14 +1567,25 @@ export default function NotificationsPage() {
             }
           }
 
-          @keyframes moku-empty-in {
+          @keyframes moku-empty-img-in {
             from {
               opacity: 0;
-              transform: translate3d(0, 12px, 0) scale(0.96);
+              transform: translate3d(0, 16px, 0) scale(0.94);
+            }
+            to {
+              opacity: 0.4;
+              transform: translate3d(0, 0, 0) scale(1);
+            }
+          }
+
+          @keyframes moku-empty-text-in {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 10px, 0);
             }
             to {
               opacity: 1;
-              transform: translate3d(0, 0, 0) scale(1);
+              transform: translate3d(0, 0, 0);
             }
           }
 
@@ -1617,13 +1641,18 @@ export default function NotificationsPage() {
 
           @media (prefers-reduced-motion: reduce) {
             .notif-card-reveal,
-            .moku-empty-enter,
+            .moku-empty-img,
+            .moku-empty-title,
+            .moku-empty-desc,
             .moku-trash-pop,
             .moku-bar-enter,
             .moku-bar-exit,
             .snackbar-enter,
             .snackbar-progress {
               animation: none;
+            }
+            .moku-empty-img {
+              opacity: 0.4;
             }
             .moku-icon-flip-inner,
             .moku-icon-face-front,
@@ -1698,7 +1727,7 @@ export default function NotificationsPage() {
         <section>
           {notifications.length > 0 ? (
             <div
-              className={`divide-y divide-[#ECEDEF] transition-[opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`divide-y divide-[#ECEDEF] transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isClearingAll
                   ? "pointer-events-none translate-y-2 scale-[0.99] opacity-0"
                   : "translate-y-0 scale-100 opacity-100"
@@ -1839,21 +1868,21 @@ export default function NotificationsPage() {
               })}
             </div>
           ) : (
-            <div className="moku-empty-enter flex min-h-[440px] flex-col items-center justify-center px-5 py-10 text-center">
+            <div className="flex min-h-[440px] flex-col items-center justify-center px-5 py-10 text-center">
               <img
-                src="/images/moku/illustrations/notifikasi-lonceng.png"
+                src={EMPTY_BELL_SRC}
                 alt="Belum ada notifikasi"
                 width={200}
                 height={200}
                 draggable={false}
-                className="h-auto w-[180px] select-none object-contain opacity-40 grayscale-[20%]"
+                className="moku-empty-img h-auto w-[180px] select-none object-contain grayscale-[20%]"
               />
 
-              <h2 className="mt-4 font-display text-lg font-bold tracking-tight text-[#171717]/45">
+              <h2 className="moku-empty-title mt-4 font-display text-lg font-bold tracking-tight text-[#171717]/45">
                 Belum Ada Notifikasi
               </h2>
 
-              <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-[#6E6873]/60">
+              <p className="moku-empty-desc mt-1.5 max-w-xs text-sm leading-relaxed text-[#6E6873]/60">
                 Saat ini tidak ada notifikasi untuk Anda.
               </p>
             </div>
@@ -1901,8 +1930,16 @@ export default function NotificationsPage() {
           animation: notification-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        .moku-empty-enter {
-          animation: moku-empty-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        .moku-empty-img {
+          animation: moku-empty-img-in 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .moku-empty-title {
+          animation: moku-empty-text-in 620ms cubic-bezier(0.16, 1, 0.3, 1) 110ms both;
+        }
+
+        .moku-empty-desc {
+          animation: moku-empty-text-in 620ms cubic-bezier(0.16, 1, 0.3, 1) 190ms both;
         }
 
         .snackbar-enter {
@@ -1924,14 +1961,25 @@ export default function NotificationsPage() {
           }
         }
 
-        @keyframes moku-empty-in {
+        @keyframes moku-empty-img-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 12px, 0) scale(0.96);
+            transform: translate3d(0, 16px, 0) scale(0.94);
+          }
+          to {
+            opacity: 0.4;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes moku-empty-text-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 10px, 0);
           }
           to {
             opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
+            transform: translate3d(0, 0, 0);
           }
         }
 
@@ -1957,10 +2005,15 @@ export default function NotificationsPage() {
 
         @media (prefers-reduced-motion: reduce) {
           .page-enter,
-          .moku-empty-enter,
+          .moku-empty-img,
+          .moku-empty-title,
+          .moku-empty-desc,
           .snackbar-enter,
           .snackbar-progress {
             animation: none;
+          }
+          .moku-empty-img {
+            opacity: 0.4;
           }
         }
       `}</style>
