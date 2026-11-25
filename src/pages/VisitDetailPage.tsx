@@ -434,7 +434,7 @@ export default function VisitDetailPage() {
             type="button"
             onClick={handleEditVisit}
             style={{ color: "#FFFFFF" }}
-            className="flex min-h-[calc(46*var(--u))] items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(10*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(13*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(142,0,28,0.2)] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] active:bg-[#730217]"
+            className="flex min-h-[calc(46*var(--u))] items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(10*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(13*var(--u))] font-semibold text-white transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] active:bg-[#730217]"
           >
             <PencilSimple
               weight="regular"
