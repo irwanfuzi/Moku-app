@@ -11,7 +11,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
-import { useIonViewWillEnter } from "@ionic/react";
 import {
   ArrowLeft,
   Buildings,
@@ -719,11 +718,17 @@ export default function CreateVisitPage() {
   const errorExitTimerRef = useRef<number | null>(null);
   const recordedBy = "Budi Santoso";
 
-  useIonViewWillEnter(() => {
+  // Reset form & success state saat halaman dibuka kembali
+  useEffect(() => {
+    setSelectedMachineCode(initialMachineCode);
+    setVisitDate(getTodayIsoDate());
+    setVisitType("");
+    setActivityDesc("");
+    setTechnicianNotes("");
     setSavedVisit(null);
     setIsSubmitting(false);
     setIsFormExiting(false);
-  });
+  }, [location.key, initialMachineCode]);
 
   const selectedMachine = useMemo(
     () =>
@@ -982,7 +987,7 @@ export default function CreateVisitPage() {
             </div>
           </div>
 
-          {/* Tombol Aksi */}
+          {/* Tombol Aksi (Flat) */}
           <div className="moku-success-step-4 mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
             <button
               type="button"
@@ -1284,7 +1289,7 @@ export default function CreateVisitPage() {
             </div>
           </div>
 
-          {/* 9. Tombol Simpan Kunjungan */}
+          {/* 9. Tombol Simpan Kunjungan (Flat) */}
           <div className="pt-[calc(8*var(--u))]">
             <button
               type="submit"
