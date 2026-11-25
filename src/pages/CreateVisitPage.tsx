@@ -20,7 +20,6 @@ import {
   CaretRight,
   ChatText,
   Check,
-  CheckCircle,
   FileText,
   GearSix,
   Laptop,
@@ -51,6 +50,12 @@ interface VisitTypeOption {
   title: string;
   description: string;
   icon: "laptop" | "printer" | "package" | "wrench" | "gear";
+}
+
+interface SavedVisitSummary {
+  visitNumber: string;
+  visitDate: string;
+  machineCode: string;
 }
 
 const MACHINE_OPTIONS: MachineOption[] = [
@@ -143,6 +148,11 @@ function formatMonthYear(year: number, monthIndex: number): string {
   }).format(new Date(year, monthIndex, 1));
 }
 
+function generateVisitNumber(isoDate: string): string {
+  const compactDate = (isoDate || getTodayIsoDate()).replace(/-/g, "");
+  return `KJ-${compactDate}-001`;
+}
+
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
@@ -169,6 +179,58 @@ function VisitTypeIcon({
     default:
       return <GearSix className={className} weight="regular" />;
   }
+}
+
+/* =========================================================
+   SUCCESS ILLUSTRATION (CRISP VECTOR)
+========================================================= */
+
+function VisitSuccessIllustration() {
+  return (
+    <div className="moku-success-icon relative flex flex-col items-center justify-center">
+      <svg
+        viewBox="0 0 140 128"
+        fill="none"
+        aria-hidden="true"
+        className="h-[calc(112*var(--u))] w-[calc(124*var(--u))]"
+      >
+        {/* Bayangan lembut di bawah lingkaran */}
+        <ellipse cx="66" cy="116" rx="34" ry="5.5" fill="#E3F5E7" />
+
+        {/* Lingkaran hijau lembut */}
+        <circle cx="66" cy="64" r="40" fill="#D5F2DC" />
+
+        {/* Tanda centang hijau */}
+        <path
+          d="M49 64.5L60.8 76L84 52"
+          stroke="#1E9E3E"
+          strokeWidth="8.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* 3 garis aksen di kanan atas */}
+        <path
+          d="M100 22L103 13"
+          stroke="#1E9E3E"
+          strokeWidth="4.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M110 29L118 22"
+          stroke="#1E9E3E"
+          strokeWidth="4.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M114 39L123 37"
+          stroke="#1E9E3E"
+          strokeWidth="4.2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
 }
 
 /* =========================================================
@@ -463,7 +525,6 @@ function CalendarBottomSheet({
       title="Pilih Tanggal Kunjungan"
       onClose={onClose}
     >
-      {/* Navigasi Bulan & Tahun */}
       <div className="mb-[calc(12*var(--u))] flex items-center justify-between rounded-[calc(14*var(--u))] bg-[#F7F7F9] px-[calc(8*var(--u))] py-[calc(6*var(--u))]">
         <button
           type="button"
@@ -494,7 +555,6 @@ function CalendarBottomSheet({
         </button>
       </div>
 
-      {/* Header Hari */}
       <div className="mb-[calc(6*var(--u))] grid grid-cols-7 text-center">
         {WEEKDAYS.map((dayName) => (
           <span
@@ -506,7 +566,6 @@ function CalendarBottomSheet({
         ))}
       </div>
 
-      {/* Grid Tanggal */}
       <div className="grid grid-cols-7 gap-y-[calc(4*var(--u))] text-center">
         {daysGrid.map((cell) => {
           if (cell.day === null) {
@@ -535,7 +594,6 @@ function CalendarBottomSheet({
         })}
       </div>
 
-      {/* Tombol Cepat Hari Ini */}
       <div className="mt-[calc(14*var(--u))] flex justify-end border-t border-[#EFEFF2] pt-[calc(10*var(--u))]">
         <button
           type="button"
@@ -554,7 +612,8 @@ function CalendarBottomSheet({
 ========================================================= */
 
 export default function CreateVisitPage() {
-  const { isMobile, isReady, backWithTransition } = useAppLayout();
+  const { isMobile, isReady, backWithTransition, navigateWithTransition } =
+    useAppLayout();
   const location = useLocation();
 
   const initialMachineCode = useMemo(() => {
@@ -579,7 +638,7 @@ export default function CreateVisitPage() {
     title: string;
     description: string;
   } | null>(null);
-  const [savedToast, setSavedToast] = useState(false);
+  const [savedVisit, setSavedVisit] = useState<SavedVisitSummary | null>(null);
 
   const selectDelayRef = useRef<number | null>(null);
   const recordedBy = "Budi Santoso";
@@ -681,12 +740,11 @@ export default function CreateVisitPage() {
 
     setErrorSnackbar(null);
     triggerHaptic(12);
-    setSavedToast(true);
-
-    window.setTimeout(() => {
-      setSavedToast(false);
-      backWithTransition("/");
-    }, 1300);
+    setSavedVisit({
+      visitNumber: generateVisitNumber(visitDate),
+      visitDate,
+      machineCode: selectedMachineCode,
+    });
   };
 
   return (
@@ -715,34 +773,139 @@ export default function CreateVisitPage() {
         </div>
       </header>
 
-      {/* Form Body */}
-      <form
-        onSubmit={handleSubmit}
-        noValidate
-        className="mx-auto w-full max-w-[680px] space-y-[calc(16*var(--u))] px-[calc(16*var(--u))] pt-[calc(18*var(--u))]"
-      >
-        {/* 1. Nomor Mesin * */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Nomor Mesin <span className="text-[#DC0E2E]">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              setMachineSearch("");
-              setShowMachineSheet(true);
-            }}
-            className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
-              showMachineSheet
-                ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
-                : "border-[#DEDEE4]"
-            }`}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
-              <Printer
+      {/* Success Page State */}
+      {savedVisit ? (
+        <section className="moku-success-enter mx-auto flex min-h-[calc(100dvh-calc(140*var(--u)))] w-full max-w-[680px] flex-col items-center justify-center px-[calc(20*var(--u))] py-[calc(24*var(--u))] text-center">
+          <VisitSuccessIllustration />
+
+          <h2 className="mt-[calc(16*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]">
+            Kunjungan Berhasil Disimpan
+          </h2>
+
+          <p className="mt-[calc(8*var(--u))] max-w-[calc(270*var(--u))] text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#5E5863]">
+            Data kunjungan telah berhasil disimpan ke sistem.
+          </p>
+
+          {/* Kartu Ringkasan Kunjungan */}
+          <div className="mt-[calc(22*var(--u))] w-full divide-y divide-[#F0E4E7] rounded-[calc(16*var(--u))] bg-[#FDF7F8] px-[calc(16*var(--u))] text-left">
+            <div className="flex items-center gap-[calc(14*var(--u))] py-[calc(14*var(--u))]">
+              <CalendarBlank
                 weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 text-[#8E001C]"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[calc(11.5*var(--u))] font-normal text-[#6E6873]">
+                  No. Kunjungan
+                </p>
+                <p className="mt-[calc(2*var(--u))] truncate font-display text-[calc(15*var(--u))] font-bold tracking-[-0.01em] text-[#171717]">
+                  {savedVisit.visitNumber}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-[calc(14*var(--u))] py-[calc(14*var(--u))]">
+              <CalendarBlank
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] shrink-0 text-[#8E001C]"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[calc(11.5*var(--u))] font-normal text-[#6E6873]">
+                  Tanggal Kunjungan
+                </p>
+                <p className="mt-[calc(2*var(--u))] truncate font-display text-[calc(15*var(--u))] font-bold tracking-[-0.01em] text-[#171717]">
+                  {formatIndonesianDate(savedVisit.visitDate)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tombol Aksi */}
+          <div className="mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
+            <button
+              type="button"
+              onClick={() => navigateWithTransition("/visit-history", "forward")}
+              style={{ color: "#FFFFFF" }}
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+            >
+              <FileText
+                weight="regular"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0"
+              />
+              Lihat Detail Kunjungan
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+            >
+              <ArrowLeft
+                weight="bold"
+                className="h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0"
+              />
+              Kembali
+            </button>
+          </div>
+        </section>
+      ) : (
+        /* Form Body */
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="mx-auto w-full max-w-[680px] space-y-[calc(16*var(--u))] px-[calc(16*var(--u))] pt-[calc(18*var(--u))]"
+        >
+          {/* 1. Nomor Mesin * */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Nomor Mesin <span className="text-[#DC0E2E]">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                setMachineSearch("");
+                setShowMachineSheet(true);
+              }}
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+                showMachineSheet
+                  ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
+                  : "border-[#DEDEE4]"
+              }`}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
+                <Printer
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
+                />
+                <span
+                  className={`truncate text-[calc(13.5*var(--u))] ${
+                    selectedMachine
+                      ? "font-semibold text-[#171717]"
+                      : "font-normal text-[#8E8994]"
+                  }`}
+                >
+                  {selectedMachine ? selectedMachine.code : "Pilih mesin"}
+                </span>
+              </span>
+
+              <CaretDown
+                weight="bold"
+                className={`h-[calc(15*var(--u))] w-[calc(15*var(--u))] shrink-0 text-[#29232A] transition-transform duration-300 ${
+                  showMachineSheet ? "rotate-180 text-[#8E001C]" : "rotate-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* 2. Model Mesin (Auto-filled / Read-only) */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Model Mesin
+            </label>
+            <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
+              <Stack
+                weight="regular"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
               />
               <span
                 className={`truncate text-[calc(13.5*var(--u))] ${
@@ -751,241 +914,211 @@ export default function CreateVisitPage() {
                     : "font-normal text-[#8E8994]"
                 }`}
               >
-                {selectedMachine ? selectedMachine.code : "Pilih mesin"}
+                {selectedMachine ? selectedMachine.model : "-"}
               </span>
-            </span>
-
-            <CaretDown
-              weight="bold"
-              className={`h-[calc(15*var(--u))] w-[calc(15*var(--u))] shrink-0 text-[#29232A] transition-transform duration-300 ${
-                showMachineSheet ? "rotate-180 text-[#8E001C]" : "rotate-0"
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* 2. Model Mesin (Auto-filled / Read-only) */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Model Mesin
-          </label>
-          <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
-            <Stack
-              weight="regular"
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
-            />
-            <span
-              className={`truncate text-[calc(13.5*var(--u))] ${
-                selectedMachine
-                  ? "font-semibold text-[#171717]"
-                  : "font-normal text-[#8E8994]"
-              }`}
-            >
-              {selectedMachine ? selectedMachine.model : "-"}
-            </span>
+            </div>
           </div>
-        </div>
 
-        {/* 3. Pelanggan (Auto-filled / Read-only) */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Pelanggan
-          </label>
-          <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
-            <Buildings
-              weight="regular"
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
-            />
-            <span
-              className={`truncate text-[calc(13.5*var(--u))] ${
-                selectedMachine
-                  ? "font-semibold text-[#171717]"
-                  : "font-normal text-[#8E8994]"
-              }`}
-            >
-              {selectedMachine ? selectedMachine.customer : "-"}
-            </span>
-          </div>
-        </div>
-
-        {/* 4. Tanggal Kunjungan * (Bottom Sheet Kalender) */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Tanggal Kunjungan <span className="text-[#DC0E2E]">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              setShowDateSheet(true);
-            }}
-            className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
-              showDateSheet
-                ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
-                : "border-[#DEDEE4]"
-            }`}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
-              <CalendarBlank
+          {/* 3. Pelanggan (Auto-filled / Read-only) */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Pelanggan
+            </label>
+            <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
+              <Buildings
                 weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
-              />
-              <span className="truncate text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                {formatIndonesianDate(visitDate) || "Pilih tanggal"}
-              </span>
-            </span>
-
-            <CalendarBlank
-              weight="regular"
-              className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 transition-colors duration-200 ${
-                showDateSheet ? "text-[#8E001C]" : "text-[#29232A]"
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* 5. Jenis Kunjungan * */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Jenis Kunjungan <span className="text-[#DC0E2E]">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              setShowVisitTypeSheet(true);
-            }}
-            className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
-              showVisitTypeSheet
-                ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
-                : "border-[#DEDEE4]"
-            }`}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
-              <SquaresFour
-                weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
               />
               <span
                 className={`truncate text-[calc(13.5*var(--u))] ${
-                  selectedVisitTypeObj
+                  selectedMachine
                     ? "font-semibold text-[#171717]"
                     : "font-normal text-[#8E8994]"
                 }`}
               >
-                {selectedVisitTypeObj
-                  ? selectedVisitTypeObj.title
-                  : "Pilih jenis kunjungan"}
+                {selectedMachine ? selectedMachine.customer : "-"}
               </span>
-            </span>
+            </div>
+          </div>
 
-            <CaretDown
-              weight="bold"
-              className={`h-[calc(15*var(--u))] w-[calc(15*var(--u))] shrink-0 text-[#29232A] transition-transform duration-300 ${
-                showVisitTypeSheet ? "rotate-180 text-[#8E001C]" : "rotate-0"
+          {/* 4. Tanggal Kunjungan * (Bottom Sheet Kalender) */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Tanggal Kunjungan <span className="text-[#DC0E2E]">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                setShowDateSheet(true);
+              }}
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+                showDateSheet
+                  ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
+                  : "border-[#DEDEE4]"
               }`}
-            />
-          </button>
-          <p className="mt-[calc(5*var(--u))] text-[calc(11.5*var(--u))] font-normal text-[#6E6873]">
-            Pilihan: IND, INS, DIS, PMC, UMC
-          </p>
-        </div>
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
+                <CalendarBlank
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
+                />
+                <span className="truncate text-[calc(13.5*var(--u))] font-medium text-[#171717]">
+                  {formatIndonesianDate(visitDate) || "Pilih tanggal"}
+                </span>
+              </span>
 
-        {/* 6. Deskripsi Aktivitas * */}
-        <div>
-          <label
-            htmlFor="activity-desc-input"
-            className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]"
-          >
-            Deskripsi Aktivitas <span className="text-[#DC0E2E]">*</span>
-          </label>
-          <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
-            <div className="flex items-start gap-[calc(11*var(--u))]">
-              <FileText
+              <CalendarBlank
                 weight="regular"
-                className="mt-[calc(2*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#29232A]"
+                className={`h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 transition-colors duration-200 ${
+                  showDateSheet ? "text-[#8E001C]" : "text-[#29232A]"
+                }`}
               />
-              <textarea
-                id="activity-desc-input"
-                rows={3}
-                maxLength={MAX_TEXT_LENGTH}
-                value={activityDesc}
-                onChange={(e) => {
-                  setActivityDesc(e.target.value);
-                  if (errorSnackbar) setErrorSnackbar(null);
-                }}
-                placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
-                style={NO_OUTLINE_STYLE}
-                className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
-              />
-            </div>
-
-            <span className="pointer-events-none absolute bottom-[calc(8*var(--u))] right-[calc(12*var(--u))] text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#6E6873]">
-              {activityDesc.length}/{MAX_TEXT_LENGTH}
-            </span>
+            </button>
           </div>
-        </div>
 
-        {/* 7. Catatan Teknisi */}
-        <div>
-          <label
-            htmlFor="tech-notes-input"
-            className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]"
-          >
-            Catatan Teknisi
-          </label>
-          <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
-            <div className="flex items-start gap-[calc(11*var(--u))]">
-              <ChatText
+          {/* 5. Jenis Kunjungan * */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Jenis Kunjungan <span className="text-[#DC0E2E]">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                setShowVisitTypeSheet(true);
+              }}
+              className={`flex min-h-[calc(46*var(--u))] w-full items-center justify-between gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] border bg-white px-[calc(13*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFC] ${
+                showVisitTypeSheet
+                  ? "border-[#8E001C] ring-2 ring-[#8E001C]/10"
+                  : "border-[#DEDEE4]"
+              }`}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-[calc(11*var(--u))]">
+                <SquaresFour
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#29232A]"
+                />
+                <span
+                  className={`truncate text-[calc(13.5*var(--u))] ${
+                    selectedVisitTypeObj
+                      ? "font-semibold text-[#171717]"
+                      : "font-normal text-[#8E8994]"
+                  }`}
+                >
+                  {selectedVisitTypeObj
+                    ? selectedVisitTypeObj.title
+                    : "Pilih jenis kunjungan"}
+                </span>
+              </span>
+
+              <CaretDown
+                weight="bold"
+                className={`h-[calc(15*var(--u))] w-[calc(15*var(--u))] shrink-0 text-[#29232A] transition-transform duration-300 ${
+                  showVisitTypeSheet ? "rotate-180 text-[#8E001C]" : "rotate-0"
+                }`}
+              />
+            </button>
+            <p className="mt-[calc(5*var(--u))] text-[calc(11.5*var(--u))] font-normal text-[#6E6873]">
+              Pilihan: IND, INS, DIS, PMC, UMC
+            </p>
+          </div>
+
+          {/* 6. Deskripsi Aktivitas * */}
+          <div>
+            <label
+              htmlFor="activity-desc-input"
+              className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]"
+            >
+              Deskripsi Aktivitas <span className="text-[#DC0E2E]">*</span>
+            </label>
+            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
+              <div className="flex items-start gap-[calc(11*var(--u))]">
+                <FileText
+                  weight="regular"
+                  className="mt-[calc(2*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#29232A]"
+                />
+                <textarea
+                  id="activity-desc-input"
+                  rows={3}
+                  maxLength={MAX_TEXT_LENGTH}
+                  value={activityDesc}
+                  onChange={(e) => {
+                    setActivityDesc(e.target.value);
+                    if (errorSnackbar) setErrorSnackbar(null);
+                  }}
+                  placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
+                  style={NO_OUTLINE_STYLE}
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                />
+              </div>
+
+              <span className="pointer-events-none absolute bottom-[calc(8*var(--u))] right-[calc(12*var(--u))] text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#6E6873]">
+                {activityDesc.length}/{MAX_TEXT_LENGTH}
+              </span>
+            </div>
+          </div>
+
+          {/* 7. Catatan Teknisi */}
+          <div>
+            <label
+              htmlFor="tech-notes-input"
+              className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]"
+            >
+              Catatan Teknisi
+            </label>
+            <div className="relative rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(13*var(--u))] pb-[calc(26*var(--u))] pt-[calc(11*var(--u))] transition-colors duration-200 focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
+              <div className="flex items-start gap-[calc(11*var(--u))]">
+                <ChatText
+                  weight="regular"
+                  className="mt-[calc(2*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#29232A]"
+                />
+                <textarea
+                  id="tech-notes-input"
+                  rows={3}
+                  maxLength={MAX_TEXT_LENGTH}
+                  value={technicianNotes}
+                  onChange={(e) => setTechnicianNotes(e.target.value)}
+                  placeholder="Tambahkan catatan jika diperlukan..."
+                  style={NO_OUTLINE_STYLE}
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                />
+              </div>
+
+              <span className="pointer-events-none absolute bottom-[calc(8*var(--u))] right-[calc(12*var(--u))] text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#6E6873]">
+                {technicianNotes.length}/{MAX_TEXT_LENGTH}
+              </span>
+            </div>
+          </div>
+
+          {/* 8. Dicatat oleh (Read-only) */}
+          <div>
+            <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
+              Dicatat oleh
+            </label>
+            <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
+              <User
                 weight="regular"
-                className="mt-[calc(2*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#29232A]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
               />
-              <textarea
-                id="tech-notes-input"
-                rows={3}
-                maxLength={MAX_TEXT_LENGTH}
-                value={technicianNotes}
-                onChange={(e) => setTechnicianNotes(e.target.value)}
-                placeholder="Tambahkan catatan jika diperlukan..."
-                style={NO_OUTLINE_STYLE}
-                className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
-              />
+              <span className="truncate text-[calc(13.5*var(--u))] font-semibold text-[#171717]">
+                {recordedBy}
+              </span>
             </div>
-
-            <span className="pointer-events-none absolute bottom-[calc(8*var(--u))] right-[calc(12*var(--u))] text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#6E6873]">
-              {technicianNotes.length}/{MAX_TEXT_LENGTH}
-            </span>
           </div>
-        </div>
 
-        {/* 8. Dicatat oleh (Read-only) */}
-        <div>
-          <label className="mb-[calc(6*var(--u))] block font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Dicatat oleh
-          </label>
-          <div className="flex min-h-[calc(46*var(--u))] w-full items-center gap-[calc(11*var(--u))] rounded-[calc(12*var(--u))] bg-[#EAEAEF] px-[calc(13*var(--u))]">
-            <User
-              weight="regular"
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
-            />
-            <span className="truncate text-[calc(13.5*var(--u))] font-semibold text-[#171717]">
-              {recordedBy}
-            </span>
+          {/* 9. Tombol Simpan Kunjungan */}
+          <div className="pt-[calc(8*var(--u))]">
+            <button
+              type="submit"
+              style={{ color: "#FFFFFF" }}
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-bold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217]"
+            >
+              Simpan Kunjungan
+            </button>
           </div>
-        </div>
-
-        {/* 9. Tombol Simpan Kunjungan */}
-        <div className="pt-[calc(8*var(--u))]">
-          <button
-            type="submit"
-            disabled={savedToast}
-            style={{ color: "#FFFFFF" }}
-            className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-bold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-transform duration-150 active:scale-[0.985] active:bg-[#730217] disabled:opacity-75"
-          >
-            {savedToast ? "Menyimpan..." : "Simpan Kunjungan"}
-          </button>
-        </div>
-      </form>
+        </form>
+      )}
 
       {/* Bottom Sheet Pilih Mesin (dengan Pencarian + Ikon Printer) */}
       <ElasticBottomSheet
@@ -1005,7 +1138,7 @@ export default function CreateVisitPage() {
             type="text"
             value={machineSearch}
             onChange={(e) => setMachineSearch(e.target.value)}
-            placeholder="Cari nomor mesin atau pelanggan..."
+            placeholder="Cari nomor mesin atau pelanggan"
             style={NO_OUTLINE_STYLE}
             className="w-full border-0 bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
           />
@@ -1140,7 +1273,7 @@ export default function CreateVisitPage() {
         </div>
       </ElasticBottomSheet>
 
-      {/* Snackbar Error State (lebih ramping & proporsional) */}
+      {/* Snackbar Error State */}
       {errorSnackbar &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1185,31 +1318,15 @@ export default function CreateVisitPage() {
           document.body
         )}
 
-      {/* Snackbar Konfirmasi Simpan (Portal) */}
-      {savedToast &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            style={MOBILE_SCALE_VARS}
-            role="status"
-            aria-live="polite"
-            className="moku-snack-enter fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-2.5 rounded-[12px] bg-[#730217] px-4 py-2.5 text-white shadow-xl"
-          >
-            <CheckCircle
-              size={18}
-              weight="fill"
-              className="shrink-0 text-white"
-            />
-            <span className="truncate text-xs font-medium sm:text-sm">
-              Kunjungan {selectedMachineCode} berhasil disimpan.
-            </span>
-          </div>,
-          document.body
-        )}
-
       <style>{`
         .moku-snack-enter {
           animation: moku-snack-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-success-enter {
+          animation: moku-success-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-success-icon {
+          animation: moku-icon-pop 520ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
         }
         @keyframes moku-snack-up {
           from {
@@ -1219,6 +1336,37 @@ export default function CreateVisitPage() {
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-success-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 14px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-icon-pop {
+          0% {
+            opacity: 0;
+            transform: scale(0.75);
+          }
+          65% {
+            opacity: 1;
+            transform: scale(1.06);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .moku-snack-enter,
+          .moku-success-enter,
+          .moku-success-icon {
+            animation: none;
           }
         }
       `}</style>
