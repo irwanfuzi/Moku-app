@@ -309,9 +309,9 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="rounded-[3px] bg-[#FCECEF] px-[2px] text-[#8E001C]">
+      <span className="rounded-[3px] bg-[#FCECEF] px-[2px] text-[#8E001C]">
         {text.slice(idx, idx + q.length)}
-      </mark>
+      </span>
       {text.slice(idx + q.length)}
     </>
   );
@@ -1436,7 +1436,7 @@ export default function CreateVisitPage() {
         </form>
       )}
 
-      {/* Bottom Sheet Pilih Mesin (Autosuggest + Error Tolerance + Fixed Height) */}
+      {/* Bottom Sheet Pilih Mesin (Error Tolerance + Fixed Height) */}
       <ElasticBottomSheet
         isOpen={showMachineSheet}
         title="Pilih Mesin"
@@ -1452,12 +1452,17 @@ export default function CreateVisitPage() {
             className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#5A555F]"
           />
           <input
-            type="text"
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
             value={machineSearch}
             onChange={(e) => setMachineSearch(e.target.value)}
             placeholder="Cari nomor mesin, model, atau pelanggan"
             style={NO_OUTLINE_STYLE}
-            className="w-full border-0 bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+            className="w-full border-0 bg-transparent text-[calc(13.5*var(--u))] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden"
           />
           {machineSearch && (
             <button
@@ -1473,28 +1478,6 @@ export default function CreateVisitPage() {
             </button>
           )}
         </div>
-
-        {/* Autosuggest Chips (tampil saat belum mengetik) */}
-        {!machineSearch.trim() && (
-          <div className="mb-[calc(10*var(--u))] flex items-center gap-[calc(6*var(--u))] overflow-x-auto pb-[calc(2*var(--u))] [scrollbar-width:none]">
-            <span className="shrink-0 text-[calc(11*var(--u))] font-medium text-[#8E8994]">
-              Cepat:
-            </span>
-            {MACHINE_OPTIONS.slice(0, 4).map((item) => (
-              <button
-                key={`suggest-${item.code}`}
-                type="button"
-                onClick={() => {
-                  triggerHaptic(6);
-                  setMachineSearch(item.code);
-                }}
-                className="shrink-0 rounded-full border border-[#E6E6EC] bg-[#FAFAFC] px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-[#4A454F] transition-colors duration-[260ms] active:border-[#8E001C] active:bg-[#FCECEF] active:text-[#8E001C]"
-              >
-                {item.code}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Info Error Tolerance (tampil jika hasil dari koreksi typo) */}
         {machineSearchResult.isFuzzyOnly && (
