@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -64,14 +63,6 @@ function triggerHaptic(duration = 8) {
   }
 }
 
-function parseChecklistItems(description: string): string[] {
-  const lines = description
-    .split(/\r?\n|•|;/)
-    .map((line) => line.replace(/^[-*\d.)\s]+/, "").trim())
-    .filter(Boolean);
-  return lines.length > 0 ? lines : [description.trim()];
-}
-
 function VisitTypeDetailIcon({
   code,
   className,
@@ -109,11 +100,6 @@ export default function VisitDetailPage() {
   useEffect(() => {
     setVisit(getVisitByNumber(visitNumber));
   }, [visitNumber, location.key]);
-
-  const checklistItems = useMemo(
-    () => parseChecklistItems(visit.activityDescription),
-    [visit.activityDescription]
-  );
 
   const [showMenuSheet, setShowMenuSheet] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
@@ -223,9 +209,7 @@ export default function VisitDetailPage() {
     );
   };
 
-  const visitTypeDisplay = `${visit.visitTypeCode} — ${
-    VISIT_TYPE_LABELS[visit.visitTypeCode]
-  }`;
+  const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
 
   return (
     <main
@@ -368,7 +352,7 @@ export default function VisitDetailPage() {
           </div>
         </section>
 
-        {/* 4. Hasil Kunjungan */}
+        {/* 4. Deskripsi Aktivitas (Paragraf Biasa) */}
         <section className="pt-[calc(4*var(--u))]">
           <div className="mb-[calc(8*var(--u))] flex items-center gap-[calc(8*var(--u))]">
             <FileText
@@ -376,25 +360,14 @@ export default function VisitDetailPage() {
               className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#8E001C]"
             />
             <h2 className="font-display text-[calc(14.5*var(--u))] font-bold tracking-[-0.015em] text-[#171717]">
-              Hasil Kunjungan
+              Deskripsi Aktivitas
             </h2>
           </div>
 
-          <div className="space-y-[calc(9*var(--u))] rounded-[calc(16*var(--u))] bg-[#F7F7F9] px-[calc(15*var(--u))] py-[calc(13*var(--u))]">
-            {checklistItems.map((item, idx) => (
-              <div
-                key={`${idx}-${item}`}
-                className="flex items-start gap-[calc(9*var(--u))]"
-              >
-                <CheckCircle
-                  weight="fill"
-                  className="mt-[calc(1*var(--u))] h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0 text-[#1E9E3E]"
-                />
-                <p className="text-[calc(13*var(--u))] leading-[1.42] text-[#29232A]">
-                  {item}
-                </p>
-              </div>
-            ))}
+          <div className="rounded-[calc(16*var(--u))] bg-[#F7F7F9] px-[calc(15*var(--u))] py-[calc(13*var(--u))]">
+            <p className="whitespace-pre-line text-[calc(13*var(--u))] leading-[1.5] text-[#29232A]">
+              {visit.activityDescription?.trim() || "-"}
+            </p>
           </div>
         </section>
 
@@ -411,7 +384,7 @@ export default function VisitDetailPage() {
           </div>
 
           <div className="rounded-[calc(16*var(--u))] border border-[#E6E6EC] bg-white px-[calc(15*var(--u))] py-[calc(13*var(--u))]">
-            <p className="text-[calc(13*var(--u))] leading-[1.5] text-[#29232A]">
+            <p className="whitespace-pre-line text-[calc(13*var(--u))] leading-[1.5] text-[#29232A]">
               {visit.technicianNotes?.trim() ||
                 "Tidak ada catatan teknisi tambahan."}
             </p>
