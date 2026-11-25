@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
+import { useIonViewWillEnter } from "@ionic/react";
 import {
   ArrowLeft,
   Buildings,
@@ -649,7 +650,7 @@ function CalendarBottomSheet({
               onClick={() => handlePickDate(cell.iso)}
               className={`mx-auto flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] items-center justify-center rounded-full text-[calc(13.5*var(--u))] transition-all duration-[260ms] active:scale-90 ${
                 isSelected
-                  ? "bg-[#8E001C] font-bold text-white shadow-[0_3px_10px_rgba(142,0,28,0.28)]"
+                  ? "bg-[#8E001C] font-bold text-white"
                   : isToday
                     ? "bg-[#FCECEF] font-bold text-[#8E001C]"
                     : "font-medium text-[#171717] active:bg-[#F2F2F5]"
@@ -717,6 +718,12 @@ export default function CreateVisitPage() {
   const errorAutoTimerRef = useRef<number | null>(null);
   const errorExitTimerRef = useRef<number | null>(null);
   const recordedBy = "Budi Santoso";
+
+  useIonViewWillEnter(() => {
+    setSavedVisit(null);
+    setIsSubmitting(false);
+    setIsFormExiting(false);
+  });
 
   const selectedMachine = useMemo(
     () =>
@@ -986,7 +993,7 @@ export default function CreateVisitPage() {
                 )
               }
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.2)] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
             >
               <FileText
                 weight="regular"
@@ -997,7 +1004,7 @@ export default function CreateVisitPage() {
 
             <button
               type="button"
-              onClick={handleBack}
+              onClick={() => navigateWithTransition("/", "back")}
               className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
             >
               <ArrowLeft
@@ -1076,7 +1083,7 @@ export default function CreateVisitPage() {
               <span
                 className={`truncate text-[calc(13.5*var(--u))] ${
                   selectedMachine
-                    ? "font-semibold text-[#171717]"
+                    ? "font-semibold text-[#4A454F]"
                     : "font-normal text-[#8E8994]"
                 }`}
               >
@@ -1098,7 +1105,7 @@ export default function CreateVisitPage() {
               <span
                 className={`truncate text-[calc(13.5*var(--u))] ${
                   selectedMachine
-                    ? "font-semibold text-[#171717]"
+                    ? "font-semibold text-[#4A454F]"
                     : "font-normal text-[#8E8994]"
                 }`}
               >
@@ -1175,7 +1182,7 @@ export default function CreateVisitPage() {
                   }`}
                 >
                   {selectedVisitTypeObj
-                    ? selectedVisitTypeObj.title
+                    ? `${selectedVisitTypeObj.title} (${selectedVisitTypeObj.code})`
                     : "Pilih jenis kunjungan"}
                 </span>
               </span>
@@ -1218,7 +1225,7 @@ export default function CreateVisitPage() {
                   }}
                   placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
                 />
               </div>
 
@@ -1251,7 +1258,7 @@ export default function CreateVisitPage() {
                   onChange={(e) => setTechnicianNotes(e.target.value)}
                   placeholder="Tambahkan catatan jika diperlukan..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13.5*var(--u))] leading-[1.45] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0 disabled:opacity-70"
                 />
               </div>
 
@@ -1271,7 +1278,7 @@ export default function CreateVisitPage() {
                 weight="regular"
                 className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#4F4B53]"
               />
-              <span className="truncate text-[calc(13.5*var(--u))] font-semibold text-[#171717]">
+              <span className="truncate text-[calc(13.5*var(--u))] font-semibold text-[#4A454F]">
                 {recordedBy}
               </span>
             </div>
@@ -1283,7 +1290,7 @@ export default function CreateVisitPage() {
               type="submit"
               disabled={isSubmitting}
               style={{ color: "#FFFFFF" }}
-              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold tracking-[-0.01em] text-white shadow-[0_4px_14px_rgba(142,0,28,0.22)] transition-[transform,background-color,opacity] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217] disabled:opacity-85"
+              className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold tracking-[-0.01em] text-white transition-[transform,background-color,opacity] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217] disabled:opacity-85"
             >
               {isSubmitting ? (
                 <>
@@ -1434,7 +1441,7 @@ export default function CreateVisitPage() {
                         isActive ? "text-[#8E001C]" : "text-[#171717]"
                       }`}
                     >
-                      {option.title}
+                      {option.title} ({option.code})
                     </p>
                     <p className="mt-[calc(2*var(--u))] text-[calc(12*var(--u))] font-normal leading-[1.35] text-[#6E6873]">
                       {option.description}
