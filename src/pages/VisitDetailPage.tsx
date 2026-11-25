@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Buildings,
@@ -100,16 +100,10 @@ function VisitTypeDetailIcon({
 
 export default function VisitDetailPage() {
   const { visitNumber } = useParams<{ visitNumber?: string }>();
-  const location = useLocation();
   const { isMobile, isReady, backWithTransition, navigateWithTransition } =
     useAppLayout();
 
-  const [visit, setVisit] = useState(() => getVisitByNumber(visitNumber));
-
-  useEffect(() => {
-    setVisit(getVisitByNumber(visitNumber));
-  }, [visitNumber, location.key]);
-
+  const visit = useMemo(() => getVisitByNumber(visitNumber), [visitNumber]);
   const checklistItems = useMemo(
     () => parseChecklistItems(visit.activityDescription),
     [visit.activityDescription]
@@ -218,7 +212,7 @@ export default function VisitDetailPage() {
   const handleEditVisit = () => {
     triggerHaptic(8);
     navigateWithTransition(
-      `/visits/edit/${encodeURIComponent(visit.visitNumber)}`,
+      `/visits/new?equipment=${encodeURIComponent(visit.machineCode)}`,
       "forward"
     );
   };
@@ -319,6 +313,7 @@ export default function VisitDetailPage() {
 
         {/* 3. Kartu Informasi Detail */}
         <section className="divide-y divide-[#ECECF0] rounded-[calc(16*var(--u))] bg-[#F7F7F9] px-[calc(15*var(--u))]">
+          {/* Pelanggan */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <Buildings
               weight="regular"
@@ -331,6 +326,7 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
+          {/* Lokasi */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <MapPin
               weight="regular"
@@ -343,6 +339,7 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
+          {/* Teknisi */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <User
               weight="regular"
@@ -355,6 +352,7 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
+          {/* Jenis Kunjungan */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <VisitTypeDetailIcon
               code={visit.visitTypeCode}
@@ -418,7 +416,7 @@ export default function VisitDetailPage() {
           </div>
         </section>
 
-        {/* 6. Tombol Aksi Bawah (2 Kolom, Flat) */}
+        {/* 6. Tombol Aksi Bawah (2 Kolom) */}
         <section className="grid grid-cols-2 gap-[calc(10*var(--u))] pt-[calc(8*var(--u))]">
           <button
             type="button"
@@ -436,7 +434,7 @@ export default function VisitDetailPage() {
             type="button"
             onClick={handleEditVisit}
             style={{ color: "#FFFFFF" }}
-            className="flex min-h-[calc(46*var(--u))] items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(10*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(13*var(--u))] font-semibold text-white transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] active:bg-[#730217]"
+            className="flex min-h-[calc(46*var(--u))] items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(10*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(13*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(142,0,28,0.2)] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] active:bg-[#730217]"
           >
             <PencilSimple
               weight="regular"
