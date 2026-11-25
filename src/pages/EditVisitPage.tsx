@@ -1067,7 +1067,7 @@ export default function EditVisitPage() {
 
             {/* Tanggal Kunjungan * */}
             <div>
-              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
+              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#4A454F]">
                 Tanggal Kunjungan <span className="text-[#DC0E2E]">*</span>
               </label>
               <button
@@ -1103,7 +1103,7 @@ export default function EditVisitPage() {
 
             {/* Jenis Kunjungan * */}
             <div>
-              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
+              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#4A454F]">
                 Jenis Kunjungan <span className="text-[#DC0E2E]">*</span>
               </label>
               <button
@@ -1139,7 +1139,7 @@ export default function EditVisitPage() {
 
             {/* Teknisi * */}
             <div>
-              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#29232A]">
+              <label className="mb-[calc(6*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#4A454F]">
                 Teknisi <span className="text-[#DC0E2E]">*</span>
               </label>
               <button
@@ -1191,7 +1191,7 @@ export default function EditVisitPage() {
                 <p className="text-[calc(11*var(--u))] font-normal text-[#6E6873]">
                   Nomor Mesin
                 </p>
-                <p className="mt-[calc(1.5*var(--u))] truncate font-display text-[calc(14*var(--u))] font-bold text-[#171717]">
+                <p className="mt-[calc(1.5*var(--u))] truncate font-display text-[calc(14*var(--u))] font-semibold text-[#4A454F]">
                   {existingVisit.machineCode}
                 </p>
               </div>
@@ -1206,7 +1206,7 @@ export default function EditVisitPage() {
                 <p className="text-[calc(11*var(--u))] font-normal text-[#6E6873]">
                   Model Mesin
                 </p>
-                <p className="mt-[calc(1.5*var(--u))] truncate font-display text-[calc(14*var(--u))] font-bold text-[#171717]">
+                <p className="mt-[calc(1.5*var(--u))] truncate font-display text-[calc(14*var(--u))] font-semibold text-[#4A454F]">
                   {existingVisit.machineModel}
                 </p>
               </div>
@@ -1255,7 +1255,7 @@ export default function EditVisitPage() {
                         }`}
                       />
                     </span>
-                    <span className="min-w-0 flex-1 text-[calc(13*var(--u))] font-medium leading-[1.35] text-[#171717]">
+                    <span className="min-w-0 flex-1 text-[calc(13*var(--u))] font-normal leading-[1.35] text-[#29232A]">
                       {label}
                     </span>
                   </button>
@@ -1286,7 +1286,7 @@ export default function EditVisitPage() {
                   onChange={(e) => setTechnicianNotes(e.target.value)}
                   placeholder="Tambahkan tindakan atau catatan teknisi..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13*var(--u))] leading-[1.48] text-[#171717] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13*var(--u))] leading-[1.48] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
                 />
               </div>
 
