@@ -245,7 +245,7 @@ function ShimmerOverlay({ active }: { active: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="moku-skeleton pointer-events-none absolute inset-0 z-10 opacity-40 transition-opacity duration-200"
+      className="moku-skeleton pointer-events-none absolute inset-0 z-10 opacity-40 transition-opacity duration-[260ms]"
     />
   );
 }
@@ -266,11 +266,11 @@ function QuickAction({
       to={href}
       onContextMenu={blockContextMenu}
       draggable={false}
-      className={`group flex min-w-0 select-none flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center [-webkit-touch-callout:none] [-webkit-user-select:none] transition-transform duration-150 active:scale-95 ${
+      className={`group flex min-w-0 select-none flex-col items-center justify-start gap-[calc(5*var(--u))] px-[calc(4*var(--u))] text-center [-webkit-touch-callout:none] [-webkit-user-select:none] transition-transform duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 ${
         separated ? "border-l border-[#EAEAEF]" : ""
       }`}
     >
-      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-none transition-colors duration-150 group-active:bg-[#730217]">
+      <span className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#8E001C] text-white shadow-none transition-colors duration-[260ms] group-active:bg-[#730217]">
         {children}
       </span>
       <span className="text-[calc(11.5*var(--u))] font-medium leading-[1.2] tracking-[-0.02em] text-[#1F1B20]">
@@ -455,7 +455,7 @@ function MonthPickerSheet({
         className="fixed inset-0 bg-black backdrop-blur-[1.5px]"
       />
 
-      {/* Sheet Panel (satu elemen utuh tanpa ::after agar tidak ada garis subpixel saat ditarik ke atas) */}
+      {/* Sheet Panel */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -486,7 +486,7 @@ function MonthPickerSheet({
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors duration-200 active:bg-[#F2F2F5]"
+            className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full text-[#5A555F] transition-colors duration-[260ms] active:bg-[#F2F2F5]"
           >
             <X
               weight="bold"
@@ -610,7 +610,7 @@ function DesktopDashboard() {
                 ? `Notifikasi (${unreadCount} belum dibaca)`
                 : "Notifikasi"
             }
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#29232A] transition hover:bg-[#F3ECEF]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#29232A] transition duration-[260ms] hover:bg-[#F3ECEF]"
           >
             <Bell size={23} weight="regular" />
             {unreadCount > 0 && (
@@ -624,7 +624,7 @@ function DesktopDashboard() {
 
           <Link
             to="/profile"
-            className="flex items-center gap-2.5 rounded-xl py-1 pr-1 transition hover:bg-[#F3ECEF]/60"
+            className="flex items-center gap-2.5 rounded-xl py-1 pr-1 transition duration-[260ms] hover:bg-[#F3ECEF]/60"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E9EC] font-display text-sm font-bold text-[#730217]">
               BS
@@ -760,12 +760,12 @@ function DesktopDashboard() {
                   >
                     <div className="flex h-full w-full items-end justify-center gap-1">
                       <div
-                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#8E001C] transition-all"
+                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#8E001C] transition-all duration-300"
                         style={{ height: `${(item.visits / 20) * 100}%` }}
                         title={`Kunjungan ${item.day}: ${item.visits}`}
                       />
                       <div
-                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#D5D5DA] transition-all"
+                        className="w-[38%] max-w-[18px] rounded-t-[4px] bg-[#D5D5DA] transition-all duration-300"
                         style={{ height: `${(item.target / 20) * 100}%` }}
                         title={`Target ${item.day}: ${item.target}`}
                       />
@@ -835,7 +835,7 @@ function DesktopDashboard() {
 
           <Link
             to="/equipment"
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#8E001C] px-4 text-xs font-semibold text-white transition hover:bg-[#730217] sm:text-sm"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#8E001C] px-4 text-xs font-semibold text-white transition duration-[260ms] hover:bg-[#730217] sm:text-sm"
           >
             <Plus size={16} weight="bold" />
             Tambah
@@ -859,7 +859,7 @@ function DesktopDashboard() {
               {filteredRows.map((row) => (
                 <tr
                   key={row.code}
-                  className="border-b border-[#EFEFF2] text-sm transition hover:bg-[#FCFAFB]"
+                  className="border-b border-[#EFEFF2] text-sm transition duration-[260ms] hover:bg-[#FCFAFB]"
                 >
                   <td className="px-3.5 py-3.5 text-[#5A5660]">{row.no}</td>
                   <td className="px-3.5 py-3.5 font-semibold text-[#171717]">
@@ -899,7 +899,7 @@ function DesktopDashboard() {
                       onClick={() =>
                         setOpenAction(openAction === row.code ? null : row.code)
                       }
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5660] hover:bg-[#F3ECEF]"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5660] transition-colors duration-[260ms] hover:bg-[#F3ECEF]"
                     >
                       <DotsThreeVertical size={18} weight="bold" />
                     </button>
@@ -1296,7 +1296,7 @@ function MobileDashboard() {
                   ? `Notifikasi (${unreadCount} belum dibaca)`
                   : "Notifikasi"
               }
-              className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors active:bg-white/15"
+              className="relative flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] items-center justify-center rounded-full transition-colors duration-[260ms] active:bg-white/15"
             >
               <Bell
                 weight="regular"
@@ -1324,7 +1324,7 @@ function MobileDashboard() {
               transform: `translate3d(0, ${emblemTranslateY}px, 0) scale(${emblemScale})`,
               transition: isPullDragging
                 ? "none"
-                : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
+                : "transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease",
             }}
             className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+calc(42*var(--u)))] z-50 flex justify-center will-change-[transform,opacity]"
           >
@@ -1381,7 +1381,7 @@ function MobileDashboard() {
                 : undefined,
             transition: isPullDragging
               ? "none"
-              : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)",
+              : "transform 380ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
           className="relative"
         >
@@ -1446,7 +1446,7 @@ function MobileDashboard() {
                   onClick={openMonthPicker}
                   aria-haspopup="dialog"
                   aria-expanded={showMonthPicker}
-                  className={`group flex h-[calc(33*var(--u))] shrink-0 items-center gap-[calc(5*var(--u))] overflow-hidden rounded-full border px-[calc(11*var(--u))] ring-2 transition-[transform,background-color,border-color,box-shadow] duration-500 ease-out active:scale-[0.94] active:duration-150 ${
+                  className={`group flex h-[calc(33*var(--u))] shrink-0 items-center gap-[calc(5*var(--u))] overflow-hidden rounded-full border px-[calc(11*var(--u))] ring-2 transition-[transform,background-color,border-color,box-shadow] duration-500 ease-out active:scale-[0.94] active:duration-[240ms] ${
                     showMonthPicker
                       ? "border-[#8E001C]/35 bg-[#FDF2F4] ring-[#8E001C]/12 shadow-[0_2px_10px_rgba(142,0,28,0.09)]"
                       : isMonthJustChanged
@@ -1683,7 +1683,7 @@ function MobileDashboard() {
               to="/monitoring"
               onContextMenu={blockContextMenu}
               draggable={false}
-              className="relative flex min-h-[calc(68*var(--u))] min-w-0 select-none items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)] [-webkit-touch-callout:none] [-webkit-user-select:none] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#F7F7F9]"
+              className="relative flex min-h-[calc(68*var(--u))] min-w-0 select-none items-center gap-[calc(12*var(--u))] overflow-hidden rounded-[calc(17*var(--u))] border border-[#EEEEEE] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] shadow-[0_1px_4px_rgba(41,35,42,0.025)] [-webkit-touch-callout:none] [-webkit-user-select:none] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#F7F7F9]"
             >
               <ShimmerOverlay active={showPwaShimmer} />
               <span
@@ -1720,7 +1720,7 @@ function MobileDashboard() {
                   to="/visit-history"
                   onContextMenu={blockContextMenu}
                   draggable={false}
-                  className="flex shrink-0 select-none items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032] [-webkit-touch-callout:none] transition-opacity active:opacity-70"
+                  className="flex shrink-0 select-none items-center gap-0.5 whitespace-nowrap text-[calc(13*var(--u))] font-bold text-[#C81032] [-webkit-touch-callout:none] transition-opacity duration-[260ms] active:opacity-70"
                 >
                   Lihat Semua
                   <CaretRight
