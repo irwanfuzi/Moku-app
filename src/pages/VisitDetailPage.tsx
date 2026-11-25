@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Buildings,
@@ -100,10 +100,16 @@ function VisitTypeDetailIcon({
 
 export default function VisitDetailPage() {
   const { visitNumber } = useParams<{ visitNumber?: string }>();
+  const location = useLocation();
   const { isMobile, isReady, backWithTransition, navigateWithTransition } =
     useAppLayout();
 
-  const visit = useMemo(() => getVisitByNumber(visitNumber), [visitNumber]);
+  const [visit, setVisit] = useState(() => getVisitByNumber(visitNumber));
+
+  useEffect(() => {
+    setVisit(getVisitByNumber(visitNumber));
+  }, [visitNumber, location.key]);
+
   const checklistItems = useMemo(
     () => parseChecklistItems(visit.activityDescription),
     [visit.activityDescription]
@@ -212,7 +218,7 @@ export default function VisitDetailPage() {
   const handleEditVisit = () => {
     triggerHaptic(8);
     navigateWithTransition(
-      `/visits/new?equipment=${encodeURIComponent(visit.machineCode)}`,
+      `/visits/edit/${encodeURIComponent(visit.visitNumber)}`,
       "forward"
     );
   };
@@ -313,7 +319,6 @@ export default function VisitDetailPage() {
 
         {/* 3. Kartu Informasi Detail */}
         <section className="divide-y divide-[#ECECF0] rounded-[calc(16*var(--u))] bg-[#F7F7F9] px-[calc(15*var(--u))]">
-          {/* Pelanggan */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <Buildings
               weight="regular"
@@ -326,7 +331,6 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
-          {/* Lokasi */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <MapPin
               weight="regular"
@@ -339,7 +343,6 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
-          {/* Teknisi */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <User
               weight="regular"
@@ -352,7 +355,6 @@ export default function VisitDetailPage() {
             </span>
           </div>
 
-          {/* Jenis Kunjungan */}
           <div className="grid grid-cols-[calc(20*var(--u))_calc(102*var(--u))_calc(10*var(--u))_minmax(0,1fr)] items-start gap-x-[calc(8*var(--u))] py-[calc(12*var(--u))] text-[calc(12.5*var(--u))]">
             <VisitTypeDetailIcon
               code={visit.visitTypeCode}
@@ -416,7 +418,7 @@ export default function VisitDetailPage() {
           </div>
         </section>
 
-        {/* 6. Tombol Aksi Bawah (2 Kolom) */}
+        {/* 6. Tombol Aksi Bawah (2 Kolom, Flat) */}
         <section className="grid grid-cols-2 gap-[calc(10*var(--u))] pt-[calc(8*var(--u))]">
           <button
             type="button"
