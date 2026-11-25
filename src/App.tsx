@@ -15,6 +15,7 @@ import AppShell from "@/components/layout/app-shell";
 import DashboardPage from "@/pages/DashboardPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import CreateVisitPage from "@/pages/CreateVisitPage";
+import VisitDetailPage from "@/pages/VisitDetailPage";
 import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
@@ -98,6 +99,18 @@ function CreateVisitRoute() {
   );
 }
 
+function VisitDetailRoute() {
+  return (
+    <IonPage>
+      <IonContent fullscreen scrollEvents={true}>
+        <AppShell>
+          <VisitDetailPage />
+        </AppShell>
+      </IonContent>
+    </IonPage>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -113,6 +126,12 @@ export default function App() {
           <Route exact path="/notifications" component={NotificationsRoute} />
           <Route exact path="/visits" component={CreateVisitRoute} />
           <Route exact path="/visits/new" component={CreateVisitRoute} />
+          <Route
+            exact
+            path="/visits/detail/:visitNumber"
+            component={VisitDetailRoute}
+          />
+          <Route exact path="/visit-detail" component={VisitDetailRoute} />
         </IonRouterOutlet>
       </IonReactRouter>
     </IonApp>
