@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarBlank,
@@ -19,7 +19,7 @@ import {
   CaretRight,
   Check,
   CheckCircle,
-  ClipboardText,
+  FileText,
   FloppyDisk,
   GearSix,
   Laptop,
@@ -95,13 +95,6 @@ const TECHNICIAN_OPTIONS = [
   "Dimas Anggara",
 ];
 
-const DEFAULT_CHECKLIST_ITEMS = [
-  "Pemeriksaan kondisi mesin",
-  "Pembersihan unit utama",
-  "Pengecekan komponen",
-  "Uji fungsi dan kualitas hasil cetak",
-];
-
 const WEEKDAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const MAX_TEXT_LENGTH = 500;
 const SHEET_TRANSITION_MS = 420;
@@ -152,13 +145,6 @@ function formatMonthYear(year: number, monthIndex: number): string {
   }).format(new Date(year, monthIndex, 1));
 }
 
-function parseChecklistLines(description: string): string[] {
-  return description
-    .split(/\r?\n|•|;/)
-    .map((line) => line.replace(/^[-*\d.)\s]+/, "").trim())
-    .filter(Boolean);
-}
-
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
@@ -200,16 +186,13 @@ function EditSuccessIllustration() {
         aria-hidden="true"
         className="h-[calc(146*var(--u))] w-[calc(168*var(--u))] overflow-visible"
       >
-        {/* Soft organic green blob background */}
         <path
           d="M36 92C25 65 40 34 69 27C96 20 112 40 132 56C150 70 156 102 138 122C120 142 86 140 60 128C45 121 41 106 36 92Z"
           fill="#E4F5E8"
           className="moku-edit-blob"
         />
 
-        {/* Clipboard group (sedikit miring halus) */}
         <g transform="rotate(-7 88 84)" className="moku-edit-board">
-          {/* Depth/rim bawah clipboard */}
           <rect
             x="48"
             y="36"
@@ -218,7 +201,6 @@ function EditSuccessIllustration() {
             rx="14"
             fill="#C9334B"
           />
-          {/* Badan luar clipboard */}
           <rect
             x="50"
             y="33"
@@ -227,7 +209,6 @@ function EditSuccessIllustration() {
             rx="14"
             fill="#E87C8D"
           />
-          {/* Kertas putih di dalam */}
           <rect
             x="56"
             y="40"
@@ -237,7 +218,6 @@ function EditSuccessIllustration() {
             fill="#FFFFFF"
           />
 
-          {/* Klip atas merah marun */}
           <rect
             x="72"
             y="27"
@@ -249,7 +229,6 @@ function EditSuccessIllustration() {
           <circle cx="88" cy="27" r="6" fill="#B82940" />
           <circle cx="88" cy="27" r="2.3" fill="#FFFFFF" />
 
-          {/* Baris checklist abu-abu */}
           <circle cx="66" cy="59" r="2.8" fill="#D5D7DC" />
           <rect x="74" y="56.5" width="34" height="5" rx="2.5" fill="#D5D7DC" />
 
@@ -263,7 +242,6 @@ function EditSuccessIllustration() {
           <rect x="74" y="98.5" width="14" height="5" rx="2.5" fill="#D5D7DC" />
         </g>
 
-        {/* Badge lingkaran centang hijau */}
         <g className="moku-edit-badge">
           <circle cx="113" cy="103" r="20" fill="#2CA83A" />
           <path
@@ -276,7 +254,6 @@ function EditSuccessIllustration() {
           />
         </g>
 
-        {/* 3 garis aksen hijau di kanan atas */}
         <g className="moku-edit-rays">
           <path
             d="M126 24L129 14"
@@ -690,26 +667,13 @@ function CalendarBottomSheet({
 
 export default function EditVisitPage() {
   const { visitNumber } = useParams<{ visitNumber?: string }>();
+  const location = useLocation();
   const { isMobile, isReady, backWithTransition, navigateWithTransition } =
     useAppLayout();
 
-  const existingVisit = useMemo(
-    () => getVisitByNumber(visitNumber),
-    [visitNumber]
+  const [existingVisit, setExistingVisit] = useState(() =>
+    getVisitByNumber(visitNumber)
   );
-
-  const initialChecklistState = useMemo(() => {
-    const existingLines = parseChecklistLines(
-      existingVisit.activityDescription
-    );
-    const mergedOptions = Array.from(
-      new Set([...existingLines, ...DEFAULT_CHECKLIST_ITEMS])
-    );
-    const initialChecked =
-      existingLines.length > 0 ? existingLines : DEFAULT_CHECKLIST_ITEMS;
-    return { options: mergedOptions, checked: initialChecked };
-  }, [existingVisit.activityDescription]);
-
   const [visitDate, setVisitDate] = useState(existingVisit.visitDate);
   const [visitType, setVisitType] = useState<VisitTypeCode>(
     existingVisit.visitTypeCode
@@ -717,8 +681,8 @@ export default function EditVisitPage() {
   const [technicianName, setTechnicianName] = useState(
     existingVisit.technicianName
   );
-  const [checkedResults, setCheckedResults] = useState<string[]>(
-    initialChecklistState.checked
+  const [activityDesc, setActivityDesc] = useState(
+    existingVisit.activityDescription
   );
   const [technicianNotes, setTechnicianNotes] = useState(
     existingVisit.technicianNotes
@@ -749,6 +713,20 @@ export default function EditVisitPage() {
   const snackbarExitRef = useRef<number | null>(null);
 
   const isMobileView = !isReady || isMobile;
+
+  // Reset state & muat ulang data terbaru tiap kali halaman dibuka kembali
+  useEffect(() => {
+    const fresh = getVisitByNumber(visitNumber);
+    setExistingVisit(fresh);
+    setVisitDate(fresh.visitDate);
+    setVisitType(fresh.visitTypeCode);
+    setTechnicianName(fresh.technicianName);
+    setActivityDesc(fresh.activityDescription);
+    setTechnicianNotes(fresh.technicianNotes);
+    setUpdatedVisit(null);
+    setIsSaving(false);
+    setIsFormExiting(false);
+  }, [visitNumber, location.key]);
 
   const selectedVisitTypeObj = useMemo(
     () =>
@@ -837,18 +815,8 @@ export default function EditVisitPage() {
   }, [backWithTransition, existingVisit.visitNumber]);
 
   const handleBackToDashboard = useCallback(() => {
-    backWithTransition("/");
-  }, [backWithTransition]);
-
-  const toggleResultItem = (label: string) => {
-    triggerHaptic(6);
-    setCheckedResults((current) =>
-      current.includes(label)
-        ? current.filter((item) => item !== label)
-        : [...current, label]
-    );
-    if (snackbar?.type === "error") dismissSnackbar();
-  };
+    navigateWithTransition("/", "back");
+  }, [navigateWithTransition]);
 
   const handleChooseVisitType = (code: VisitTypeCode) => {
     triggerHaptic(8);
@@ -878,17 +846,12 @@ export default function EditVisitPage() {
     event.preventDefault();
     if (isSaving) return;
 
-    if (
-      !visitDate ||
-      !visitType ||
-      !technicianName ||
-      checkedResults.length === 0
-    ) {
+    if (!visitDate || !visitType || !technicianName || !activityDesc.trim()) {
       triggerHaptic(16);
       triggerSnackbar(
         "error",
         "Data Belum Lengkap",
-        "Pastikan tanggal, jenis, teknisi, dan minimal 1 hasil kunjungan terisi."
+        "Pastikan tanggal, jenis, teknisi, dan deskripsi aktivitas terisi."
       );
       return;
     }
@@ -897,19 +860,17 @@ export default function EditVisitPage() {
     triggerHaptic(10);
     setIsSaving(true);
 
-    // Fase 1: tampilkan spinner "Menyimpan..." lalu fade-out form
     const t1 = window.setTimeout(() => {
       setIsFormExiting(true);
     }, 520);
 
-    // Fase 2: simpan perubahan & tampilkan halaman sukses
     const t2 = window.setTimeout(() => {
       saveVisitRecord({
         ...existingVisit,
         visitDate,
         visitTypeCode: visitType,
         technicianName,
-        activityDescription: checkedResults.join("\n"),
+        activityDescription: activityDesc.trim(),
         technicianNotes: technicianNotes.trim(),
       });
 
@@ -1125,7 +1086,7 @@ export default function EditVisitPage() {
                     className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#5A555F]"
                   />
                   <span className="truncate text-[calc(13.5*var(--u))] font-semibold text-[#171717]">
-                    {selectedVisitTypeObj.code} — {selectedVisitTypeObj.title}
+                    {selectedVisitTypeObj.title} ({selectedVisitTypeObj.code})
                   </span>
                 </span>
                 <CaretDown
@@ -1217,50 +1178,38 @@ export default function EditVisitPage() {
             </div>
           </section>
 
-          {/* 3. Card Hasil Kunjungan (Checklist Interaktif) */}
+          {/* 3. Card Deskripsi Aktivitas (Paragraf Biasa) */}
           <section className="space-y-[calc(10*var(--u))] rounded-[calc(18*var(--u))] border border-[#EEEEEE] bg-white p-[calc(15*var(--u))]">
             <div className="flex items-center gap-[calc(9*var(--u))]">
-              <ClipboardText
+              <FileText
                 weight="regular"
                 className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#8E001C]"
               />
               <h2 className="font-display text-[calc(15*var(--u))] font-bold tracking-[-0.015em] text-[#171717]">
-                Hasil Kunjungan
+                Deskripsi Aktivitas <span className="text-[#DC0E2E]">*</span>
               </h2>
             </div>
 
-            <div className="space-y-[calc(8*var(--u))]">
-              {initialChecklistState.options.map((label) => {
-                const isChecked = checkedResults.includes(label);
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={isChecked}
-                    onClick={() => toggleResultItem(label)}
-                    className="flex w-full items-center gap-[calc(11*var(--u))] rounded-[calc(11*var(--u))] bg-[#FAFAFC] px-[calc(11*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-[260ms] active:bg-[#F2F2F5]"
-                  >
-                    <span
-                      className={`flex h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 items-center justify-center rounded-[calc(5*var(--u))] border transition-all duration-[260ms] ${
-                        isChecked
-                          ? "border-[#8E001C] bg-[#8E001C] text-white"
-                          : "border-[#CFCFD6] bg-white text-transparent"
-                      }`}
-                    >
-                      <Check
-                        weight="bold"
-                        className={`h-[calc(12*var(--u))] w-[calc(12*var(--u))] transition-transform duration-[260ms] ${
-                          isChecked ? "scale-100" : "scale-75"
-                        }`}
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1 text-[calc(13*var(--u))] font-normal leading-[1.35] text-[#29232A]">
-                      {label}
-                    </span>
-                  </button>
-                );
-              })}
+            <div>
+              <div className="rounded-[calc(12*var(--u))] border border-[#E0E0E6] bg-white px-[calc(12*var(--u))] py-[calc(10*var(--u))] transition-colors duration-[260ms] focus-within:border-[#8E001C] focus-within:ring-2 focus-within:ring-[#8E001C]/10">
+                <textarea
+                  rows={4}
+                  disabled={isSaving}
+                  maxLength={MAX_TEXT_LENGTH}
+                  value={activityDesc}
+                  onChange={(e) => {
+                    setActivityDesc(e.target.value);
+                    if (snackbar?.type === "error") dismissSnackbar();
+                  }}
+                  placeholder="Jelaskan aktivitas yang dilakukan pada kunjungan ini..."
+                  style={NO_OUTLINE_STYLE}
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13*var(--u))] font-normal leading-[1.48] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                />
+              </div>
+
+              <p className="mt-[calc(5*var(--u))] text-right text-[calc(11.5*var(--u))] font-medium tabular-nums text-[#6E6873]">
+                {activityDesc.length} / {MAX_TEXT_LENGTH}
+              </p>
             </div>
           </section>
 
@@ -1286,7 +1235,7 @@ export default function EditVisitPage() {
                   onChange={(e) => setTechnicianNotes(e.target.value)}
                   placeholder="Tambahkan tindakan atau catatan teknisi..."
                   style={NO_OUTLINE_STYLE}
-                  className="w-full resize-none border-0 bg-transparent text-[calc(13*var(--u))] leading-[1.48] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
+                  className="w-full resize-none border-0 bg-transparent text-[calc(13*var(--u))] font-normal leading-[1.48] text-[#29232A] outline-none placeholder:text-[#8E8994] focus:outline-none focus:ring-0"
                 />
               </div>
 
@@ -1375,7 +1324,7 @@ export default function EditVisitPage() {
                         isActive ? "text-[#8E001C]" : "text-[#171717]"
                       }`}
                     >
-                      {option.code} — {option.title}
+                      {option.title} ({option.code})
                     </p>
                     <p className="mt-[calc(2*var(--u))] text-[calc(12*var(--u))] font-normal leading-[1.35] text-[#6E6873]">
                       {option.description}
