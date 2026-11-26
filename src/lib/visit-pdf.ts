@@ -1,8 +1,7 @@
 import { jsPDF } from "jspdf";
 import { VISIT_TYPE_LABELS, type VisitRecord } from "@/lib/visit-store";
 
-const PDF_HEADER_URL = "/images/moku/pdf/pdf-header.png";
-const PDF_FOOTER_URL = "/images/moku/pdf/pdf-footer.png";
+const MOKU_LOGO_URL = "/images/moku/brand/moku-logo-marun.png";
 
 const FONT_FILES = {
   jakartaBold: "/fonts/PlusJakartaSans-Bold.ttf",
@@ -121,80 +120,153 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
-/**
- * Resize gambar banner header/footer + auto-trim ruang putih/transparan atas-bawah
- * agar tajam di A4, proporsional, dan ukuran PDF tetap ringan
- */
-function resizeBannerClean(
-  img: HTMLImageElement,
-  maxW = 1600
+function resizeLogoClean(
+  img: HTMLImageElement
 ): { dataUrl: string; aspect: number } | null {
   try {
+    const maxW = 520;
     const natW = img.naturalWidth || img.width;
     const natH = img.naturalHeight || img.height;
-    if (!natW || !natH) return null;
-
     const scale = Math.min(1, maxW / natW);
     const drawW = Math.round(natW * scale);
     const drawH = Math.round(natH * scale);
 
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = drawW;
-    tempCanvas.height = drawH;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = drawW;
+    canvas.height = drawH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
 
-    tempCtx.drawImage(img, 0, 0, drawW, drawH);
-
-    // Cari batas atas & bawah konten (abaikan piksel transparan atau putih polos)
-    const { data } = tempCtx.getImageData(0, 0, drawW, drawH);
-    let top = 0;
-    let bottom = drawH - 1;
-
-    const isRowEmpty = (row: number) => {
-      const rowOffset = row * drawW * 4;
-      for (let x = 0; x < drawW; x += 4) {
-        const idx = rowOffset + x * 4;
-        const a = data[idx + 3];
-        if (a > 12) {
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-          if (r < 246 || g < 246 || b < 246) {
-            return false;
-          }
-        }
-      }
-      return true;
-    };
-
-    while (top < drawH && isRowEmpty(top)) top++;
-    while (bottom > top && isRowEmpty(bottom)) bottom--;
-
-    const padY = 4;
-    const cropTop = Math.max(0, top - padY);
-    const cropBottom = Math.min(drawH - 1, bottom + padY);
-    const cropH = cropBottom - cropTop + 1;
-
-    if (cropH <= 10 || cropH >= drawH - 4) {
-      return {
-        dataUrl: tempCanvas.toDataURL("image/png"),
-        aspect: drawW / drawH,
-      };
-    }
-
-    const outCanvas = document.createElement("canvas");
-    outCanvas.width = drawW;
-    outCanvas.height = cropH;
-    const outCtx = outCanvas.getContext("2d");
-    if (!outCtx) return null;
-
-    outCtx.drawImage(tempCanvas, 0, cropTop, drawW, cropH, 0, 0, drawW, cropH);
+    ctx.drawImage(img, 0, 0, drawW, drawH);
 
     return {
-      dataUrl: outCanvas.toDataURL("image/png"),
-      aspect: drawW / cropH,
+      dataUrl: canvas.toDataURL("image/png"),
+      aspect: drawW / drawH,
     };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pita lengkung marun + gradasi emas di Header (menempel penuh ke tepi kanan & atas)
+ */
+function renderHeaderRibbon(): string | null {
+  try {
+    const w = 900;
+    const h = 216;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // 1. Pita emas gradasi
+    const goldGrad = ctx.createLinearGradient(30, h, 230, 0);
+    goldGrad.addColorStop(0, "#EA8C00");
+    goldGrad.addColorStop(0.45, "#F5B400");
+    goldGrad.addColorStop(0.8, "#FDE047");
+    goldGrad.addColorStop(1, "#F59E0B");
+
+    ctx.fillStyle = goldGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.bezierCurveTo(90, h, 108, 8, 224, 0);
+    ctx.lineTo(300, 0);
+    ctx.bezierCurveTo(185, 8, 166, h, 78, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 2. Banner marun gradasi penuh sampai tepi kanan
+    const maroonGrad = ctx.createLinearGradient(110, 0, w, h);
+    maroonGrad.addColorStop(0, "#A30021");
+    maroonGrad.addColorStop(0.55, "#83051C");
+    maroonGrad.addColorStop(1, "#620213");
+
+    ctx.fillStyle = maroonGrad;
+    ctx.beginPath();
+    ctx.moveTo(60, h);
+    ctx.bezierCurveTo(150, h, 168, 8, 282, 0);
+    ctx.lineTo(w, 0);
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Garis aksen emas kecil di bawah teks "Laporan Kunjungan"
+    const lineGrad = ctx.createLinearGradient(w - 205, 0, w - 80, 0);
+    lineGrad.addColorStop(0, "#F59E0B");
+    lineGrad.addColorStop(0.5, "#FDE047");
+    lineGrad.addColorStop(1, "#D97706");
+
+    ctx.fillStyle = lineGrad;
+    ctx.beginPath();
+    ctx.roundRect(w - 206, 154, 120, 10, 5);
+    ctx.fill();
+
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pita gelombang marun + gradasi emas di Footer (menempel penuh ke tepi kanan & bawah)
+ */
+function renderFooterRibbon(): string | null {
+  try {
+    const w = 720;
+    const h = 160;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // 1. Gelombang marun kiri
+    const leftMaroon = ctx.createLinearGradient(0, h, 340, 0);
+    leftMaroon.addColorStop(0, "#A30021");
+    leftMaroon.addColorStop(1, "#7B0419");
+
+    ctx.fillStyle = leftMaroon;
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.bezierCurveTo(66, 26, 156, 6, 336, 6);
+    ctx.lineTo(w, 6);
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 2. Pita emas melengkung di tengah
+    const goldGrad = ctx.createLinearGradient(185, h, 445, 0);
+    goldGrad.addColorStop(0, "#EA8C00");
+    goldGrad.addColorStop(0.42, "#F5B400");
+    goldGrad.addColorStop(0.75, "#FDE047");
+    goldGrad.addColorStop(1, "#F59E0B");
+
+    ctx.fillStyle = goldGrad;
+    ctx.beginPath();
+    ctx.moveTo(190, h);
+    ctx.bezierCurveTo(266, 44, 336, 6, 468, 6);
+    ctx.lineTo(545, 6);
+    ctx.bezierCurveTo(412, 10, 355, 62, 282, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Gelombang marun gelap di kanan (penuh sampai tepi kanan bawah)
+    const rightMaroon = ctx.createLinearGradient(280, h, w, 0);
+    rightMaroon.addColorStop(0, "#7A0318");
+    rightMaroon.addColorStop(1, "#550110");
+
+    ctx.fillStyle = rightMaroon;
+    ctx.beginPath();
+    ctx.moveTo(282, h);
+    ctx.bezierCurveTo(355, 58, 422, 8, 540, 6);
+    ctx.lineTo(w, 6);
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fill();
+
+    return canvas.toDataURL("image/png");
   } catch {
     return null;
   }
@@ -338,35 +410,63 @@ export async function generateVisitReportPdf(
   const margin = 11;
   const contentW = pageW - margin * 2; // 188mm
 
-  const [{ displayFont, bodyFont }, rawHeader, rawFooter] = await Promise.all([
+  const [{ displayFont, bodyFont }, rawLogo] = await Promise.all([
     registerPdfFonts(doc),
-    loadImage(PDF_HEADER_URL),
-    loadImage(PDF_FOOTER_URL),
+    loadImage(MOKU_LOGO_URL),
   ]);
 
-  const headerBanner = rawHeader ? resizeBannerClean(rawHeader) : null;
-  const footerBanner = rawFooter ? resizeBannerClean(rawFooter) : null;
+  const cleanLogo = rawLogo ? resizeLogoClean(rawLogo) : null;
+  const headerRibbon = renderHeaderRibbon();
+  const footerRibbon = renderFooterRibbon();
 
   /* =========================================================
-     1. TOP HEADER (GAMBAR MASTER FULL WIDTH)
+     1. TOP HEADER (LOGO BERSIH + PITA FULL-BLEED KANAN ATAS)
   ========================================================= */
-  let headerH = 26;
-  if (headerBanner) {
-    headerH = pageW / headerBanner.aspect;
-    doc.addImage(headerBanner.dataUrl, "PNG", 0, 0, pageW, headerH);
+  const headerH = 26;
+  if (headerRibbon) {
+    doc.addImage(headerRibbon, "PNG", pageW - 108, 0, 108, headerH);
   } else {
     doc.setFillColor(142, 0, 28);
-    doc.rect(0, 0, pageW, headerH, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(displayFont, "bold");
-    doc.setFontSize(18);
-    doc.text("Laporan Kunjungan", pageW - margin, 15, { align: "right" });
+    doc.rect(pageW - 96, 0, 96, headerH, "F");
   }
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(displayFont, "bold");
+  doc.setFontSize(18.5);
+  doc.text("Laporan Kunjungan", pageW - margin, 14.5, { align: "right" });
+
+  let subtitleX = margin + 48;
+  if (cleanLogo) {
+    const targetH = 15.5;
+    const targetW = Math.min(48, cleanLogo.aspect * targetH);
+    doc.addImage(cleanLogo.dataUrl, "PNG", margin, 5.2, targetW, targetH);
+    subtitleX = margin + targetW + 5;
+  } else {
+    doc.setTextColor(142, 0, 28);
+    doc.setFont(displayFont, "bold");
+    doc.setFontSize(22);
+    doc.text("MOKU", margin, 17);
+    subtitleX = margin + 34;
+  }
+
+  doc.setDrawColor(135, 135, 145);
+  doc.setLineWidth(0.38);
+  doc.line(subtitleX - 2.6, 8, subtitleX - 2.6, 18.2);
+
+  doc.setTextColor(28, 28, 34);
+  doc.setFont(displayFont, "bold");
+  doc.setFontSize(9);
+  doc.text("Monitoring Operasional", subtitleX, 12.2);
+  doc.text("Kunjungan Unit", subtitleX, 16.6);
+
+  doc.setDrawColor(218, 222, 232);
+  doc.setLineWidth(0.35);
+  doc.line(margin, headerH, pageW - margin, headerH);
 
   /* =========================================================
      2. SUB-HEADER (JUDUL DETAIL + BADGE NO. KUNJUNGAN)
   ========================================================= */
-  let y = Math.max(32, headerH + 7);
+  let y = 34;
 
   doc.setFillColor(252, 236, 239);
   doc.roundedRect(margin, y, 16.5, 16.5, 3.4, 3.4, "F");
@@ -411,7 +511,7 @@ export async function generateVisitReportPdf(
   /* =========================================================
      3. KARTU 1: INFORMASI KUNJUNGAN
   ========================================================= */
-  y += 23.5;
+  y = 58;
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
   const infoRows: Array<{
     icon: "calendar" | "building" | "pin" | "user" | "gear";
@@ -592,28 +692,20 @@ export async function generateVisitReportPdf(
   doc.text(notesLines, margin + 7, notesCardY + 9.5);
 
   /* =========================================================
-     7. FOOTER A4 (GAMBAR MASTER FULL WIDTH)
+     7. FOOTER A4 (TAGLINE + PITA FULL-BLEED KANAN BAWAH)
   ========================================================= */
-  if (footerBanner) {
-    const footerH = pageW / footerBanner.aspect;
-    doc.addImage(
-      footerBanner.dataUrl,
-      "PNG",
-      0,
-      pageH - footerH,
-      pageW,
-      footerH
-    );
-  } else {
-    const footerLineY = pageH - 22;
-    doc.setDrawColor(200, 206, 220);
-    doc.setLineWidth(0.35);
-    doc.line(margin, footerLineY, pageW - margin, footerLineY);
+  const footerLineY = pageH - 22;
+  doc.setDrawColor(200, 206, 220);
+  doc.setLineWidth(0.35);
+  doc.line(margin, footerLineY, pageW - margin, footerLineY);
 
-    doc.setTextColor(32, 32, 38);
-    doc.setFont(bodyFont, "italic");
-    doc.setFontSize(11);
-    doc.text("Track Precisely, Deliver Quality", margin, pageH - 10.5);
+  doc.setTextColor(32, 32, 38);
+  doc.setFont(bodyFont, "italic");
+  doc.setFontSize(11);
+  doc.text("Track Precisely, Deliver Quality", margin, pageH - 10.5);
+
+  if (footerRibbon) {
+    doc.addImage(footerRibbon, "PNG", pageW - 82, pageH - 18.5, 82, 18.5);
   }
 
   const blob = doc.output("blob");
