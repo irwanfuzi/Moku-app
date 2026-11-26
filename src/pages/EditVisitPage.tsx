@@ -33,6 +33,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import MokuModalDialog from "@/components/ui/moku-modal-dialog";
 import {
   getVisitByNumber,
   saveVisitRecord,
@@ -691,6 +692,7 @@ export default function EditVisitPage() {
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [showVisitTypeSheet, setShowVisitTypeSheet] = useState(false);
   const [showTechSheet, setShowTechSheet] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isFormExiting, setIsFormExiting] = useState(false);
@@ -724,9 +726,29 @@ export default function EditVisitPage() {
     setActivityDesc(fresh.activityDescription);
     setTechnicianNotes(fresh.technicianNotes);
     setUpdatedVisit(null);
+    setShowExitModal(false);
     setIsSaving(false);
     setIsFormExiting(false);
   }, [visitNumber, location.key]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (updatedVisit) return false;
+    return (
+      visitDate !== existingVisit.visitDate ||
+      visitType !== existingVisit.visitTypeCode ||
+      technicianName !== existingVisit.technicianName ||
+      activityDesc.trim() !== existingVisit.activityDescription.trim() ||
+      technicianNotes.trim() !== existingVisit.technicianNotes.trim()
+    );
+  }, [
+    updatedVisit,
+    visitDate,
+    visitType,
+    technicianName,
+    activityDesc,
+    technicianNotes,
+    existingVisit,
+  ]);
 
   const selectedVisitTypeObj = useMemo(
     () =>
@@ -815,8 +837,35 @@ export default function EditVisitPage() {
   }, [backWithTransition, existingVisit.visitNumber]);
 
   const handleBackToDashboard = useCallback(() => {
+    triggerHaptic(6);
     navigateWithTransition("/", "back");
   }, [navigateWithTransition]);
+
+  const handleRequestCancel = useCallback(() => {
+    if (isSaving) return;
+    if (updatedVisit) {
+      handleBackToDashboard();
+      return;
+    }
+    if (hasUnsavedChanges) {
+      triggerHaptic(10);
+      setShowExitModal(true);
+      return;
+    }
+    triggerHaptic(6);
+    handleBackToDetail();
+  }, [
+    isSaving,
+    updatedVisit,
+    hasUnsavedChanges,
+    handleBackToDashboard,
+    handleBackToDetail,
+  ]);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitModal(false);
+    handleBackToDetail();
+  }, [handleBackToDetail]);
 
   const handleChooseVisitType = (code: VisitTypeCode) => {
     triggerHaptic(8);
@@ -900,7 +949,7 @@ export default function EditVisitPage() {
         <div className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(14*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(11*var(--u)))]">
           <button
             type="button"
-            onClick={updatedVisit ? handleBackToDashboard : handleBackToDetail}
+            onClick={handleRequestCancel}
             aria-label="Kembali"
             className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-[260ms] active:bg-white/15"
           >
@@ -974,12 +1023,13 @@ export default function EditVisitPage() {
           <div className="moku-success-step-4 mt-[calc(24*var(--u))] flex w-full flex-col gap-[calc(12*var(--u))]">
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                triggerHaptic(8);
                 navigateWithTransition(
                   `/visits/detail/${encodeURIComponent(updatedVisit.visitNumber)}`,
                   "back"
-                )
-              }
+                );
+              }}
               style={{ color: "#FFFFFF" }}
               className="flex min-h-[calc(48*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] bg-[#8E001C] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold tracking-[-0.01em] text-white transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
             >
@@ -1250,7 +1300,7 @@ export default function EditVisitPage() {
             <button
               type="button"
               disabled={isSaving}
-              onClick={handleBackToDetail}
+              onClick={handleRequestCancel}
               className="flex min-h-[calc(46*var(--u))] items-center justify-center rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(12*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(13.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] active:bg-[#FDF2F4] disabled:opacity-60"
             >
               Batal
@@ -1283,6 +1333,18 @@ export default function EditVisitPage() {
           </section>
         </form>
       )}
+
+      {/* Modal Konfirmasi Batal / Keluar */}
+      <MokuModalDialog
+        isOpen={showExitModal}
+        title="Buang Perubahan?"
+        description="Perubahan yang sudah kamu buat belum disimpan dan akan hilang jika keluar sekarang."
+        confirmLabel="Ya, Buang"
+        cancelLabel="Lanjut Ubah"
+        tone="danger"
+        onConfirm={handleConfirmExit}
+        onCancel={() => setShowExitModal(false)}
+      />
 
       {/* Bottom Sheet Kalender */}
       <CalendarBottomSheet
@@ -1620,4 +1682,4 @@ export default function EditVisitPage() {
       `}</style>
     </main>
   );
-} 
+          }
