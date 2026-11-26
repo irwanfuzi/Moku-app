@@ -8,6 +8,7 @@ export interface MokuModalDialogProps {
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  hideCancel?: boolean;
   tone?: "danger" | "primary";
   icon?: ReactNode;
   onConfirm: () => void;
@@ -33,6 +34,7 @@ export default function MokuModalDialog({
   description,
   confirmLabel = "Ya, Lanjutkan",
   cancelLabel = "Batal",
+  hideCancel = false,
   tone = "danger",
   icon,
   onConfirm,
@@ -140,18 +142,24 @@ export default function MokuModalDialog({
           {description}
         </p>
 
-        {/* Tombol Aksi (2 Kolom, Flat) */}
-        <div className="mt-[calc(20*var(--u))] grid grid-cols-2 gap-[calc(10*var(--u))]">
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              onCancel();
-            }}
-            className="flex min-h-[calc(44*var(--u))] items-center justify-center rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(12*var(--u))] py-[calc(9*var(--u))] font-display text-[calc(13.5*var(--u))] font-semibold text-[#4A454F] transition-[transform,background-color] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:bg-[#F7F7F9]"
-          >
-            {cancelLabel}
-          </button>
+        {/* Tombol Aksi (1 Kolom Penuh atau 2 Kolom, Flat) */}
+        <div
+          className={`mt-[calc(20*var(--u))] grid gap-[calc(10*var(--u))] ${
+            hideCancel ? "grid-cols-1" : "grid-cols-2"
+          }`}
+        >
+          {!hideCancel && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                onCancel();
+              }}
+              className="flex min-h-[calc(44*var(--u))] items-center justify-center rounded-[calc(12*var(--u))] border border-[#DEDEE4] bg-white px-[calc(12*var(--u))] py-[calc(9*var(--u))] font-display text-[calc(13.5*var(--u))] font-semibold text-[#4A454F] transition-[transform,background-color] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] active:bg-[#F7F7F9]"
+            >
+              {cancelLabel}
+            </button>
+          )}
 
           <button
             type="button"
