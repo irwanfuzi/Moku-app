@@ -34,6 +34,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import MokuModalDialog from "@/components/ui/moku-modal-dialog";
 import { saveVisitRecord, type VisitTypeCode } from "@/lib/visit-store";
 
 /* =========================================================
@@ -726,6 +727,7 @@ export default function CreateVisitPage() {
   const [showMachineSheet, setShowMachineSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [showVisitTypeSheet, setShowVisitTypeSheet] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const [errorSnackbar, setErrorSnackbar] = useState<{
     id: number;
@@ -752,9 +754,29 @@ export default function CreateVisitPage() {
     setActivityDesc("");
     setTechnicianNotes("");
     setSavedVisit(null);
+    setShowExitModal(false);
     setIsSubmitting(false);
     setIsFormExiting(false);
   }, [location.key, initialMachineCode]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (savedVisit) return false;
+    return (
+      selectedMachineCode !== initialMachineCode ||
+      visitDate !== getTodayIsoDate() ||
+      visitType !== "" ||
+      activityDesc.trim() !== "" ||
+      technicianNotes.trim() !== ""
+    );
+  }, [
+    savedVisit,
+    selectedMachineCode,
+    initialMachineCode,
+    visitDate,
+    visitType,
+    activityDesc,
+    technicianNotes,
+  ]);
 
   const selectedMachine = useMemo(
     () =>
@@ -869,7 +891,30 @@ export default function CreateVisitPage() {
     }
   }, []);
 
-  const handleBack = useCallback(() => {
+  const handleRequestBack = useCallback(() => {
+    if (isSubmitting) return;
+    if (savedVisit) {
+      triggerHaptic(6);
+      navigateWithTransition("/", "back");
+      return;
+    }
+    if (hasUnsavedChanges) {
+      triggerHaptic(10);
+      setShowExitModal(true);
+      return;
+    }
+    triggerHaptic(6);
+    backWithTransition("/");
+  }, [
+    isSubmitting,
+    savedVisit,
+    hasUnsavedChanges,
+    navigateWithTransition,
+    backWithTransition,
+  ]);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitModal(false);
     backWithTransition("/");
   }, [backWithTransition]);
 
@@ -970,7 +1015,7 @@ export default function CreateVisitPage() {
         <div className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(10*var(--u))] px-[calc(14*var(--u))] pb-[calc(14*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(11*var(--u)))]">
           <button
             type="button"
-            onClick={handleBack}
+            onClick={handleRequestBack}
             aria-label="Kembali"
             className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-[260ms] active:bg-white/15"
           >
@@ -1358,6 +1403,18 @@ export default function CreateVisitPage() {
         </form>
       )}
 
+      {/* Modal Konfirmasi Keluar */}
+      <MokuModalDialog
+        isOpen={showExitModal}
+        title="Batalkan Pembuatan Kunjungan?"
+        description="Data yang sudah diisi belum disimpan dan akan hilang jika keluar sekarang."
+        confirmLabel="Ya, Keluar"
+        cancelLabel="Lanjut Isi"
+        tone="danger"
+        onConfirm={handleConfirmExit}
+        onCancel={() => setShowExitModal(false)}
+      />
+
       {/* Bottom Sheet Pilih Mesin (Live Suggestion + Fixed Height) */}
       <ElasticBottomSheet
         isOpen={showMachineSheet}
@@ -1733,4 +1790,4 @@ export default function CreateVisitPage() {
       `}</style>
     </main>
   );
-}
+      }
