@@ -35,6 +35,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
+import { useBackGesture } from "@/hooks/use-back-gesture";
 import { saveVisitRecord, type VisitTypeCode } from "@/lib/visit-store";
 
 /* =========================================================
@@ -778,6 +779,14 @@ export default function CreateVisitPage() {
     technicianNotes,
   ]);
 
+  const { rearm: rearmBackGesture } = useBackGesture(
+    hasUnsavedChanges && !showExitModal,
+    () => {
+      triggerHaptic(10);
+      setShowExitModal(true);
+    }
+  );
+
   const selectedMachine = useMemo(
     () =>
       MACHINE_OPTIONS.find((item) => item.code === selectedMachineCode) ?? null,
@@ -915,8 +924,8 @@ export default function CreateVisitPage() {
 
   const handleConfirmExit = useCallback(() => {
     setShowExitModal(false);
-    backWithTransition("/");
-  }, [backWithTransition]);
+    navigateWithTransition("/", "back");
+  }, [navigateWithTransition]);
 
   const handleChooseMachine = (code: string) => {
     triggerHaptic(8);
@@ -1406,13 +1415,16 @@ export default function CreateVisitPage() {
       {/* Modal Konfirmasi Keluar */}
       <MokuModalDialog
         isOpen={showExitModal}
-        title="Batalkan Pembuatan Kunjungan?"
-        description="Data yang sudah diisi belum disimpan dan akan hilang jika keluar sekarang."
+        title="Batalkan Kunjungan?"
+        description="Data yang diisi belum disimpan dan akan hilang."
         confirmLabel="Ya, Keluar"
         cancelLabel="Lanjut Isi"
         tone="danger"
         onConfirm={handleConfirmExit}
-        onCancel={() => setShowExitModal(false)}
+        onCancel={() => {
+          setShowExitModal(false);
+          rearmBackGesture();
+        }}
       />
 
       {/* Bottom Sheet Pilih Mesin (Live Suggestion + Fixed Height) */}
@@ -1790,4 +1802,4 @@ export default function CreateVisitPage() {
       `}</style>
     </main>
   );
-      }
+}
