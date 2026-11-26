@@ -30,6 +30,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import MokuModalDialog from "@/components/ui/moku-modal-dialog";
 import { useBackGesture } from "@/hooks/use-back-gesture";
 import {
   getVisitByNumber,
@@ -48,7 +49,7 @@ const MOBILE_SCALE_VARS = {
 const SNACKBAR_EXIT_MS = 320;
 const SHEET_EXIT_MS = 360;
 const DOWNLOAD_TOTAL_MB = 2.0;
-const DOWNLOAD_DURATION_MS = 3200;
+const DOWNLOAD_DURATION_MS = 3600;
 
 function formatIndonesianDate(isoDate: string): string {
   if (!isoDate) return "-";
@@ -93,6 +94,23 @@ function VisitTypeDetailIcon({
   }
 }
 
+function CancelDownloadIcon() {
+  return (
+    <span className="relative inline-flex items-center justify-center">
+      <DownloadSimple
+        weight="bold"
+        className="h-[calc(25*var(--u))] w-[calc(25*var(--u))] text-[#8E001C]"
+      />
+      <span className="absolute -bottom-[calc(3*var(--u))] -right-[calc(4*var(--u))] flex h-[calc(15*var(--u))] w-[calc(15*var(--u))] items-center justify-center rounded-full bg-[#B8001F] ring-[2px] ring-[#FCECEF]">
+        <X
+          weight="bold"
+          className="h-[calc(9*var(--u))] w-[calc(9*var(--u))] text-white"
+        />
+      </span>
+    </span>
+  );
+}
+
 /* =========================================================
    VISIT DETAIL PAGE
 ========================================================= */
@@ -113,11 +131,12 @@ export default function VisitDetailPage() {
   const [menuMounted, setMenuMounted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Download Laporan Sheet
+  // Download Laporan Sheet & Modal Konfirmasi Batal
   const [showDownloadSheet, setShowDownloadSheet] = useState(false);
   const [downloadMounted, setDownloadMounted] = useState(false);
   const [downloadVisible, setDownloadVisible] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [showCancelDownloadModal, setShowCancelDownloadModal] = useState(false);
 
   // Toast / Snackbar
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
@@ -129,6 +148,7 @@ export default function VisitDetailPage() {
   const toastExitRef = useRef<number | null>(null);
   const downloadRafRef = useRef<number | null>(null);
   const downloadCompleteTimerRef = useRef<number | null>(null);
+  const downloadElapsedRef = useRef(0);
 
   const isMobileView = !isReady || isMobile;
 
@@ -176,6 +196,7 @@ export default function VisitDetailPage() {
       const timer = window.setTimeout(() => {
         setDownloadMounted(false);
         setDownloadProgress(0);
+        downloadElapsedRef.current = 0;
       }, SHEET_EXIT_MS);
       return () => window.clearTimeout(timer);
     }
@@ -237,42 +258,63 @@ export default function VisitDetailPage() {
     };
   }, [stopDownloadTimers]);
 
-  const handleCancelDownload = useCallback(() => {
-    triggerHaptic(6);
-    stopDownloadTimers();
-    setShowDownloadSheet(false);
-  }, [stopDownloadTimers]);
+  const runDownloadLoop = useCallback(
+    (initialElapsed: number) => {
+      stopDownloadTimers();
+      const startTime = performance.now() - initialElapsed;
+
+      const tick = (now: number) => {
+        const elapsed = Math.min(DOWNLOAD_DURATION_MS, now - startTime);
+        downloadElapsedRef.current = elapsed;
+        const ratio = elapsed / DOWNLOAD_DURATION_MS;
+        const eased = 1 - Math.pow(1 - ratio, 1.4);
+        const pct = Math.round(eased * 100);
+        setDownloadProgress(pct);
+
+        if (ratio < 1) {
+          downloadRafRef.current = requestAnimationFrame(tick);
+        } else {
+          downloadRafRef.current = null;
+          downloadCompleteTimerRef.current = window.setTimeout(() => {
+            setShowCancelDownloadModal(false);
+            setShowDownloadSheet(false);
+            triggerHaptic(12);
+            triggerToast(`Laporan ${visit.visitNumber}.pdf berhasil diunduh.`);
+            downloadCompleteTimerRef.current = null;
+          }, 280);
+        }
+      };
+
+      downloadRafRef.current = requestAnimationFrame(tick);
+    },
+    [stopDownloadTimers, triggerToast, visit.visitNumber]
+  );
 
   const handleDownloadPdf = useCallback(() => {
     triggerHaptic(10);
-    stopDownloadTimers();
+    downloadElapsedRef.current = 0;
     setDownloadProgress(0);
+    setShowCancelDownloadModal(false);
     setShowDownloadSheet(true);
+    runDownloadLoop(0);
+  }, [runDownloadLoop]);
 
-    const startTime = performance.now();
+  const handleRequestCancelDownload = useCallback(() => {
+    triggerHaptic(10);
+    stopDownloadTimers();
+    setShowCancelDownloadModal(true);
+  }, [stopDownloadTimers]);
 
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const ratio = Math.min(1, elapsed / DOWNLOAD_DURATION_MS);
-      const eased = 1 - Math.pow(1 - ratio, 1.4);
-      const pct = Math.round(eased * 100);
-      setDownloadProgress(pct);
+  const handleResumeDownload = useCallback(() => {
+    setShowCancelDownloadModal(false);
+    runDownloadLoop(downloadElapsedRef.current);
+  }, [runDownloadLoop]);
 
-      if (ratio < 1) {
-        downloadRafRef.current = requestAnimationFrame(tick);
-      } else {
-        downloadRafRef.current = null;
-        downloadCompleteTimerRef.current = window.setTimeout(() => {
-          setShowDownloadSheet(false);
-          triggerHaptic(12);
-          triggerToast(`Laporan ${visit.visitNumber}.pdf berhasil diunduh.`);
-          downloadCompleteTimerRef.current = null;
-        }, 280);
-      }
-    };
-
-    downloadRafRef.current = requestAnimationFrame(tick);
-  }, [stopDownloadTimers, triggerToast, visit.visitNumber]);
+  const handleConfirmCancelDownload = useCallback(() => {
+    stopDownloadTimers();
+    setShowCancelDownloadModal(false);
+    setShowDownloadSheet(false);
+  }, [stopDownloadTimers]);
 
   const handleBackToDashboard = useCallback(() => {
     triggerHaptic(6);
@@ -280,8 +322,14 @@ export default function VisitDetailPage() {
   }, [navigateWithTransition]);
 
   const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showCancelDownloadModal) {
+      triggerHaptic(6);
+      handleResumeDownload();
+      rearmBackGesture();
+      return;
+    }
     if (showDownloadSheet) {
-      handleCancelDownload();
+      handleRequestCancelDownload();
       rearmBackGesture();
       return;
     }
@@ -541,7 +589,7 @@ export default function VisitDetailPage() {
             className="fixed inset-0 z-[9999] flex items-end justify-center select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
           >
             <div
-              onClick={handleCancelDownload}
+              onClick={handleRequestCancelDownload}
               style={{
                 opacity: downloadVisible ? 0.45 : 0,
                 transition: "opacity 360ms ease-out",
@@ -608,7 +656,7 @@ export default function VisitDetailPage() {
               {/* Tombol Batal (Outline, Flat) */}
               <button
                 type="button"
-                onClick={handleCancelDownload}
+                onClick={handleRequestCancelDownload}
                 className="mt-[calc(22*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(12*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
               >
                 Batal
@@ -617,6 +665,19 @@ export default function VisitDetailPage() {
           </div>,
           document.body
         )}
+
+      {/* Modal Konfirmasi Batalkan Unduhan */}
+      <MokuModalDialog
+        isOpen={showCancelDownloadModal}
+        title="Batalkan Unduhan?"
+        description="Proses unduh laporan akan dihentikan dan file tidak tersimpan."
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Tidak"
+        tone="danger"
+        icon={<CancelDownloadIcon />}
+        onConfirm={handleConfirmCancelDownload}
+        onCancel={handleResumeDownload}
+      />
 
       {/* Bottom Sheet Menu Opsi Lainnya */}
       {menuMounted &&
@@ -777,4 +838,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-              }
+}
