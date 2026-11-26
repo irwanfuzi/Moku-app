@@ -1,7 +1,100 @@
 import { jsPDF } from "jspdf";
 import { VISIT_TYPE_LABELS, type VisitRecord } from "@/lib/visit-store";
 
-const MOKU_LOGO_URL = "/images/moku/brand/moku-logo-marun.png";
+const PDF_HEADER_URL = "/images/moku/pdf/pdf-header.png";
+const PDF_FOOTER_URL = "/images/moku/pdf/pdf-footer.png";
+
+const FONT_FILES = {
+  jakartaBold: "/fonts/PlusJakartaSans-Bold.ttf",
+  interRegular: "/fonts/Inter_18pt-Regular.ttf",
+  interBold: "/fonts/Inter_18pt-Bold.ttf",
+  interItalic: "/fonts/Inter_18pt-Italic.ttf",
+} as const;
+
+interface CachedFonts {
+  jakartaBold: string | null;
+  interRegular: string | null;
+  interBold: string | null;
+  interItalic: string | null;
+}
+
+let cachedFontsPromise: Promise<CachedFonts> | null = null;
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}
+
+async function fetchFontBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) return null;
+    const buffer = await res.arrayBuffer();
+    return arrayBufferToBase64(buffer);
+  } catch {
+    return null;
+  }
+}
+
+function loadCustomFonts(): Promise<CachedFonts> {
+  if (!cachedFontsPromise) {
+    cachedFontsPromise = Promise.all([
+      fetchFontBase64(FONT_FILES.jakartaBold),
+      fetchFontBase64(FONT_FILES.interRegular),
+      fetchFontBase64(FONT_FILES.interBold),
+      fetchFontBase64(FONT_FILES.interItalic),
+    ]).then(([jakartaBold, interRegular, interBold, interItalic]) => ({
+      jakartaBold,
+      interRegular,
+      interBold,
+      interItalic,
+    }));
+  }
+  return cachedFontsPromise;
+}
+
+async function registerPdfFonts(doc: jsPDF) {
+  const fonts = await loadCustomFonts();
+
+  let displayFont = "helvetica";
+  let bodyFont = "helvetica";
+
+  if (fonts.jakartaBold) {
+    doc.addFileToVFS("PlusJakartaSans-Bold.ttf", fonts.jakartaBold);
+    doc.addFont("PlusJakartaSans-Bold.ttf", "PlusJakartaSans", "bold");
+    displayFont = "PlusJakartaSans";
+  }
+
+  if (fonts.interRegular) {
+    doc.addFileToVFS("Inter_18pt-Regular.ttf", fonts.interRegular);
+    doc.addFont("Inter_18pt-Regular.ttf", "Inter", "normal");
+    bodyFont = "Inter";
+  }
+
+  if (fonts.interBold) {
+    doc.addFileToVFS("Inter_18pt-Bold.ttf", fonts.interBold);
+    doc.addFont("Inter_18pt-Bold.ttf", "Inter", "bold");
+  } else if (fonts.interRegular) {
+    doc.addFont("Inter_18pt-Regular.ttf", "Inter", "bold");
+  }
+
+  if (fonts.interItalic) {
+    doc.addFileToVFS("Inter_18pt-Italic.ttf", fonts.interItalic);
+    doc.addFont("Inter_18pt-Italic.ttf", "Inter", "italic");
+  } else if (fonts.interRegular) {
+    doc.addFont("Inter_18pt-Regular.ttf", "Inter", "italic");
+  }
+
+  return { displayFont, bodyFont };
+}
 
 function formatIndonesianDate(isoDate: string): string {
   if (!isoDate) return "-";
@@ -29,155 +122,79 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
 }
 
 /**
- * Resize logo MOKU tanpa efek/shadow agar tetap tajam & ukuran PDF ringan
+ * Resize gambar banner header/footer + auto-trim ruang putih/transparan atas-bawah
+ * agar tajam di A4, proporsional, dan ukuran PDF tetap ringan
  */
-function resizeLogoClean(
-  img: HTMLImageElement
+function resizeBannerClean(
+  img: HTMLImageElement,
+  maxW = 1600
 ): { dataUrl: string; aspect: number } | null {
   try {
-    const maxW = 540;
     const natW = img.naturalWidth || img.width;
     const natH = img.naturalHeight || img.height;
+    if (!natW || !natH) return null;
+
     const scale = Math.min(1, maxW / natW);
     const drawW = Math.round(natW * scale);
     const drawH = Math.round(natH * scale);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = drawW;
-    canvas.height = drawH;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = drawW;
+    tempCanvas.height = drawH;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return null;
 
-    ctx.drawImage(img, 0, 0, drawW, drawH);
+    tempCtx.drawImage(img, 0, 0, drawW, drawH);
+
+    // Cari batas atas & bawah konten (abaikan piksel transparan atau putih polos)
+    const { data } = tempCtx.getImageData(0, 0, drawW, drawH);
+    let top = 0;
+    let bottom = drawH - 1;
+
+    const isRowEmpty = (row: number) => {
+      const rowOffset = row * drawW * 4;
+      for (let x = 0; x < drawW; x += 4) {
+        const idx = rowOffset + x * 4;
+        const a = data[idx + 3];
+        if (a > 12) {
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          if (r < 246 || g < 246 || b < 246) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
+    while (top < drawH && isRowEmpty(top)) top++;
+    while (bottom > top && isRowEmpty(bottom)) bottom--;
+
+    const padY = 4;
+    const cropTop = Math.max(0, top - padY);
+    const cropBottom = Math.min(drawH - 1, bottom + padY);
+    const cropH = cropBottom - cropTop + 1;
+
+    if (cropH <= 10 || cropH >= drawH - 4) {
+      return {
+        dataUrl: tempCanvas.toDataURL("image/png"),
+        aspect: drawW / drawH,
+      };
+    }
+
+    const outCanvas = document.createElement("canvas");
+    outCanvas.width = drawW;
+    outCanvas.height = cropH;
+    const outCtx = outCanvas.getContext("2d");
+    if (!outCtx) return null;
+
+    outCtx.drawImage(tempCanvas, 0, cropTop, drawW, cropH, 0, 0, drawW, cropH);
 
     return {
-      dataUrl: canvas.toDataURL("image/png"),
-      aspect: drawW / drawH,
+      dataUrl: outCanvas.toDataURL("image/png"),
+      aspect: drawW / cropH,
     };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Render pita lengkung marun + gradasi emas di Header (kanan atas)
- */
-function renderHeaderRibbon(): string | null {
-  try {
-    const w = 960;
-    const h = 230;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    // 1. Pita emas gradasi
-    const goldGrad = ctx.createLinearGradient(40, h, 240, 0);
-    goldGrad.addColorStop(0, "#D97706");
-    goldGrad.addColorStop(0.45, "#F59E0B");
-    goldGrad.addColorStop(0.75, "#FDE047");
-    goldGrad.addColorStop(1, "#F59E0B");
-
-    ctx.fillStyle = goldGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, h);
-    ctx.bezierCurveTo(95, h, 115, 10, 235, 0);
-    ctx.lineTo(315, 0);
-    ctx.bezierCurveTo(195, 10, 175, h, 82, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // 2. Banner marun gradasi
-    const maroonGrad = ctx.createLinearGradient(120, 0, w, h);
-    maroonGrad.addColorStop(0, "#A30021");
-    maroonGrad.addColorStop(0.55, "#83051C");
-    maroonGrad.addColorStop(1, "#620213");
-
-    ctx.fillStyle = maroonGrad;
-    ctx.beginPath();
-    ctx.moveTo(64, h);
-    ctx.bezierCurveTo(160, h, 178, 10, 295, 0);
-    ctx.lineTo(w, 0);
-    ctx.lineTo(w, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // 3. Garis aksen emas kecil di bawah judul
-    const lineGrad = ctx.createLinearGradient(w - 220, 0, w - 85, 0);
-    lineGrad.addColorStop(0, "#F59E0B");
-    lineGrad.addColorStop(0.5, "#FDE047");
-    lineGrad.addColorStop(1, "#D97706");
-
-    ctx.fillStyle = lineGrad;
-    ctx.beginPath();
-    ctx.roundRect(w - 218, 164, 128, 11, 5.5);
-    ctx.fill();
-
-    return canvas.toDataURL("image/png");
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Render pita gelombang marun + gradasi emas di Footer (kanan bawah)
- */
-function renderFooterRibbon(): string | null {
-  try {
-    const w = 760;
-    const h = 170;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    // 1. Gelombang marun kiri
-    const leftMaroon = ctx.createLinearGradient(0, h, 360, 0);
-    leftMaroon.addColorStop(0, "#A30021");
-    leftMaroon.addColorStop(1, "#7B0419");
-
-    ctx.fillStyle = leftMaroon;
-    ctx.beginPath();
-    ctx.moveTo(0, h);
-    ctx.bezierCurveTo(70, 28, 165, 6, 355, 6);
-    ctx.lineTo(w, 6);
-    ctx.lineTo(w, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // 2. Pita emas melengkung di tengah
-    const goldGrad = ctx.createLinearGradient(195, h, 470, 0);
-    goldGrad.addColorStop(0, "#D97706");
-    goldGrad.addColorStop(0.42, "#F59E0B");
-    goldGrad.addColorStop(0.75, "#FDE047");
-    goldGrad.addColorStop(1, "#F59E0B");
-
-    ctx.fillStyle = goldGrad;
-    ctx.beginPath();
-    ctx.moveTo(200, h);
-    ctx.bezierCurveTo(280, 48, 355, 6, 495, 6);
-    ctx.lineTo(575, 6);
-    ctx.bezierCurveTo(435, 10, 375, 66, 298, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // 3. Gelombang marun gelap di kanan
-    const rightMaroon = ctx.createLinearGradient(295, h, w, 0);
-    rightMaroon.addColorStop(0, "#7A0318");
-    rightMaroon.addColorStop(1, "#550110");
-
-    ctx.fillStyle = rightMaroon;
-    ctx.beginPath();
-    ctx.moveTo(298, h);
-    ctx.bezierCurveTo(375, 62, 445, 8, 570, 6);
-    ctx.lineTo(w, 6);
-    ctx.lineTo(w, h);
-    ctx.closePath();
-    ctx.fill();
-
-    return canvas.toDataURL("image/png");
   } catch {
     return null;
   }
@@ -190,9 +207,6 @@ export interface GeneratedVisitPdf {
   sizeMb: number;
 }
 
-/**
- * Menggambar kartu dengan folder-tab marun yang menyatu mulus (sudut kiri atas siku)
- */
 function drawFolderCard(
   doc: jsPDF,
   x: number,
@@ -200,13 +214,13 @@ function drawFolderCard(
   w: number,
   bodyH: number,
   tabTitle: string,
-  tabW: number
+  tabW: number,
+  displayFont: string
 ) {
   const tabH = 8.8;
   const r = 3.2;
   const cardY = y + tabH;
 
-  // 1. Badan kartu putih + border merah marun (kiri atas siku, 3 sudut lain rounded)
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(192, 18, 44);
   doc.setLineWidth(0.48);
@@ -229,7 +243,6 @@ function drawFolderCard(
   doc.close();
   doc.fillStroke();
 
-  // 2. Tab marun di atas kartu (kiri atas rounded, kanan melengkung halus ke border)
   doc.setFillColor(142, 0, 28);
   doc.moveTo(x - 0.2, cardY + 0.25);
   doc.lineTo(x - 0.2, y + r);
@@ -239,10 +252,9 @@ function drawFolderCard(
   doc.close();
   doc.fill();
 
-  // 3. Judul tab
   doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFont(displayFont, "bold");
+  doc.setFontSize(11.5);
   doc.text(tabTitle, x + 5.5, y + 6.1);
 
   return cardY;
@@ -326,65 +338,36 @@ export async function generateVisitReportPdf(
   const margin = 11;
   const contentW = pageW - margin * 2; // 188mm
 
-  const rawLogo = await loadImage(MOKU_LOGO_URL);
-  const cleanLogo = rawLogo ? resizeLogoClean(rawLogo) : null;
-  const headerRibbon = renderHeaderRibbon();
-  const footerRibbon = renderFooterRibbon();
+  const [{ displayFont, bodyFont }, rawHeader, rawFooter] = await Promise.all([
+    registerPdfFonts(doc),
+    loadImage(PDF_HEADER_URL),
+    loadImage(PDF_FOOTER_URL),
+  ]);
+
+  const headerBanner = rawHeader ? resizeBannerClean(rawHeader) : null;
+  const footerBanner = rawFooter ? resizeBannerClean(rawFooter) : null;
 
   /* =========================================================
-     1. TOP HEADER (LOGO MOKU BERSIH + PITA LENGKUNG)
+     1. TOP HEADER (GAMBAR MASTER FULL WIDTH)
   ========================================================= */
-  const headerH = 26;
-  if (headerRibbon) {
-    doc.addImage(headerRibbon, "PNG", pageW - 110, 0, 110, headerH);
+  let headerH = 26;
+  if (headerBanner) {
+    headerH = pageW / headerBanner.aspect;
+    doc.addImage(headerBanner.dataUrl, "PNG", 0, 0, pageW, headerH);
   } else {
     doc.setFillColor(142, 0, 28);
-    doc.rect(pageW - 96, 0, 96, headerH, "F");
+    doc.rect(0, 0, pageW, headerH, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont(displayFont, "bold");
+    doc.setFontSize(18);
+    doc.text("Laporan Kunjungan", pageW - margin, 15, { align: "right" });
   }
-
-  // Judul kanan atas
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(19);
-  doc.text("Laporan Kunjungan", pageW - margin, 14.5, { align: "right" });
-
-  // Logo MOKU kiri atas (bersih tanpa efek/shadow)
-  let subtitleX = margin + 48;
-  if (cleanLogo) {
-    const targetH = 15.5;
-    const targetW = Math.min(48, cleanLogo.aspect * targetH);
-    doc.addImage(cleanLogo.dataUrl, "PNG", margin, 5.2, targetW, targetH);
-    subtitleX = margin + targetW + 5;
-  } else {
-    doc.setTextColor(142, 0, 28);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(23);
-    doc.text("MOKU", margin, 17);
-    subtitleX = margin + 34;
-  }
-
-  // Garis pemisah vertikal + subtitle
-  doc.setDrawColor(135, 135, 145);
-  doc.setLineWidth(0.38);
-  doc.line(subtitleX - 2.6, 8, subtitleX - 2.6, 18.2);
-
-  doc.setTextColor(28, 28, 34);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.2);
-  doc.text("Monitoring Operasional", subtitleX, 12.2);
-  doc.text("Kunjungan Unit", subtitleX, 16.6);
-
-  // Garis tipis bawah header
-  doc.setDrawColor(218, 222, 232);
-  doc.setLineWidth(0.35);
-  doc.line(margin, headerH, pageW - margin, headerH);
 
   /* =========================================================
      2. SUB-HEADER (JUDUL DETAIL + BADGE NO. KUNJUNGAN)
   ========================================================= */
-  let y = 34;
+  let y = Math.max(32, headerH + 7);
 
-  // Kotak ikon kalender merah muda
   doc.setFillColor(252, 236, 239);
   doc.roundedRect(margin, y, 16.5, 16.5, 3.4, 3.4, "F");
   doc.setDrawColor(192, 18, 44);
@@ -394,35 +377,33 @@ export async function generateVisitReportPdf(
   doc.line(margin + 6.1, y + 3.3, margin + 6.1, y + 5.2);
   doc.line(margin + 10.4, y + 3.3, margin + 10.4, y + 5.2);
 
-  // Teks judul & subjudul
   doc.setTextColor(20, 20, 24);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15.5);
+  doc.setFont(displayFont, "bold");
+  doc.setFontSize(15);
   doc.text("Laporan Detail Kunjungan", margin + 21, y + 6.8);
 
   doc.setTextColor(80, 78, 88);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.2);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(9.8);
   doc.text(
     "Laporan hasil kunjungan teknisi ke lokasi pelanggan.",
     margin + 21,
     y + 13
   );
 
-  // Badge No. Kunjungan di kanan
   const badgeW = 58;
   const badgeX = pageW - margin - badgeW;
   doc.setFillColor(252, 236, 239);
   doc.roundedRect(badgeX, y, badgeW, 16.5, 3.4, 3.4, "F");
 
   doc.setTextColor(65, 62, 72);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(8.8);
   doc.text("No. Kunjungan", badgeX + badgeW / 2, y + 5.8, { align: "center" });
 
   doc.setTextColor(176, 16, 40);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12.5);
+  doc.setFont(displayFont, "bold");
+  doc.setFontSize(12);
   doc.text(visit.visitNumber, badgeX + badgeW / 2, y + 12.6, {
     align: "center",
   });
@@ -430,7 +411,7 @@ export async function generateVisitReportPdf(
   /* =========================================================
      3. KARTU 1: INFORMASI KUNJUNGAN
   ========================================================= */
-  y = 58;
+  y += 23.5;
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
   const infoRows: Array<{
     icon: "calendar" | "building" | "pin" | "user" | "gear";
@@ -468,8 +449,8 @@ export async function generateVisitReportPdf(
     },
   ];
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(10.5);
   const preparedRows = infoRows.map((row) => {
     const lines = doc.splitTextToSize(row.value, contentW - 70);
     const rowH = Math.max(10.8, lines.length * 5.4 + 4.8);
@@ -484,7 +465,8 @@ export async function generateVisitReportPdf(
     contentW,
     infoBodyH,
     "Informasi Kunjungan",
-    58
+    60,
+    displayFont
   );
 
   let rowY = infoCardY + 2;
@@ -492,13 +474,13 @@ export async function generateVisitReportPdf(
     const textBaseline = rowY + 6.9;
     drawSmallRowIcon(doc, row.icon, margin + 10.5, rowY + 5.6);
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
+    doc.setFont(bodyFont, "normal");
+    doc.setFontSize(10.5);
     doc.setTextColor(40, 38, 46);
     doc.text(row.label, margin + 19, textBaseline);
     doc.text(":", margin + 62, textBaseline);
 
-    doc.setFont("helvetica", row.boldValue ? "bold" : "normal");
+    doc.setFont(bodyFont, row.boldValue ? "bold" : "normal");
     doc.setTextColor(20, 20, 24);
     doc.text(row.lines, margin + 67, textBaseline);
 
@@ -527,7 +509,8 @@ export async function generateVisitReportPdf(
     contentW,
     machineBodyH,
     "Informasi Mesin",
-    48
+    50,
+    displayFont
   );
 
   drawPrinterVector(doc, margin + 9, machineCardY + 3.8);
@@ -541,16 +524,16 @@ export async function generateVisitReportPdf(
   doc.setFillColor(244, 245, 249);
   doc.roundedRect(mBoxX, machineCardY + 5, mBoxW, 24, 3, 3, "F");
 
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setFont(bodyFont, "normal");
   doc.setTextColor(50, 48, 58);
   doc.text("Nomor Mesin", mBoxX + 6, machineCardY + 13.8);
   doc.text(":", mBoxX + 40, machineCardY + 13.8);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(bodyFont, "bold");
   doc.setTextColor(20, 20, 24);
   doc.text(visit.machineCode || "-", mBoxX + 45, machineCardY + 13.8);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(bodyFont, "normal");
   doc.setTextColor(50, 48, 58);
   doc.text("Model Mesin", mBoxX + 6, machineCardY + 22.8);
   doc.text(":", mBoxX + 40, machineCardY + 22.8);
@@ -561,8 +544,8 @@ export async function generateVisitReportPdf(
      5. KARTU 3: DESKRIPSI AKTIVITAS
   ========================================================= */
   y = machineCardY + machineBodyH + 7.5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(10.5);
   const activityText = visit.activityDescription?.trim() || "-";
   const activityLines = doc.splitTextToSize(activityText, contentW - 14);
   const activityBodyH = Math.max(36, activityLines.length * 5.8 + 14);
@@ -574,12 +557,13 @@ export async function generateVisitReportPdf(
     contentW,
     activityBodyH,
     "Deskripsi Aktivitas",
-    53
+    55,
+    displayFont
   );
 
   doc.setTextColor(30, 28, 35);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(10.5);
   doc.text(activityLines, margin + 7, activityCardY + 9.5);
 
   /* =========================================================
@@ -598,29 +582,38 @@ export async function generateVisitReportPdf(
     contentW,
     notesBodyH,
     "Tindakan / Catatan Teknisi",
-    66
+    68,
+    displayFont
   );
 
   doc.setTextColor(30, 28, 35);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFont(bodyFont, "normal");
+  doc.setFontSize(10.5);
   doc.text(notesLines, margin + 7, notesCardY + 9.5);
 
   /* =========================================================
-     7. FOOTER A4 (TAGLINE + PITA GELOMBANG MARUN EMAS)
+     7. FOOTER A4 (GAMBAR MASTER FULL WIDTH)
   ========================================================= */
-  const footerLineY = pageH - 22;
-  doc.setDrawColor(200, 206, 220);
-  doc.setLineWidth(0.35);
-  doc.line(margin, footerLineY, pageW - margin, footerLineY);
+  if (footerBanner) {
+    const footerH = pageW / footerBanner.aspect;
+    doc.addImage(
+      footerBanner.dataUrl,
+      "PNG",
+      0,
+      pageH - footerH,
+      pageW,
+      footerH
+    );
+  } else {
+    const footerLineY = pageH - 22;
+    doc.setDrawColor(200, 206, 220);
+    doc.setLineWidth(0.35);
+    doc.line(margin, footerLineY, pageW - margin, footerLineY);
 
-  doc.setTextColor(32, 32, 38);
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(11.5);
-  doc.text("Track Precisely, Deliver Quality", margin, pageH - 10.5);
-
-  if (footerRibbon) {
-    doc.addImage(footerRibbon, "PNG", pageW - 82, pageH - 18.5, 82, 18.5);
+    doc.setTextColor(32, 32, 38);
+    doc.setFont(bodyFont, "italic");
+    doc.setFontSize(11);
+    doc.text("Track Precisely, Deliver Quality", margin, pageH - 10.5);
   }
 
   const blob = doc.output("blob");
