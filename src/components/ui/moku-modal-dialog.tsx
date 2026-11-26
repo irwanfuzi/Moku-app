@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { WarningCircle } from "@phosphor-icons/react";
 
@@ -9,6 +9,7 @@ export interface MokuModalDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "danger" | "primary";
+  icon?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -33,6 +34,7 @@ export default function MokuModalDialog({
   confirmLabel = "Ya, Lanjutkan",
   cancelLabel = "Batal",
   tone = "danger",
+  icon,
   onConfirm,
   onCancel,
 }: MokuModalDialogProps) {
@@ -108,16 +110,18 @@ export default function MokuModalDialog({
         }}
         className="relative z-10 w-full max-w-[calc(330*var(--u))] rounded-[calc(20*var(--u))] border border-[#EFEFF2] bg-white p-[calc(20*var(--u))] text-center shadow-[0_12px_36px_rgba(23,23,23,0.16)]"
       >
-        {/* Ikon Peringatan */}
+        {/* Ikon */}
         <div
-          className={`mx-auto mb-[calc(14*var(--u))] flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] items-center justify-center rounded-full ${
+          className={`mx-auto mb-[calc(14*var(--u))] flex h-[calc(54*var(--u))] w-[calc(54*var(--u))] items-center justify-center rounded-full ${
             isDanger ? "bg-[#FCECEF] text-[#8E001C]" : "bg-[#F4F4F7] text-[#29232A]"
           }`}
         >
-          <WarningCircle
-            weight="regular"
-            className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
-          />
+          {icon ?? (
+            <WarningCircle
+              weight="regular"
+              className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
+            />
+          )}
         </div>
 
         {/* Judul */}
