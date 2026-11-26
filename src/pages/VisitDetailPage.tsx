@@ -335,19 +335,10 @@ export default function VisitDetailPage() {
     [stopDownloadTimers]
   );
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
     triggerHaptic(10);
     stopDownloadTimers();
     revokeGeneratedPdf();
-
-    try {
-      const pdf = generateVisitReportPdf(visit);
-      generatedPdfRef.current = pdf;
-      setDownloadTotalMb(pdf.sizeMb);
-    } catch {
-      triggerToast("Gagal menyiapkan file PDF.");
-      return;
-    }
 
     downloadElapsedRef.current = 0;
     setDownloadProgress(0);
@@ -355,7 +346,16 @@ export default function VisitDetailPage() {
     setShowCancelDownloadModal(false);
     setShowDownloadCancelledModal(false);
     setShowDownloadSheet(true);
-    runDownloadLoop(0);
+
+    try {
+      const pdf = await generateVisitReportPdf(visit);
+      generatedPdfRef.current = pdf;
+      setDownloadTotalMb(pdf.sizeMb);
+      runDownloadLoop(0);
+    } catch {
+      setShowDownloadSheet(false);
+      triggerToast("Gagal menyiapkan file PDF.");
+    }
   }, [
     visit,
     stopDownloadTimers,
@@ -392,17 +392,42 @@ export default function VisitDetailPage() {
     setShowDownloadSheet(false);
   }, []);
 
-  const handleOpenDownloadedFile = useCallback(() => {
+  const handleOpenDownloadedFile = useCallback(async () => {
     triggerHaptic(8);
     const pdf = generatedPdfRef.current;
-    if (pdf?.url) {
-      const opened = window.open(pdf.url, "_blank", "noopener,noreferrer");
-      if (!opened) {
-        triggerBrowserPdfDownload(pdf.url, pdf.filename);
+    if (!pdf) {
+      setShowDownloadSheet(false);
+      return;
+    }
+
+    try {
+      const file = new File([pdf.blob], pdf.filename, {
+        type: "application/pdf",
+      });
+
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          files: [file],
+          title: `Laporan Kunjungan ${visit.visitNumber}`,
+        });
+        setShowDownloadSheet(false);
+        return;
+      }
+    } catch (err) {
+      // Jika user membatalkan dialog share bawaan OS, cukup tutup sheet
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
       }
     }
+
+    // Fallback untuk browser desktop / browser yang belum mendukung Web Share Files
+    window.open(pdf.url, "_blank", "noopener,noreferrer");
     setShowDownloadSheet(false);
-    triggerToast(`Membuka ${visit.visitNumber}.pdf...`);
+    triggerToast(`Membuka ${pdf.filename}...`);
   }, [triggerToast, visit.visitNumber]);
 
   const handleCloseDownloadSuccess = useCallback(() => {
@@ -1011,4 +1036,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-            }
+}
