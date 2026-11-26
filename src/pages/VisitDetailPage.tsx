@@ -16,6 +16,7 @@ import {
   Copy,
   DotsThreeVertical,
   DownloadSimple,
+  FilePdf,
   FileText,
   GearSix,
   Laptop,
@@ -45,7 +46,9 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const SNACKBAR_EXIT_MS = 320;
-const MENU_EXIT_MS = 360;
+const SHEET_EXIT_MS = 360;
+const DOWNLOAD_TOTAL_MB = 2.0;
+const DOWNLOAD_DURATION_MS = 3200;
 
 function formatIndonesianDate(isoDate: string): string {
   if (!isoDate) return "-";
@@ -56,6 +59,10 @@ function formatIndonesianDate(isoDate: string): string {
     month: "long",
     year: "numeric",
   }).format(new Date(y, m - 1, d));
+}
+
+function formatMb(value: number): string {
+  return value.toFixed(1).replace(".", ",");
 }
 
 function triggerHaptic(duration = 8) {
@@ -101,10 +108,18 @@ export default function VisitDetailPage() {
     setVisit(getVisitByNumber(visitNumber));
   }, [visitNumber, location.key]);
 
+  // Menu Opsi Lainnya Sheet
   const [showMenuSheet, setShowMenuSheet] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
+  // Download Laporan Sheet
+  const [showDownloadSheet, setShowDownloadSheet] = useState(false);
+  const [downloadMounted, setDownloadMounted] = useState(false);
+  const [downloadVisible, setDownloadVisible] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+
+  // Toast / Snackbar
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
     null
   );
@@ -112,6 +127,8 @@ export default function VisitDetailPage() {
 
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
+  const downloadRafRef = useRef<number | null>(null);
+  const downloadCompleteTimerRef = useRef<number | null>(null);
 
   const isMobileView = !isReady || isMobile;
 
@@ -121,6 +138,7 @@ export default function VisitDetailPage() {
     metas.forEach((meta) => meta.setAttribute("content", "#83051C"));
   }, [isMobileView]);
 
+  // Transisi Menu Sheet
   useEffect(() => {
     if (showMenuSheet) {
       setMenuMounted(true);
@@ -136,10 +154,32 @@ export default function VisitDetailPage() {
       setMenuVisible(false);
       const timer = window.setTimeout(() => {
         setMenuMounted(false);
-      }, MENU_EXIT_MS);
+      }, SHEET_EXIT_MS);
       return () => window.clearTimeout(timer);
     }
   }, [showMenuSheet]);
+
+  // Transisi Download Sheet
+  useEffect(() => {
+    if (showDownloadSheet) {
+      setDownloadMounted(true);
+      let raf2 = 0;
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => setDownloadVisible(true));
+      });
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+      };
+    } else {
+      setDownloadVisible(false);
+      const timer = window.setTimeout(() => {
+        setDownloadMounted(false);
+        setDownloadProgress(0);
+      }, SHEET_EXIT_MS);
+      return () => window.clearTimeout(timer);
+    }
+  }, [showDownloadSheet]);
 
   const dismissToast = useCallback(() => {
     if (toastAutoRef.current !== null) {
@@ -174,8 +214,20 @@ export default function VisitDetailPage() {
     [dismissToast]
   );
 
+  const stopDownloadTimers = useCallback(() => {
+    if (downloadRafRef.current !== null) {
+      cancelAnimationFrame(downloadRafRef.current);
+      downloadRafRef.current = null;
+    }
+    if (downloadCompleteTimerRef.current !== null) {
+      window.clearTimeout(downloadCompleteTimerRef.current);
+      downloadCompleteTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
+      stopDownloadTimers();
       if (toastAutoRef.current !== null) {
         window.clearTimeout(toastAutoRef.current);
       }
@@ -183,7 +235,44 @@ export default function VisitDetailPage() {
         window.clearTimeout(toastExitRef.current);
       }
     };
-  }, []);
+  }, [stopDownloadTimers]);
+
+  const handleCancelDownload = useCallback(() => {
+    triggerHaptic(6);
+    stopDownloadTimers();
+    setShowDownloadSheet(false);
+  }, [stopDownloadTimers]);
+
+  const handleDownloadPdf = useCallback(() => {
+    triggerHaptic(10);
+    stopDownloadTimers();
+    setDownloadProgress(0);
+    setShowDownloadSheet(true);
+
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const ratio = Math.min(1, elapsed / DOWNLOAD_DURATION_MS);
+      const eased = 1 - Math.pow(1 - ratio, 1.4);
+      const pct = Math.round(eased * 100);
+      setDownloadProgress(pct);
+
+      if (ratio < 1) {
+        downloadRafRef.current = requestAnimationFrame(tick);
+      } else {
+        downloadRafRef.current = null;
+        downloadCompleteTimerRef.current = window.setTimeout(() => {
+          setShowDownloadSheet(false);
+          triggerHaptic(12);
+          triggerToast(`Laporan ${visit.visitNumber}.pdf berhasil diunduh.`);
+          downloadCompleteTimerRef.current = null;
+        }, 280);
+      }
+    };
+
+    downloadRafRef.current = requestAnimationFrame(tick);
+  }, [stopDownloadTimers, triggerToast, visit.visitNumber]);
 
   const handleBackToDashboard = useCallback(() => {
     triggerHaptic(6);
@@ -191,6 +280,11 @@ export default function VisitDetailPage() {
   }, [navigateWithTransition]);
 
   const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showDownloadSheet) {
+      handleCancelDownload();
+      rearmBackGesture();
+      return;
+    }
     if (showMenuSheet) {
       triggerHaptic(6);
       setShowMenuSheet(false);
@@ -211,11 +305,6 @@ export default function VisitDetailPage() {
     }
   };
 
-  const handleDownloadPdf = () => {
-    triggerHaptic(10);
-    triggerToast(`Menyiapkan laporan ${visit.visitNumber}.pdf...`);
-  };
-
   const handleEditVisit = () => {
     triggerHaptic(8);
     navigateWithTransition(
@@ -225,6 +314,11 @@ export default function VisitDetailPage() {
   };
 
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
+  const downloadedMb = (DOWNLOAD_TOTAL_MB * downloadProgress) / 100;
+  const remainingSeconds = Math.max(
+    1,
+    Math.ceil(((100 - downloadProgress) / 100) * (DOWNLOAD_DURATION_MS / 1000))
+  );
 
   return (
     <main
@@ -417,7 +511,7 @@ export default function VisitDetailPage() {
               weight="bold"
               className="h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0"
             />
-            <span className="truncate">Unduh PDF</span>
+            <span className="truncate">Unduh Laporan</span>
           </button>
 
           <button
@@ -434,6 +528,95 @@ export default function VisitDetailPage() {
           </button>
         </section>
       </div>
+
+      {/* Bottom Sheet Mengunduh Laporan */}
+      {downloadMounted &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={MOBILE_SCALE_VARS}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mengunduh Laporan"
+            className="fixed inset-0 z-[9999] flex items-end justify-center select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
+          >
+            <div
+              onClick={handleCancelDownload}
+              style={{
+                opacity: downloadVisible ? 0.45 : 0,
+                transition: "opacity 360ms ease-out",
+              }}
+              className="fixed inset-0 bg-black backdrop-blur-[1.5px]"
+            />
+
+            <div
+              style={{
+                transform: downloadVisible
+                  ? "translate3d(0, 0, 0)"
+                  : "translate3d(0, 105%, 0)",
+                transition: downloadVisible
+                  ? "transform 400ms cubic-bezier(0.22, 1, 0.36, 1)"
+                  : "transform 360ms cubic-bezier(0.32, 0.72, 0, 1)",
+              }}
+              className="relative z-10 w-full max-w-[600px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] pb-[calc(26px+env(safe-area-inset-bottom))] pt-[calc(12*var(--u))] shadow-[0_-8px_30px_rgba(23,23,23,0.18)]"
+            >
+              {/* Drag Handle */}
+              <div className="mx-auto mb-[calc(20*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] rounded-full bg-[#DCDCE2]" />
+
+              {/* Header PDF + Judul */}
+              <div className="flex items-center gap-[calc(14*var(--u))]">
+                <div className="flex h-[calc(58*var(--u))] w-[calc(58*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FCECEF]">
+                  <FilePdf
+                    weight="regular"
+                    className="h-[calc(30*var(--u))] w-[calc(30*var(--u))] text-[#C8102E]"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-[calc(17*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]">
+                    Mengunduh Laporan
+                  </h3>
+                  <p className="mt-[calc(4*var(--u))] truncate text-[calc(13.5*var(--u))] font-normal text-[#5A555F]">
+                    {visit.visitNumber}.pdf
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-[calc(22*var(--u))]">
+                <div className="h-[calc(8*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E5EA]">
+                  <div
+                    style={{ width: `${downloadProgress}%` }}
+                    className="h-full rounded-full bg-[#8E001C] transition-[width] duration-100 ease-out"
+                  />
+                </div>
+
+                {/* Metadata Progres */}
+                <div className="mt-[calc(10*var(--u))] flex items-center justify-between gap-[calc(10*var(--u))] text-[calc(12.5*var(--u))] font-normal tabular-nums text-[#4A454F]">
+                  <span>
+                    {formatMb(downloadedMb)} MB / {formatMb(DOWNLOAD_TOTAL_MB)}{" "}
+                    MB ({downloadProgress}%)
+                  </span>
+                  <span className="text-[#6E6873]">
+                    {downloadProgress >= 100
+                      ? "Selesai"
+                      : `~ ${remainingSeconds} detik lagi`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tombol Batal (Outline, Flat) */}
+              <button
+                type="button"
+                onClick={handleCancelDownload}
+                className="mt-[calc(22*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(12*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
+              >
+                Batal
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Bottom Sheet Menu Opsi Lainnya */}
       {menuMounted &&
@@ -594,4 +777,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-}
+              }
