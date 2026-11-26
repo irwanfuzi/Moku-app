@@ -392,43 +392,14 @@ export default function VisitDetailPage() {
     setShowDownloadSheet(false);
   }, []);
 
-  const handleOpenDownloadedFile = useCallback(async () => {
+  const handleOpenDownloadedFile = useCallback(() => {
     triggerHaptic(8);
     const pdf = generatedPdfRef.current;
-    if (!pdf) {
-      setShowDownloadSheet(false);
-      return;
+    if (pdf?.url) {
+      window.open(pdf.url, "_blank", "noopener,noreferrer");
     }
-
-    try {
-      const file = new File([pdf.blob], pdf.filename, {
-        type: "application/pdf",
-      });
-
-      if (
-        typeof navigator !== "undefined" &&
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files: [file] })
-      ) {
-        await navigator.share({
-          files: [file],
-          title: `Laporan Kunjungan ${visit.visitNumber}`,
-        });
-        setShowDownloadSheet(false);
-        return;
-      }
-    } catch (err) {
-      // Jika user membatalkan dialog share bawaan OS, cukup tutup sheet
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
-      }
-    }
-
-    // Fallback untuk browser desktop / browser yang belum mendukung Web Share Files
-    window.open(pdf.url, "_blank", "noopener,noreferrer");
     setShowDownloadSheet(false);
-    triggerToast(`Membuka ${pdf.filename}...`);
-  }, [triggerToast, visit.visitNumber]);
+  }, []);
 
   const handleCloseDownloadSuccess = useCallback(() => {
     triggerHaptic(6);
@@ -1036,4 +1007,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-}
+              }
