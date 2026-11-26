@@ -92,8 +92,7 @@ function VisitTypeDetailIcon({
 export default function VisitDetailPage() {
   const { visitNumber } = useParams<{ visitNumber?: string }>();
   const location = useLocation();
-  const { isMobile, isReady, backWithTransition, navigateWithTransition } =
-    useAppLayout();
+  const { isMobile, isReady, navigateWithTransition } = useAppLayout();
 
   const [visit, setVisit] = useState(() => getVisitByNumber(visitNumber));
 
@@ -185,6 +184,11 @@ export default function VisitDetailPage() {
     };
   }, []);
 
+  const handleBackToDashboard = () => {
+    triggerHaptic(6);
+    navigateWithTransition("/", "back");
+  };
+
   const handleCopyVisitNumber = async () => {
     triggerHaptic(8);
     setShowMenuSheet(false);
@@ -222,8 +226,8 @@ export default function VisitDetailPage() {
           <div className="flex min-w-0 items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={() => backWithTransition("/")}
-              aria-label="Kembali"
+              onClick={handleBackToDashboard}
+              aria-label="Kembali ke Dashboard"
               className="flex h-[calc(34*var(--u))] w-[calc(34*var(--u))] shrink-0 items-center justify-center rounded-full text-white transition-colors duration-[260ms] active:bg-white/15"
             >
               <ArrowLeft
