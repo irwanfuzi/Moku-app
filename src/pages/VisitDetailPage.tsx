@@ -29,6 +29,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import { useBackGesture } from "@/hooks/use-back-gesture";
 import {
   getVisitByNumber,
   VISIT_TYPE_LABELS,
@@ -184,10 +185,12 @@ export default function VisitDetailPage() {
     };
   }, []);
 
-  const handleBackToDashboard = () => {
+  const handleBackToDashboard = useCallback(() => {
     triggerHaptic(6);
     navigateWithTransition("/", "back");
-  };
+  }, [navigateWithTransition]);
+
+  useBackGesture(true, handleBackToDashboard);
 
   const handleCopyVisitNumber = async () => {
     triggerHaptic(8);
