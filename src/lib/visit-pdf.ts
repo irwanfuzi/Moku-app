@@ -148,9 +148,6 @@ function resizeLogoClean(
   }
 }
 
-/**
- * Pita lengkung marun + gradasi emas di Header (menempel penuh ke tepi kanan & atas)
- */
 function renderHeaderRibbon(): string | null {
   try {
     const w = 900;
@@ -161,7 +158,6 @@ function renderHeaderRibbon(): string | null {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    // 1. Pita emas gradasi
     const goldGrad = ctx.createLinearGradient(30, h, 230, 0);
     goldGrad.addColorStop(0, "#EA8C00");
     goldGrad.addColorStop(0.45, "#F5B400");
@@ -177,7 +173,6 @@ function renderHeaderRibbon(): string | null {
     ctx.closePath();
     ctx.fill();
 
-    // 2. Banner marun gradasi penuh sampai tepi kanan
     const maroonGrad = ctx.createLinearGradient(110, 0, w, h);
     maroonGrad.addColorStop(0, "#A30021");
     maroonGrad.addColorStop(0.55, "#83051C");
@@ -192,7 +187,6 @@ function renderHeaderRibbon(): string | null {
     ctx.closePath();
     ctx.fill();
 
-    // 3. Garis aksen emas kecil di bawah teks "Laporan Kunjungan"
     const lineGrad = ctx.createLinearGradient(w - 205, 0, w - 80, 0);
     lineGrad.addColorStop(0, "#F59E0B");
     lineGrad.addColorStop(0.5, "#FDE047");
@@ -209,9 +203,6 @@ function renderHeaderRibbon(): string | null {
   }
 }
 
-/**
- * Pita gelombang marun + gradasi emas di Footer (menempel penuh ke tepi kanan & bawah)
- */
 function renderFooterRibbon(): string | null {
   try {
     const w = 720;
@@ -222,7 +213,6 @@ function renderFooterRibbon(): string | null {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    // 1. Gelombang marun kiri
     const leftMaroon = ctx.createLinearGradient(0, h, 340, 0);
     leftMaroon.addColorStop(0, "#A30021");
     leftMaroon.addColorStop(1, "#7B0419");
@@ -236,7 +226,6 @@ function renderFooterRibbon(): string | null {
     ctx.closePath();
     ctx.fill();
 
-    // 2. Pita emas melengkung di tengah
     const goldGrad = ctx.createLinearGradient(185, h, 445, 0);
     goldGrad.addColorStop(0, "#EA8C00");
     goldGrad.addColorStop(0.42, "#F5B400");
@@ -252,7 +241,6 @@ function renderFooterRibbon(): string | null {
     ctx.closePath();
     ctx.fill();
 
-    // 3. Gelombang marun gelap di kanan (penuh sampai tepi kanan bawah)
     const rightMaroon = ctx.createLinearGradient(280, h, w, 0);
     rightMaroon.addColorStop(0, "#7A0318");
     rightMaroon.addColorStop(1, "#550110");
@@ -289,7 +277,7 @@ function drawFolderCard(
   tabW: number,
   displayFont: string
 ) {
-  const tabH = 8.8;
+  const tabH = 9;
   const r = 3.2;
   const cardY = y + tabH;
 
@@ -326,8 +314,8 @@ function drawFolderCard(
 
   doc.setTextColor(255, 255, 255);
   doc.setFont(displayFont, "bold");
-  doc.setFontSize(11.5);
-  doc.text(tabTitle, x + 5.5, y + 6.1);
+  doc.setFontSize(12);
+  doc.text(tabTitle, x + 5.5, y + 6.3);
 
   return cardY;
 }
@@ -455,9 +443,9 @@ export async function generateVisitReportPdf(
 
   doc.setTextColor(28, 28, 34);
   doc.setFont(displayFont, "bold");
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.text("Monitoring Operasional", subtitleX, 12.2);
-  doc.text("Kunjungan Unit", subtitleX, 16.6);
+  doc.text("Kunjungan Unit", subtitleX, 16.8);
 
   doc.setDrawColor(218, 222, 232);
   doc.setLineWidth(0.35);
@@ -479,16 +467,16 @@ export async function generateVisitReportPdf(
 
   doc.setTextColor(20, 20, 24);
   doc.setFont(displayFont, "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(15.5);
   doc.text("Laporan Detail Kunjungan", margin + 21, y + 6.8);
 
   doc.setTextColor(80, 78, 88);
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(9.8);
+  doc.setFontSize(10.5);
   doc.text(
     "Laporan hasil kunjungan teknisi ke lokasi pelanggan.",
     margin + 21,
-    y + 13
+    y + 13.2
   );
 
   const badgeW = 58;
@@ -498,18 +486,18 @@ export async function generateVisitReportPdf(
 
   doc.setTextColor(65, 62, 72);
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(8.8);
+  doc.setFontSize(9.5);
   doc.text("No. Kunjungan", badgeX + badgeW / 2, y + 5.8, { align: "center" });
 
   doc.setTextColor(176, 16, 40);
   doc.setFont(displayFont, "bold");
-  doc.setFontSize(12);
-  doc.text(visit.visitNumber, badgeX + badgeW / 2, y + 12.6, {
+  doc.setFontSize(12.5);
+  doc.text(visit.visitNumber, badgeX + badgeW / 2, y + 12.8, {
     align: "center",
   });
 
   /* =========================================================
-     3. KARTU 1: INFORMASI KUNJUNGAN
+     3. KARTU 1: INFORMASI KUNJUNGAN (SEMUA ISI NORMAL, NON-BOLD)
   ========================================================= */
   y = 58;
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
@@ -517,7 +505,6 @@ export async function generateVisitReportPdf(
     icon: "calendar" | "building" | "pin" | "user" | "gear";
     label: string;
     value: string;
-    boldValue?: boolean;
   }> = [
     {
       icon: "calendar",
@@ -528,7 +515,6 @@ export async function generateVisitReportPdf(
       icon: "building",
       label: "Pelanggan",
       value: visit.customerName || "-",
-      boldValue: true,
     },
     {
       icon: "pin",
@@ -539,21 +525,19 @@ export async function generateVisitReportPdf(
       icon: "user",
       label: "Teknisi",
       value: visit.technicianName || "-",
-      boldValue: true,
     },
     {
       icon: "gear",
       label: "Jenis Kunjungan",
       value: visitTypeDisplay,
-      boldValue: true,
     },
   ];
 
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(11);
   const preparedRows = infoRows.map((row) => {
     const lines = doc.splitTextToSize(row.value, contentW - 70);
-    const rowH = Math.max(10.8, lines.length * 5.4 + 4.8);
+    const rowH = Math.max(11, lines.length * 5.6 + 4.8);
     return { ...row, lines, rowH };
   });
 
@@ -565,22 +549,21 @@ export async function generateVisitReportPdf(
     contentW,
     infoBodyH,
     "Informasi Kunjungan",
-    60,
+    62,
     displayFont
   );
 
   let rowY = infoCardY + 2;
   preparedRows.forEach((row, index) => {
-    const textBaseline = rowY + 6.9;
-    drawSmallRowIcon(doc, row.icon, margin + 10.5, rowY + 5.6);
+    const textBaseline = rowY + 7.1;
+    drawSmallRowIcon(doc, row.icon, margin + 10.5, rowY + 5.7);
 
     doc.setFont(bodyFont, "normal");
-    doc.setFontSize(10.5);
+    doc.setFontSize(11);
     doc.setTextColor(40, 38, 46);
     doc.text(row.label, margin + 19, textBaseline);
     doc.text(":", margin + 62, textBaseline);
 
-    doc.setFont(bodyFont, row.boldValue ? "bold" : "normal");
     doc.setTextColor(20, 20, 24);
     doc.text(row.lines, margin + 67, textBaseline);
 
@@ -598,7 +581,7 @@ export async function generateVisitReportPdf(
   });
 
   /* =========================================================
-     4. KARTU 2: INFORMASI MESIN
+     4. KARTU 2: INFORMASI MESIN (SEMUA ISI NORMAL, NON-BOLD)
   ========================================================= */
   y = infoCardY + infoBodyH + 7.5;
   const machineBodyH = 34;
@@ -609,7 +592,7 @@ export async function generateVisitReportPdf(
     contentW,
     machineBodyH,
     "Informasi Mesin",
-    50,
+    52,
     displayFont
   );
 
@@ -624,16 +607,14 @@ export async function generateVisitReportPdf(
   doc.setFillColor(244, 245, 249);
   doc.roundedRect(mBoxX, machineCardY + 5, mBoxW, 24, 3, 3, "F");
 
-  doc.setFontSize(10.5);
+  doc.setFontSize(11);
   doc.setFont(bodyFont, "normal");
   doc.setTextColor(50, 48, 58);
   doc.text("Nomor Mesin", mBoxX + 6, machineCardY + 13.8);
   doc.text(":", mBoxX + 40, machineCardY + 13.8);
-  doc.setFont(bodyFont, "bold");
   doc.setTextColor(20, 20, 24);
   doc.text(visit.machineCode || "-", mBoxX + 45, machineCardY + 13.8);
 
-  doc.setFont(bodyFont, "normal");
   doc.setTextColor(50, 48, 58);
   doc.text("Model Mesin", mBoxX + 6, machineCardY + 22.8);
   doc.text(":", mBoxX + 40, machineCardY + 22.8);
@@ -645,10 +626,10 @@ export async function generateVisitReportPdf(
   ========================================================= */
   y = machineCardY + machineBodyH + 7.5;
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(11);
   const activityText = visit.activityDescription?.trim() || "-";
   const activityLines = doc.splitTextToSize(activityText, contentW - 14);
-  const activityBodyH = Math.max(36, activityLines.length * 5.8 + 14);
+  const activityBodyH = Math.max(36, activityLines.length * 6 + 14);
 
   const activityCardY = drawFolderCard(
     doc,
@@ -657,13 +638,13 @@ export async function generateVisitReportPdf(
     contentW,
     activityBodyH,
     "Deskripsi Aktivitas",
-    55,
+    57,
     displayFont
   );
 
   doc.setTextColor(30, 28, 35);
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(11);
   doc.text(activityLines, margin + 7, activityCardY + 9.5);
 
   /* =========================================================
@@ -673,7 +654,7 @@ export async function generateVisitReportPdf(
   const notesText =
     visit.technicianNotes?.trim() || "Tidak ada catatan teknisi tambahan.";
   const notesLines = doc.splitTextToSize(notesText, contentW - 14);
-  const notesBodyH = Math.max(24, notesLines.length * 5.8 + 14);
+  const notesBodyH = Math.max(24, notesLines.length * 6 + 14);
 
   const notesCardY = drawFolderCard(
     doc,
@@ -682,13 +663,13 @@ export async function generateVisitReportPdf(
     contentW,
     notesBodyH,
     "Tindakan / Catatan Teknisi",
-    68,
+    70,
     displayFont
   );
 
   doc.setTextColor(30, 28, 35);
   doc.setFont(bodyFont, "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(11);
   doc.text(notesLines, margin + 7, notesCardY + 9.5);
 
   /* =========================================================
@@ -701,7 +682,7 @@ export async function generateVisitReportPdf(
 
   doc.setTextColor(32, 32, 38);
   doc.setFont(bodyFont, "italic");
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   doc.text("Track Precisely, Deliver Quality", margin, pageH - 10.5);
 
   if (footerRibbon) {
@@ -723,4 +704,4 @@ export function triggerBrowserPdfDownload(url: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
+      }
