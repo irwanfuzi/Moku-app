@@ -1,5 +1,9 @@
 import { jsPDF } from "jspdf";
-import { VISIT_TYPE_LABELS, type VisitRecord } from "@/lib/visit-store";
+import {
+  VISIT_TYPE_LABELS,
+  type VisitRecord,
+  type VisitTypeCode,
+} from "@/lib/visit-store";
 
 const MOKU_LOGO_URL = "/images/moku/brand/moku-logo-marun.png";
 
@@ -18,6 +22,135 @@ interface CachedFonts {
 }
 
 let cachedFontsPromise: Promise<CachedFonts> | null = null;
+
+type PdfIconName =
+  | "calendar"
+  | "buildings"
+  | "mapPin"
+  | "user"
+  | "laptop"
+  | "printer"
+  | "package"
+  | "wrench"
+  | "gearSix";
+
+const PHOSPHOR_ICON_PATHS: Record<PdfIconName, string> = {
+  calendar: `
+    <rect x="40" y="40" width="176" height="176" rx="8" />
+    <line x1="176" y1="24" x2="176" y2="56" />
+    <line x1="80" y1="24" x2="80" y2="56" />
+    <line x1="40" y1="88" x2="216" y2="88" />
+  `,
+  buildings: `
+    <line x1="16" y1="216" x2="240" y2="216" />
+    <path d="M144,216V40a8,8,0,0,0-8-8H40a8,8,0,0,0-8,8V216" />
+    <path d="M224,216V104a8,8,0,0,0-8-8H144" />
+    <line x1="64" y1="72" x2="96" y2="72" />
+    <line x1="80" y1="136" x2="112" y2="136" />
+    <line x1="64" y1="176" x2="96" y2="176" />
+    <line x1="176" y1="176" x2="192" y2="176" />
+    <line x1="176" y1="136" x2="192" y2="136" />
+  `,
+  mapPin: `
+    <circle cx="128" cy="104" r="32" />
+    <path d="M208,104c0,72-80,128-80,128S48,176,48,104a80,80,0,0,1,160,0Z" />
+  `,
+  user: `
+    <circle cx="128" cy="96" r="64" />
+    <path d="M32,216c19.37-33.47,54.55-56,96-56s76.63,22.53,96,56" />
+  `,
+  laptop: `
+    <path d="M40,176V72A16,16,0,0,1,56,56H200a16,16,0,0,1,16,16V176" />
+    <path d="M24,176H232a0,0,0,0,1,0,0v16a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V176A0,0,0,0,1,24,176Z" />
+    <line x1="144" y1="88" x2="112" y2="88" />
+  `,
+  printer: `
+    <polyline points="64 80 64 40 192 40 192 80" />
+    <rect x="64" y="152" width="128" height="64" />
+    <path d="M64,176H24V96c0-8.84,7.76-16,17.33-16H214.67C224.24,80,232,87.16,232,96v80H192" />
+    <circle cx="188" cy="116" r="10" fill="#C0122C" stroke="none" />
+  `,
+  package: `
+    <path d="M224,177.32V78.68a8,8,0,0,0-4.08-7l-88-49.5a8,8,0,0,0-7.84,0l-88,49.5a8,8,0,0,0-4.08,7v98.64a8,8,0,0,0,4.08,7l88,49.5a8,8,0,0,0,7.84,0l88-49.5A8,8,0,0,0,224,177.32Z" />
+    <polyline points="177.02 152.51 177.02 100.51 80 47" />
+    <polyline points="222.89 74.62 128.98 128 33.11 74.62" />
+    <line x1="128.98" y1="128" x2="128.01" y2="234.82" />
+  `,
+  wrench: `
+    <path d="M104,126.94a64,64,0,0,1,80-90.29L141.66,79,153,103l24,11.31L219.35,72a64,64,0,0,1-90.29,80L73,217a24,24,0,0,1-34-34Z" />
+  `,
+  gearSix: `
+    <circle cx="128" cy="128" r="40" />
+    <path d="M130.05,206.11c-1.34,0-2.69,0-4,0L94,224,64.48,206.87l-.2-36.92a82.09,82.09,0,0,1-4.09-7.1l-32-18.3V109.45l32-18.3a82.09,82.09,0,0,1,4.09-7.1l.2-36.92L94,30l32,17.92c1.35,0,2.7,0,4,0L162,30l29.52,17.13.2,36.92a82.09,82.09,0,0,1,4.09,7.1l32,18.3v35.1l-32,18.3a82.09,82.09,0,0,1-4.09,7.1l-.2,36.92L162,224Z" />
+  `,
+};
+
+const iconPngCache = new Map<string, string>();
+
+function getVisitTypeIconName(code: VisitTypeCode): PdfIconName {
+  switch (code) {
+    case "IND":
+      return "laptop";
+    case "INS":
+      return "printer";
+    case "DIS":
+      return "package";
+    case "PMC":
+      return "wrench";
+    case "UMC":
+    default:
+      return "gearSix";
+  }
+}
+
+function renderPhosphorIconPng(
+  name: PdfIconName,
+  color = "#C0122C",
+  size = 96
+): Promise<string | null> {
+  const key = `${name}:${color}:${size}`;
+  const cached = iconPngCache.get(key);
+  if (cached) return Promise.resolve(cached);
+
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256" fill="none" stroke="${color}" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">${PHOSPHOR_ICON_PATHS[name]}</svg>`;
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, size, size);
+        const dataUrl = canvas.toDataURL("image/png");
+        iconPngCache.set(key, dataUrl);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      } catch {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -277,7 +410,7 @@ function drawFolderCard(
   tabW: number,
   displayFont: string
 ) {
-  const tabH = 9;
+  const tabH = 8.6;
   const r = 3.2;
   const cardY = y + tabH;
 
@@ -315,52 +448,9 @@ function drawFolderCard(
   doc.setTextColor(255, 255, 255);
   doc.setFont(displayFont, "bold");
   doc.setFontSize(12);
-  doc.text(tabTitle, x + 5.5, y + 6.3);
+  doc.text(tabTitle, x + 5.5, y + 6.1);
 
   return cardY;
-}
-
-function drawSmallRowIcon(
-  doc: jsPDF,
-  kind: "calendar" | "building" | "pin" | "user" | "gear",
-  cx: number,
-  cy: number
-) {
-  doc.setDrawColor(192, 18, 44);
-  doc.setFillColor(192, 18, 44);
-  doc.setLineWidth(0.45);
-
-  switch (kind) {
-    case "calendar":
-      doc.roundedRect(cx - 2.3, cy - 2, 4.6, 4.1, 0.7, 0.7, "S");
-      doc.line(cx - 2.3, cy - 0.7, cx + 2.3, cy - 0.7);
-      doc.line(cx - 1.05, cy - 2.6, cx - 1.05, cy - 1.5);
-      doc.line(cx + 1.05, cy - 2.6, cx + 1.05, cy - 1.5);
-      break;
-    case "building":
-      doc.rect(cx - 2, cy - 2.3, 4, 4.6, "S");
-      doc.rect(cx - 0.55, cy + 0.7, 1.1, 1.6, "S");
-      doc.circle(cx - 0.9, cy - 1.1, 0.28, "F");
-      doc.circle(cx + 0.9, cy - 1.1, 0.28, "F");
-      doc.circle(cx - 0.9, cy - 0.1, 0.28, "F");
-      doc.circle(cx + 0.9, cy - 0.1, 0.28, "F");
-      break;
-    case "pin":
-      doc.circle(cx, cy - 0.6, 1.9, "S");
-      doc.circle(cx, cy - 0.6, 0.55, "F");
-      doc.line(cx - 1.35, cy + 0.7, cx, cy + 2.4);
-      doc.line(cx + 1.35, cy + 0.7, cx, cy + 2.4);
-      break;
-    case "user":
-      doc.circle(cx, cy - 1.15, 1.2, "S");
-      doc.roundedRect(cx - 2.1, cy + 0.5, 4.2, 2, 1, 1, "S");
-      break;
-    case "gear":
-    default:
-      doc.circle(cx, cy, 2.1, "S");
-      doc.circle(cx, cy, 0.8, "S");
-      break;
-  }
 }
 
 function drawPrinterVector(doc: jsPDF, x: number, y: number) {
@@ -368,20 +458,20 @@ function drawPrinterVector(doc: jsPDF, x: number, y: number) {
   doc.setDrawColor(190, 194, 204);
   doc.setLineWidth(0.35);
 
-  doc.roundedRect(x + 4, y + 15.5, 21, 10.5, 1.1, 1.1, "FD");
-  doc.line(x + 5, y + 20.8, x + 24, y + 20.8);
+  doc.roundedRect(x + 4, y + 14, 21, 9.5, 1.1, 1.1, "FD");
+  doc.line(x + 5, y + 18.8, x + 24, y + 18.8);
 
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(x + 2, y + 4.8, 25, 11.5, 1.5, 1.5, "FD");
+  doc.roundedRect(x + 2, y + 4.2, 25, 10.6, 1.5, 1.5, "FD");
 
   doc.setFillColor(228, 231, 238);
-  doc.roundedRect(x + 3.5, y + 1.6, 22, 3.6, 0.8, 0.8, "FD");
+  doc.roundedRect(x + 3.5, y + 1.4, 22, 3.2, 0.8, 0.8, "FD");
 
   doc.setFillColor(142, 0, 28);
-  doc.roundedRect(x + 20, y + 6.8, 5, 2.6, 0.5, 0.5, "F");
+  doc.roundedRect(x + 20, y + 6, 5, 2.4, 0.5, 0.5, "F");
 
   doc.setFillColor(212, 216, 224);
-  doc.rect(x + 6.5, y + 10.8, 11.5, 2.5, "F");
+  doc.rect(x + 6.5, y + 9.6, 11.5, 2.3, "F");
 }
 
 export async function generateVisitReportPdf(
@@ -398,9 +488,24 @@ export async function generateVisitReportPdf(
   const margin = 11;
   const contentW = pageW - margin * 2; // 188mm
 
-  const [{ displayFont, bodyFont }, rawLogo] = await Promise.all([
+  const visitTypeIconName = getVisitTypeIconName(visit.visitTypeCode);
+
+  const [
+    { displayFont, bodyFont },
+    rawLogo,
+    calendarIcon,
+    buildingsIcon,
+    mapPinIcon,
+    userIcon,
+    visitTypeIcon,
+  ] = await Promise.all([
     registerPdfFonts(doc),
     loadImage(MOKU_LOGO_URL),
+    renderPhosphorIconPng("calendar"),
+    renderPhosphorIconPng("buildings"),
+    renderPhosphorIconPng("mapPin"),
+    renderPhosphorIconPng("user"),
+    renderPhosphorIconPng(visitTypeIconName),
   ]);
 
   const cleanLogo = rawLogo ? resizeLogoClean(rawLogo) : null;
@@ -439,13 +544,13 @@ export async function generateVisitReportPdf(
 
   doc.setDrawColor(135, 135, 145);
   doc.setLineWidth(0.38);
-  doc.line(subtitleX - 2.6, 8, subtitleX - 2.6, 18.2);
+  doc.line(subtitleX - 2.6, 8.4, subtitleX - 2.6, 17.8);
 
   doc.setTextColor(28, 28, 34);
   doc.setFont(displayFont, "bold");
   doc.setFontSize(9.5);
-  doc.text("Monitoring Operasional", subtitleX, 12.2);
-  doc.text("Kunjungan Unit", subtitleX, 16.8);
+  doc.text("Monitoring Operasional", subtitleX, 12.4);
+  doc.text("Kunjungan Unit", subtitleX, 16.2);
 
   doc.setDrawColor(218, 222, 232);
   doc.setLineWidth(0.35);
@@ -454,80 +559,77 @@ export async function generateVisitReportPdf(
   /* =========================================================
      2. SUB-HEADER (JUDUL DETAIL + BADGE NO. KUNJUNGAN)
   ========================================================= */
-  let y = 34;
+  let y = 33;
 
   doc.setFillColor(252, 236, 239);
-  doc.roundedRect(margin, y, 16.5, 16.5, 3.4, 3.4, "F");
-  doc.setDrawColor(192, 18, 44);
-  doc.setLineWidth(0.62);
-  doc.roundedRect(margin + 4, y + 4.5, 8.5, 7.6, 1.2, 1.2, "S");
-  doc.line(margin + 4, y + 7.1, margin + 12.5, y + 7.1);
-  doc.line(margin + 6.1, y + 3.3, margin + 6.1, y + 5.2);
-  doc.line(margin + 10.4, y + 3.3, margin + 10.4, y + 5.2);
+  doc.roundedRect(margin, y, 16, 16, 3.4, 3.4, "F");
+  if (calendarIcon) {
+    doc.addImage(calendarIcon, "PNG", margin + 3, y + 3, 10, 10);
+  }
 
   doc.setTextColor(20, 20, 24);
   doc.setFont(displayFont, "bold");
   doc.setFontSize(15.5);
-  doc.text("Laporan Detail Kunjungan", margin + 21, y + 6.8);
+  doc.text("Laporan Detail Kunjungan", margin + 20.5, y + 6.6);
 
   doc.setTextColor(80, 78, 88);
   doc.setFont(bodyFont, "normal");
   doc.setFontSize(10.5);
   doc.text(
     "Laporan hasil kunjungan teknisi ke lokasi pelanggan.",
-    margin + 21,
-    y + 13.2
+    margin + 20.5,
+    y + 12.1
   );
 
   const badgeW = 58;
   const badgeX = pageW - margin - badgeW;
   doc.setFillColor(252, 236, 239);
-  doc.roundedRect(badgeX, y, badgeW, 16.5, 3.4, 3.4, "F");
+  doc.roundedRect(badgeX, y, badgeW, 16, 3.4, 3.4, "F");
 
   doc.setTextColor(65, 62, 72);
   doc.setFont(bodyFont, "normal");
   doc.setFontSize(9.5);
-  doc.text("No. Kunjungan", badgeX + badgeW / 2, y + 5.8, { align: "center" });
+  doc.text("No. Kunjungan", badgeX + badgeW / 2, y + 5.9, { align: "center" });
 
   doc.setTextColor(176, 16, 40);
   doc.setFont(displayFont, "bold");
   doc.setFontSize(12.5);
-  doc.text(visit.visitNumber, badgeX + badgeW / 2, y + 12.8, {
+  doc.text(visit.visitNumber, badgeX + badgeW / 2, y + 12.1, {
     align: "center",
   });
 
   /* =========================================================
-     3. KARTU 1: INFORMASI KUNJUNGAN (SEMUA ISI NORMAL, NON-BOLD)
+     3. KARTU 1: INFORMASI KUNJUNGAN (RAPAT + NON-BOLD)
   ========================================================= */
-  y = 58;
+  y = 55.5;
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
   const infoRows: Array<{
-    icon: "calendar" | "building" | "pin" | "user" | "gear";
+    iconUrl: string | null;
     label: string;
     value: string;
   }> = [
     {
-      icon: "calendar",
+      iconUrl: calendarIcon,
       label: "Tanggal Kunjungan",
       value: formatIndonesianDate(visit.visitDate),
     },
     {
-      icon: "building",
+      iconUrl: buildingsIcon,
       label: "Pelanggan",
       value: visit.customerName || "-",
     },
     {
-      icon: "pin",
+      iconUrl: mapPinIcon,
       label: "Lokasi",
       value: visit.location || "-",
     },
     {
-      icon: "user",
+      iconUrl: userIcon,
       label: "Teknisi",
       value: visit.technicianName || "-",
     },
     {
-      icon: "gear",
+      iconUrl: visitTypeIcon,
       label: "Jenis Kunjungan",
       value: visitTypeDisplay,
     },
@@ -537,11 +639,11 @@ export async function generateVisitReportPdf(
   doc.setFontSize(11);
   const preparedRows = infoRows.map((row) => {
     const lines = doc.splitTextToSize(row.value, contentW - 70);
-    const rowH = Math.max(11, lines.length * 5.6 + 4.8);
+    const rowH = Math.max(9.2, lines.length * 4.7 + 3.6);
     return { ...row, lines, rowH };
   });
 
-  const infoBodyH = preparedRows.reduce((sum, r) => sum + r.rowH, 0) + 4;
+  const infoBodyH = preparedRows.reduce((sum, r) => sum + r.rowH, 0) + 3;
   const infoCardY = drawFolderCard(
     doc,
     margin,
@@ -553,25 +655,30 @@ export async function generateVisitReportPdf(
     displayFont
   );
 
-  let rowY = infoCardY + 2;
+  let rowY = infoCardY + 1.5;
   preparedRows.forEach((row, index) => {
-    const textBaseline = rowY + 7.1;
-    drawSmallRowIcon(doc, row.icon, margin + 10.5, rowY + 5.7);
+    const textBaseline = rowY + 6;
+
+    if (row.iconUrl) {
+      doc.addImage(row.iconUrl, "PNG", margin + 7.5, rowY + 2, 5.2, 5.2);
+    }
 
     doc.setFont(bodyFont, "normal");
     doc.setFontSize(11);
     doc.setTextColor(40, 38, 46);
-    doc.text(row.label, margin + 19, textBaseline);
-    doc.text(":", margin + 62, textBaseline);
+    doc.text(row.label, margin + 18.5, textBaseline);
+    doc.text(":", margin + 61.5, textBaseline);
 
     doc.setTextColor(20, 20, 24);
-    doc.text(row.lines, margin + 67, textBaseline);
+    doc.text(row.lines, margin + 66.5, textBaseline, {
+      lineHeightFactor: 1.15,
+    });
 
     if (index < preparedRows.length - 1) {
       doc.setDrawColor(236, 236, 242);
       doc.setLineWidth(0.28);
       doc.line(
-        margin + 19,
+        margin + 18.5,
         rowY + row.rowH,
         pageW - margin - 6,
         rowY + row.rowH
@@ -581,10 +688,10 @@ export async function generateVisitReportPdf(
   });
 
   /* =========================================================
-     4. KARTU 2: INFORMASI MESIN (SEMUA ISI NORMAL, NON-BOLD)
+     4. KARTU 2: INFORMASI MESIN (RAPAT + NON-BOLD)
   ========================================================= */
-  y = infoCardY + infoBodyH + 7.5;
-  const machineBodyH = 34;
+  y = infoCardY + infoBodyH + 6.5;
+  const machineBodyH = 30;
   const machineCardY = drawFolderCard(
     doc,
     margin,
@@ -596,40 +703,40 @@ export async function generateVisitReportPdf(
     displayFont
   );
 
-  drawPrinterVector(doc, margin + 9, machineCardY + 3.8);
+  drawPrinterVector(doc, margin + 9, machineCardY + 2.8);
 
   doc.setDrawColor(190, 196, 210);
   doc.setLineWidth(0.38);
-  doc.line(margin + 46, machineCardY + 6, margin + 46, machineCardY + 28);
+  doc.line(margin + 46, machineCardY + 5, margin + 46, machineCardY + 25);
 
   const mBoxX = margin + 52;
   const mBoxW = contentW - 58;
   doc.setFillColor(244, 245, 249);
-  doc.roundedRect(mBoxX, machineCardY + 5, mBoxW, 24, 3, 3, "F");
+  doc.roundedRect(mBoxX, machineCardY + 4.5, mBoxW, 21, 3, 3, "F");
 
   doc.setFontSize(11);
   doc.setFont(bodyFont, "normal");
   doc.setTextColor(50, 48, 58);
-  doc.text("Nomor Mesin", mBoxX + 6, machineCardY + 13.8);
-  doc.text(":", mBoxX + 40, machineCardY + 13.8);
+  doc.text("Nomor Mesin", mBoxX + 6, machineCardY + 12.2);
+  doc.text(":", mBoxX + 40, machineCardY + 12.2);
   doc.setTextColor(20, 20, 24);
-  doc.text(visit.machineCode || "-", mBoxX + 45, machineCardY + 13.8);
+  doc.text(visit.machineCode || "-", mBoxX + 45, machineCardY + 12.2);
 
   doc.setTextColor(50, 48, 58);
-  doc.text("Model Mesin", mBoxX + 6, machineCardY + 22.8);
-  doc.text(":", mBoxX + 40, machineCardY + 22.8);
+  doc.text("Model Mesin", mBoxX + 6, machineCardY + 19.6);
+  doc.text(":", mBoxX + 40, machineCardY + 19.6);
   doc.setTextColor(20, 20, 24);
-  doc.text(visit.machineModel || "-", mBoxX + 45, machineCardY + 22.8);
+  doc.text(visit.machineModel || "-", mBoxX + 45, machineCardY + 19.6);
 
   /* =========================================================
      5. KARTU 3: DESKRIPSI AKTIVITAS
   ========================================================= */
-  y = machineCardY + machineBodyH + 7.5;
+  y = machineCardY + machineBodyH + 6.5;
   doc.setFont(bodyFont, "normal");
   doc.setFontSize(11);
   const activityText = visit.activityDescription?.trim() || "-";
   const activityLines = doc.splitTextToSize(activityText, contentW - 14);
-  const activityBodyH = Math.max(36, activityLines.length * 6 + 14);
+  const activityBodyH = Math.max(28, activityLines.length * 4.8 + 11);
 
   const activityCardY = drawFolderCard(
     doc,
@@ -645,16 +752,18 @@ export async function generateVisitReportPdf(
   doc.setTextColor(30, 28, 35);
   doc.setFont(bodyFont, "normal");
   doc.setFontSize(11);
-  doc.text(activityLines, margin + 7, activityCardY + 9.5);
+  doc.text(activityLines, margin + 7, activityCardY + 8.2, {
+    lineHeightFactor: 1.18,
+  });
 
   /* =========================================================
      6. KARTU 4: TINDAKAN / CATATAN TEKNISI
   ========================================================= */
-  y = activityCardY + activityBodyH + 7.5;
+  y = activityCardY + activityBodyH + 6.5;
   const notesText =
     visit.technicianNotes?.trim() || "Tidak ada catatan teknisi tambahan.";
   const notesLines = doc.splitTextToSize(notesText, contentW - 14);
-  const notesBodyH = Math.max(24, notesLines.length * 6 + 14);
+  const notesBodyH = Math.max(22, notesLines.length * 4.8 + 11);
 
   const notesCardY = drawFolderCard(
     doc,
@@ -670,7 +779,9 @@ export async function generateVisitReportPdf(
   doc.setTextColor(30, 28, 35);
   doc.setFont(bodyFont, "normal");
   doc.setFontSize(11);
-  doc.text(notesLines, margin + 7, notesCardY + 9.5);
+  doc.text(notesLines, margin + 7, notesCardY + 8.2, {
+    lineHeightFactor: 1.18,
+  });
 
   /* =========================================================
      7. FOOTER A4 (TAGLINE + PITA FULL-BLEED KANAN BAWAH)
@@ -704,4 +815,4 @@ export function triggerBrowserPdfDownload(url: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-      }
+                      }
