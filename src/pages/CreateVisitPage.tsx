@@ -779,14 +779,6 @@ export default function CreateVisitPage() {
     technicianNotes,
   ]);
 
-  const { rearm: rearmBackGesture } = useBackGesture(
-    hasUnsavedChanges && !showExitModal,
-    () => {
-      triggerHaptic(10);
-      setShowExitModal(true);
-    }
-  );
-
   const selectedMachine = useMemo(
     () =>
       MACHINE_OPTIONS.find((item) => item.code === selectedMachineCode) ?? null,
@@ -921,6 +913,34 @@ export default function CreateVisitPage() {
     navigateWithTransition,
     backWithTransition,
   ]);
+
+  const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showMachineSheet || showDateSheet || showVisitTypeSheet) {
+      triggerHaptic(6);
+      setShowMachineSheet(false);
+      setShowDateSheet(false);
+      setShowVisitTypeSheet(false);
+      rearmBackGesture();
+      return;
+    }
+    if (showExitModal) {
+      triggerHaptic(6);
+      setShowExitModal(false);
+      rearmBackGesture();
+      return;
+    }
+    if (isSubmitting) {
+      rearmBackGesture();
+      return;
+    }
+    if (hasUnsavedChanges && !savedVisit) {
+      triggerHaptic(10);
+      setShowExitModal(true);
+      rearmBackGesture();
+      return;
+    }
+    handleRequestBack();
+  });
 
   const handleConfirmExit = useCallback(() => {
     setShowExitModal(false);
