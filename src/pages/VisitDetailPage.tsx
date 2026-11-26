@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  ArrowSquareOut,
   Buildings,
   CalendarBlank,
   Check,
@@ -148,10 +149,13 @@ export default function VisitDetailPage() {
   const [menuMounted, setMenuMounted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Download Laporan Sheet & Modal States
+  // Download Laporan Sheet & States
   const [showDownloadSheet, setShowDownloadSheet] = useState(false);
   const [downloadMounted, setDownloadMounted] = useState(false);
   const [downloadVisible, setDownloadVisible] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<
+    "downloading" | "completed"
+  >("downloading");
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showCancelDownloadModal, setShowCancelDownloadModal] = useState(false);
   const [showDownloadCancelledModal, setShowDownloadCancelledModal] =
@@ -215,6 +219,7 @@ export default function VisitDetailPage() {
       const timer = window.setTimeout(() => {
         setDownloadMounted(false);
         setDownloadProgress(0);
+        setDownloadStatus("downloading");
         downloadElapsedRef.current = 0;
       }, SHEET_EXIT_MS);
       return () => window.clearTimeout(timer);
@@ -297,23 +302,23 @@ export default function VisitDetailPage() {
           downloadCompleteTimerRef.current = window.setTimeout(() => {
             setShowCancelDownloadModal(false);
             setShowDownloadCancelledModal(false);
-            setShowDownloadSheet(false);
-            triggerHaptic(12);
-            triggerToast(`Laporan ${visit.visitNumber}.pdf berhasil diunduh.`);
+            setDownloadStatus("completed");
+            triggerHaptic(14);
             downloadCompleteTimerRef.current = null;
-          }, 280);
+          }, 220);
         }
       };
 
       downloadRafRef.current = requestAnimationFrame(tick);
     },
-    [stopDownloadTimers, triggerToast, visit.visitNumber]
+    [stopDownloadTimers]
   );
 
   const handleDownloadPdf = useCallback(() => {
     triggerHaptic(10);
     downloadElapsedRef.current = 0;
     setDownloadProgress(0);
+    setDownloadStatus("downloading");
     setShowCancelDownloadModal(false);
     setShowDownloadCancelledModal(false);
     setShowDownloadSheet(true);
@@ -321,10 +326,15 @@ export default function VisitDetailPage() {
   }, [runDownloadLoop]);
 
   const handleRequestCancelDownload = useCallback(() => {
+    if (downloadStatus === "completed") {
+      triggerHaptic(6);
+      setShowDownloadSheet(false);
+      return;
+    }
     triggerHaptic(10);
     stopDownloadTimers();
     setShowCancelDownloadModal(true);
-  }, [stopDownloadTimers]);
+  }, [downloadStatus, stopDownloadTimers]);
 
   const handleResumeDownload = useCallback(() => {
     setShowCancelDownloadModal(false);
@@ -339,6 +349,17 @@ export default function VisitDetailPage() {
 
   const handleCloseDownloadCancelled = useCallback(() => {
     setShowDownloadCancelledModal(false);
+    setShowDownloadSheet(false);
+  }, []);
+
+  const handleOpenDownloadedFile = useCallback(() => {
+    triggerHaptic(8);
+    setShowDownloadSheet(false);
+    triggerToast(`Membuka ${visit.visitNumber}.pdf...`);
+  }, [triggerToast, visit.visitNumber]);
+
+  const handleCloseDownloadSuccess = useCallback(() => {
+    triggerHaptic(6);
     setShowDownloadSheet(false);
   }, []);
 
@@ -609,7 +630,7 @@ export default function VisitDetailPage() {
         </section>
       </div>
 
-      {/* Bottom Sheet Mengunduh Laporan */}
+      {/* Bottom Sheet Unduh Laporan (Mengunduh -> Berhasil Diunduh) */}
       {downloadMounted &&
         typeof document !== "undefined" &&
         createPortal(
@@ -617,7 +638,11 @@ export default function VisitDetailPage() {
             style={MOBILE_SCALE_VARS}
             role="dialog"
             aria-modal="true"
-            aria-label="Mengunduh Laporan"
+            aria-label={
+              downloadStatus === "completed"
+                ? "Laporan Berhasil Diunduh"
+                : "Mengunduh Laporan"
+            }
             className="fixed inset-0 z-[9999] flex items-end justify-center select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
           >
             <div
@@ -643,56 +668,112 @@ export default function VisitDetailPage() {
               {/* Drag Handle */}
               <div className="mx-auto mb-[calc(20*var(--u))] h-[calc(4*var(--u))] w-[calc(40*var(--u))] rounded-full bg-[#DCDCE2]" />
 
-              {/* Header PDF + Judul */}
-              <div className="flex items-center gap-[calc(14*var(--u))]">
-                <div className="flex h-[calc(58*var(--u))] w-[calc(58*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FCECEF]">
-                  <FilePdf
-                    weight="regular"
-                    className="h-[calc(30*var(--u))] w-[calc(30*var(--u))] text-[#C8102E]"
-                  />
-                </div>
+              {downloadStatus === "completed" ? (
+                <div className="moku-detail-enter">
+                  {/* Header PDF + Badge Centang Hijau */}
+                  <div className="flex items-center gap-[calc(14*var(--u))]">
+                    <div className="relative flex h-[calc(60*var(--u))] w-[calc(60*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FCECEF]">
+                      <FilePdf
+                        weight="regular"
+                        className="h-[calc(30*var(--u))] w-[calc(30*var(--u))] text-[#C8102E]"
+                      />
+                      <span className="absolute -bottom-[calc(1*var(--u))] -right-[calc(1*var(--u))] flex h-[calc(21*var(--u))] w-[calc(21*var(--u))] items-center justify-center rounded-full bg-[#1E9E3E] ring-[2.5px] ring-white">
+                        <Check
+                          weight="bold"
+                          className="h-[calc(12*var(--u))] w-[calc(12*var(--u))] text-white"
+                        />
+                      </span>
+                    </div>
 
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-display text-[calc(17*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]">
-                    Mengunduh Laporan
-                  </h3>
-                  <p className="mt-[calc(4*var(--u))] truncate text-[calc(13.5*var(--u))] font-normal text-[#5A555F]">
-                    {visit.visitNumber}.pdf
-                  </p>
-                </div>
-              </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-[calc(17*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]">
+                        Laporan Berhasil Diunduh
+                      </h3>
+                      <p className="mt-[calc(4*var(--u))] text-[calc(13*var(--u))] font-normal leading-[1.42] text-[#5A555F]">
+                        File {visit.visitNumber}.pdf berhasil disimpan di
+                        perangkat Anda.
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Progress Bar */}
-              <div className="mt-[calc(22*var(--u))]">
-                <div className="h-[calc(8*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E5EA]">
-                  <div
-                    style={{ width: `${downloadProgress}%` }}
-                    className="h-full rounded-full bg-[#8E001C] transition-[width] duration-100 ease-out"
-                  />
-                </div>
+                  {/* Tombol Aksi (Flat) */}
+                  <div className="mt-[calc(22*var(--u))] flex flex-col gap-[calc(11*var(--u))]">
+                    <button
+                      type="button"
+                      onClick={handleOpenDownloadedFile}
+                      style={{ color: "#FFFFFF" }}
+                      className="flex min-h-[calc(46*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] bg-[#8E001C] px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#730217]"
+                    >
+                      <ArrowSquareOut
+                        weight="bold"
+                        className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0"
+                      />
+                      Buka File
+                    </button>
 
-                {/* Metadata Progres */}
-                <div className="mt-[calc(10*var(--u))] flex items-center justify-between gap-[calc(10*var(--u))] text-[calc(12.5*var(--u))] font-normal tabular-nums text-[#4A454F]">
-                  <span>
-                    {formatMb(downloadedMb)} MB / {formatMb(DOWNLOAD_TOTAL_MB)}{" "}
-                    MB ({downloadProgress}%)
-                  </span>
-                  <span className="text-[#6E6873]">
-                    {downloadProgress >= 100
-                      ? "Selesai"
-                      : `~ ${remainingSeconds} detik lagi`}
-                  </span>
+                    <button
+                      type="button"
+                      onClick={handleCloseDownloadSuccess}
+                      className="flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(12*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
+                    >
+                      Selesai
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Header PDF + Judul */}
+                  <div className="flex items-center gap-[calc(14*var(--u))]">
+                    <div className="flex h-[calc(58*var(--u))] w-[calc(58*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FCECEF]">
+                      <FilePdf
+                        weight="regular"
+                        className="h-[calc(30*var(--u))] w-[calc(30*var(--u))] text-[#C8102E]"
+                      />
+                    </div>
 
-              {/* Tombol Batal (Outline, Flat) */}
-              <button
-                type="button"
-                onClick={handleRequestCancelDownload}
-                className="mt-[calc(22*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(12*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
-              >
-                Batal
-              </button>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-[calc(17*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]">
+                        Mengunduh Laporan
+                      </h3>
+                      <p className="mt-[calc(4*var(--u))] truncate text-[calc(13.5*var(--u))] font-normal text-[#5A555F]">
+                        {visit.visitNumber}.pdf
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-[calc(22*var(--u))]">
+                    <div className="h-[calc(8*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E5EA]">
+                      <div
+                        style={{ width: `${downloadProgress}%` }}
+                        className="h-full rounded-full bg-[#8E001C] transition-[width] duration-100 ease-out"
+                      />
+                    </div>
+
+                    {/* Metadata Progres */}
+                    <div className="mt-[calc(10*var(--u))] flex items-center justify-between gap-[calc(10*var(--u))] text-[calc(12.5*var(--u))] font-normal tabular-nums text-[#4A454F]">
+                      <span>
+                        {formatMb(downloadedMb)} MB /{" "}
+                        {formatMb(DOWNLOAD_TOTAL_MB)} MB ({downloadProgress}%)
+                      </span>
+                      <span className="text-[#6E6873]">
+                        {downloadProgress >= 100
+                          ? "Selesai"
+                          : `~ ${remainingSeconds} detik lagi`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tombol Batal (Outline, Flat) */}
+                  <button
+                    type="button"
+                    onClick={handleRequestCancelDownload}
+                    className="mt-[calc(22*var(--u))] flex min-h-[calc(46*var(--u))] w-full items-center justify-center rounded-[calc(12*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985] active:bg-[#FDF2F4]"
+                  >
+                    Batal
+                  </button>
+                </>
+              )}
             </div>
           </div>,
           document.body
@@ -883,4 +964,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-} 
+      }
