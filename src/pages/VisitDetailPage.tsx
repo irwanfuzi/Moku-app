@@ -111,6 +111,23 @@ function CancelDownloadIcon() {
   );
 }
 
+function DownloadCancelledIcon() {
+  return (
+    <span className="relative inline-flex items-center justify-center">
+      <FileText
+        weight="regular"
+        className="h-[calc(27*var(--u))] w-[calc(27*var(--u))] text-[#8E001C]"
+      />
+      <span className="absolute -bottom-[calc(2*var(--u))] -right-[calc(4*var(--u))] flex h-[calc(16*var(--u))] w-[calc(16*var(--u))] items-center justify-center rounded-full bg-[#B8001F] ring-[2px] ring-[#FCECEF]">
+        <X
+          weight="bold"
+          className="h-[calc(9.5*var(--u))] w-[calc(9.5*var(--u))] text-white"
+        />
+      </span>
+    </span>
+  );
+}
+
 /* =========================================================
    VISIT DETAIL PAGE
 ========================================================= */
@@ -131,12 +148,14 @@ export default function VisitDetailPage() {
   const [menuMounted, setMenuMounted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Download Laporan Sheet & Modal Konfirmasi Batal
+  // Download Laporan Sheet & Modal States
   const [showDownloadSheet, setShowDownloadSheet] = useState(false);
   const [downloadMounted, setDownloadMounted] = useState(false);
   const [downloadVisible, setDownloadVisible] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showCancelDownloadModal, setShowCancelDownloadModal] = useState(false);
+  const [showDownloadCancelledModal, setShowDownloadCancelledModal] =
+    useState(false);
 
   // Toast / Snackbar
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
@@ -277,6 +296,7 @@ export default function VisitDetailPage() {
           downloadRafRef.current = null;
           downloadCompleteTimerRef.current = window.setTimeout(() => {
             setShowCancelDownloadModal(false);
+            setShowDownloadCancelledModal(false);
             setShowDownloadSheet(false);
             triggerHaptic(12);
             triggerToast(`Laporan ${visit.visitNumber}.pdf berhasil diunduh.`);
@@ -295,6 +315,7 @@ export default function VisitDetailPage() {
     downloadElapsedRef.current = 0;
     setDownloadProgress(0);
     setShowCancelDownloadModal(false);
+    setShowDownloadCancelledModal(false);
     setShowDownloadSheet(true);
     runDownloadLoop(0);
   }, [runDownloadLoop]);
@@ -313,8 +334,13 @@ export default function VisitDetailPage() {
   const handleConfirmCancelDownload = useCallback(() => {
     stopDownloadTimers();
     setShowCancelDownloadModal(false);
-    setShowDownloadSheet(false);
+    setShowDownloadCancelledModal(true);
   }, [stopDownloadTimers]);
+
+  const handleCloseDownloadCancelled = useCallback(() => {
+    setShowDownloadCancelledModal(false);
+    setShowDownloadSheet(false);
+  }, []);
 
   const handleBackToDashboard = useCallback(() => {
     triggerHaptic(6);
@@ -322,6 +348,12 @@ export default function VisitDetailPage() {
   }, [navigateWithTransition]);
 
   const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showDownloadCancelledModal) {
+      triggerHaptic(6);
+      handleCloseDownloadCancelled();
+      rearmBackGesture();
+      return;
+    }
     if (showCancelDownloadModal) {
       triggerHaptic(6);
       handleResumeDownload();
@@ -677,6 +709,19 @@ export default function VisitDetailPage() {
         icon={<CancelDownloadIcon />}
         onConfirm={handleConfirmCancelDownload}
         onCancel={handleResumeDownload}
+      />
+
+      {/* Modal Info Unduhan Dibatalkan */}
+      <MokuModalDialog
+        isOpen={showDownloadCancelledModal}
+        title="Unduhan Dibatalkan"
+        description="Laporan tidak jadi diunduh."
+        confirmLabel="OK"
+        hideCancel
+        tone="danger"
+        icon={<DownloadCancelledIcon />}
+        onConfirm={handleCloseDownloadCancelled}
+        onCancel={handleCloseDownloadCancelled}
       />
 
       {/* Bottom Sheet Menu Opsi Lainnya */}
