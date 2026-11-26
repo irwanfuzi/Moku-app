@@ -34,6 +34,11 @@ import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
 import { useBackGesture } from "@/hooks/use-back-gesture";
 import {
+  generateVisitReportPdf,
+  triggerBrowserPdfDownload,
+  type GeneratedVisitPdf,
+} from "@/lib/visit-pdf";
+import {
   getVisitByNumber,
   VISIT_TYPE_LABELS,
   type VisitTypeCode,
@@ -49,8 +54,8 @@ const MOBILE_SCALE_VARS = {
 
 const SNACKBAR_EXIT_MS = 320;
 const SHEET_EXIT_MS = 360;
-const DOWNLOAD_TOTAL_MB = 2.0;
-const DOWNLOAD_DURATION_MS = 3600;
+const DEFAULT_DOWNLOAD_MB = 0.2;
+const DOWNLOAD_DURATION_MS = 2400;
 
 function formatIndonesianDate(isoDate: string): string {
   if (!isoDate) return "-";
@@ -157,6 +162,7 @@ export default function VisitDetailPage() {
     "downloading" | "completed"
   >("downloading");
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadTotalMb, setDownloadTotalMb] = useState(DEFAULT_DOWNLOAD_MB);
   const [showCancelDownloadModal, setShowCancelDownloadModal] = useState(false);
   const [showDownloadCancelledModal, setShowDownloadCancelledModal] =
     useState(false);
@@ -172,6 +178,7 @@ export default function VisitDetailPage() {
   const downloadRafRef = useRef<number | null>(null);
   const downloadCompleteTimerRef = useRef<number | null>(null);
   const downloadElapsedRef = useRef(0);
+  const generatedPdfRef = useRef<GeneratedVisitPdf | null>(null);
 
   const isMobileView = !isReady || isMobile;
 
@@ -259,6 +266,13 @@ export default function VisitDetailPage() {
     [dismissToast]
   );
 
+  const revokeGeneratedPdf = useCallback(() => {
+    if (generatedPdfRef.current) {
+      URL.revokeObjectURL(generatedPdfRef.current.url);
+      generatedPdfRef.current = null;
+    }
+  }, []);
+
   const stopDownloadTimers = useCallback(() => {
     if (downloadRafRef.current !== null) {
       cancelAnimationFrame(downloadRafRef.current);
@@ -273,6 +287,7 @@ export default function VisitDetailPage() {
   useEffect(() => {
     return () => {
       stopDownloadTimers();
+      revokeGeneratedPdf();
       if (toastAutoRef.current !== null) {
         window.clearTimeout(toastAutoRef.current);
       }
@@ -280,7 +295,7 @@ export default function VisitDetailPage() {
         window.clearTimeout(toastExitRef.current);
       }
     };
-  }, [stopDownloadTimers]);
+  }, [stopDownloadTimers, revokeGeneratedPdf]);
 
   const runDownloadLoop = useCallback(
     (initialElapsed: number) => {
@@ -300,6 +315,12 @@ export default function VisitDetailPage() {
         } else {
           downloadRafRef.current = null;
           downloadCompleteTimerRef.current = window.setTimeout(() => {
+            if (generatedPdfRef.current) {
+              triggerBrowserPdfDownload(
+                generatedPdfRef.current.url,
+                generatedPdfRef.current.filename
+              );
+            }
             setShowCancelDownloadModal(false);
             setShowDownloadCancelledModal(false);
             setDownloadStatus("completed");
@@ -316,6 +337,18 @@ export default function VisitDetailPage() {
 
   const handleDownloadPdf = useCallback(() => {
     triggerHaptic(10);
+    stopDownloadTimers();
+    revokeGeneratedPdf();
+
+    try {
+      const pdf = generateVisitReportPdf(visit);
+      generatedPdfRef.current = pdf;
+      setDownloadTotalMb(pdf.sizeMb);
+    } catch {
+      triggerToast("Gagal menyiapkan file PDF.");
+      return;
+    }
+
     downloadElapsedRef.current = 0;
     setDownloadProgress(0);
     setDownloadStatus("downloading");
@@ -323,7 +356,13 @@ export default function VisitDetailPage() {
     setShowDownloadCancelledModal(false);
     setShowDownloadSheet(true);
     runDownloadLoop(0);
-  }, [runDownloadLoop]);
+  }, [
+    visit,
+    stopDownloadTimers,
+    revokeGeneratedPdf,
+    runDownloadLoop,
+    triggerToast,
+  ]);
 
   const handleRequestCancelDownload = useCallback(() => {
     if (downloadStatus === "completed") {
@@ -343,9 +382,10 @@ export default function VisitDetailPage() {
 
   const handleConfirmCancelDownload = useCallback(() => {
     stopDownloadTimers();
+    revokeGeneratedPdf();
     setShowCancelDownloadModal(false);
     setShowDownloadCancelledModal(true);
-  }, [stopDownloadTimers]);
+  }, [stopDownloadTimers, revokeGeneratedPdf]);
 
   const handleCloseDownloadCancelled = useCallback(() => {
     setShowDownloadCancelledModal(false);
@@ -354,6 +394,13 @@ export default function VisitDetailPage() {
 
   const handleOpenDownloadedFile = useCallback(() => {
     triggerHaptic(8);
+    const pdf = generatedPdfRef.current;
+    if (pdf?.url) {
+      const opened = window.open(pdf.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        triggerBrowserPdfDownload(pdf.url, pdf.filename);
+      }
+    }
     setShowDownloadSheet(false);
     triggerToast(`Membuka ${visit.visitNumber}.pdf...`);
   }, [triggerToast, visit.visitNumber]);
@@ -415,7 +462,7 @@ export default function VisitDetailPage() {
   };
 
   const visitTypeDisplay = `${VISIT_TYPE_LABELS[visit.visitTypeCode]} (${visit.visitTypeCode})`;
-  const downloadedMb = (DOWNLOAD_TOTAL_MB * downloadProgress) / 100;
+  const downloadedMb = (downloadTotalMb * downloadProgress) / 100;
   const remainingSeconds = Math.max(
     1,
     Math.ceil(((100 - downloadProgress) / 100) * (DOWNLOAD_DURATION_MS / 1000))
@@ -754,7 +801,7 @@ export default function VisitDetailPage() {
                     <div className="mt-[calc(10*var(--u))] flex items-center justify-between gap-[calc(10*var(--u))] text-[calc(12.5*var(--u))] font-normal tabular-nums text-[#4A454F]">
                       <span>
                         {formatMb(downloadedMb)} MB /{" "}
-                        {formatMb(DOWNLOAD_TOTAL_MB)} MB ({downloadProgress}%)
+                        {formatMb(downloadTotalMb)} MB ({downloadProgress}%)
                       </span>
                       <span className="text-[#6E6873]">
                         {downloadProgress >= 100
@@ -964,4 +1011,4 @@ export default function VisitDetailPage() {
       `}</style>
     </main>
   );
-      }
+            }
