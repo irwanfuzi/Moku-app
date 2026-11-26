@@ -15,7 +15,8 @@ export function useBackGesture(active: boolean, onBack: () => void) {
   }, [onBack]);
 
   const arm = useCallback(() => {
-    if (typeof window === "undefined" || armedRef.current || !isEnabled) return;
+    if (typeof window === "undefined" || !isEnabled) return;
+    if (armedRef.current) return;
     window.history.pushState({ mokuBackGuard: true }, "", window.location.href);
     armedRef.current = true;
   }, [isEnabled]);
@@ -40,5 +41,12 @@ export function useBackGesture(active: boolean, onBack: () => void) {
     };
   }, [isEnabled, arm]);
 
-  return { rearm: arm };
+  const rearm = useCallback(() => {
+    armedRef.current = false;
+    window.setTimeout(() => {
+      arm();
+    }, 30);
+  }, [arm]);
+
+  return { rearm };
 }
