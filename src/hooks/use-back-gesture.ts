@@ -1,21 +1,27 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 
 export function useBackGesture(active: boolean, onBack: () => void) {
+  const { pathname } = useLocation();
+  const initialPathRef = useRef(pathname);
   const onBackRef = useRef(onBack);
   const armedRef = useRef(false);
+
+  const isCurrentRoute = pathname === initialPathRef.current;
+  const isEnabled = active && isCurrentRoute;
 
   useEffect(() => {
     onBackRef.current = onBack;
   }, [onBack]);
 
   const arm = useCallback(() => {
-    if (typeof window === "undefined" || armedRef.current) return;
+    if (typeof window === "undefined" || armedRef.current || !isEnabled) return;
     window.history.pushState({ mokuBackGuard: true }, "", window.location.href);
     armedRef.current = true;
-  }, []);
+  }, [isEnabled]);
 
   useEffect(() => {
-    if (!active || typeof window === "undefined") {
+    if (!isEnabled || typeof window === "undefined") {
       armedRef.current = false;
       return;
     }
@@ -23,6 +29,7 @@ export function useBackGesture(active: boolean, onBack: () => void) {
     arm();
 
     const handlePopState = () => {
+      if (window.location.pathname !== initialPathRef.current) return;
       armedRef.current = false;
       onBackRef.current();
     };
@@ -31,7 +38,7 @@ export function useBackGesture(active: boolean, onBack: () => void) {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [active, arm]);
+  }, [isEnabled, arm]);
 
   return { rearm: arm };
 }
