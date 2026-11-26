@@ -8,19 +8,23 @@ import {
 import { createPortal } from "react-dom";
 import {
   Bell,
+  Buildings,
   CaretRight,
   CheckCircle,
-  IdentificationBadge,
+  FileText,
   Info,
-  LockKey,
-  MapPin,
-  PencilSimple,
-  Phone,
+  Lock,
+  Moon,
+  Question,
+  ShieldCheck,
   SignOut,
+  Translate,
   User,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
+
+const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -37,7 +41,8 @@ function triggerHaptic(duration = 8) {
 export default function ProfilePage() {
   const { isMobile, isReady, navigateWithTransition } = useAppLayout();
 
-  const [notifEnabled, setNotifEnabled] = useState(true);
+  const [avatarError, setAvatarError] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
@@ -53,7 +58,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isMobileView) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) => meta.setAttribute("content", "#83051C"));
+    metas.forEach((meta) => meta.setAttribute("content", "#7A041B"));
   }, [isMobileView]);
 
   const dismissToast = useCallback(() => {
@@ -100,12 +105,12 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const handleToggleNotif = () => {
+  const handleToggleDarkMode = () => {
     triggerHaptic(8);
-    setNotifEnabled((prev) => {
+    setDarkMode((prev) => {
       const next = !prev;
       triggerToast(
-        next ? "Notifikasi kunjungan diaktifkan." : "Notifikasi dimatikan."
+        next ? "Mode Gelap segera hadir." : "Mode Terang aktif."
       );
       return next;
     });
@@ -120,156 +125,85 @@ export default function ProfilePage() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-white pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Marun */}
-      <header className="sticky top-0 z-40 w-full bg-[#83051C] text-white">
-        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between px-[calc(16*var(--u))] pb-[calc(14*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(12*var(--u)))]">
-          <h1 className="font-display text-[calc(18*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
-            Profil
+      {/* Header Profil Marun */}
+      <header className="w-full bg-[#7A041B] text-white">
+        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(24*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(22*var(--u)))] text-center">
+          {/* Avatar Lingkaran + Border Putih */}
+          <div className="flex h-[calc(94*var(--u))] w-[calc(94*var(--u))] items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]">
+            {!avatarError ? (
+              <img
+                src={AVATAR_URL}
+                alt="Budi Santoso"
+                onError={() => setAvatarError(true)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="font-display text-[calc(30*var(--u))] font-bold text-[#7A041B]">
+                BS
+              </span>
+            )}
+          </div>
+
+          {/* Nama & Email */}
+          <h1 className="mt-[calc(12*var(--u))] font-display text-[calc(21*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
+            Budi Santoso
           </h1>
-          <span className="rounded-full bg-white/15 px-[calc(10*var(--u))] py-[calc(4*var(--u))] text-[calc(11*var(--u))] font-semibold text-white">
-            v1.0.0
-          </span>
+          <p className="mt-[calc(3*var(--u))] text-[calc(13.5*var(--u))] font-normal text-white/90">
+            budi.santoso@moku.id
+          </p>
+
+          {/* Jabatan | Cabang */}
+          <div className="mt-[calc(11*var(--u))] flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(12.5*var(--u))] font-normal text-white/95">
+            <span className="inline-flex items-center gap-[calc(5*var(--u))]">
+              <User
+                weight="regular"
+                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+              />
+              Teknisi
+            </span>
+
+            <span className="h-[calc(13*var(--u))] w-[1px] bg-white/45" />
+
+            <span className="inline-flex items-center gap-[calc(5*var(--u))]">
+              <Buildings
+                weight="regular"
+                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+              />
+              Cabang Jakarta 3
+            </span>
+          </div>
         </div>
       </header>
 
-      {/* Body Konten */}
-      <div className="moku-profile-enter mx-auto w-full max-w-[680px] space-y-[calc(14*var(--u))] px-[calc(16*var(--u))] pt-[calc(16*var(--u))]">
-        {/* 1. Kartu Identitas Teknisi */}
-        <section className="flex items-center gap-[calc(14*var(--u))] rounded-[calc(16*var(--u))] bg-[#FDF4F5] px-[calc(15*var(--u))] py-[calc(15*var(--u))]">
-          <div className="flex h-[calc(58*var(--u))] w-[calc(58*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#8E001C] font-display text-[calc(20*var(--u))] font-bold text-white">
-            BS
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate font-display text-[calc(16.5*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]">
-              Budi Santoso
-            </h2>
-            <p className="mt-[calc(3*var(--u))] truncate text-[calc(12.5*var(--u))] font-normal text-[#5A555F]">
-              Teknisi Lapangan • TEK-001
-            </p>
-            <span className="mt-[calc(6*var(--u))] inline-flex items-center gap-[calc(4*var(--u))] rounded-full bg-[#DCF5E3] px-[calc(9*var(--u))] py-[calc(3*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#15803D]">
-              Aktif Bertugas
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              triggerToast("Fitur ubah profil segera tersedia.");
-            }}
-            aria-label="Ubah Profil"
-            className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-white text-[#8E001C] transition-transform duration-200 active:scale-95"
-          >
-            <PencilSimple
-              weight="bold"
-              className="h-[calc(17*var(--u))] w-[calc(17*var(--u))]"
-            />
-          </button>
-        </section>
-
-        {/* 2. Ringkasan Kunjungan */}
-        <section className="grid grid-cols-2 gap-[calc(10*var(--u))]">
-          <div className="rounded-[calc(14*var(--u))] bg-[#F7F7F9] px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
-            <p className="text-[calc(11.5*var(--u))] font-normal text-[#5A555F]">
-              Kunjungan Bulan Ini
-            </p>
-            <p className="mt-[calc(4*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-none text-[#171717]">
-              24
-            </p>
-          </div>
-
-          <div className="rounded-[calc(14*var(--u))] bg-[#F7F7F9] px-[calc(14*var(--u))] py-[calc(12*var(--u))]">
-            <p className="text-[calc(11.5*var(--u))] font-normal text-[#5A555F]">
-              Total Kunjungan
-            </p>
-            <p className="mt-[calc(4*var(--u))] font-display text-[calc(20*var(--u))] font-bold leading-none text-[#8E001C]">
-              148
-            </p>
-          </div>
-        </section>
-
-        {/* 3. Informasi Akun */}
+      {/* Konten Menu Profil */}
+      <div className="moku-profile-enter mx-auto w-full max-w-[680px] space-y-[calc(18*var(--u))] px-[calc(16*var(--u))] pt-[calc(20*var(--u))]">
+        {/* 1. Seksi Akun */}
         <section>
-          <h3 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Informasi Akun
-          </h3>
+          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+            Akun
+          </h2>
 
-          <div className="divide-y divide-[#ECECF0] rounded-[calc(16*var(--u))] bg-[#F7F7F9] px-[calc(15*var(--u))]">
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
-              <IdentificationBadge
-                weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#8E001C]"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[calc(11.5*var(--u))] text-[#5A555F]">
-                  ID Karyawan
-                </p>
-                <p className="truncate text-[calc(13*var(--u))] font-semibold text-[#171717]">
-                  TEK-001
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
-              <Phone
-                weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#8E001C]"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[calc(11.5*var(--u))] text-[#5A555F]">
-                  Nomor Telepon
-                </p>
-                <p className="truncate text-[calc(13*var(--u))] font-semibold text-[#171717]">
-                  0812-3456-7890
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
-              <MapPin
-                weight="regular"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#8E001C]"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[calc(11.5*var(--u))] text-[#5A555F]">
-                  Area Tugas
-                </p>
-                <p className="truncate text-[calc(13*var(--u))] font-semibold text-[#171717]">
-                  Jakarta Selatan & Pusat
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Pengaturan */}
-        <section>
-          <h3 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(13.5*var(--u))] font-bold text-[#171717]">
-            Pengaturan
-          </h3>
-
-          <div className="divide-y divide-[#ECECF0] rounded-[calc(16*var(--u))] border border-[#E6E6EC] bg-white px-[calc(15*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
-                triggerToast("Menu ubah data diri segera tersedia.");
+                triggerToast("Halaman Informasi Akun segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13*var(--u))] text-left active:opacity-75"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#171717]">
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
                 <User
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#8E001C]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
                 />
-                Ubah Data Diri
+                Informasi Akun
               </span>
               <CaretRight
-                weight="bold"
-                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#8E8A94]"
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
               />
             </button>
 
@@ -277,46 +211,98 @@ export default function ProfilePage() {
               type="button"
               onClick={() => {
                 triggerHaptic(6);
-                triggerToast("Menu ubah kata sandi segera tersedia.");
+                triggerToast("Halaman Ubah Kata Sandi segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13*var(--u))] text-left active:opacity-75"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                <LockKey
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <Lock
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#8E001C]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
                 />
-                Keamanan & Kata Sandi
+                Ubah Kata Sandi
               </span>
               <CaretRight
-                weight="bold"
-                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#8E8A94]"
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
               />
             </button>
 
-            <div className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(12*var(--u))]">
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#171717]">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                triggerToast("Halaman Keamanan Akun segera tersedia.");
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <ShieldCheck
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
+                />
+                Keamanan Akun
+              </span>
+              <CaretRight
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+              />
+            </button>
+          </div>
+        </section>
+
+        {/* 2. Seksi Preferensi */}
+        <section>
+          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+            Preferensi
+          </h2>
+
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                navigateWithTransition("/notifications", "forward");
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
                 <Bell
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#8E001C]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
                 />
-                Notifikasi Kunjungan
+                Notifikasi
+              </span>
+              <CaretRight
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+              />
+            </button>
+
+            <div className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(12.5*var(--u))]">
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <Moon
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
+                />
+                Mode Gelap
               </span>
 
               <button
                 type="button"
                 role="switch"
-                aria-checked={notifEnabled}
-                onClick={handleToggleNotif}
-                className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(42*var(--u))] shrink-0 items-center rounded-full transition-colors duration-200 ${
-                  notifEnabled ? "bg-[#8E001C]" : "bg-[#D1D1D8]"
+                aria-checked={darkMode}
+                aria-label="Mode Gelap"
+                onClick={handleToggleDarkMode}
+                className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center rounded-full transition-colors duration-200 ${
+                  darkMode ? "bg-[#7A041B]" : "bg-[#C8C8CE]"
                 }`}
               >
                 <span
-                  className={`inline-block h-[calc(18*var(--u))] w-[calc(18*var(--u))] rounded-full bg-white transition-transform duration-200 ${
-                    notifEnabled
-                      ? "translate-x-[calc(21*var(--u))]"
-                      : "translate-x-[calc(3*var(--u))]"
+                  className={`inline-block h-[calc(19*var(--u))] w-[calc(19*var(--u))] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    darkMode
+                      ? "translate-x-[calc(22*var(--u))]"
+                      : "translate-x-[calc(2.5*var(--u))]"
                   }`}
                 />
               </button>
@@ -326,41 +312,128 @@ export default function ProfilePage() {
               type="button"
               onClick={() => {
                 triggerHaptic(6);
-                triggerToast("MOKU — Monitoring Operasional Kunjungan Unit v1.0.0");
+                triggerToast("Bahasa aktif: Bahasa Indonesia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13*var(--u))] text-left active:opacity-75"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                <Info
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <Translate
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#8E001C]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
                 />
-                Tentang Aplikasi
+                Bahasa
               </span>
-              <CaretRight
-                weight="bold"
-                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))] text-[#8E8A94]"
-              />
+
+              <span className="flex items-center gap-[calc(6*var(--u))]">
+                <span className="text-[calc(13*var(--u))] font-normal text-[#6B6B76]">
+                  Bahasa Indonesia
+                </span>
+                <CaretRight
+                  weight="regular"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                />
+              </span>
             </button>
           </div>
         </section>
 
-        {/* 5. Tombol Keluar */}
-        <section className="pt-[calc(4*var(--u))]">
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(10);
-              setShowLogoutModal(true);
-            }}
-            className="flex min-h-[calc(46*var(--u))] w-full items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(13*var(--u))] border border-[#8E001C] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#8E001C] transition-[transform,background-color] duration-[260ms] active:scale-[0.985] active:bg-[#FDF2F4]"
-          >
-            <SignOut
-              weight="bold"
-              className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
-            />
-            Keluar Akun
-          </button>
+        {/* 3. Seksi Lainnya */}
+        <section>
+          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+            Lainnya
+          </h2>
+
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                triggerToast("Halaman Kebijakan Privasi segera tersedia.");
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <FileText
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
+                />
+                Kebijakan Privasi
+              </span>
+              <CaretRight
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                triggerToast("Halaman Pusat Bantuan segera tersedia.");
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <Question
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
+                />
+                Pusat Bantuan
+              </span>
+              <CaretRight
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(6);
+                triggerToast("MOKU — Monitoring Operasional Kunjungan Unit v1.4.0");
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+                <Info
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
+                />
+                Tentang MOKU
+              </span>
+
+              <span className="flex items-center gap-[calc(6*var(--u))]">
+                <span className="text-[calc(13*var(--u))] font-normal text-[#6B6B76]">
+                  v1.4.0
+                </span>
+                <CaretRight
+                  weight="regular"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                />
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(10);
+                setShowLogoutModal(true);
+              }}
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-semibold text-[#C8102E]">
+                <SignOut
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#C8102E]"
+                />
+                Keluar Akun
+              </span>
+              <CaretRight
+                weight="regular"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+              />
+            </button>
+          </div>
         </section>
       </div>
 
