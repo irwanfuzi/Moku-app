@@ -751,14 +751,6 @@ export default function EditVisitPage() {
     existingVisit,
   ]);
 
-  const { rearm: rearmBackGesture } = useBackGesture(
-    hasUnsavedChanges && !showExitModal,
-    () => {
-      triggerHaptic(10);
-      setShowExitModal(true);
-    }
-  );
-
   const selectedVisitTypeObj = useMemo(
     () =>
       VISIT_TYPE_OPTIONS.find((item) => item.code === visitType) ??
@@ -853,7 +845,11 @@ export default function EditVisitPage() {
   const handleRequestCancel = useCallback(() => {
     if (isSaving) return;
     if (updatedVisit) {
-      handleBackToDashboard();
+      triggerHaptic(6);
+      navigateWithTransition(
+        `/visits/detail/${encodeURIComponent(updatedVisit.visitNumber)}`,
+        "back"
+      );
       return;
     }
     if (hasUnsavedChanges) {
@@ -867,9 +863,37 @@ export default function EditVisitPage() {
     isSaving,
     updatedVisit,
     hasUnsavedChanges,
-    handleBackToDashboard,
+    navigateWithTransition,
     handleBackToDetail,
   ]);
+
+  const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showDateSheet || showVisitTypeSheet || showTechSheet) {
+      triggerHaptic(6);
+      setShowDateSheet(false);
+      setShowVisitTypeSheet(false);
+      setShowTechSheet(false);
+      rearmBackGesture();
+      return;
+    }
+    if (showExitModal) {
+      triggerHaptic(6);
+      setShowExitModal(false);
+      rearmBackGesture();
+      return;
+    }
+    if (isSaving) {
+      rearmBackGesture();
+      return;
+    }
+    if (hasUnsavedChanges && !updatedVisit) {
+      triggerHaptic(10);
+      setShowExitModal(true);
+      rearmBackGesture();
+      return;
+    }
+    handleRequestCancel();
+  });
 
   const handleConfirmExit = useCallback(() => {
     setShowExitModal(false);
