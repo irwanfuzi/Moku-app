@@ -34,6 +34,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
+import { useBackGesture } from "@/hooks/use-back-gesture";
 import {
   getVisitByNumber,
   saveVisitRecord,
@@ -750,6 +751,14 @@ export default function EditVisitPage() {
     existingVisit,
   ]);
 
+  const { rearm: rearmBackGesture } = useBackGesture(
+    hasUnsavedChanges && !showExitModal,
+    () => {
+      triggerHaptic(10);
+      setShowExitModal(true);
+    }
+  );
+
   const selectedVisitTypeObj = useMemo(
     () =>
       VISIT_TYPE_OPTIONS.find((item) => item.code === visitType) ??
@@ -864,8 +873,11 @@ export default function EditVisitPage() {
 
   const handleConfirmExit = useCallback(() => {
     setShowExitModal(false);
-    handleBackToDetail();
-  }, [handleBackToDetail]);
+    navigateWithTransition(
+      `/visits/detail/${encodeURIComponent(existingVisit.visitNumber)}`,
+      "back"
+    );
+  }, [navigateWithTransition, existingVisit.visitNumber]);
 
   const handleChooseVisitType = (code: VisitTypeCode) => {
     triggerHaptic(8);
@@ -1338,12 +1350,15 @@ export default function EditVisitPage() {
       <MokuModalDialog
         isOpen={showExitModal}
         title="Buang Perubahan?"
-        description="Perubahan yang sudah kamu buat belum disimpan dan akan hilang jika keluar sekarang."
+        description="Perubahan belum disimpan dan akan hilang."
         confirmLabel="Ya, Buang"
         cancelLabel="Lanjut Ubah"
         tone="danger"
         onConfirm={handleConfirmExit}
-        onCancel={() => setShowExitModal(false)}
+        onCancel={() => {
+          setShowExitModal(false);
+          rearmBackGesture();
+        }}
       />
 
       {/* Bottom Sheet Kalender */}
@@ -1682,4 +1697,4 @@ export default function EditVisitPage() {
       `}</style>
     </main>
   );
-          }
+}
