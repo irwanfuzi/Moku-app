@@ -190,7 +190,15 @@ export default function VisitDetailPage() {
     navigateWithTransition("/", "back");
   }, [navigateWithTransition]);
 
-  useBackGesture(true, handleBackToDashboard);
+  const { rearm: rearmBackGesture } = useBackGesture(true, () => {
+    if (showMenuSheet) {
+      triggerHaptic(6);
+      setShowMenuSheet(false);
+      rearmBackGesture();
+      return;
+    }
+    handleBackToDashboard();
+  });
 
   const handleCopyVisitNumber = async () => {
     triggerHaptic(8);
