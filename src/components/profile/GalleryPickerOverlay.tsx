@@ -354,9 +354,10 @@ export default function GalleryPickerOverlay({
     setAdjustingUrl(selectedItem.src);
   };
 
-  const handleRotatePhoto = () => {
+  // Putar searah jarum jam bertahap: 90, 180, 270, 360, dst.
+  const handleRotateClockwise = () => {
     triggerHaptic(7);
-    setRotation((prev) => (prev + 90) % 360);
+    setRotation((prev) => prev + 90);
   };
 
   const handleCancelAdjust = () => {
@@ -421,7 +422,6 @@ export default function GalleryPickerOverlay({
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Hitung transformasi relatif terhadap pusat lingkaran crop
     const imgRect = imgEl.getBoundingClientRect();
     const imgCenterX = imgRect.left + imgRect.width / 2;
     const imgCenterY = imgRect.top + imgRect.height / 2;
@@ -436,11 +436,18 @@ export default function GalleryPickerOverlay({
 
     const relCenterX = (imgCenterX - circleCenterX) * outputScale;
     const relCenterY = (imgCenterY - circleCenterY) * outputScale;
+    const normalizedDeg = ((rotation % 360) + 360) % 360;
 
     ctx.save();
-    ctx.translate(canvas.width / 2 + relCenterX, canvas.height / 2 + relCenterY);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(zoom * outputScale * baseFitScale, zoom * outputScale * baseFitScale);
+    ctx.translate(
+      canvas.width / 2 + relCenterX,
+      canvas.height / 2 + relCenterY
+    );
+    ctx.rotate((normalizedDeg * Math.PI) / 180);
+    ctx.scale(
+      zoom * outputScale * baseFitScale,
+      zoom * outputScale * baseFitScale
+    );
     ctx.drawImage(imgEl, -natW / 2, -natH / 2, natW, natH);
     ctx.restore();
 
@@ -516,7 +523,7 @@ export default function GalleryPickerOverlay({
           style={{ touchAction: "none" }}
           className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-grab flex-col items-center justify-center overflow-hidden bg-[#26262A] active:cursor-grabbing"
         >
-          {/* Foto yang dapat di-pan, di-zoom, dan di-rotasi */}
+          {/* Foto yang dapat di-pan, di-zoom, dan di-rotasi searah jarum jam */}
           <img
             ref={cropImageRef}
             src={adjustingUrl}
@@ -566,7 +573,7 @@ export default function GalleryPickerOverlay({
           </p>
         </div>
 
-        {/* Panel Bawah Putih: Slider Zoom + Tombol Rotasi + Tombol Batal & Simpan */}
+        {/* Panel Bawah Putih: Slider Zoom + Tombol Rotasi Searah Jarum Jam + Tombol Batal & Simpan */}
         <div
           style={{
             paddingTop: "calc(18 * var(--u))",
@@ -575,7 +582,6 @@ export default function GalleryPickerOverlay({
           className="w-full bg-white px-[calc(16*var(--u))] text-[#171717]"
         >
           <div className="mx-auto w-full max-w-[680px]">
-            {/* Kontrol Zoom (- / Slider / +) + Tombol Rotasi (↻) */}
             <div
               style={{ marginBottom: "calc(20 * var(--u))" }}
               className="mx-auto flex w-full max-w-[520px] items-center gap-[calc(12*var(--u))]"
@@ -646,8 +652,8 @@ export default function GalleryPickerOverlay({
 
               <button
                 type="button"
-                onClick={handleRotatePhoto}
-                aria-label="Putar Foto 90 Derajat"
+                onClick={handleRotateClockwise}
+                aria-label="Putar Searah Jarum Jam"
                 style={{
                   width: "calc(54 * var(--u))",
                   height: "calc(40 * var(--u))",
@@ -661,7 +667,6 @@ export default function GalleryPickerOverlay({
               </button>
             </div>
 
-            {/* Tombol Batal & Simpan */}
             <div className="grid grid-cols-2 gap-[calc(12*var(--u))]">
               <button
                 type="button"
