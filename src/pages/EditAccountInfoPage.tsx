@@ -92,34 +92,34 @@ function isRepeatedOrMash(text: string): boolean {
 
 function getEmailError(value: string): string | undefined {
   const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return "Alamat email wajib diisi.";
+  if (!trimmed) return "Email wajib diisi (contoh: nama@domain.com).";
   if (/\s/.test(trimmed) || trimmed.includes("..")) {
-    return "Format email tidak valid (tidak boleh spasi atau titik ganda).";
+    return "Format email tidak valid (tanpa spasi atau '..').";
   }
 
   const parts = trimmed.split("@");
   if (parts.length !== 2) {
-    return "Format email tidak valid (harus menggunakan satu tanda @).";
+    return "Format email tidak valid (harus satu '@').";
   }
 
   const [localPart, domainPart] = parts;
   if (!localPart || localPart.length < 2) {
-    return "Bagian nama email sebelum @ minimal 2 karakter.";
+    return "Format email tidak valid (awal email min. 2 karakter).";
   }
   if (
     localPart.startsWith(".") ||
     localPart.endsWith(".") ||
     !/^[a-z0-9._%+-]+$/.test(localPart)
   ) {
-    return "Karakter pada bagian depan email tidak valid.";
+    return "Format email tidak valid (karakter awal tidak diizinkan).";
   }
   if (isRepeatedOrMash(localPart)) {
-    return "Nama email terdeteksi asal ketik atau pola berulang.";
+    return "Format email tidak valid (hindari pola ketikan acak).";
   }
 
   const domainLabels = domainPart.split(".");
   if (domainLabels.length < 2) {
-    return "Domain email harus memiliki ekstensi (contoh: moku.id atau gmail.com).";
+    return "Format email tidak valid (gunakan domain seperti moku.id / gmail.com).";
   }
 
   for (const label of domainLabels) {
@@ -130,7 +130,7 @@ function getEmailError(value: string): string | undefined {
       label.endsWith("-") ||
       !/^[a-z0-9-]+$/.test(label)
     ) {
-      return "Format nama domain email tidak valid.";
+      return "Format email tidak valid (struktur domain salah).";
     }
   }
 
@@ -149,7 +149,7 @@ function getEmailError(value: string): string | undefined {
     : null;
 
   if (!matchedTld) {
-    return "Ekstensi domain belum didukung (gunakan .id, .co.id, .com, .org, .net, dll.).";
+    return "Format email tidak valid (ekstensi harus .id, .co.id, .com, .org, .net).";
   }
 
   const hostWithoutTld = trimmed.slice(
@@ -158,8 +158,12 @@ function getEmailError(value: string): string | undefined {
   );
   const hostNamePart = hostWithoutTld.split(".").pop() || "";
 
-  if (!hostNamePart || hostNamePart.length < 2 || isRepeatedOrMash(hostNamePart)) {
-    return "Nama domain email tidak valid atau terdeteksi asal ketik.";
+  if (
+    !hostNamePart ||
+    hostNamePart.length < 2 ||
+    isRepeatedOrMash(hostNamePart)
+  ) {
+    return "Format email tidak valid (nama domain tidak sesuai).";
   }
 
   return undefined;
@@ -310,7 +314,6 @@ export default function EditAccountInfoPage() {
     [email, fullName]
   );
 
-  // Cek ketersediaan username HANYA ketika username diubah
   useEffect(() => {
     if (usernameCheckRef.current !== null) {
       window.clearTimeout(usernameCheckRef.current);
@@ -463,7 +466,6 @@ export default function EditAccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -494,14 +496,12 @@ export default function EditAccountInfoPage() {
         </div>
       </header>
 
-      {/* Form Utama (Submit Enter dinonaktifkan) */}
       <form
         onSubmit={(e) => e.preventDefault()}
         onKeyDown={handlePreventEnter}
         noValidate
         className="moku-edit-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]"
       >
-        {/* Avatar + Ubah Foto Profil */}
         <section className="flex flex-col items-center text-center">
           <div
             style={{ marginBottom: "calc(12 * var(--u))" }}
@@ -560,7 +560,6 @@ export default function EditAccountInfoPage() {
           </button>
         </section>
 
-        {/* Kartu 1: Data Pribadi */}
         <section
           style={{ marginTop: "calc(20 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -573,7 +572,6 @@ export default function EditAccountInfoPage() {
           </h2>
 
           <div className="space-y-[calc(16*var(--u))]">
-            {/* Nama Lengkap */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -626,7 +624,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Username */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -707,7 +704,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email (error langsung muncul saat mengetik jika belum valid) */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -770,7 +766,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Nomor Telepon */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -791,7 +786,6 @@ export default function EditAccountInfoPage() {
                   Nomor Telepon <span className="text-[#C8102E]">*</span>
                 </label>
                 <div className="flex items-center gap-[calc(8*var(--u))]">
-                  {/* Kode Negara +62 */}
                   <button
                     type="button"
                     onClick={() => {
@@ -818,7 +812,6 @@ export default function EditAccountInfoPage() {
                     />
                   </button>
 
-                  {/* Input Nomor */}
                   <input
                     id="edit-phone"
                     type="tel"
@@ -858,7 +851,6 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Kartu 2: Data Operasional (Read-Only / Locked) */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -871,7 +863,6 @@ export default function EditAccountInfoPage() {
           </h2>
 
           <div className="space-y-[calc(16*var(--u))]">
-            {/* Jabatan / Role (Terkunci) */}
             <div className="flex items-end gap-[calc(12*var(--u))]">
               <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
                 <Briefcase
@@ -903,7 +894,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Cabang (Terkunci) */}
             <div className="flex items-end gap-[calc(12*var(--u))]">
               <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
                 <Buildings
@@ -935,7 +925,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Banner Info */}
             <div className="flex items-start gap-[calc(12*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <Info
                 weight="regular"
@@ -952,7 +941,6 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Aksi dengan Micro-Interaksi */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="space-y-[calc(12*var(--u))]"
@@ -1001,7 +989,6 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
-      {/* Snackbar Feedback */}
       {toast &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1129,4 +1116,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-        }
+                  }
