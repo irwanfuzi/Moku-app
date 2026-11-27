@@ -92,34 +92,34 @@ function isRepeatedOrMash(text: string): boolean {
 
 function getEmailError(value: string): string | undefined {
   const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return "Email wajib diisi (contoh: nama@domain.com).";
+  if (!trimmed) return "Format email tidak valid";
   if (/\s/.test(trimmed) || trimmed.includes("..")) {
-    return "Format email tidak valid (tanpa spasi atau '..').";
+    return "Format email tidak valid";
   }
 
   const parts = trimmed.split("@");
   if (parts.length !== 2) {
-    return "Format email tidak valid (harus satu '@').";
+    return "Format email tidak valid";
   }
 
   const [localPart, domainPart] = parts;
   if (!localPart || localPart.length < 2) {
-    return "Format email tidak valid (awal email min. 2 karakter).";
+    return "Format email tidak valid";
   }
   if (
     localPart.startsWith(".") ||
     localPart.endsWith(".") ||
     !/^[a-z0-9._%+-]+$/.test(localPart)
   ) {
-    return "Format email tidak valid (karakter awal tidak diizinkan).";
+    return "Format email tidak valid";
   }
   if (isRepeatedOrMash(localPart)) {
-    return "Format email tidak valid (hindari pola ketikan acak).";
+    return "Format email tidak valid";
   }
 
   const domainLabels = domainPart.split(".");
   if (domainLabels.length < 2) {
-    return "Format email tidak valid (gunakan domain seperti moku.id / gmail.com).";
+    return "Format email tidak valid";
   }
 
   for (const label of domainLabels) {
@@ -130,7 +130,7 @@ function getEmailError(value: string): string | undefined {
       label.endsWith("-") ||
       !/^[a-z0-9-]+$/.test(label)
     ) {
-      return "Format email tidak valid (struktur domain salah).";
+      return "Format email tidak valid";
     }
   }
 
@@ -149,7 +149,7 @@ function getEmailError(value: string): string | undefined {
     : null;
 
   if (!matchedTld) {
-    return "Format email tidak valid (ekstensi harus .id, .co.id, .com, .org, .net).";
+    return "Format email tidak valid";
   }
 
   const hostWithoutTld = trimmed.slice(
@@ -163,7 +163,7 @@ function getEmailError(value: string): string | undefined {
     hostNamePart.length < 2 ||
     isRepeatedOrMash(hostNamePart)
   ) {
-    return "Format email tidak valid (nama domain tidak sesuai).";
+    return "Format email tidak valid";
   }
 
   return undefined;
@@ -1116,4 +1116,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-                  }
+}
