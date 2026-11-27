@@ -58,7 +58,6 @@ export default function GalleryPickerOverlay({
   onSelectPhoto,
 }: GalleryPickerOverlayProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const autoOpenedRef = useRef(false);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
@@ -133,7 +132,6 @@ export default function GalleryPickerOverlay({
 
   useEffect(() => {
     if (!isOpen) {
-      autoOpenedRef.current = false;
       setIsAlbumMenuOpen(false);
       setDragX(0);
       setIsDragging(false);
@@ -152,28 +150,13 @@ export default function GalleryPickerOverlay({
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
 
-    // Buka pemilih galeri perangkat otomatis saat masuk menu galeri jika belum ada foto terpilih
-    if (!autoOpenedRef.current && devicePhotos.length === 0) {
-      autoOpenedRef.current = true;
-      const t = window.setTimeout(() => {
-        fileInputRef.current?.click();
-      }, 180);
-      return () => {
-        window.clearTimeout(t);
-        if (closeTimerRef.current !== null) {
-          window.clearTimeout(closeTimerRef.current);
-          closeTimerRef.current = null;
-        }
-      };
-    }
-
     return () => {
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
     };
-  }, [devicePhotos.length, isOpen]);
+  }, [isOpen]);
 
   // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
@@ -456,7 +439,7 @@ export default function GalleryPickerOverlay({
           )}
         </div>
 
-        {/* Grid 3 Kolom + Slot Pilih Foto Perangkat */}
+        {/* Grid 3 Kolom + Kartu Pilih dari Perangkat */}
         <div className="grid grid-cols-3 gap-[calc(10*var(--u))]">
           {visibleItems.map((item) => {
             const isSelected = item.id === selectedId;
@@ -503,11 +486,11 @@ export default function GalleryPickerOverlay({
             );
           })}
 
-          {/* Kartu Pilih Foto dari Galeri Perangkat */}
+          {/* Kartu Pilih dari Perangkat */}
           <button
             type="button"
             onClick={openDevicePicker}
-            aria-label="Pilih Foto dari Perangkat"
+            aria-label="Pilih dari Perangkat"
             className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(12*var(--u))] border border-dashed border-[#D4D4DC] bg-[#FAFAFB] p-[calc(8*var(--u))] text-center transition-colors active:bg-[#FDF2F4]"
           >
             <span className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
@@ -523,7 +506,7 @@ export default function GalleryPickerOverlay({
         </div>
       </div>
 
-      {/* Bottom Bar: Counter "1 foto dipilih" & Tombol "Gunakan Foto" */}
+      {/* Bottom Bar: Counter & Tombol "Gunakan Foto" */}
       <div
         style={{
           paddingTop: "calc(12 * var(--u))",
