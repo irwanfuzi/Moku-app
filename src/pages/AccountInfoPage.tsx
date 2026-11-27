@@ -11,6 +11,7 @@ import {
   Briefcase,
   Buildings,
   EnvelopeSimple,
+  PencilSimple,
   Phone,
   User,
 } from "@phosphor-icons/react";
@@ -83,37 +84,53 @@ export default function AccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(96*var(--u)+env(safe-area-inset-bottom))]"
     >
+      {/* Top Header Marun */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
             paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
             paddingBottom: "calc(12 * var(--u))",
           }}
-          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
+          className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
         >
+          <div className="flex items-center gap-[calc(8*var(--u))]">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Kembali"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-white/15"
+            >
+              <ArrowLeft
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            </button>
+
+            <h1
+              style={{ margin: 0 }}
+              className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-white"
+            >
+              Informasi Akun
+            </h1>
+          </div>
+
           <button
             type="button"
-            onClick={handleBack}
-            aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-white/15"
+            onClick={handleOpenEdit}
+            aria-label="Ubah Informasi Akun"
+            className="flex h-[calc(34*var(--u))] cursor-pointer items-center gap-[calc(6*var(--u))] rounded-full bg-white/14 px-[calc(12*var(--u))] text-[calc(12*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-95 active:bg-white/25"
           >
-            <ArrowLeft
-              weight="regular"
-              className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+            <PencilSimple
+              weight="bold"
+              className="h-[calc(14*var(--u))] w-[calc(14*var(--u))]"
             />
+            <span>Ubah</span>
           </button>
-
-          <h1
-            style={{ margin: 0 }}
-            className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-white"
-          >
-            Informasi Akun
-          </h1>
         </div>
       </header>
 
       <div className="moku-info-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* Avatar 120u Tanpa Nama & Label Jabatan di Bawahnya */}
+        {/* Avatar 120u Bersih Tanpa Nama & Label Jabatan di Bawahnya */}
         <section className="flex flex-col items-center text-center">
           <div
             key={avatarSrc}
@@ -139,7 +156,7 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Data Pribadi */}
+        {/* Kartu Data Pribadi */}
         <section
           style={{ marginTop: "calc(22 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -246,7 +263,7 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Data Operasional */}
+        {/* Kartu Data Operasional */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -305,21 +322,6 @@ export default function AccountInfoPage() {
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Tombol Ubah Informasi Akun */}
-        <section style={{ marginTop: "calc(24 * var(--u))" }}>
-          <button
-            type="button"
-            onClick={handleOpenEdit}
-            style={{
-              backgroundColor: "#740319",
-              color: "#FFFFFF",
-            }}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(116,3,25,0.22)] transition-[transform,background-color] duration-200 active:scale-[0.985]"
-          >
-            <span>Ubah Informasi Akun</span>
-          </button>
         </section>
       </div>
 
