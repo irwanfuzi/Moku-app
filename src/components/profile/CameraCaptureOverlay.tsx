@@ -204,6 +204,16 @@ export default function CameraCaptureOverlay({
     setIsDragging(false);
     setIsExiting(false);
 
+    if (typeof window !== "undefined") {
+      lockedUrlRef.current = window.location.href;
+      window.history.pushState(
+        { mokuCameraOverlay: true },
+        "",
+        lockedUrlRef.current
+      );
+      guardActiveRef.current = true;
+    }
+
     return () => {
       stopStream();
       if (closeTimerRef.current !== null) {
@@ -239,25 +249,19 @@ export default function CameraCaptureOverlay({
   }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    lockedUrlRef.current = window.location.href;
-    window.history.pushState(
-      { mokuCameraOverlay: true },
-      "",
-      lockedUrlRef.current
-    );
-    guardActiveRef.current = true;
+    if (!isOpen || typeof window === "undefined") return;
 
     const handlePopState = (ev: PopStateEvent) => {
       if (!guardActiveRef.current) return;
+      ev.preventDefault();
       ev.stopImmediatePropagation();
 
       window.history.pushState(
         { mokuCameraRestored: true },
         "",
-        lockedUrlRef.current
+        lockedUrlRef.current || window.location.href
       );
+
       if (previewUrl) {
         handleRetakePhoto();
       } else {
@@ -267,6 +271,7 @@ export default function CameraCaptureOverlay({
 
     const handleIonBack = (ev: Event) => {
       if (!guardActiveRef.current) return;
+      ev.preventDefault();
       ev.stopImmediatePropagation();
       const customEv = ev as CustomEvent<{
         register: (priority: number, handler: () => void) => void;
@@ -292,9 +297,26 @@ export default function CameraCaptureOverlay({
     return () => {
       window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
-      guardActiveRef.current = false;
     };
   }, [handleRetakePhoto, isOpen, previewUrl, triggerOverlayClose]);
+
+  useEffect(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track || !track.getCapabilities) return;
+
+    const caps = track.getCapabilities() as MediaTrackCapabilities & {
+      torch?: boolean;
+    };
+    if (caps.torch && facingMode === "environment") {
+      track
+        .applyConstraints({
+          advanced: [{ torch: flashMode === "on" } as MediaTrackConstraintSet],
+        })
+        .catch(() => {});
+    }
+  }, [flashMode, facingMode, cameraReady]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -715,7 +737,7 @@ export default function CameraCaptureOverlay({
               type="button"
               onClick={() => triggerOverlayClose()}
               aria-label="Kembali"
-              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
               <ArrowLeft
                 weight="regular"
@@ -944,4 +966,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-                    }
+    }
