@@ -101,55 +101,40 @@ export default function AccountInfoPage() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(92*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Top Header Marun */}
+      {/* Top Header Marun Bersih */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
             paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
             paddingBottom: "calc(12 * var(--u))",
           }}
-          className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
+          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
         >
-          <div className="flex items-center gap-[calc(8*var(--u))]">
-            <button
-              type="button"
-              onClick={handleBack}
-              aria-label="Kembali"
-              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-white/15"
-            >
-              <ArrowLeft
-                weight="regular"
-                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
-              />
-            </button>
-
-            <h1
-              style={{ margin: 0 }}
-              className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-white"
-            >
-              Informasi Akun
-            </h1>
-          </div>
-
           <button
             type="button"
-            onClick={handleOpenEdit}
-            aria-label="Ubah Informasi Akun"
-            className="flex h-[calc(34*var(--u))] cursor-pointer items-center gap-[calc(6*var(--u))] rounded-full bg-white/14 px-[calc(12*var(--u))] text-[calc(12*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-95 active:bg-white/25"
+            onClick={handleBack}
+            aria-label="Kembali"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-white/15"
           >
-            <PencilSimple
-              weight="bold"
-              className="h-[calc(14*var(--u))] w-[calc(14*var(--u))]"
+            <ArrowLeft
+              weight="regular"
+              className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
             />
-            <span>Ubah</span>
           </button>
+
+          <h1
+            style={{ margin: 0 }}
+            className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-white"
+          >
+            Informasi Akun
+          </h1>
         </div>
       </header>
 
-      <div className="moku-info-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* Avatar Besar Bersih Tanpa Teks Nama & Jabatan di Bawahnya */}
+      <div className="moku-info-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(20*var(--u))]">
+        {/* Avatar Besar Bersih Tanpa Teks di Bawahnya */}
         <section className="flex flex-col items-center text-center">
           <div
             style={{
@@ -174,97 +159,97 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Kartu Data Pribadi */}
+        {/* Kartu Data Pribadi (Rapat & Proporsional) */}
         <section
-          style={{ marginTop: "calc(20 * var(--u))" }}
-          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+          style={{ marginTop: "calc(18 * var(--u))" }}
+          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] py-[calc(14*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
         >
           <h2
-            style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
-            className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]"
+            style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
+            className="font-display text-[calc(15*var(--u))] font-bold text-[#171717]"
           >
             Data Pribadi
           </h2>
 
           <div className="divide-y divide-[#F2F2F6]">
-            <div className="flex items-center gap-[calc(12*var(--u))] pb-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(10*var(--u))]">
               <User
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Nama Lengkap
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {profile.fullName}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(10*var(--u))]">
               <At
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Username
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {profile.username}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(10*var(--u))]">
               <EnvelopeSimple
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Email
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {profile.email}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))] pt-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] pb-[calc(2*var(--u))] pt-[calc(10*var(--u))]">
               <Phone
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Nomor Telepon
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {formattedPhone}
                 </p>
@@ -275,53 +260,53 @@ export default function AccountInfoPage() {
 
         {/* Kartu Data Operasional */}
         <section
-          style={{ marginTop: "calc(16 * var(--u))" }}
-          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+          style={{ marginTop: "calc(12 * var(--u))" }}
+          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] py-[calc(14*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
         >
           <h2
-            style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
-            className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]"
+            style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
+            className="font-display text-[calc(15*var(--u))] font-bold text-[#171717]"
           >
             Data Operasional
           </h2>
 
           <div className="divide-y divide-[#F2F2F6]">
-            <div className="flex items-center gap-[calc(12*var(--u))] pb-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(10*var(--u))]">
               <Briefcase
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Jabatan / Role
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {profile.role}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(14*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(10*var(--u))]">
               <Buildings
                 weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
+                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#1E1E24]"
               />
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
-                  className="text-[calc(11.5*var(--u))] font-medium text-[#6B6B76]"
+                  className="text-[calc(11*var(--u))] font-medium leading-tight text-[#6B6B76]"
                 >
                   Cabang
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
+                  className="truncate text-[calc(13.5*var(--u))] font-semibold leading-snug text-[#171717]"
                 >
                   {profile.branch}
                 </p>
@@ -330,16 +315,16 @@ export default function AccountInfoPage() {
           </div>
 
           <div
-            style={{ marginTop: "calc(6 * var(--u))" }}
-            className="flex items-start gap-[calc(12*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]"
+            style={{ marginTop: "calc(8 * var(--u))" }}
+            className="flex items-start gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(10*var(--u))]"
           >
             <Info
               weight="regular"
-              className="mt-[1px] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#740319]"
+              className="mt-[1px] h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0 text-[#740319]"
             />
             <p
               style={{ margin: 0 }}
-              className="text-[calc(12*var(--u))] font-normal leading-relaxed text-[#2D2D34]"
+              className="text-[calc(11.5*var(--u))] font-normal leading-relaxed text-[#2D2D34]"
             >
               Jabatan dan cabang tidak dapat diubah. Hubungi admin jika ada
               perubahan data operasional.
@@ -348,9 +333,38 @@ export default function AccountInfoPage() {
         </section>
       </div>
 
+      {/* Floating Action Button (FAB) Icon-Only di Pojok Kanan Bawah */}
+      <div
+        style={{
+          bottom: "calc(20 * var(--u) + env(safe-area-inset-bottom))",
+        }}
+        className="pointer-events-none fixed inset-x-0 z-40"
+      >
+        <div className="mx-auto flex w-full max-w-[680px] justify-end px-[calc(16*var(--u))]">
+          <button
+            type="button"
+            onClick={handleOpenEdit}
+            aria-label="Ubah Informasi Akun"
+            style={{
+              width: "calc(52 * var(--u))",
+              height: "calc(52 * var(--u))",
+            }}
+            className="moku-fab-pop pointer-events-auto flex cursor-pointer items-center justify-center rounded-full bg-[#740319] text-white shadow-[0_8px_22px_rgba(116,3,25,0.32)] transition-[transform,background-color,box-shadow] duration-200 ease-out hover:bg-[#620215] active:scale-92 active:bg-[#5B0213]"
+          >
+            <PencilSimple
+              weight="bold"
+              className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+            />
+          </button>
+        </div>
+      </div>
+
       <style>{`
         .moku-info-enter {
           animation: moku-info-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-fab-pop {
+          animation: moku-fab-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
         }
         @keyframes moku-info-in {
           from {
@@ -360,6 +374,16 @@ export default function AccountInfoPage() {
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-fab-in {
+          from {
+            opacity: 0;
+            transform: scale(0.8) translate3d(0, 10px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translate3d(0, 0, 0);
           }
         }
       `}</style>
