@@ -3,7 +3,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
@@ -31,6 +30,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import CameraCaptureOverlay from "@/components/profile/CameraCaptureOverlay";
+import GalleryPickerOverlay from "@/components/profile/GalleryPickerOverlay";
 import {
   DEFAULT_AVATAR_URL,
   getAccountProfile,
@@ -212,6 +212,7 @@ export default function EditAccountInfoPage() {
   const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
   const [isPhotoSheetClosing, setIsPhotoSheetClosing] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   const [fullName, setFullName] = useState(initialProfile.current.fullName);
   const [username, setUsername] = useState(initialProfile.current.username);
@@ -238,8 +239,6 @@ export default function EditAccountInfoPage() {
     tone: "success" | "error";
   } | null>(null);
   const [isToastClosing, setIsToastClosing] = useState(false);
-
-  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const toastDelayRef = useRef<number | null>(null);
   const toastAutoRef = useRef<number | null>(null);
@@ -391,38 +390,20 @@ export default function EditAccountInfoPage() {
     setIsCameraOpen(true);
   };
 
-  const handleCameraCaptured = (dataUrl: string) => {
+  const handleOpenGalleryOverlay = () => {
+    triggerHaptic(8);
+    setIsPhotoSheetOpen(false);
+    setIsPhotoSheetClosing(false);
+    setIsGalleryOpen(true);
+  };
+
+  const handlePhotoSelected = (dataUrl: string) => {
     setAvatarError(false);
     setAvatarUrl(dataUrl);
     saveAccountProfile({ avatarUrl: dataUrl });
     setIsCameraOpen(false);
+    setIsGalleryOpen(false);
     triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
-  };
-
-  const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      triggerHaptic(12);
-      triggerToast("Pilih file gambar yang valid.", "error");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      if (!result) return;
-      triggerHaptic([8, 25, 10]);
-      setAvatarError(false);
-      setAvatarUrl(result);
-      saveAccountProfile({ avatarUrl: result });
-      setIsCameraOpen(false);
-      closePhotoSheet();
-      triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleRemovePhoto = () => {
@@ -759,14 +740,6 @@ export default function EditAccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handlePhotoFileChange}
-        className="sr-only"
-      />
-
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -1355,11 +1328,14 @@ export default function EditAccountInfoPage() {
       <CameraCaptureOverlay
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
-        onCapture={handleCameraCaptured}
-        onOpenGallery={() => {
-          setIsCameraOpen(false);
-          galleryInputRef.current?.click();
-        }}
+        onCapture={handlePhotoSelected}
+        onOpenGallery={handleOpenGalleryOverlay}
+      />
+
+      <GalleryPickerOverlay
+        isOpen={isGalleryOpen}
+        onClose={() => setIsGalleryOpen(false)}
+        onSelectPhoto={handlePhotoSelected}
       />
 
       {isPhotoSheetOpen &&
@@ -1430,10 +1406,7 @@ export default function EditAccountInfoPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    triggerHaptic(6);
-                    galleryInputRef.current?.click();
-                  }}
+                  onClick={handleOpenGalleryOverlay}
                   className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
                 >
                   <span className="flex items-center gap-[calc(12*var(--u))]">
