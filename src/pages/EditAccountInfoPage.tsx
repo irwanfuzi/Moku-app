@@ -39,7 +39,7 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SNACKBAR_EXIT_MS = 380;
+const SNACKBAR_EXIT_MS = 420;
 const DEMO_OTP_CODE = "123456";
 
 const VALID_DOMAINS = new Set([
@@ -207,7 +207,7 @@ export default function EditAccountInfoPage() {
     useState<UsernameCheckStatus>("idle");
   const [savePhase, setSavePhase] = useState<SavePhase>("idle");
 
-  // Smooth transition state antara error email dan banner verifikasi OTP
+  // Transisi bertahap antara error email dan banner verifikasi OTP
   const [showEmailOtpNotice, setShowEmailOtpNotice] = useState(false);
 
   const [verifiedEmail, setVerifiedEmail] = useState<string>(
@@ -252,7 +252,6 @@ export default function EditAccountInfoPage() {
   const needsEmailOtp = isEmailValid && normalizedEmail !== verifiedEmail;
   const needsPhoneOtp = isPhoneValid && normalizedPhone !== verifiedPhone;
 
-  // Transisi bertahap: ketika email valid & berbeda dari verifiedEmail, tunggu sejenak agar error sempat hilang mulus
   useEffect(() => {
     if (emailOtpNoticeRef.current !== null) {
       window.clearTimeout(emailOtpNoticeRef.current);
@@ -266,7 +265,7 @@ export default function EditAccountInfoPage() {
 
     emailOtpNoticeRef.current = window.setTimeout(() => {
       setShowEmailOtpNotice(true);
-    }, 160);
+    }, 340);
   }, [needsEmailOtp, errors.email]);
 
   useEffect(() => {
@@ -315,7 +314,7 @@ export default function EditAccountInfoPage() {
       setToast({ id: Date.now(), message, tone });
       toastAutoRef.current = window.setTimeout(() => {
         dismissToast();
-      }, 2600);
+      }, 2800);
     },
     [dismissToast]
   );
@@ -461,7 +460,7 @@ export default function EditAccountInfoPage() {
         else delete next.email;
         return next;
       });
-    }, 500);
+    }, 520);
   }, [email, errors.email]);
 
   useEffect(() => {
@@ -507,7 +506,7 @@ export default function EditAccountInfoPage() {
           return next;
         });
       }
-    }, 360);
+    }, 380);
   }, [username]);
 
   const navigateBackSmooth = useCallback(() => {
@@ -574,8 +573,8 @@ export default function EditAccountInfoPage() {
 
       doneTimerRef.current = window.setTimeout(() => {
         navigateBackSmooth();
-      }, 380);
-    }, 360);
+      }, 420);
+    }, 420);
   };
 
   const handleSave = () => {
@@ -625,7 +624,7 @@ export default function EditAccountInfoPage() {
   };
 
   const getInputClass = (hasError: boolean, hasPendingOtp = false) =>
-    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-300 ease-out placeholder:text-[#9E9EA9] ${
+    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-420 ease-out placeholder:text-[#9E9EA9] ${
       hasError
         ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15"
         : hasPendingOtp
@@ -651,7 +650,7 @@ export default function EditAccountInfoPage() {
             onClick={handleBack}
             disabled={isBusy}
             aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-220 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-260 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
           >
             <ArrowLeft
               weight="regular"
@@ -711,7 +710,7 @@ export default function EditAccountInfoPage() {
                 width: "calc(32 * var(--u))",
                 height: "calc(32 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-220 ease-out active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
@@ -726,7 +725,7 @@ export default function EditAccountInfoPage() {
               triggerHaptic(6);
               triggerToast("Fitur ubah foto profil segera tersedia.");
             }}
-            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-220 active:bg-[#F0F0F4] active:text-[#171717]"
+            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-260 active:bg-[#F0F0F4] active:text-[#171717]"
           >
             Ubah Foto Profil
           </button>
@@ -747,7 +746,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-300 ${
                   errors.fullName ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -784,7 +783,7 @@ export default function EditAccountInfoPage() {
                     id="edit-fullname-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-smooth-swap flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -799,7 +798,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-300 ${
                   errors.username ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -843,7 +842,7 @@ export default function EditAccountInfoPage() {
                   {usernameStatus === "available" && !errors.username && (
                     <CheckCircle
                       weight="fill"
-                      className="moku-field-msg pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-[#16A34A]"
+                      className="moku-smooth-swap pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-[#16A34A]"
                     />
                   )}
                 </div>
@@ -853,7 +852,7 @@ export default function EditAccountInfoPage() {
                     id="edit-username-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-smooth-swap flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -864,7 +863,7 @@ export default function EditAccountInfoPage() {
                 ) : usernameStatus === "available" ? (
                   <p
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#16A34A]"
+                    className="moku-smooth-swap flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#16A34A]"
                   >
                     <CheckCircle
                       weight="fill"
@@ -880,7 +879,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-300 ease-out ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-420 ease-out ${
                   errors.email || showEmailOtpNotice
                     ? "text-[#C8102E]"
                     : "text-[#1E1E24]"
@@ -930,7 +929,7 @@ export default function EditAccountInfoPage() {
                       onClick={() =>
                         openOtpVerification("email", normalizedEmail)
                       }
-                      className="moku-smooth-swap absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-200 active:bg-[#F9DCE2]"
+                      className="moku-smooth-swap absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-250 active:bg-[#F9DCE2]"
                     >
                       Verifikasi
                     </button>
@@ -975,7 +974,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-300 ${
                   errors.phone || needsPhoneOtp
                     ? "text-[#C8102E]"
                     : "text-[#1E1E24]"
@@ -1000,7 +999,7 @@ export default function EditAccountInfoPage() {
                       triggerHaptic(6);
                       triggerToast("Kode negara aktif: Indonesia (+62).");
                     }}
-                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-220 active:bg-[#F4F4F7] ${
+                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-300 active:bg-[#F4F4F7] ${
                       errors.phone
                         ? "border-[#C8102E] bg-[#FFF9FA]"
                         : needsPhoneOtp
@@ -1049,7 +1048,7 @@ export default function EditAccountInfoPage() {
                         onClick={() =>
                           openOtpVerification("phone", normalizedPhone)
                         }
-                        className="moku-smooth-swap absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-200 active:bg-[#F9DCE2]"
+                        className="moku-smooth-swap absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-250 active:bg-[#F9DCE2]"
                       >
                         Verifikasi
                       </button>
@@ -1189,7 +1188,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleSave}
             disabled={isBusy || usernameStatus === "checking"}
-            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-220 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
+            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-260 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
               savePhase === "saved"
                 ? "bg-[#15803D] shadow-[0_4px_14px_rgba(21,128,61,0.28)]"
                 : savePhase === "saving"
@@ -1222,7 +1221,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleBack}
             disabled={isBusy}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-220 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Batal
           </button>
@@ -1392,25 +1391,25 @@ export default function EditAccountInfoPage() {
 
       <style>{`
         .moku-edit-enter {
-          animation: moku-edit-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-edit-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-smooth-swap {
-          animation: moku-swap-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-swap-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-spin-slow {
-          animation: moku-spin 900ms linear infinite;
+          animation: moku-spin 950ms linear infinite;
         }
         .moku-save-pulse {
-          animation: moku-save-ring 1100ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+          animation: moku-save-ring 1200ms cubic-bezier(0.25, 1, 0.5, 1) infinite;
         }
         .moku-saved-pop {
-          animation: moku-saved-scale 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-saved-scale 440ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-toast-up 460ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 380ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: moku-toast-down 420ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         @keyframes moku-edit-in {
           from {
@@ -1425,11 +1424,11 @@ export default function EditAccountInfoPage() {
         @keyframes moku-swap-in {
           from {
             opacity: 0;
-            transform: translate3d(0, -5px, 0) scale(0.99);
+            transform: translate3d(0, -6px, 0);
           }
           to {
             opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
+            transform: translate3d(0, 0, 0);
           }
         }
         @keyframes moku-spin {
@@ -1451,7 +1450,7 @@ export default function EditAccountInfoPage() {
         @keyframes moku-saved-scale {
           0% {
             opacity: 0;
-            transform: scale(0.94);
+            transform: scale(0.95);
           }
           65% {
             opacity: 1;
@@ -1485,4 +1484,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-}
+                      }
