@@ -8,14 +8,13 @@ export interface AccountProfile {
   role: string;
   branch: string;
   joinedAt: string;
-  avatarUrl: string | null; // null = tampil inisial, DEFAULT_AVATAR_URL = robot moku
+  avatarUrl: string;
 }
 
 const STORAGE_KEY = "moku_account_profile_v1";
 const PROFILE_UPDATED_EVENT = "moku:account-profile-updated";
 
 export const DEFAULT_AVATAR_URL = "/images/moku/brand/moku-avatar.png";
-export const REMOVED_AVATAR_VALUE = "__removed__";
 
 export const DEFAULT_ACCOUNT_PROFILE: AccountProfile = {
   fullName: "Budi Santoso",
@@ -42,11 +41,12 @@ export const TAKEN_USERNAMES = new Set([
   "teknisi.jkt3",
 ]);
 
-function resolveAvatarUrl(rawAvatar: unknown): string | null {
-  if (rawAvatar === REMOVED_AVATAR_VALUE) {
-    return null;
-  }
-  if (typeof rawAvatar === "string" && rawAvatar.trim().length > 0) {
+function resolveAvatarUrl(rawAvatar: unknown): string {
+  if (
+    typeof rawAvatar === "string" &&
+    rawAvatar.trim().length > 0 &&
+    rawAvatar !== "__removed__"
+  ) {
     return rawAvatar;
   }
   return DEFAULT_AVATAR_URL;
@@ -85,12 +85,7 @@ export function saveAccountProfile(
 
   if (typeof window !== "undefined") {
     try {
-      const toStore: Partial<AccountProfile> = {
-        ...next,
-        avatarUrl:
-          next.avatarUrl === null ? REMOVED_AVATAR_VALUE : next.avatarUrl,
-      };
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
       // Abaikan jika localStorage penuh akibat ukuran gambar besar; tetap kirim event
     }
@@ -110,7 +105,10 @@ export function useAccountProfile(): AccountProfile {
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<AccountProfile>;
       if (customEvent.detail) {
-        setProfile(customEvent.detail);
+        setProfile({
+          ...customEvent.detail,
+          avatarUrl: resolveAvatarUrl(customEvent.detail.avatarUrl),
+        });
       } else {
         setProfile(getAccountProfile());
       }
