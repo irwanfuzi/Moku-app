@@ -127,11 +127,11 @@ export default function ProfilePage() {
     >
       {/* Header Profil Marun */}
       <header className="w-full bg-[#7A041B] text-white">
-        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(26*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(22*var(--u)))] text-center">
+        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(24*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(32*var(--u)))] text-center">
           {/* Avatar Lingkaran + Border Putih */}
           <div
-            style={{ marginBottom: "calc(22 * var(--u))" }}
-            className="flex h-[calc(94*var(--u))] w-[calc(94*var(--u))] items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
+            style={{ marginBottom: "calc(14 * var(--u))" }}
+            className="flex h-[calc(112*var(--u))] w-[calc(112*var(--u))] items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
           >
             {!avatarError ? (
               <img
@@ -141,7 +141,7 @@ export default function ProfilePage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="font-display text-[calc(30*var(--u))] font-bold text-[#7A041B]">
+              <span className="font-display text-[calc(34*var(--u))] font-bold text-[#7A041B]">
                 BS
               </span>
             )}
