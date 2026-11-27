@@ -40,24 +40,19 @@ const MOBILE_SCALE_VARS = {
 
 const SNACKBAR_EXIT_MS = 380;
 
-const ALLOWED_TLDS = new Set([
-  "id",
-  "co.id",
-  "ac.id",
-  "go.id",
-  "or.id",
-  "web.id",
-  "my.id",
-  "com",
-  "net",
-  "org",
-  "edu",
-  "gov",
-  "io",
-  "app",
-  "dev",
-  "co",
+const VALID_DOMAINS = new Set([
+  "moku.id",
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.co.id",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
 ]);
+
+const COMPANY_TLD_SUFFIXES = [".co.id", ".ac.id", ".go.id", ".or.id"];
 
 const MASH_PATTERNS = [
   "qwerty",
@@ -88,6 +83,33 @@ function isRepeatedOrMash(text: string): boolean {
   if (/(.)\1{3,}/.test(clean)) return true;
   if (/(.{2,})\1{2,}/.test(clean)) return true;
   return MASH_PATTERNS.some((pat) => clean.includes(pat));
+}
+
+function isAllowedEmailDomain(domain: string): boolean {
+  if (VALID_DOMAINS.has(domain)) return true;
+
+  for (const suffix of COMPANY_TLD_SUFFIXES) {
+    if (domain.endsWith(suffix)) {
+      const prefix = domain.slice(0, domain.length - suffix.length);
+      const companyLabels = prefix.split(".").filter(Boolean);
+      const mainCompany = companyLabels[companyLabels.length - 1] || "";
+      if (
+        mainCompany.length >= 2 &&
+        companyLabels.every(
+          (lbl) =>
+            lbl.length >= 2 &&
+            !lbl.startsWith("-") &&
+            !lbl.endsWith("-") &&
+            /^[a-z0-9-]+$/.test(lbl)
+        ) &&
+        !isRepeatedOrMash(mainCompany)
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function getEmailError(value: string): string | undefined {
@@ -134,39 +156,19 @@ function getEmailError(value: string): string | undefined {
     }
   }
 
-  const lastTwo =
-    domainLabels.length >= 2
-      ? `${domainLabels[domainLabels.length - 2]}.${
-          domainLabels[domainLabels.length - 1]
-        }`
-      : "";
-  const lastOne = domainLabels[domainLabels.length - 1];
-
-  const matchedTld = ALLOWED_TLDS.has(lastTwo)
-    ? lastTwo
-    : ALLOWED_TLDS.has(lastOne)
-    ? lastOne
-    : null;
-
-  if (!matchedTld) {
-    return "Format email tidak valid";
-  }
-
-  const hostWithoutTld = trimmed.slice(
-    0,
-    trimmed.length - (matchedTld.length + 1)
-  );
-  const hostNamePart = hostWithoutTld.split(".").pop() || "";
-
-  if (
-    !hostNamePart ||
-    hostNamePart.length < 2 ||
-    isRepeatedOrMash(hostNamePart)
-  ) {
+  if (!isAllowedEmailDomain(domainPart)) {
     return "Format email tidak valid";
   }
 
   return undefined;
+}
+
+function looksLikeCompletedEmailAttempt(value: string): boolean {
+  const trimmed = value.trim();
+  const atIdx = trimmed.indexOf("@");
+  if (atIdx < 0) return false;
+  const afterAt = trimmed.slice(atIdx + 1);
+  return afterAt.includes(".") && afterAt.split(".").pop()!.length >= 2;
 }
 
 export default function EditAccountInfoPage() {
@@ -195,6 +197,7 @@ export default function EditAccountInfoPage() {
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
   const usernameCheckRef = useRef<number | null>(null);
+  const emailTypingRef = useRef<number | null>(null);
   const saveTimerRef = useRef<number | null>(null);
   const doneTimerRef = useRef<number | null>(null);
 
@@ -260,6 +263,9 @@ export default function EditAccountInfoPage() {
       if (usernameCheckRef.current !== null) {
         window.clearTimeout(usernameCheckRef.current);
       }
+      if (emailTypingRef.current !== null) {
+        window.clearTimeout(emailTypingRef.current);
+      }
       if (saveTimerRef.current !== null) {
         window.clearTimeout(saveTimerRef.current);
       }
@@ -313,6 +319,29 @@ export default function EditAccountInfoPage() {
     },
     [email, fullName]
   );
+
+  // Evaluasi email setelah jeda ngetik saat alamat email tampak sudah diketik lengkap
+  useEffect(() => {
+    if (emailTypingRef.current !== null) {
+      window.clearTimeout(emailTypingRef.current);
+      emailTypingRef.current = null;
+    }
+
+    const shouldEvaluate =
+      looksLikeCompletedEmailAttempt(email) || Boolean(errors.email);
+    if (!shouldEvaluate) return;
+
+    emailTypingRef.current = window.setTimeout(() => {
+      const emailErr = getEmailError(email);
+      setErrors((prev) => {
+        if (prev.email === emailErr) return prev;
+        const next = { ...prev };
+        if (emailErr) next.email = emailErr;
+        else delete next.email;
+        return next;
+      });
+    }, 500);
+  }, [email, errors.email]);
 
   useEffect(() => {
     if (usernameCheckRef.current !== null) {
@@ -384,6 +413,10 @@ export default function EditAccountInfoPage() {
   };
 
   const handleBlur = (field: FieldKey, value: string) => {
+    if (field === "email" && emailTypingRef.current !== null) {
+      window.clearTimeout(emailTypingRef.current);
+      emailTypingRef.current = null;
+    }
     const err = validateField(field, value);
     setErrors((prev) => {
       if (!err && !prev[field]) return prev;
@@ -735,18 +768,10 @@ export default function EditAccountInfoPage() {
                     errors.email ? "edit-email-error" : undefined
                   }
                   onChange={(e) => {
-                    const nextVal = e.target.value;
-                    setEmail(nextVal);
-                    const emailErr = getEmailError(nextVal);
-                    setErrors((prev) => {
-                      const next = { ...prev };
-                      if (emailErr) next.email = emailErr;
-                      else delete next.email;
-                      return next;
-                    });
+                    setEmail(e.target.value);
                   }}
                   onBlur={() => handleBlur("email", email)}
-                  placeholder="nama@domain.com"
+                  placeholder="nama@moku.id atau nama@gmail.com"
                   className={getInputClass(Boolean(errors.email))}
                 />
                 {errors.email && (
