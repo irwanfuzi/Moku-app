@@ -27,6 +27,7 @@ import {
   Trash,
   User,
   WarningCircle,
+  X,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import CameraCaptureOverlay from "@/components/profile/CameraCaptureOverlay";
@@ -372,23 +373,26 @@ export default function EditAccountInfoPage() {
     setIsPhotoSheetOpen(true);
   }, [isBusy]);
 
-  const closePhotoSheet = useCallback((afterClose?: () => void) => {
-    if (!isPhotoSheetOpen || isPhotoSheetClosing) {
-      afterClose?.();
-      return;
-    }
-    triggerHaptic(6);
-    setIsPhotoSheetClosing(true);
-    if (photoSheetExitRef.current !== null) {
-      window.clearTimeout(photoSheetExitRef.current);
-    }
-    photoSheetExitRef.current = window.setTimeout(() => {
-      setIsPhotoSheetOpen(false);
-      setIsPhotoSheetClosing(false);
-      photoSheetExitRef.current = null;
-      afterClose?.();
-    }, PHOTO_SHEET_EXIT_MS);
-  }, [isPhotoSheetClosing, isPhotoSheetOpen]);
+  const closePhotoSheet = useCallback(
+    (afterClose?: () => void) => {
+      if (!isPhotoSheetOpen || isPhotoSheetClosing) {
+        afterClose?.();
+        return;
+      }
+      triggerHaptic(6);
+      setIsPhotoSheetClosing(true);
+      if (photoSheetExitRef.current !== null) {
+        window.clearTimeout(photoSheetExitRef.current);
+      }
+      photoSheetExitRef.current = window.setTimeout(() => {
+        setIsPhotoSheetOpen(false);
+        setIsPhotoSheetClosing(false);
+        photoSheetExitRef.current = null;
+        afterClose?.();
+      }, PHOTO_SHEET_EXIT_MS);
+    },
+    [isPhotoSheetClosing, isPhotoSheetOpen]
+  );
 
   const openDeleteConfirmSheet = useCallback(() => {
     if (deleteConfirmExitRef.current !== null) {
@@ -402,23 +406,26 @@ export default function EditAccountInfoPage() {
     setIsDeleteConfirmOpen(true);
   }, []);
 
-  const closeDeleteConfirmSheet = useCallback((afterClose?: () => void) => {
-    if (!isDeleteConfirmOpen || isDeleteConfirmClosing) {
-      afterClose?.();
-      return;
-    }
-    triggerHaptic(6);
-    setIsDeleteConfirmClosing(true);
-    if (deleteConfirmExitRef.current !== null) {
-      window.clearTimeout(deleteConfirmExitRef.current);
-    }
-    deleteConfirmExitRef.current = window.setTimeout(() => {
-      setIsDeleteConfirmOpen(false);
-      setIsDeleteConfirmClosing(false);
-      deleteConfirmExitRef.current = null;
-      afterClose?.();
-    }, PHOTO_SHEET_EXIT_MS);
-  }, [isDeleteConfirmClosing, isDeleteConfirmOpen]);
+  const closeDeleteConfirmSheet = useCallback(
+    (afterClose?: () => void) => {
+      if (!isDeleteConfirmOpen || isDeleteConfirmClosing) {
+        afterClose?.();
+        return;
+      }
+      triggerHaptic(6);
+      setIsDeleteConfirmClosing(true);
+      if (deleteConfirmExitRef.current !== null) {
+        window.clearTimeout(deleteConfirmExitRef.current);
+      }
+      deleteConfirmExitRef.current = window.setTimeout(() => {
+        setIsDeleteConfirmOpen(false);
+        setIsDeleteConfirmClosing(false);
+        deleteConfirmExitRef.current = null;
+        afterClose?.();
+      }, PHOTO_SHEET_EXIT_MS);
+    },
+    [isDeleteConfirmClosing, isDeleteConfirmOpen]
+  );
 
   const handleOpenCameraOverlay = () => {
     triggerHaptic(8);
@@ -1245,7 +1252,7 @@ export default function EditAccountInfoPage() {
                   htmlFor="edit-role"
                   className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
                 >
-                  Jabatan / Role
+                  Posisi
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -1304,17 +1311,27 @@ export default function EditAccountInfoPage() {
                 style={{ margin: 0 }}
                 className="text-[calc(12*var(--u))] font-normal leading-relaxed text-[#2D2D34]"
               >
-                Jabatan dan cabang tidak dapat diubah. Hubungi admin jika ada
+                Posisi dan cabang tidak dapat diubah. Hubungi admin jika ada
                 perubahan data operasional.
               </p>
             </div>
           </div>
         </section>
 
+        {/* Tombol Batal (Kiri) & Simpan (Kanan) */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
-          className="space-y-[calc(12*var(--u))]"
+          className="grid grid-cols-2 gap-[calc(12*var(--u))]"
         >
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={isBusy}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Batal
+          </button>
+
           <button
             type="button"
             onClick={handleSave}
@@ -1345,16 +1362,7 @@ export default function EditAccountInfoPage() {
                 <span>Tersimpan</span>
               </span>
             )}
-            {savePhase === "idle" && <span>Simpan Perubahan</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={isBusy}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Batal
+            {savePhase === "idle" && <span>Simpan</span>}
           </button>
         </section>
       </form>
@@ -1392,7 +1400,8 @@ export default function EditAccountInfoPage() {
               aria-modal="true"
               aria-labelledby="photo-sheet-title"
               style={{
-                paddingBottom: "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
+                paddingBottom:
+                  "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
               }}
               className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))] shadow-[0_-8px_28px_rgba(0,0,0,0.16)] ${
                 isPhotoSheetClosing ? "moku-sheet-down" : "moku-sheet-up"
@@ -1407,11 +1416,12 @@ export default function EditAccountInfoPage() {
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
+              {/* Header Sheet dengan Tombol Tutup Icon-Only (X) di Kanan */}
               <div
                 style={{ marginBottom: "calc(12 * var(--u))" }}
                 className="flex items-center justify-between gap-[calc(12*var(--u))]"
               >
-                <div className="w-[calc(54*var(--u))]" aria-hidden="true" />
+                <div className="w-[calc(32*var(--u))]" aria-hidden="true" />
                 <h3
                   id="photo-sheet-title"
                   style={{ margin: 0 }}
@@ -1422,9 +1432,13 @@ export default function EditAccountInfoPage() {
                 <button
                   type="button"
                   onClick={() => closePhotoSheet()}
-                  className="flex h-[calc(28*var(--u))] cursor-pointer items-center justify-center rounded-full bg-[#FDF2F4] px-[calc(11*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-92 active:bg-[#F9DCE2]"
+                  aria-label="Tutup"
+                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F4F4F6] text-[#52525B] transition-[transform,background-color] duration-200 active:scale-90 active:bg-[#E4E4EA]"
                 >
-                  Batal
+                  <X
+                    weight="bold"
+                    className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+                  />
                 </button>
               </div>
 
@@ -1520,7 +1534,8 @@ export default function EditAccountInfoPage() {
               aria-modal="true"
               aria-labelledby="delete-photo-title"
               style={{
-                paddingBottom: "calc(env(safe-area-inset-bottom) + 18 * var(--u))",
+                paddingBottom:
+                  "calc(env(safe-area-inset-bottom) + 18 * var(--u))",
               }}
               className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] pt-[calc(10*var(--u))] text-center shadow-[0_-8px_28px_rgba(0,0,0,0.18)] ${
                 isDeleteConfirmClosing ? "moku-sheet-down" : "moku-sheet-up"
