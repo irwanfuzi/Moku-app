@@ -143,10 +143,15 @@ export default function CameraCaptureOverlay({
 
         streamRef.current = stream;
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+        const videoEl = videoRef.current;
+        if (videoEl) {
+          videoEl.srcObject = stream;
           setCameraReady(true);
+          try {
+            await videoEl.play();
+          } catch {
+            // Biarkan frame tetap bisa diambil selama srcObject terpasang
+          }
         }
       } catch {
         setCameraError(
@@ -157,22 +162,7 @@ export default function CameraCaptureOverlay({
     [stopStream]
   );
 
-  // Jalankan kamera hanya saat overlay terbuka dan belum berada di mode Pratinjau Foto
-  useEffect(() => {
-    if (!isOpen || previewUrl) {
-      stopStream();
-      setCameraReady(false);
-      return;
-    }
-
-    startCamera(facingMode);
-
-    return () => {
-      stopStream();
-    };
-  }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
-
-  // Sinkronisasi theme-color & reset state saat overlay dibuka/ditutup
+  // Reset state saat overlay dibuka atau ditutup
   useEffect(() => {
     if (!isOpen) {
       stopStream();
@@ -192,19 +182,41 @@ export default function CameraCaptureOverlay({
     setIsDragging(false);
     setIsExiting(false);
 
-    const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) =>
-      meta.setAttribute("content", previewUrl ? "#740319" : "#000000")
-    );
-
     return () => {
+      stopStream();
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
+    };
+  }, [isOpen, stopStream]);
+
+  // Sinkronkan status bar theme-color sesuai mode kamera vs pratinjau
+  useEffect(() => {
+    if (!isOpen) return;
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    metas.forEach((meta) =>
+      meta.setAttribute("content", previewUrl ? "#740319" : "#000000")
+    );
+    return () => {
       metas.forEach((meta) => meta.setAttribute("content", "#740319"));
     };
-  }, [isOpen, previewUrl, stopStream]);
+  }, [isOpen, previewUrl]);
+
+  // Jalankan kamera hanya saat overlay terbuka dan belum berada di mode Pratinjau Foto
+  useEffect(() => {
+    if (!isOpen || previewUrl) {
+      stopStream();
+      setCameraReady(false);
+      return;
+    }
+
+    startCamera(facingMode);
+
+    return () => {
+      stopStream();
+    };
+  }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
 
   // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
@@ -362,7 +374,11 @@ export default function CameraCaptureOverlay({
     const video = videoRef.current;
     const circleEl = circleGuideRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !cameraReady || isClosingRef.current) return;
+    if (!video || !canvas || isClosingRef.current) return;
+
+    const hasStreamFrame =
+      cameraReady || video.videoWidth > 0 || video.readyState >= 2;
+    if (!hasStreamFrame) return;
 
     triggerHaptic([10, 20, 10]);
 
@@ -479,7 +495,6 @@ export default function CameraCaptureOverlay({
         aria-label="Pratinjau Foto"
         className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
       >
-        {/* Header Marun */}
         <header className="w-full bg-[#740319] text-white">
           <div
             style={{
@@ -508,7 +523,6 @@ export default function CameraCaptureOverlay({
           </div>
         </header>
 
-        {/* Lingkaran Pratinjau + Teks Panduan */}
         <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
           <div
             style={{
@@ -533,7 +547,6 @@ export default function CameraCaptureOverlay({
           </p>
         </div>
 
-        {/* Tombol Aksi Bawah: Gunakan Foto & Ambil Ulang */}
         <div
           style={{
             paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
@@ -673,6 +686,8 @@ export default function CameraCaptureOverlay({
           playsInline
           muted
           autoPlay
+          onLoadedMetadata={() => setCameraReady(true)}
+          onCanPlay={() => setCameraReady(true)}
           className={`h-full w-full object-cover transition-opacity duration-300 ${
             facingMode === "user" ? "-scale-x-100" : ""
           } ${cameraReady ? "opacity-100" : "opacity-0"}`}
@@ -750,13 +765,12 @@ export default function CameraCaptureOverlay({
           <button
             type="button"
             onClick={handleTakeSnapshot}
-            disabled={!cameraReady}
             aria-label="Jepret Foto"
             style={{
               width: "calc(72 * var(--u))",
               height: "calc(72 * var(--u))",
             }}
-            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white p-[calc(4*var(--u))] transition-transform duration-150 active:scale-92 disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white p-[calc(4*var(--u))] transition-transform duration-150 active:scale-92"
           >
             <span className="h-full w-full rounded-full bg-white" />
           </button>
