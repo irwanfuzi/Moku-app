@@ -21,6 +21,7 @@ import {
   UserCircle,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import { useAccountProfile } from "@/lib/account-profile";
 
 const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
 
@@ -39,6 +40,7 @@ function triggerHaptic(duration = 8) {
 export default function AccountInfoPage() {
   const { isMobile, isReady, navigateWithTransition } = useAppLayout();
   const ionRouter = useIonRouter();
+  const profile = useAccountProfile();
 
   const [avatarError, setAvatarError] = useState(false);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
@@ -113,7 +115,7 @@ export default function AccountInfoPage() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
       {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
@@ -163,7 +165,7 @@ export default function AccountInfoPage() {
               {!avatarError ? (
                 <img
                   src={AVATAR_URL}
-                  alt="Budi Santoso"
+                  alt={profile.fullName}
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
@@ -199,13 +201,13 @@ export default function AccountInfoPage() {
             style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
             className="font-display text-[calc(21*var(--u))] font-bold leading-tight tracking-[-0.02em] text-[#171717]"
           >
-            Budi Santoso
+            {profile.fullName}
           </h2>
           <p
             style={{ margin: 0 }}
             className="text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]"
           >
-            Teknisi
+            {profile.role}
           </p>
         </section>
 
@@ -231,7 +233,7 @@ export default function AccountInfoPage() {
                 Nama Lengkap
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                Budi Santoso
+                {profile.fullName}
               </span>
             </div>
 
@@ -244,7 +246,7 @@ export default function AccountInfoPage() {
                 Username
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                budisantoso
+                {profile.username}
               </span>
             </div>
 
@@ -257,7 +259,7 @@ export default function AccountInfoPage() {
                 Email
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                budi.santoso@moku.id
+                {profile.email}
               </span>
             </div>
 
@@ -270,7 +272,7 @@ export default function AccountInfoPage() {
                 Nomor Telepon
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                +62 812-3456-7890
+                +62 {profile.phone}
               </span>
             </div>
           </div>
@@ -298,7 +300,7 @@ export default function AccountInfoPage() {
                 Jabatan / Role
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                Teknisi
+                {profile.role}
               </span>
             </div>
 
@@ -311,7 +313,7 @@ export default function AccountInfoPage() {
                 Cabang
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                Cabang Jakarta 3
+                {profile.branch}
               </span>
             </div>
 
@@ -324,7 +326,7 @@ export default function AccountInfoPage() {
                 Bergabung Sejak
               </span>
               <span className="select-text truncate text-right text-[calc(13.5*var(--u))] font-medium text-[#171717]">
-                12 Jan 2024
+                {profile.joinedAt}
               </span>
             </div>
           </div>
@@ -358,7 +360,7 @@ export default function AccountInfoPage() {
             style={MOBILE_SCALE_VARS}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+            className={`fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
               isToastClosing
                 ? "moku-toast-exit pointer-events-none"
                 : "moku-toast-enter"
