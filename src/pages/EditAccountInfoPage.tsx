@@ -851,7 +851,7 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email + Tombol Verifikasi di Kanan Atas + Informasi 1 Baris */}
+            {/* Email + Tombol Verifikasi di Dalam Kolom + Info Compact */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -867,44 +867,46 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
-                  <label
-                    htmlFor="edit-email"
-                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                  >
-                    Email <span className="text-[#C8102E]">*</span>
-                  </label>
+                <label
+                  htmlFor="edit-email"
+                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                >
+                  Email <span className="text-[#C8102E]">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="edit-email"
+                    type="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    value={email}
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={
+                      errors.email ? "edit-email-error" : undefined
+                    }
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                    }}
+                    onBlur={() => handleBlur("email", email)}
+                    placeholder="nama@moku.id"
+                    className={`${getInputClass(
+                      Boolean(errors.email),
+                      needsEmailOtp
+                    )} ${needsEmailOtp ? "pr-[calc(76*var(--u))]" : ""}`}
+                  />
                   {needsEmailOtp && (
                     <button
                       type="button"
                       onClick={() =>
                         openOtpVerification("email", normalizedEmail)
                       }
-                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
+                      className="absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
                     >
                       Verifikasi
                     </button>
                   )}
                 </div>
-
-                <input
-                  id="edit-email"
-                  type="email"
-                  inputMode="email"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  value={email}
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={
-                    errors.email ? "edit-email-error" : undefined
-                  }
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                  }}
-                  onBlur={() => handleBlur("email", email)}
-                  placeholder="nama@moku.id"
-                  className={getInputClass(Boolean(errors.email), needsEmailOtp)}
-                />
 
                 {errors.email && (
                   <p
@@ -923,14 +925,14 @@ export default function EditAccountInfoPage() {
 
                 {needsEmailOtp && (
                   <div
-                    style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))]"
+                    style={{ marginTop: "calc(6 * var(--u))" }}
+                    className="moku-field-msg flex w-full items-center gap-[calc(6*var(--u))] rounded-[calc(8*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(8*var(--u))] py-[calc(6*var(--u))]"
                   >
                     <Info
                       weight="regular"
-                      className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
+                    <span className="truncate text-[calc(11*var(--u))] font-normal leading-none text-[#1F2937]">
                       Klik Verifikasi untuk memvalidasi email baru Anda.
                     </span>
                   </div>
@@ -938,7 +940,7 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Nomor Telepon + Tombol Verifikasi di Kanan Atas + Informasi 1 Baris */}
+            {/* Nomor Telepon + Tombol Verifikasi di Dalam Kolom + Info Compact */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -954,26 +956,12 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
-                  <label
-                    htmlFor="edit-phone"
-                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                  >
-                    Nomor Telepon <span className="text-[#C8102E]">*</span>
-                  </label>
-                  {needsPhoneOtp && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openOtpVerification("phone", normalizedPhone)
-                      }
-                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
-                    >
-                      Verifikasi
-                    </button>
-                  )}
-                </div>
-
+                <label
+                  htmlFor="edit-phone"
+                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                >
+                  Nomor Telepon <span className="text-[#C8102E]">*</span>
+                </label>
                 <div className="flex items-center gap-[calc(8*var(--u))]">
                   <button
                     type="button"
@@ -1003,26 +991,39 @@ export default function EditAccountInfoPage() {
                     />
                   </button>
 
-                  <input
-                    id="edit-phone"
-                    type="tel"
-                    inputMode="tel"
-                    value={phone}
-                    aria-invalid={Boolean(errors.phone)}
-                    aria-describedby={
-                      errors.phone ? "edit-phone-error" : undefined
-                    }
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      clearFieldError("phone");
-                    }}
-                    onBlur={() => handleBlur("phone", phone)}
-                    placeholder="812-3456-7890"
-                    className={`min-w-0 flex-1 ${getInputClass(
-                      Boolean(errors.phone),
-                      needsPhoneOtp
-                    )}`}
-                  />
+                  <div className="relative flex min-w-0 flex-1 items-center">
+                    <input
+                      id="edit-phone"
+                      type="tel"
+                      inputMode="tel"
+                      value={phone}
+                      aria-invalid={Boolean(errors.phone)}
+                      aria-describedby={
+                        errors.phone ? "edit-phone-error" : undefined
+                      }
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        clearFieldError("phone");
+                      }}
+                      onBlur={() => handleBlur("phone", phone)}
+                      placeholder="812-3456-7890"
+                      className={`${getInputClass(
+                        Boolean(errors.phone),
+                        needsPhoneOtp
+                      )} ${needsPhoneOtp ? "pr-[calc(76*var(--u))]" : ""}`}
+                    />
+                    {needsPhoneOtp && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openOtpVerification("phone", normalizedPhone)
+                        }
+                        className="absolute right-[calc(6*var(--u))] flex h-[calc(30*var(--u))] cursor-pointer items-center justify-center rounded-[calc(7*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
+                      >
+                        Verifikasi
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {errors.phone && (
@@ -1042,14 +1043,14 @@ export default function EditAccountInfoPage() {
 
                 {needsPhoneOtp && (
                   <div
-                    style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))]"
+                    style={{ marginTop: "calc(6 * var(--u))" }}
+                    className="moku-field-msg flex w-full items-center gap-[calc(6*var(--u))] rounded-[calc(8*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(8*var(--u))] py-[calc(6*var(--u))]"
                   >
                     <Info
                       weight="regular"
-                      className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
+                    <span className="truncate text-[calc(11*var(--u))] font-normal leading-none text-[#1F2937]">
                       Klik Verifikasi untuk memvalidasi nomor baru Anda.
                     </span>
                   </div>
