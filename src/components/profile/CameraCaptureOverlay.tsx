@@ -9,26 +9,32 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import {
-  ArrowClockwise,
   ArrowLeft,
-  Camera,
   CameraRotate,
   Image as ImageIcon,
-  MagnifyingGlassMinus,
-  MagnifyingGlassPlus,
-  User,
+  Info,
+  Lightning,
+  LightningA,
+  LightningSlash,
+  WarningCircle,
 } from "@phosphor-icons/react";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 260;
-const EDGE_SWIPE_ZONE_PX = 40;
+const CLOSE_ANIMATION_MS = 280;
+const EDGE_SWIPE_ZONE_PX = 48;
 const DISMISS_DISTANCE_PX = 76;
 const DISMISS_VELOCITY_PX_MS = 0.35;
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 3;
+
+type FlashMode = "auto" | "on" | "off";
+
+interface FocusIndicatorState {
+  id: number;
+  x: number;
+  y: number;
+}
 
 interface CameraCaptureOverlayProps {
   isOpen: boolean;
@@ -49,14 +55,11 @@ export default function CameraCaptureOverlay({
   onCapture,
   onOpenGallery,
 }: CameraCaptureOverlayProps) {
+  const viewfinderRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const circleGuideRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const cropStageRef = useRef<HTMLDivElement | null>(null);
-  const cropCircleRef = useRef<HTMLDivElement | null>(null);
-  const cropImageRef = useRef<HTMLImageElement | null>(null);
-  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
@@ -78,91 +81,26 @@ export default function CameraCaptureOverlay({
     lockedHorizontal: false,
   });
 
-  const panRef = useRef<{
-    dragging: boolean;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-  }>({
-    dragging: false,
-    startX: 0,
-    startY: 0,
-    originX: 0,
-    originY: 0,
-  });
-
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [flashMode, setFlashMode] = useState<FlashMode>("auto");
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isFlashingScreen, setIsFlashingScreen] = useState(false);
+  const [focusIndicator, setFocusIndicator] =
+    useState<FocusIndicatorState | null>(null);
 
-  const [capturedUrl, setCapturedUrl] = useState<string | null>(null);
-  const [zoom, setZoom] = useState<number>(1.15);
-  const [rotation, setRotation] = useState<number>(0);
-  const [offset, setOffset] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
-  const [isPanning, setIsPanning] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const stopCameraStream = useCallback(() => {
+  const stopStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setCameraReady(false);
   }, []);
-
-  const resetAdjustState = useCallback(() => {
-    setCapturedUrl(null);
-    setZoom(1.15);
-    setRotation(0);
-    setOffset({ x: 0, y: 0 });
-  }, []);
-
-  const startCameraStream = useCallback(
-    async (mode: "user" | "environment") => {
-      if (
-        typeof navigator === "undefined" ||
-        !navigator.mediaDevices?.getUserMedia
-      ) {
-        setCameraError("Kamera tidak didukung di perangkat ini.");
-        setCameraReady(false);
-        return;
-      }
-
-      stopCameraStream();
-      setCameraError(null);
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: mode },
-            width: { ideal: 1080 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play().catch(() => {});
-        }
-        setCameraReady(true);
-      } catch {
-        setCameraError("Izin kamera belum aktif atau kamera tidak tersedia.");
-        setCameraReady(false);
-      }
-    },
-    [stopCameraStream]
-  );
 
   const triggerOverlayClose = useCallback(
     (afterClose?: () => void) => {
@@ -170,7 +108,7 @@ export default function CameraCaptureOverlay({
       isClosingRef.current = true;
       guardActiveRef.current = false;
       triggerHaptic(6);
-      stopCameraStream();
+      stopStream();
       setIsDragging(false);
       setIsExiting(true);
 
@@ -182,18 +120,67 @@ export default function CameraCaptureOverlay({
         isClosingRef.current = false;
         setIsExiting(false);
         setDragX(0);
-        resetAdjustState();
+        setPreviewUrl(null);
+        setFocusIndicator(null);
         onClose();
         afterClose?.();
       }, CLOSE_ANIMATION_MS);
     },
-    [onClose, resetAdjustState, stopCameraStream]
+    [onClose, stopStream]
+  );
+
+  const startCamera = useCallback(
+    async (targetFacing: "user" | "environment") => {
+      stopStream();
+      setCameraReady(false);
+      setCameraError(null);
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setCameraError("Perangkat atau browser tidak mendukung akses kamera.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: targetFacing },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
+          audio: false,
+        });
+
+        streamRef.current = stream;
+
+        const videoEl = videoRef.current;
+        if (videoEl) {
+          videoEl.srcObject = stream;
+          setCameraReady(true);
+          try {
+            await videoEl.play();
+          } catch {
+            // Frame tetap dapat diambil selama srcObject tersedia
+          }
+        }
+      } catch {
+        setCameraError(
+          "Izin kamera ditolak atau kamera sedang digunakan aplikasi lain."
+        );
+      }
+    },
+    [stopStream]
   );
 
   useEffect(() => {
     if (!isOpen) {
-      stopCameraStream();
-      resetAdjustState();
+      stopStream();
+      setCameraReady(false);
+      setPreviewUrl(null);
+      setFocusIndicator(null);
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -203,29 +190,45 @@ export default function CameraCaptureOverlay({
     }
 
     isClosingRef.current = false;
-    resetAdjustState();
+    setPreviewUrl(null);
+    setFocusIndicator(null);
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
-    startCameraStream(facingMode);
-
-    const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) => meta.setAttribute("content", "#740319"));
 
     return () => {
+      stopStream();
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
-      stopCameraStream();
     };
-  }, [
-    facingMode,
-    isOpen,
-    resetAdjustState,
-    startCameraStream,
-    stopCameraStream,
-  ]);
+  }, [isOpen, stopStream]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    metas.forEach((meta) =>
+      meta.setAttribute("content", previewUrl ? "#740319" : "#000000")
+    );
+    return () => {
+      metas.forEach((meta) => meta.setAttribute("content", "#740319"));
+    };
+  }, [isOpen, previewUrl]);
+
+  useEffect(() => {
+    if (!isOpen || previewUrl) {
+      stopStream();
+      setCameraReady(false);
+      return;
+    }
+
+    startCamera(facingMode);
+
+    return () => {
+      stopStream();
+    };
+  }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -247,12 +250,7 @@ export default function CameraCaptureOverlay({
         "",
         lockedUrlRef.current
       );
-      if (capturedUrl) {
-        triggerHaptic(6);
-        resetAdjustState();
-      } else {
-        triggerOverlayClose();
-      }
+      triggerOverlayClose();
     };
 
     const handleIonBack = (ev: Event) => {
@@ -263,14 +261,8 @@ export default function CameraCaptureOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          if (capturedUrl) {
-            resetAdjustState();
-          } else {
-            triggerOverlayClose();
-          }
+          triggerOverlayClose();
         });
-      } else if (capturedUrl) {
-        resetAdjustState();
       } else {
         triggerOverlayClose();
       }
@@ -284,9 +276,82 @@ export default function CameraCaptureOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [capturedUrl, isOpen, resetAdjustState, triggerOverlayClose]);
+  }, [isOpen, triggerOverlayClose]);
+
+  useEffect(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track || !track.getCapabilities) return;
+
+    const caps = track.getCapabilities() as MediaTrackCapabilities & {
+      torch?: boolean;
+    };
+    if (caps.torch && facingMode === "environment") {
+      track
+        .applyConstraints({
+          advanced: [{ torch: flashMode === "on" } as MediaTrackConstraintSet],
+        })
+        .catch(() => {});
+    }
+  }, [flashMode, facingMode, cameraReady]);
 
   if (!isOpen || typeof document === "undefined") return null;
+
+  const handleViewfinderPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (cameraError || isClosingRef.current || swipeStartRef.current.active) {
+      return;
+    }
+    const container = viewfinderRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+    triggerHaptic(5);
+    setFocusIndicator({
+      id: Date.now(),
+      x: localX,
+      y: localY,
+    });
+
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track && track.getCapabilities && track.applyConstraints) {
+      const caps = track.getCapabilities() as MediaTrackCapabilities & {
+        focusMode?: string[];
+      };
+      const constraints: Record<string, unknown>[] = [];
+
+      const normX =
+        facingMode === "user" ? 1 - localX / rect.width : localX / rect.width;
+      const normY = localY / rect.height;
+
+      if (Array.isArray(caps.focusMode)) {
+        if (caps.focusMode.includes("single-shot")) {
+          constraints.push({
+            focusMode: "single-shot",
+            pointsOfInterest: [{ x: normX, y: normY }],
+          });
+        } else if (caps.focusMode.includes("continuous")) {
+          constraints.push({
+            focusMode: "continuous",
+            pointsOfInterest: [{ x: normX, y: normY }],
+          });
+        }
+      }
+
+      if (constraints.length > 0) {
+        track
+          .applyConstraints({
+            advanced: constraints as MediaTrackConstraintSet[],
+          })
+          .catch(() => {});
+      }
+    }
+  };
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     if (isClosingRef.current || e.touches.length !== 1) return;
@@ -312,9 +377,7 @@ export default function CameraCaptureOverlay({
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     const state = swipeStartRef.current;
-    if (!state.active || isClosingRef.current || e.touches.length !== 1) {
-      return;
-    }
+    if (!state.active || isClosingRef.current || e.touches.length !== 1) return;
 
     const touch = e.touches[0];
     const rawDx = touch.clientX - state.x;
@@ -354,189 +417,128 @@ export default function CameraCaptureOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      if (capturedUrl) {
-        triggerHaptic(6);
-        setIsDragging(false);
-        setDragX(0);
-        resetAdjustState();
-      } else {
-        triggerOverlayClose();
-      }
+      triggerOverlayClose();
     } else {
       setIsDragging(false);
       setDragX(0);
     }
   };
 
-  const handleBackButtonClick = () => {
-    if (isClosingRef.current) return;
-    if (capturedUrl) {
-      triggerHaptic(6);
-      resetAdjustState();
-    } else {
-      triggerOverlayClose();
-    }
+  const handleCycleFlash = () => {
+    triggerHaptic(6);
+    setFlashMode((prev) =>
+      prev === "auto" ? "on" : prev === "on" ? "off" : "auto"
+    );
   };
 
   const handleSwitchCamera = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic(7);
+    triggerHaptic(8);
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   };
 
-  const handleShutterClick = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic([8, 20, 8]);
-
+  const handleTakeSnapshot = () => {
     const video = videoRef.current;
-    const canvas = captureCanvasRef.current;
+    const circleEl = circleGuideRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || isClosingRef.current) return;
 
-    if (video && videoReady(video) && canvas) {
-      const vw = video.videoWidth || 720;
-      const vh = video.videoHeight || 720;
-      const side = Math.min(vw, vh);
-      const sx = (vw - side) / 2;
-      const sy = (vh - side) / 2;
+    const hasStreamFrame =
+      cameraReady || video.videoWidth > 0 || video.readyState >= 2;
+    if (!hasStreamFrame) return;
 
-      canvas.width = 720;
-      canvas.height = 720;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.save();
-        if (facingMode === "user") {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-        }
-        ctx.drawImage(
-          video,
-          sx,
-          sy,
-          side,
-          side,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
-        ctx.restore();
+    triggerHaptic([10, 20, 10]);
 
-        const shotUrl = canvas.toDataURL("image/jpeg", 0.92);
-        stopCameraStream();
-        setZoom(1.15);
-        setRotation(0);
-        setOffset({ x: 0, y: 0 });
-        setCapturedUrl(shotUrl);
-        return;
+    if (flashMode === "on" || (flashMode === "auto" && facingMode === "user")) {
+      setIsFlashingScreen(true);
+      window.setTimeout(() => setIsFlashingScreen(false), 200);
+    }
+
+    const vw = video.videoWidth || 720;
+    const vh = video.videoHeight || 720;
+
+    const videoRect = video.getBoundingClientRect();
+    const circleRect = circleEl?.getBoundingClientRect();
+
+    let sx = (vw - Math.min(vw, vh)) / 2;
+    let sy = (vh - Math.min(vw, vh)) / 2;
+    let sSize = Math.min(vw, vh);
+
+    if (
+      circleRect &&
+      videoRect.width > 0 &&
+      videoRect.height > 0 &&
+      circleRect.width > 0
+    ) {
+      const scale = Math.max(videoRect.width / vw, videoRect.height / vh);
+      const renderedWidth = vw * scale;
+      const renderedHeight = vh * scale;
+      const offsetX = (renderedWidth - videoRect.width) / 2;
+      const offsetY = (renderedHeight - videoRect.height) / 2;
+
+      const circleLeftInVideo = circleRect.left - videoRect.left + offsetX;
+      const circleTopInVideo = circleRect.top - videoRect.top + offsetY;
+
+      sSize = circleRect.width / scale;
+      sx = circleLeftInVideo / scale;
+      sy = circleTopInVideo / scale;
+
+      if (facingMode === "user") {
+        sx = vw - sx - sSize;
       }
+
+      sSize = Math.min(sSize, vw, vh);
+      sx = Math.max(0, Math.min(vw - sSize, sx));
+      sy = Math.max(0, Math.min(vh - sSize, sy));
     }
-
-    stopCameraStream();
-    setZoom(1.15);
-    setRotation(0);
-    setOffset({ x: 0, y: 0 });
-    setCapturedUrl(buildFallbackAvatarDataUrl());
-  };
-
-  const handleRotateClockwise = () => {
-    triggerHaptic(7);
-    setRotation((prev) => prev + 90);
-  };
-
-  const handlePanPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!capturedUrl) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setIsPanning(true);
-    panRef.current = {
-      dragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      originX: offset.x,
-      originY: offset.y,
-    };
-  };
-
-  const handlePanPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (!panRef.current.dragging) return;
-    const dx = e.clientX - panRef.current.startX;
-    const dy = e.clientY - panRef.current.startY;
-    const maxPan = 180 * zoom;
-    setOffset({
-      x: Math.max(-maxPan, Math.min(maxPan, panRef.current.originX + dx)),
-      y: Math.max(-maxPan, Math.min(maxPan, panRef.current.originY + dy)),
-    });
-  };
-
-  const handlePanPointerUp = (e: PointerEvent<HTMLDivElement>) => {
-    if (!panRef.current.dragging) return;
-    panRef.current.dragging = false;
-    setIsPanning(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-  };
-
-  const handleSaveAdjustedPhoto = () => {
-    const imgEl = cropImageRef.current;
-    const circleEl = cropCircleRef.current;
-    const canvas = exportCanvasRef.current;
-    if (!capturedUrl || !imgEl || !circleEl || !canvas || isClosingRef.current) {
-      return;
-    }
-
-    triggerHaptic([8, 25, 10]);
-
-    const natW = imgEl.naturalWidth || 720;
-    const natH = imgEl.naturalHeight || 720;
-    const circleRect = circleEl.getBoundingClientRect();
-    const circleSizePx = Math.max(1, circleRect.width);
 
     canvas.width = 720;
     canvas.height = 720;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const imgRect = imgEl.getBoundingClientRect();
-    const imgCenterX = imgRect.left + imgRect.width / 2;
-    const imgCenterY = imgRect.top + imgRect.height / 2;
-    const circleCenterX = circleRect.left + circleRect.width / 2;
-    const circleCenterY = circleRect.top + circleRect.height / 2;
-
-    const outputScale = canvas.width / circleSizePx;
-    const baseFitScale = Math.max(
-      circleSizePx / Math.max(1, natW),
-      circleSizePx / Math.max(1, natH)
-    );
-
-    const relCenterX = (imgCenterX - circleCenterX) * outputScale;
-    const relCenterY = (imgCenterY - circleCenterY) * outputScale;
-    const normalizedDeg = ((rotation % 360) + 360) % 360;
-
     ctx.save();
-    ctx.translate(
-      canvas.width / 2 + relCenterX,
-      canvas.height / 2 + relCenterY
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(
+      video,
+      sx,
+      sy,
+      sSize,
+      sSize,
+      0,
+      0,
+      canvas.width,
+      canvas.height
     );
-    ctx.rotate((normalizedDeg * Math.PI) / 180);
-    ctx.scale(
-      zoom * outputScale * baseFitScale,
-      zoom * outputScale * baseFitScale
-    );
-    ctx.drawImage(imgEl, -natW / 2, -natH / 2, natW, natH);
     ctx.restore();
 
-    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    stopStream();
+    setPreviewUrl(dataUrl);
+  };
+
+  // Transisi keluar mulus sebelum menerapkan foto ke halaman Ubah Informasi Akun
+  const handleUsePhoto = () => {
+    if (!previewUrl || isClosingRef.current) return;
+    triggerHaptic([8, 25, 10]);
+    const finalUrl = previewUrl;
     triggerOverlayClose(() => {
-      onCapture(croppedDataUrl);
+      onCapture(finalUrl);
     });
+  };
+
+  const handleRetakePhoto = () => {
+    if (isClosingRef.current) return;
+    triggerHaptic(6);
+    setPreviewUrl(null);
   };
 
   const overlayStyle: CSSProperties = {
     ...MOBILE_SCALE_VARS,
     WebkitTouchCallout: "none",
-    WebkitUserSelect: "none",
     transform: isExiting
       ? "translate3d(100%, 0, 0)"
       : dragX > 0
@@ -548,11 +550,7 @@ export default function CameraCaptureOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
-  if (capturedUrl) {
-    const zoomPercent = Math.round(
-      ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100
-    );
-
+  if (previewUrl) {
     return createPortal(
       <div
         style={overlayStyle}
@@ -563,8 +561,8 @@ export default function CameraCaptureOverlay({
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
-        aria-label="Sesuaikan Foto"
-        className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#1F1F23] text-white select-none"
+        aria-label="Pratinjau Foto"
+        className="moku-preview-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
       >
         <header className="w-full bg-[#740319] text-white">
           <div
@@ -576,7 +574,7 @@ export default function CameraCaptureOverlay({
           >
             <button
               type="button"
-              onClick={handleBackButtonClick}
+              onClick={() => triggerOverlayClose()}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -589,192 +587,92 @@ export default function CameraCaptureOverlay({
               style={{ margin: 0 }}
               className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
             >
-              Sesuaikan Foto
+              Pratinjau Foto
             </h2>
           </div>
         </header>
 
-        <div
-          ref={cropStageRef}
-          onPointerDown={handlePanPointerDown}
-          onPointerMove={handlePanPointerMove}
-          onPointerUp={handlePanPointerUp}
-          onPointerCancel={handlePanPointerUp}
-          onContextMenu={(e) => e.preventDefault()}
-          style={{ touchAction: "none" }}
-          className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-grab flex-col items-center justify-center overflow-hidden bg-[#26262A] active:cursor-grabbing"
-        >
-          <img
-            ref={cropImageRef}
-            src={capturedUrl}
-            alt="Sesuaikan Foto Profil"
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-            style={{
-              width: "min(86vw, 356 * var(--u))",
-              height: "min(86vw, 356 * var(--u))",
-              transform: `translate3d(${offset.x}px, ${offset.y}px, 0) rotate(${rotation}deg) scale(${zoom})`,
-              transition: isPanning
-                ? "none"
-                : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
-            className="pointer-events-none object-cover select-none"
-          />
-
+        <div className="moku-preview-content mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
           <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            style={{
+              width: "min(76vw, 312 * var(--u))",
+              height: "min(76vw, 312 * var(--u))",
+              marginBottom: "calc(28 * var(--u))",
+            }}
+            className="overflow-hidden rounded-full bg-[#F3F4F6] shadow-[0_6px_24px_rgba(0,0,0,0.08)]"
           >
-            <div
-              ref={cropCircleRef}
-              style={{
-                width: "min(86vw, 356 * var(--u))",
-                height: "min(86vw, 356 * var(--u))",
-              }}
-              className="relative overflow-hidden rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.48)]"
-            >
-              <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
-              <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
-              <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
-              <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
-            </div>
+            <img
+              src={previewUrl}
+              alt="Pratinjau Foto Profil"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <p
-            style={{
-              margin: 0,
-              marginTop: "calc(22 * var(--u))",
-            }}
-            className="relative z-10 max-w-[270px] text-center text-[calc(13*var(--u))] font-normal leading-relaxed text-white/90"
+            style={{ margin: 0 }}
+            className="max-w-[260px] text-[calc(13.5*var(--u))] font-normal leading-relaxed text-[#6B6B76]"
           >
-            Atur posisi, ukuran, dan rotasi foto agar sesuai dengan lingkaran
-            avatar.
+            Pastikan foto sudah sesuai untuk digunakan sebagai foto profil.
           </p>
         </div>
 
         <div
           style={{
-            paddingTop: "calc(18 * var(--u))",
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 22 * var(--u))",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
           }}
-          className="w-full bg-white px-[calc(16*var(--u))] text-[#171717]"
+          className="moku-preview-actions mx-auto w-full max-w-[680px] space-y-[calc(12*var(--u))] px-[calc(16*var(--u))]"
         >
-          <div className="mx-auto w-full max-w-[680px]">
-            <div
-              style={{ marginBottom: "calc(20 * var(--u))" }}
-              className="mx-auto flex w-full max-w-[520px] items-center gap-[calc(12*var(--u))]"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic(5);
-                    setZoom((prev) =>
-                      Math.max(MIN_ZOOM, Number((prev - 0.2).toFixed(2)))
-                    );
-                  }}
-                  aria-label="Perkecil Foto"
-                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
-                >
-                  <MagnifyingGlassMinus
-                    weight="regular"
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  />
-                </button>
+          <button
+            type="button"
+            onClick={handleUsePhoto}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
+          >
+            Gunakan Foto
+          </button>
 
-                <div className="relative flex flex-1 items-center">
-                  <div className="h-[calc(4*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E7EB]">
-                    <div
-                      style={{ width: `${zoomPercent}%` }}
-                      className="h-full bg-[#740319] transition-[width] duration-100"
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min={MIN_ZOOM}
-                    max={MAX_ZOOM}
-                    step={0.02}
-                    value={zoom}
-                    aria-label="Tingkat Zoom Foto"
-                    onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  />
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      left: `calc(${zoomPercent}% - 8 * var(--u))`,
-                      width: "calc(16 * var(--u))",
-                      height: "calc(16 * var(--u))",
-                    }}
-                    className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic(5);
-                    setZoom((prev) =>
-                      Math.min(MAX_ZOOM, Number((prev + 0.2).toFixed(2)))
-                    );
-                  }}
-                  aria-label="Perbesar Foto"
-                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
-                >
-                  <MagnifyingGlassPlus
-                    weight="regular"
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRotateClockwise}
-                aria-label="Putar Searah Jarum Jam"
-                style={{
-                  width: "calc(54 * var(--u))",
-                  height: "calc(40 * var(--u))",
-                }}
-                className="flex shrink-0 cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#F3F4F6] text-[#171717] transition-[transform,background-color] duration-200 active:scale-92 active:bg-[#E5E7EB]"
-              >
-                <ArrowClockwise
-                  weight="bold"
-                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-[calc(12*var(--u))]">
-              <button
-                type="button"
-                onClick={handleBackButtonClick}
-                className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
-              >
-                Batal
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveAdjustedPhoto}
-                className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
-              >
-                Simpan
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={handleRetakePhoto}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+          >
+            Ambil Ulang
+          </button>
         </div>
 
-        <canvas ref={exportCanvasRef} className="hidden" />
-
         <style>{`
-          .moku-cam-enter {
-            animation: moku-cam-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          .moku-preview-enter {
+            animation: moku-preview-fade 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
-          @keyframes moku-cam-in {
+          .moku-preview-content {
+            animation: moku-preview-circle 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          .moku-preview-actions {
+            animation: moku-preview-btns 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          @keyframes moku-preview-fade {
             from {
               opacity: 0;
-              transform: translate3d(24px, 0, 0);
+            }
+            to {
+              opacity: 1;
+            }
+          }
+          @keyframes moku-preview-circle {
+            from {
+              opacity: 0;
+              transform: scale(0.92) translate3d(0, 12px, 0);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1) translate3d(0, 0, 0);
+            }
+          }
+          @keyframes moku-preview-btns {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 18px, 0);
             }
             to {
               opacity: 1;
@@ -798,22 +696,30 @@ export default function CameraCaptureOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="Ambil Foto"
-      className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#141417] text-white select-none"
+      className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-black text-white select-none"
     >
-      <header className="w-full bg-[#740319] text-white">
+      {isFlashingScreen && (
         <div
-          style={{
-            paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
-            paddingBottom: "calc(12 * var(--u))",
-          }}
-          className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
-        >
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 bg-white/85 transition-opacity duration-200"
+        />
+      )}
+
+      {/* Top Bar + Instruksi Pill */}
+      <div
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
+          paddingBottom: "calc(14 * var(--u))",
+        }}
+        className="relative z-20 flex flex-col bg-black px-[calc(12*var(--u))]"
+      >
+        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between">
           <div className="flex items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={handleBackButtonClick}
+              onClick={() => triggerOverlayClose()}
               aria-label="Kembali"
-              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
               <ArrowLeft
                 weight="regular"
@@ -830,127 +736,191 @@ export default function CameraCaptureOverlay({
 
           <button
             type="button"
-            onClick={handleSwitchCamera}
-            aria-label="Ganti Kamera"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            onClick={handleCycleFlash}
+            aria-label={`Mode Flash: ${flashMode}`}
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
           >
-            <CameraRotate
-              weight="regular"
-              className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
-            />
+            {flashMode === "auto" && (
+              <LightningA
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            )}
+            {flashMode === "on" && (
+              <Lightning
+                weight="fill"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#FACC15]"
+              />
+            )}
+            {flashMode === "off" && (
+              <LightningSlash
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white/70"
+              />
+            )}
           </button>
         </div>
-      </header>
 
-      <div className="relative mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center overflow-hidden bg-[#19191E]">
+        <div
+          style={{ marginTop: "calc(12 * var(--u))" }}
+          className="mx-auto flex items-center gap-[calc(8*var(--u))] rounded-full bg-[#1F1F23] px-[calc(14*var(--u))] py-[calc(7*var(--u))]"
+        >
+          <Info
+            weight="regular"
+            className="h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0 text-white"
+          />
+          <span className="text-[calc(12.5*var(--u))] font-normal text-white/95">
+            Posisikan wajah Anda di dalam lingkaran
+          </span>
+        </div>
+      </div>
+
+      {/* Area Viewfinder Kamera + Tap-to-Focus + Grid 3x3 + Lingkaran Panduan */}
+      <div
+        ref={viewfinderRef}
+        onPointerDown={handleViewfinderPointerDown}
+        onContextMenu={(e) => e.preventDefault()}
+        className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-crosshair items-center justify-center overflow-hidden bg-[#17171A]"
+      >
         <video
           ref={videoRef}
           playsInline
           muted
           autoPlay
-          style={{
-            transform: facingMode === "user" ? "scaleX(-1)" : undefined,
-          }}
-          className={`h-full w-full object-cover transition-opacity duration-200 ${
-            cameraReady ? "opacity-100" : "opacity-0"
-          }`}
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
+          onLoadedMetadata={() => setCameraReady(true)}
+          onCanPlay={() => setCameraReady(true)}
+          style={{ WebkitTouchCallout: "none" }}
+          className={`pointer-events-none h-full w-full object-cover select-none transition-opacity duration-300 ${
+            facingMode === "user" ? "-scale-x-100" : ""
+          } ${cameraReady ? "opacity-100" : "opacity-0"}`}
         />
 
-        {!cameraReady && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
-            <div
-              style={{
-                width: "min(76vw, 290 * var(--u))",
-                height: "min(76vw, 290 * var(--u))",
-              }}
-              className="flex items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white/80 bg-white/5"
-            >
-              <User
-                weight="fill"
-                className="h-[calc(92*var(--u))] w-[calc(92*var(--u))] text-white/30"
-              />
-            </div>
+        {!cameraError && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
+            <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
+            <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
+            <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
 
-            {cameraError && (
-              <p
-                style={{ margin: 0, marginTop: "calc(16 * var(--u))" }}
-                className="max-w-[280px] text-[calc(12.5*var(--u))] text-white/80"
-              >
-                {cameraError}
-              </p>
-            )}
+            <div
+              ref={circleGuideRef}
+              style={{
+                width: "min(84vw, 336 * var(--u))",
+                height: "min(84vw, 336 * var(--u))",
+              }}
+              className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]"
+            />
           </div>
         )}
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
-        >
+        {focusIndicator && !cameraError && (
           <div
+            key={focusIndicator.id}
+            aria-hidden="true"
             style={{
-              width: "min(76vw, 290 * var(--u))",
-              height: "min(76vw, 290 * var(--u))",
+              left: `${focusIndicator.x}px`,
+              top: `${focusIndicator.y}px`,
+              width: "calc(64 * var(--u))",
+              height: "calc(64 * var(--u))",
+              transform: "translate3d(-50%, -50%, 0)",
             }}
-            className="rounded-full border-[calc(2*var(--u))] border-white/75"
+            className="moku-focus-ring pointer-events-none absolute z-20 rounded-full border-[calc(1.5*var(--u))] border-[#FACC15] shadow-[0_0_0_1px_rgba(0,0,0,0.45)]"
           />
-          <p
-            style={{ margin: 0, marginTop: "calc(14 * var(--u))" }}
-            className="text-[calc(12.5*var(--u))] font-normal text-white/85"
-          >
-            Posisikan wajah di dalam lingkaran
-          </p>
-        </div>
+        )}
+
+        {cameraError && (
+          <div className="relative z-10 mx-[calc(24*var(--u))] flex max-w-[340px] flex-col items-center rounded-[calc(16*var(--u))] bg-[#1F1F23] p-[calc(20*var(--u))] text-center">
+            <WarningCircle
+              weight="fill"
+              className="mb-[calc(10*var(--u))] h-[calc(32*var(--u))] w-[calc(32*var(--u))] text-[#F87171]"
+            />
+            <p
+              style={{ margin: 0, marginBottom: "calc(14 * var(--u))" }}
+              className="text-[calc(13*var(--u))] leading-relaxed text-white/90"
+            >
+              {cameraError}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                stopStream();
+                guardActiveRef.current = false;
+                onOpenGallery();
+              }}
+              className="cursor-pointer rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white active:bg-[#5B0213]"
+            >
+              Pilih dari Galeri
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Bottom Controls: Switch Camera | Shutter | Gallery */}
       <div
         style={{
-          paddingTop: "calc(18 * var(--u))",
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 22 * var(--u))",
+          paddingTop: "calc(22 * var(--u))",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 26 * var(--u))",
         }}
-        className="w-full bg-[#141417] px-[calc(24*var(--u))]"
+        className="relative z-20 bg-black px-[calc(28*var(--u))]"
       >
-        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between">
+        <div className="mx-auto flex w-full max-w-[420px] items-center justify-between">
+          <button
+            type="button"
+            onClick={handleSwitchCamera}
+            aria-label="Ganti Kamera"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+          >
+            <CameraRotate
+              weight="regular"
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))]"
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTakeSnapshot}
+            aria-label="Jepret Foto"
+            style={{
+              width: "calc(72 * var(--u))",
+              height: "calc(72 * var(--u))",
+            }}
+            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white p-[calc(4*var(--u))] transition-transform duration-150 active:scale-92"
+          >
+            <span className="h-full w-full rounded-full bg-white" />
+          </button>
+
           <button
             type="button"
             onClick={() => {
-              triggerOverlayClose(() => {
-                onOpenGallery();
-              });
+              triggerHaptic(6);
+              stopStream();
+              guardActiveRef.current = false;
+              onOpenGallery();
             }}
-            aria-label="Buka Galeri"
-            className="flex h-[calc(44*var(--u))] w-[calc(44*var(--u))] cursor-pointer items-center justify-center rounded-full bg-white/12 text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/20"
+            aria-label="Pilih dari Galeri"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
           >
             <ImageIcon
               weight="regular"
-              className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={handleShutterClick}
-            aria-label="Ambil Foto Sekarang"
-            style={{
-              width: "calc(68 * var(--u))",
-              height: "calc(68 * var(--u))",
-            }}
-            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-200 active:scale-92 active:bg-[#5B0213]"
-          >
-            <Camera
-              weight="fill"
               className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
             />
           </button>
-
-          <div className="w-[calc(44*var(--u))]" aria-hidden="true" />
         </div>
       </div>
 
-      <canvas ref={captureCanvasRef} className="hidden" />
+      <canvas ref={canvasRef} className="hidden" />
 
       <style>{`
         .moku-cam-enter {
-          animation: moku-cam-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-cam-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-focus-ring {
+          animation: moku-focus-pulse 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes moku-cam-in {
           from {
@@ -962,34 +932,22 @@ export default function CameraCaptureOverlay({
             transform: translate3d(0, 0, 0);
           }
         }
+        @keyframes moku-focus-pulse {
+          0% {
+            opacity: 0.95;
+            transform: translate3d(-50%, -50%, 0) scale(1.25);
+          }
+          45% {
+            opacity: 1;
+            transform: translate3d(-50%, -50%, 0) scale(0.95);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(1);
+          }
+        }
       `}</style>
     </div>,
     document.body
   );
 }
-
-function videoReady(video: HTMLVideoElement): boolean {
-  return video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0;
-}
-
-function buildFallbackAvatarDataUrl(): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = 720;
-  canvas.height = 720;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-
-  ctx.fillStyle = "#FCECEF";
-  ctx.fillRect(0, 0, 720, 720);
-
-  ctx.fillStyle = "#740319";
-  ctx.beginPath();
-  ctx.arc(360, 275, 110, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(360, 620, 220, Math.PI, 0);
-  ctx.fill();
-
-  return canvas.toDataURL("image/jpeg", 0.92);
-  }
