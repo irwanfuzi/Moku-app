@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -23,9 +22,9 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const CLOSE_ANIMATION_MS = 280;
-const EDGE_SWIPE_THRESHOLD_PX = 80;
-const DISMISS_DISTANCE_PX = 84;
-const DISMISS_VELOCITY_PX_MS = 0.38;
+const EDGE_SWIPE_THRESHOLD_PX = 88;
+const DISMISS_DISTANCE_PX = 80;
+const DISMISS_VELOCITY_PX_MS = 0.35;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -48,6 +47,7 @@ export default function CameraCaptureOverlay({
   onCapture,
   onOpenGallery,
 }: CameraCaptureOverlayProps) {
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const circleGuideRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -55,15 +55,17 @@ export default function CameraCaptureOverlay({
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
 
-  const swipeStartRef = useRef<{
+  const swipeStateRef = useRef<{
     x: number;
     y: number;
+    lastX: number;
     time: number;
     active: boolean;
     lockedHorizontal: boolean;
   }>({
     x: 0,
     y: 0,
+    lastX: 0,
     time: 0,
     active: false,
     lockedHorizontal: false,
@@ -86,7 +88,7 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Fungsi penutup tunggal — dipakai tombol Back UI, Swipe-Back, dan Hardware Back
+  // Fungsi penutup tunggal — sama persis ketika pencet tombol panah kiri atas samping Ambil Foto
   const handleClose = useCallback(() => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
@@ -179,9 +181,89 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
 
-  // Tangkap tombol Back hardware / Ionic back button tanpa mengubah history browser
+  // Non-passive touch listeners + intercept hardware/Ionic back button agar perilaku 100% sama dengan tombol panah kiri
   useEffect(() => {
     if (!isOpen) return;
+
+    const onTouchStart = (e: globalThis.TouchEvent) => {
+      if (isClosingRef.current || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      if (touch.clientX > EDGE_SWIPE_THRESHOLD_PX) {
+        swipeStateRef.current.active = false;
+        return;
+      }
+      // Cegah browser/WebView mengambil alih edge-swipe sebagai history.back()
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      swipeStateRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        lastX: touch.clientX,
+        time: performance.now(),
+        active: true,
+        lockedHorizontal: false,
+      };
+    };
+
+    const onTouchMove = (e: globalThis.TouchEvent) => {
+      const state = swipeStateRef.current;
+      if (!state.active || isClosingRef.current || e.touches.length !== 1) {
+        return;
+      }
+
+      const touch = e.touches[0];
+      const dx = touch.clientX - state.x;
+      const dy = touch.clientY - state.y;
+
+      if (!state.lockedHorizontal) {
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+          state.active = false;
+          setIsDragging(false);
+          setDragX(0);
+          return;
+        }
+        if (dx > 6) {
+          state.lockedHorizontal = true;
+          setIsDragging(true);
+        } else {
+          return;
+        }
+      }
+
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      const clampedDx = Math.max(0, dx);
+      state.lastX = touch.clientX;
+      setDragX(clampedDx);
+    };
+
+    const onTouchEnd = () => {
+      const state = swipeStateRef.current;
+      if (!state.active) return;
+      state.active = false;
+
+      if (!state.lockedHorizontal) {
+        setIsDragging(false);
+        setDragX(0);
+        return;
+      }
+
+      const finalDx = Math.max(0, state.lastX - state.x);
+      const elapsed = Math.max(1, performance.now() - state.time);
+      const velocity = finalDx / elapsed;
+
+      if (
+        finalDx >= DISMISS_DISTANCE_PX ||
+        velocity >= DISMISS_VELOCITY_PX_MS
+      ) {
+        handleClose();
+      } else {
+        setIsDragging(false);
+        setDragX(0);
+      }
+    };
 
     const handleIonBack = (ev: Event) => {
       ev.stopImmediatePropagation();
@@ -203,10 +285,24 @@ export default function CameraCaptureOverlay({
       handleClose();
     };
 
+    document.addEventListener("touchstart", onTouchStart, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("touchmove", onTouchMove, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("touchend", onTouchEnd, { capture: true });
+    document.addEventListener("touchcancel", onTouchEnd, { capture: true });
     document.addEventListener("ionBackButton", handleIonBack, true);
     document.addEventListener("backbutton", handleNativeBackButton, true);
 
     return () => {
+      document.removeEventListener("touchstart", onTouchStart, true);
+      document.removeEventListener("touchmove", onTouchMove, true);
+      document.removeEventListener("touchend", onTouchEnd, true);
+      document.removeEventListener("touchcancel", onTouchEnd, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
       document.removeEventListener("backbutton", handleNativeBackButton, true);
     };
@@ -231,73 +327,6 @@ export default function CameraCaptureOverlay({
   }, [flashMode, facingMode, cameraReady]);
 
   if (!isOpen || typeof document === "undefined") return null;
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if (isClosingRef.current || e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    if (touch.clientX > EDGE_SWIPE_THRESHOLD_PX) {
-      swipeStartRef.current.active = false;
-      return;
-    }
-    swipeStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: performance.now(),
-      active: true,
-      lockedHorizontal: false,
-    };
-  };
-
-  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    const state = swipeStartRef.current;
-    if (!state.active || isClosingRef.current || e.touches.length !== 1) return;
-
-    const touch = e.touches[0];
-    const dx = touch.clientX - state.x;
-    const dy = touch.clientY - state.y;
-
-    if (!state.lockedHorizontal) {
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-        state.active = false;
-        setIsDragging(false);
-        setDragX(0);
-        return;
-      }
-      if (dx > 6) {
-        state.lockedHorizontal = true;
-        setIsDragging(true);
-      } else {
-        return;
-      }
-    }
-
-    if (e.cancelable) {
-      e.preventDefault();
-    }
-    setDragX(Math.max(0, dx));
-  };
-
-  const handleTouchEnd = () => {
-    const state = swipeStartRef.current;
-    if (!state.active) return;
-    state.active = false;
-
-    if (!state.lockedHorizontal) {
-      setIsDragging(false);
-      setDragX(0);
-      return;
-    }
-
-    const elapsed = Math.max(1, performance.now() - state.time);
-    const velocity = dragX / elapsed;
-
-    if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      handleClose();
-    } else {
-      setIsDragging(false);
-      setDragX(0);
-    }
-  };
 
   const handleCycleFlash = () => {
     triggerHaptic(6);
@@ -393,7 +422,8 @@ export default function CameraCaptureOverlay({
 
   const overlayStyle: CSSProperties = {
     ...MOBILE_SCALE_VARS,
-    touchAction: "pan-y",
+    touchAction: "none",
+    overscrollBehaviorX: "none",
     transform: isExiting
       ? "translate3d(100%, 0, 0)"
       : dragX > 0
@@ -407,11 +437,8 @@ export default function CameraCaptureOverlay({
 
   return createPortal(
     <div
+      ref={overlayRef}
       style={overlayStyle}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       role="dialog"
       aria-modal="true"
       aria-label="Ambil Foto"
