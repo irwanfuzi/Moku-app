@@ -817,19 +817,19 @@ export default function EditAccountInfoPage() {
         noValidate
         className="moku-edit-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]"
       >
-        {/* Avatar Besar Bersih Tanpa Teks Nama & Jabatan di Bawahnya */}
+        {/* Avatar Besar Bersih Tanpa Teks di Bawahnya */}
         <section className="flex flex-col items-center text-center">
-          <div
-            style={{ marginBottom: "calc(12 * var(--u))" }}
-            className="relative"
-          >
-            <div
+          <div className="relative">
+            <button
+              type="button"
               key={avatarUrl}
+              onClick={openPhotoSheet}
+              aria-label="Ubah Foto Profil"
               style={{
                 width: "calc(120 * var(--u))",
                 height: "calc(120 * var(--u))",
               }}
-              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] shadow-[0_6px_20px_rgba(116,3,25,0.08)]"
+              className="moku-avatar-pop flex cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] shadow-[0_6px_20px_rgba(116,3,25,0.08)] transition-transform duration-200 active:scale-[0.97]"
             >
               {!avatarError ? (
                 <img
@@ -844,7 +844,7 @@ export default function EditAccountInfoPage() {
                   className="h-[calc(48*var(--u))] w-[calc(48*var(--u))] text-[#740319]"
                 />
               )}
-            </div>
+            </button>
 
             <button
               type="button"
@@ -862,14 +862,6 @@ export default function EditAccountInfoPage() {
               />
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={openPhotoSheet}
-            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-260 active:bg-[#F0F0F4] active:text-[#171717]"
-          >
-            Ubah Foto Profil
-          </button>
         </section>
 
         <section
