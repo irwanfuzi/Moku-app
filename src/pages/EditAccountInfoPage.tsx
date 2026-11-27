@@ -810,7 +810,7 @@ export default function EditAccountInfoPage() {
                 width: "calc(32 * var(--u))",
                 height: "calc(32 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
@@ -1766,4 +1766,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-        }
+}
