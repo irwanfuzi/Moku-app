@@ -58,7 +58,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isMobileView) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) => meta.setAttribute("content", "#7A041B"));
+    metas.forEach((meta) => meta.setAttribute("content", "#740319"));
   }, [isMobileView]);
 
   const dismissToast = useCallback(() => {
@@ -126,12 +126,22 @@ export default function ProfilePage() {
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
       {/* Header Profil Marun */}
-      <header className="w-full bg-[#7A041B] text-white">
-        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(24*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(32*var(--u)))] text-center">
+      <header className="w-full bg-[#740319] text-white">
+        <div
+          style={{
+            paddingTop: "calc(env(safe-area-inset-top) + 26 * var(--u))",
+            paddingBottom: "calc(22 * var(--u))",
+          }}
+          className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] text-center"
+        >
           {/* Avatar Lingkaran + Border Putih */}
           <div
-            style={{ marginBottom: "calc(14 * var(--u))" }}
-            className="flex h-[calc(112*var(--u))] w-[calc(112*var(--u))] items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
+            style={{
+              width: "calc(110 * var(--u))",
+              height: "calc(110 * var(--u))",
+              marginBottom: "calc(12 * var(--u))",
+            }}
+            className="flex items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
           >
             {!avatarError ? (
               <img
@@ -141,7 +151,7 @@ export default function ProfilePage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="font-display text-[calc(34*var(--u))] font-bold text-[#7A041B]">
+              <span className="font-display text-[calc(34*var(--u))] font-bold text-[#740319]">
                 BS
               </span>
             )}
@@ -149,34 +159,34 @@ export default function ProfilePage() {
 
           {/* Nama & Email */}
           <h1
-            style={{ margin: 0, marginBottom: "calc(6 * var(--u))" }}
-            className="font-display text-[calc(21*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white"
+            style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
+            className="font-display text-[calc(22*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white"
           >
             Budi Santoso
           </h1>
           <p
             style={{ margin: 0, marginBottom: "calc(14 * var(--u))" }}
-            className="text-[calc(13.5*var(--u))] font-normal text-white/90"
+            className="text-[calc(14*var(--u))] font-normal leading-snug text-white/90"
           >
             budi.santoso@moku.id
           </p>
 
           {/* Jabatan | Cabang */}
-          <div className="flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(12.5*var(--u))] font-normal text-white/95">
-            <span className="inline-flex items-center gap-[calc(5*var(--u))]">
+          <div className="flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(13*var(--u))] font-normal text-white/95">
+            <span className="inline-flex items-center gap-[calc(6*var(--u))]">
               <User
                 weight="regular"
-                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+                className="h-[calc(15.5*var(--u))] w-[calc(15.5*var(--u))]"
               />
               Teknisi
             </span>
 
             <span className="h-[calc(13*var(--u))] w-[1px] bg-white/45" />
 
-            <span className="inline-flex items-center gap-[calc(5*var(--u))]">
+            <span className="inline-flex items-center gap-[calc(6*var(--u))]">
               <Buildings
                 weight="regular"
-                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+                className="h-[calc(15.5*var(--u))] w-[calc(15.5*var(--u))]"
               />
               Cabang Jakarta 3
             </span>
@@ -188,20 +198,23 @@ export default function ProfilePage() {
       <div className="moku-profile-enter mx-auto w-full max-w-[680px] space-y-[calc(18*var(--u))] px-[calc(16*var(--u))] pt-[calc(20*var(--u))]">
         {/* 1. Seksi Akun */}
         <section>
-          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+          <h2
+            style={{ margin: 0, marginBottom: "calc(10 * var(--u))" }}
+            className="px-[calc(2*var(--u))] font-display text-[calc(15*var(--u))] font-bold text-[#171717]"
+          >
             Akun
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 triggerToast("Halaman Informasi Akun segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <User
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -220,9 +233,9 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Ubah Kata Sandi segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Lock
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -241,9 +254,9 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Keamanan Akun segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <ShieldCheck
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -260,20 +273,23 @@ export default function ProfilePage() {
 
         {/* 2. Seksi Preferensi */}
         <section>
-          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+          <h2
+            style={{ margin: 0, marginBottom: "calc(10 * var(--u))" }}
+            className="px-[calc(2*var(--u))] font-display text-[calc(15*var(--u))] font-bold text-[#171717]"
+          >
             Preferensi
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 navigateWithTransition("/notifications", "forward");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Bell
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -286,8 +302,8 @@ export default function ProfilePage() {
               />
             </button>
 
-            <div className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(12.5*var(--u))]">
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+            <div className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(13*var(--u))]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Moon
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -302,7 +318,7 @@ export default function ProfilePage() {
                 aria-label="Mode Gelap"
                 onClick={handleToggleDarkMode}
                 className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center rounded-full transition-colors duration-200 ${
-                  darkMode ? "bg-[#7A041B]" : "bg-[#C8C8CE]"
+                  darkMode ? "bg-[#740319]" : "bg-[#C8C8CE]"
                 }`}
               >
                 <span
@@ -321,9 +337,9 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Bahasa aktif: Bahasa Indonesia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Translate
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -332,7 +348,7 @@ export default function ProfilePage() {
               </span>
 
               <span className="flex items-center gap-[calc(6*var(--u))]">
-                <span className="text-[calc(13*var(--u))] font-normal text-[#6B6B76]">
+                <span className="text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                   Bahasa Indonesia
                 </span>
                 <CaretRight
@@ -346,20 +362,23 @@ export default function ProfilePage() {
 
         {/* 3. Seksi Lainnya */}
         <section>
-          <h2 className="mb-[calc(8*var(--u))] px-[calc(2*var(--u))] font-display text-[calc(14.5*var(--u))] font-bold text-[#171717]">
+          <h2
+            style={{ margin: 0, marginBottom: "calc(10 * var(--u))" }}
+            className="px-[calc(2*var(--u))] font-display text-[calc(15*var(--u))] font-bold text-[#171717]"
+          >
             Lainnya
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(14*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 triggerToast("Halaman Kebijakan Privasi segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <FileText
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -378,9 +397,9 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Pusat Bantuan segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Question
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -399,9 +418,9 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("MOKU — Monitoring Operasional Kunjungan Unit v1.4.0");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Info
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#1E1E24]"
@@ -410,7 +429,7 @@ export default function ProfilePage() {
               </span>
 
               <span className="flex items-center gap-[calc(6*var(--u))]">
-                <span className="text-[calc(13*var(--u))] font-normal text-[#6B6B76]">
+                <span className="text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                   v1.4.0
                 </span>
                 <CaretRight
@@ -426,9 +445,9 @@ export default function ProfilePage() {
                 triggerHaptic(10);
                 setShowLogoutModal(true);
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(13.5*var(--u))] text-left transition-opacity active:opacity-70"
+              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
-              <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14*var(--u))] font-semibold text-[#C8102E]">
+              <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-semibold text-[#C8102E]">
                 <SignOut
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#C8102E]"
