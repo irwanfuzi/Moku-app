@@ -23,10 +23,10 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 280;
+const CLOSE_ANIMATION_MS = 260;
 const EDGE_SWIPE_ZONE_PX = 48;
-const DISMISS_DISTANCE_PX = 76;
-const DISMISS_VELOCITY_PX_MS = 0.35;
+const DISMISS_DISTANCE_PX = 72;
+const DISMISS_VELOCITY_PX_MS = 0.32;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -62,8 +62,7 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const guardActiveRef = useRef(false);
-  const lockedUrlRef = useRef<string>("");
+  const pushedHistoryRef = useRef(false);
 
   const swipeStartRef = useRef<{
     x: number;
@@ -106,7 +105,6 @@ export default function CameraCaptureOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      guardActiveRef.current = false;
       triggerHaptic(6);
       stopStream();
       setIsDragging(false);
@@ -118,6 +116,7 @@ export default function CameraCaptureOverlay({
       closeTimerRef.current = window.setTimeout(() => {
         closeTimerRef.current = null;
         isClosingRef.current = false;
+        pushedHistoryRef.current = false;
         setIsExiting(false);
         setDragX(0);
         setPreviewUrl(null);
@@ -193,7 +192,7 @@ export default function CameraCaptureOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      guardActiveRef.current = false;
+      pushedHistoryRef.current = false;
       return;
     }
 
@@ -204,14 +203,13 @@ export default function CameraCaptureOverlay({
     setIsDragging(false);
     setIsExiting(false);
 
-    if (typeof window !== "undefined") {
-      lockedUrlRef.current = window.location.href;
+    if (typeof window !== "undefined" && !pushedHistoryRef.current) {
       window.history.pushState(
         { mokuCameraOverlay: true },
         "",
-        lockedUrlRef.current
+        window.location.href
       );
-      guardActiveRef.current = true;
+      pushedHistoryRef.current = true;
     }
 
     return () => {
@@ -252,15 +250,9 @@ export default function CameraCaptureOverlay({
     if (!isOpen || typeof window === "undefined") return;
 
     const handlePopState = (ev: PopStateEvent) => {
-      if (!guardActiveRef.current) return;
-      ev.preventDefault();
+      if (isClosingRef.current) return;
       ev.stopImmediatePropagation();
-
-      window.history.pushState(
-        { mokuCameraRestored: true },
-        "",
-        lockedUrlRef.current || window.location.href
-      );
+      pushedHistoryRef.current = false;
 
       if (previewUrl) {
         handleRetakePhoto();
@@ -270,8 +262,7 @@ export default function CameraCaptureOverlay({
     };
 
     const handleIonBack = (ev: Event) => {
-      if (!guardActiveRef.current) return;
-      ev.preventDefault();
+      if (isClosingRef.current) return;
       ev.stopImmediatePropagation();
       const customEv = ev as CustomEvent<{
         register: (priority: number, handler: () => void) => void;
@@ -865,9 +856,9 @@ export default function CameraCaptureOverlay({
             <button
               type="button"
               onClick={() => {
-                stopStream();
-                guardActiveRef.current = false;
-                onOpenGallery();
+                triggerOverlayClose(() => {
+                  onOpenGallery();
+                });
               }}
               className="cursor-pointer rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white active:bg-[#5B0213]"
             >
@@ -913,10 +904,9 @@ export default function CameraCaptureOverlay({
           <button
             type="button"
             onClick={() => {
-              triggerHaptic(6);
-              stopStream();
-              guardActiveRef.current = false;
-              onOpenGallery();
+              triggerOverlayClose(() => {
+                onOpenGallery();
+              });
             }}
             aria-label="Pilih dari Galeri"
             className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
@@ -966,4 +956,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-    }
+        }
