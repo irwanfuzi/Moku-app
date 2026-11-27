@@ -10,7 +10,6 @@ import {
   At,
   Briefcase,
   Buildings,
-  CaretRight,
   EnvelopeSimple,
   Phone,
   User,
@@ -114,7 +113,7 @@ export default function AccountInfoPage() {
       </header>
 
       <div className="moku-info-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* Avatar 120u Bersih Tanpa Nama & Label Jabatan di Bawahnya */}
+        {/* Avatar 120u Tanpa Nama & Label Jabatan di Bawahnya */}
         <section className="flex flex-col items-center text-center">
           <div
             key={avatarSrc}
@@ -152,12 +151,14 @@ export default function AccountInfoPage() {
             Data Pribadi
           </h2>
 
-          <div className="space-y-[calc(14*var(--u))]">
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <User
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+          <div className="divide-y divide-[#F2F2F6]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <User
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -167,18 +168,20 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.fullName || "-"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <At
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <At
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -188,18 +191,20 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.username || "-"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <EnvelopeSimple
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <EnvelopeSimple
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -209,18 +214,20 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.email || "-"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <Phone
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <Phone
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -230,7 +237,7 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.phone ? `+62 ${profile.phone}` : "-"}
                 </p>
@@ -251,12 +258,14 @@ export default function AccountInfoPage() {
             Data Operasional
           </h2>
 
-          <div className="space-y-[calc(14*var(--u))]">
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <Briefcase
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+          <div className="divide-y divide-[#F2F2F6]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <Briefcase
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -266,18 +275,20 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.role || "-"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))]">
-              <Buildings
-                weight="regular"
-                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
-              />
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(12*var(--u))] first:pt-0 last:pb-0">
+              <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <Buildings
+                  weight="regular"
+                  className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p
                   style={{ margin: 0 }}
@@ -287,7 +298,7 @@ export default function AccountInfoPage() {
                 </p>
                 <p
                   style={{ margin: 0, marginTop: "calc(2 * var(--u))" }}
-                  className="truncate text-[calc(14*var(--u))] font-medium text-[#171717]"
+                  className="truncate text-[calc(14*var(--u))] font-semibold text-[#171717]"
                 >
                   {profile.branch || "-"}
                 </p>
@@ -297,19 +308,17 @@ export default function AccountInfoPage() {
         </section>
 
         {/* Tombol Ubah Informasi Akun */}
-        <section style={{ marginTop: "calc(20 * var(--u))" }}>
+        <section style={{ marginTop: "calc(24 * var(--u))" }}>
           <button
             type="button"
             onClick={handleOpenEdit}
-            className="flex min-h-[calc(52*var(--u))] w-full cursor-pointer select-none items-center justify-between rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+            style={{
+              backgroundColor: "#740319",
+              color: "#FFFFFF",
+            }}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(116,3,25,0.22)] transition-[transform,background-color] duration-200 active:scale-[0.985]"
           >
-            <span className="font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319]">
-              Ubah Informasi Akun
-            </span>
-            <CaretRight
-              weight="bold"
-              className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#740319]"
-            />
+            <span>Ubah Informasi Akun</span>
           </button>
         </section>
       </div>
