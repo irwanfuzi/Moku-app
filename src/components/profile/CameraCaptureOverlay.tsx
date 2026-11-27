@@ -43,6 +43,7 @@ export default function CameraCaptureOverlay({
   onOpenGallery,
 }: CameraCaptureOverlayProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const circleGuideRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -152,6 +153,7 @@ export default function CameraCaptureOverlay({
 
   const handleTakeSnapshot = () => {
     const video = videoRef.current;
+    const circleEl = circleGuideRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !cameraReady) return;
 
@@ -164,9 +166,44 @@ export default function CameraCaptureOverlay({
 
     const vw = video.videoWidth || 720;
     const vh = video.videoHeight || 720;
-    const size = Math.min(vw, vh);
-    const sx = (vw - size) / 2;
-    const sy = (vh - size) / 2;
+
+    // Hitung area potong presisi sesuai kotak bounding lingkaran panduan pada layar (object-cover)
+    const videoRect = video.getBoundingClientRect();
+    const circleRect = circleEl?.getBoundingClientRect();
+
+    let sx = (vw - Math.min(vw, vh)) / 2;
+    let sy = (vh - Math.min(vw, vh)) / 2;
+    let sSize = Math.min(vw, vh);
+
+    if (
+      circleRect &&
+      videoRect.width > 0 &&
+      videoRect.height > 0 &&
+      circleRect.width > 0
+    ) {
+      const scale = Math.max(videoRect.width / vw, videoRect.height / vh);
+      const renderedWidth = vw * scale;
+      const renderedHeight = vh * scale;
+      const offsetX = (renderedWidth - videoRect.width) / 2;
+      const offsetY = (renderedHeight - videoRect.height) / 2;
+
+      const circleLeftInVideo = circleRect.left - videoRect.left + offsetX;
+      const circleTopInVideo = circleRect.top - videoRect.top + offsetY;
+
+      sSize = circleRect.width / scale;
+      sx = circleLeftInVideo / scale;
+      sy = circleTopInVideo / scale;
+
+      // Jika kamera depan di-mirror secara visual (-scale-x-100), balik koordinat X sumber video
+      if (facingMode === "user") {
+        sx = vw - sx - sSize;
+      }
+
+      // Jaga agar tetap berada di dalam batas frame video
+      sSize = Math.min(sSize, vw, vh);
+      sx = Math.max(0, Math.min(vw - sSize, sx));
+      sy = Math.max(0, Math.min(vh - sSize, sy));
+    }
 
     canvas.width = 720;
     canvas.height = 720;
@@ -179,10 +216,20 @@ export default function CameraCaptureOverlay({
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
-    ctx.drawImage(video, sx, sy, size, size, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      video,
+      sx,
+      sy,
+      sSize,
+      sSize,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
     ctx.restore();
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     stopStream();
     onCapture(dataUrl);
   };
@@ -306,13 +353,14 @@ export default function CameraCaptureOverlay({
             <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
             <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
 
-            {/* Lingkaran Putih Panduan Wajah */}
+            {/* Lingkaran Putih Panduan Wajah (Area yang akan di-crop) */}
             <div
+              ref={circleGuideRef}
               style={{
                 width: "min(84vw, 336 * var(--u))",
                 height: "min(84vw, 336 * var(--u))",
               }}
-              className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.14)]"
+              className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]"
             />
           </div>
         )}
@@ -353,7 +401,6 @@ export default function CameraCaptureOverlay({
         className="relative z-20 bg-black px-[calc(28*var(--u))]"
       >
         <div className="mx-auto flex w-full max-w-[420px] items-center justify-between">
-          {/* Balik Kamera */}
           <button
             type="button"
             onClick={handleSwitchCamera}
@@ -366,7 +413,6 @@ export default function CameraCaptureOverlay({
             />
           </button>
 
-          {/* Tombol Shutter Lingkaran Ganda */}
           <button
             type="button"
             onClick={handleTakeSnapshot}
@@ -381,7 +427,6 @@ export default function CameraCaptureOverlay({
             <span className="h-full w-full rounded-full bg-white" />
           </button>
 
-          {/* Buka Galeri */}
           <button
             type="button"
             onClick={() => {
@@ -420,4 +465,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-      }
+}
