@@ -38,8 +38,38 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SNACKBAR_EXIT_MS = 440;
-const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const SNACKBAR_EXIT_MS = 380;
+
+const ALLOWED_TLDS = new Set([
+  "id",
+  "co.id",
+  "ac.id",
+  "go.id",
+  "or.id",
+  "web.id",
+  "my.id",
+  "com",
+  "net",
+  "org",
+  "edu",
+  "gov",
+  "io",
+  "app",
+  "dev",
+  "co",
+]);
+
+const MASH_PATTERNS = [
+  "qwerty",
+  "asdfgh",
+  "asdf",
+  "zxcvbn",
+  "zxcv",
+  "asdasd",
+  "qweqwe",
+  "testtest",
+  "ngasal",
+];
 
 type FieldKey = "fullName" | "username" | "email" | "phone";
 type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -52,10 +82,87 @@ function triggerHaptic(duration = 8) {
   }
 }
 
-function isValidEmailFormat(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed || /\s/.test(trimmed) || trimmed.includes("..")) return false;
-  return EMAIL_REGEX.test(trimmed);
+function isRepeatedOrMash(text: string): boolean {
+  const clean = text.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!clean) return true;
+  if (/(.)\1{3,}/.test(clean)) return true;
+  if (/(.{2,})\1{2,}/.test(clean)) return true;
+  return MASH_PATTERNS.some((pat) => clean.includes(pat));
+}
+
+function getEmailError(value: string): string | undefined {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return "Alamat email wajib diisi.";
+  if (/\s/.test(trimmed) || trimmed.includes("..")) {
+    return "Format email tidak valid (tidak boleh spasi atau titik ganda).";
+  }
+
+  const parts = trimmed.split("@");
+  if (parts.length !== 2) {
+    return "Format email tidak valid (harus menggunakan satu tanda @).";
+  }
+
+  const [localPart, domainPart] = parts;
+  if (!localPart || localPart.length < 2) {
+    return "Bagian nama email sebelum @ minimal 2 karakter.";
+  }
+  if (
+    localPart.startsWith(".") ||
+    localPart.endsWith(".") ||
+    !/^[a-z0-9._%+-]+$/.test(localPart)
+  ) {
+    return "Karakter pada bagian depan email tidak valid.";
+  }
+  if (isRepeatedOrMash(localPart)) {
+    return "Nama email terdeteksi asal ketik atau pola berulang.";
+  }
+
+  const domainLabels = domainPart.split(".");
+  if (domainLabels.length < 2) {
+    return "Domain email harus memiliki ekstensi (contoh: moku.id atau gmail.com).";
+  }
+
+  for (const label of domainLabels) {
+    if (
+      !label ||
+      label.length < 2 ||
+      label.startsWith("-") ||
+      label.endsWith("-") ||
+      !/^[a-z0-9-]+$/.test(label)
+    ) {
+      return "Format nama domain email tidak valid.";
+    }
+  }
+
+  const lastTwo =
+    domainLabels.length >= 2
+      ? `${domainLabels[domainLabels.length - 2]}.${
+          domainLabels[domainLabels.length - 1]
+        }`
+      : "";
+  const lastOne = domainLabels[domainLabels.length - 1];
+
+  const matchedTld = ALLOWED_TLDS.has(lastTwo)
+    ? lastTwo
+    : ALLOWED_TLDS.has(lastOne)
+    ? lastOne
+    : null;
+
+  if (!matchedTld) {
+    return "Ekstensi domain belum didukung (gunakan .id, .co.id, .com, .org, .net, dll.).";
+  }
+
+  const hostWithoutTld = trimmed.slice(
+    0,
+    trimmed.length - (matchedTld.length + 1)
+  );
+  const hostNamePart = hostWithoutTld.split(".").pop() || "";
+
+  if (!hostNamePart || hostNamePart.length < 2 || isRepeatedOrMash(hostNamePart)) {
+    return "Nama domain email tidak valid atau terdeteksi asal ketik.";
+  }
+
+  return undefined;
 }
 
 export default function EditAccountInfoPage() {
@@ -133,7 +240,7 @@ export default function EditAccountInfoPage() {
       setToast({ id: Date.now(), message, tone });
       toastAutoRef.current = window.setTimeout(() => {
         dismissToast();
-      }, 3200);
+      }, 2600);
     },
     [dismissToast]
   );
@@ -187,11 +294,7 @@ export default function EditAccountInfoPage() {
           }
           return undefined;
         case "email":
-          if (!trimmed) return "Alamat email wajib diisi.";
-          if (!isValidEmailFormat(trimmed)) {
-            return "Masukkan alamat email yang valid (contoh: nama@domain.com).";
-          }
-          return undefined;
+          return getEmailError(value);
         case "phone": {
           const digits = trimmed.replace(/\D/g, "");
           if (!digits) return "Nomor telepon wajib diisi.";
@@ -251,17 +354,21 @@ export default function EditAccountInfoPage() {
           return next;
         });
       }
-    }, 420);
+    }, 360);
   }, [username]);
 
-  const handleBack = () => {
-    if (isBusy) return;
-    triggerHaptic(6);
+  const navigateBackSmooth = useCallback(() => {
     if (ionRouter.canGoBack()) {
       ionRouter.goBack();
     } else {
       navigateWithTransition("/profile/account-info", "back");
     }
+  }, [ionRouter, navigateWithTransition]);
+
+  const handleBack = () => {
+    if (isBusy) return;
+    triggerHaptic(6);
+    navigateBackSmooth();
   };
 
   const clearFieldError = (field: FieldKey) => {
@@ -335,21 +442,17 @@ export default function EditAccountInfoPage() {
       });
       initialProfile.current = updated;
       setSavePhase("saved");
-      triggerHaptic([8, 40, 10]);
+      triggerHaptic([8, 30, 10]);
       triggerToast("Informasi akun berhasil disimpan.", "success");
 
       doneTimerRef.current = window.setTimeout(() => {
-        if (ionRouter.canGoBack()) {
-          ionRouter.goBack();
-        } else {
-          navigateWithTransition("/profile/account-info", "back");
-        }
-      }, 900);
-    }, 750);
+        navigateBackSmooth();
+      }, 380);
+    }, 360);
   };
 
   const getInputClass = (hasError: boolean) =>
-    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-250 placeholder:text-[#9E9EA9] ${
+    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-220 placeholder:text-[#9E9EA9] ${
       hasError
         ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15"
         : "border-[#DDDDE4] bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
@@ -374,7 +477,7 @@ export default function EditAccountInfoPage() {
             onClick={handleBack}
             disabled={isBusy}
             aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-250 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-220 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
           >
             <ArrowLeft
               weight="regular"
@@ -436,7 +539,7 @@ export default function EditAccountInfoPage() {
                 width: "calc(32 * var(--u))",
                 height: "calc(32 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-250 ease-out active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-220 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
@@ -451,7 +554,7 @@ export default function EditAccountInfoPage() {
               triggerHaptic(6);
               triggerToast("Fitur ubah foto profil segera tersedia.");
             }}
-            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-250 active:bg-[#F0F0F4] active:text-[#171717]"
+            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-220 active:bg-[#F0F0F4] active:text-[#171717]"
           >
             Ubah Foto Profil
           </button>
@@ -474,7 +577,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
                   errors.fullName ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -527,7 +630,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
                   errors.username ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -604,11 +707,11 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email */}
+            {/* Email (error langsung muncul saat mengetik jika belum valid) */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
                   errors.email ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -638,9 +741,13 @@ export default function EditAccountInfoPage() {
                   onChange={(e) => {
                     const nextVal = e.target.value;
                     setEmail(nextVal);
-                    if (errors.email && isValidEmailFormat(nextVal)) {
-                      clearFieldError("email");
-                    }
+                    const emailErr = getEmailError(nextVal);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      if (emailErr) next.email = emailErr;
+                      else delete next.email;
+                      return next;
+                    });
                   }}
                   onBlur={() => handleBlur("email", email)}
                   placeholder="nama@domain.com"
@@ -667,7 +774,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
                   errors.phone ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -691,7 +798,7 @@ export default function EditAccountInfoPage() {
                       triggerHaptic(6);
                       triggerToast("Kode negara aktif: Indonesia (+62).");
                     }}
-                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-250 active:bg-[#F4F4F7] ${
+                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-220 active:bg-[#F4F4F7] ${
                       errors.phone
                         ? "border-[#C8102E] bg-[#FFF9FA]"
                         : "border-[#DDDDE4] bg-white"
@@ -845,7 +952,7 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Aksi dengan Micro-Interaksi Smooth */}
+        {/* Tombol Aksi dengan Micro-Interaksi */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="space-y-[calc(12*var(--u))]"
@@ -854,7 +961,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleSave}
             disabled={isBusy || usernameStatus === "checking"}
-            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-300 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
+            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-220 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
               savePhase === "saved"
                 ? "bg-[#15803D] shadow-[0_4px_14px_rgba(21,128,61,0.28)]"
                 : savePhase === "saving"
@@ -887,7 +994,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleBack}
             disabled={isBusy}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-220 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Batal
           </button>
@@ -929,30 +1036,30 @@ export default function EditAccountInfoPage() {
 
       <style>{`
         .moku-edit-enter {
-          animation: moku-edit-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-edit-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-field-msg {
-          animation: moku-field-fade 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-field-fade 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-spin-slow {
-          animation: moku-spin 1050ms linear infinite;
+          animation: moku-spin 900ms linear infinite;
         }
         .moku-save-pulse {
-          animation: moku-save-ring 1400ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+          animation: moku-save-ring 1100ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
         }
         .moku-saved-pop {
-          animation: moku-saved-scale 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-saved-scale 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-toast-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 440ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: moku-toast-down 380ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes moku-edit-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 14px, 0);
+            transform: translate3d(0, 12px, 0);
           }
           to {
             opacity: 1;
@@ -962,7 +1069,7 @@ export default function EditAccountInfoPage() {
         @keyframes moku-field-fade {
           from {
             opacity: 0;
-            transform: translate3d(0, -4px, 0);
+            transform: translate3d(0, -3px, 0);
           }
           to {
             opacity: 1;
@@ -982,15 +1089,15 @@ export default function EditAccountInfoPage() {
             box-shadow: 0 0 0 0 rgba(116, 3, 25, 0.32), 0 4px 14px rgba(116, 3, 25, 0.26);
           }
           50% {
-            box-shadow: 0 0 0 8px rgba(116, 3, 25, 0), 0 4px 14px rgba(116, 3, 25, 0.26);
+            box-shadow: 0 0 0 7px rgba(116, 3, 25, 0), 0 4px 14px rgba(116, 3, 25, 0.26);
           }
         }
         @keyframes moku-saved-scale {
           0% {
             opacity: 0;
-            transform: scale(0.92);
+            transform: scale(0.94);
           }
-          60% {
+          65% {
             opacity: 1;
             transform: scale(1.02);
           }
@@ -1002,7 +1109,7 @@ export default function EditAccountInfoPage() {
         @keyframes moku-toast-up {
           from {
             opacity: 0;
-            transform: translate3d(0, 18px, 0);
+            transform: translate3d(0, 16px, 0);
           }
           to {
             opacity: 1;
@@ -1016,10 +1123,10 @@ export default function EditAccountInfoPage() {
           }
           to {
             opacity: 0;
-            transform: translate3d(0, 18px, 0);
+            transform: translate3d(0, 16px, 0);
           }
         }
       `}</style>
     </main>
   );
-}
+        }
