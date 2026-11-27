@@ -13,9 +13,8 @@ import {
   ArrowLeft,
   CaretDown,
   Check,
-  FolderPlus,
+  Image as ImageIcon,
 } from "@phosphor-icons/react";
-import { DEFAULT_AVATAR_URL } from "@/lib/account-profile";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -28,7 +27,7 @@ const DISMISS_VELOCITY_PX_MS = 0.35;
 
 type AlbumFilter = "all" | "field" | "workspace";
 
-interface GalleryItem {
+interface DevicePhotoItem {
   id: string;
   src: string;
   album: Exclude<AlbumFilter, "all">;
@@ -39,63 +38,6 @@ const ALBUM_OPTIONS: Array<{ value: AlbumFilter; label: string }> = [
   { value: "all", label: "Semua Foto" },
   { value: "field", label: "Kunjungan & Unit" },
   { value: "workspace", label: "Ruang & Perangkat" },
-];
-
-const BUILTIN_GALLERY_ITEMS: GalleryItem[] = [
-  {
-    id: "gal-1",
-    src: DEFAULT_AVATAR_URL,
-    album: "field",
-    label: "Avatar MOKU",
-  },
-  {
-    id: "gal-2",
-    src: "/images/moku/gallery/gedung-moku.jpg",
-    album: "field",
-    label: "Gedung MOKU",
-  },
-  {
-    id: "gal-3",
-    src: "/images/moku/gallery/unit-mesin-1.jpg",
-    album: "field",
-    label: "Unit Mesin 1",
-  },
-  {
-    id: "gal-4",
-    src: "/images/moku/gallery/panel-mesin.jpg",
-    album: "field",
-    label: "Panel Mesin",
-  },
-  {
-    id: "gal-5",
-    src: "/images/moku/gallery/deret-unit.jpg",
-    album: "field",
-    label: "Deret Unit",
-  },
-  {
-    id: "gal-6",
-    src: "/images/moku/gallery/teknisi-moku.jpg",
-    album: "field",
-    label: "Teknisi MOKU",
-  },
-  {
-    id: "gal-7",
-    src: "/images/moku/gallery/ruang-rapat.jpg",
-    album: "workspace",
-    label: "Ruang Rapat",
-  },
-  {
-    id: "gal-8",
-    src: "/images/moku/gallery/laptop-meja.jpg",
-    album: "workspace",
-    label: "Laptop Meja",
-  },
-  {
-    id: "gal-9",
-    src: "/images/moku/gallery/tanaman-meja.jpg",
-    album: "workspace",
-    label: "Tanaman Meja",
-  },
 ];
 
 interface GalleryPickerOverlayProps {
@@ -116,6 +58,7 @@ export default function GalleryPickerOverlay({
   onSelectPhoto,
 }: GalleryPickerOverlayProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const autoOpenedRef = useRef(false);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
@@ -143,26 +86,25 @@ export default function GalleryPickerOverlay({
 
   const [album, setAlbum] = useState<AlbumFilter>("all");
   const [isAlbumMenuOpen, setIsAlbumMenuOpen] = useState(false);
-  const [customItems, setCustomItems] = useState<GalleryItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("gal-1");
-  const [brokenIds, setBrokenIds] = useState<Record<string, boolean>>({});
-
-  const allItems = useMemo(
-    () => [...customItems, ...BUILTIN_GALLERY_ITEMS],
-    [customItems]
-  );
+  const [devicePhotos, setDevicePhotos] = useState<DevicePhotoItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
 
   const visibleItems = useMemo(() => {
-    if (album === "all") return allItems;
-    return allItems.filter((item) => item.album === album);
-  }, [album, allItems]);
+    if (album === "all") return devicePhotos;
+    return devicePhotos.filter((item) => item.album === album);
+  }, [album, devicePhotos]);
 
   const selectedItem = useMemo(
-    () => allItems.find((item) => item.id === selectedId) ?? null,
-    [allItems, selectedId]
+    () => devicePhotos.find((item) => item.id === selectedId) ?? null,
+    [devicePhotos, selectedId]
   );
 
   const selectedCount = selectedItem ? 1 : 0;
+
+  const openDevicePicker = useCallback(() => {
+    triggerHaptic(6);
+    fileInputRef.current?.click();
+  }, []);
 
   const triggerOverlayClose = useCallback(
     (afterClose?: () => void) => {
@@ -191,6 +133,7 @@ export default function GalleryPickerOverlay({
 
   useEffect(() => {
     if (!isOpen) {
+      autoOpenedRef.current = false;
       setIsAlbumMenuOpen(false);
       setDragX(0);
       setIsDragging(false);
@@ -209,13 +152,28 @@ export default function GalleryPickerOverlay({
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
 
+    // Buka pemilih galeri perangkat otomatis saat masuk menu galeri jika belum ada foto terpilih
+    if (!autoOpenedRef.current && devicePhotos.length === 0) {
+      autoOpenedRef.current = true;
+      const t = window.setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 180);
+      return () => {
+        window.clearTimeout(t);
+        if (closeTimerRef.current !== null) {
+          window.clearTimeout(closeTimerRef.current);
+          closeTimerRef.current = null;
+        }
+      };
+    }
+
     return () => {
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [devicePhotos.length, isOpen]);
 
   // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
@@ -348,15 +306,17 @@ export default function GalleryPickerOverlay({
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : null;
       if (!result) return;
-      const newId = `custom-${Date.now()}`;
-      const newItem: GalleryItem = {
+      const newId = `gal-${Date.now()}`;
+      const assignedAlbum: Exclude<AlbumFilter, "all"> =
+        album === "workspace" ? "workspace" : "field";
+      const newItem: DevicePhotoItem = {
         id: newId,
         src: result,
-        album: "field",
+        album: assignedAlbum,
         label: file.name || "Foto Galeri",
       };
-      triggerHaptic(8);
-      setCustomItems((prev) => [newItem, ...prev]);
+      triggerHaptic([8, 20, 8]);
+      setDevicePhotos((prev) => [newItem, ...prev]);
       setSelectedId(newId);
     };
     reader.readAsDataURL(file);
@@ -414,50 +374,32 @@ export default function GalleryPickerOverlay({
             paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
             paddingBottom: "calc(12 * var(--u))",
           }}
-          className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
+          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
         >
-          <div className="flex items-center gap-[calc(8*var(--u))]">
-            <button
-              type="button"
-              onClick={() => triggerOverlayClose()}
-              aria-label="Kembali"
-              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
-            >
-              <ArrowLeft
-                weight="regular"
-                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
-              />
-            </button>
-            <h2
-              style={{ margin: 0 }}
-              className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
-            >
-              Pilih dari Galeri
-            </h2>
-          </div>
-
           <button
             type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              fileInputRef.current?.click();
-            }}
-            aria-label="Tambah Foto dari Perangkat"
-            className="flex h-[calc(36*var(--u))] cursor-pointer items-center gap-[calc(5*var(--u))] rounded-full bg-white/14 px-[calc(11*var(--u))] text-[calc(12*var(--u))] font-medium text-white transition-colors active:bg-white/25"
+            onClick={() => triggerOverlayClose()}
+            aria-label="Kembali"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
           >
-            <FolderPlus
+            <ArrowLeft
               weight="regular"
-              className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+              className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
             />
-            <span>Perangkat</span>
           </button>
+          <h2
+            style={{ margin: 0 }}
+            className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
+          >
+            Pilih dari Galeri
+          </h2>
         </div>
       </header>
 
-      {/* Filter Bar + Grid Foto 3 Kolom */}
-      <div className="mx-auto w-full max-w-[680px] flex-1 overflow-y-auto px-[calc(16*var(--u))] pt-[calc(16*var(--u))] pb-[calc(20*var(--u))]">
+      {/* Filter Bar + Grid Foto 3 Kolom dari Perangkat */}
+      <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col overflow-y-auto px-[calc(16*var(--u))] pt-[calc(16*var(--u))] pb-[calc(20*var(--u))]">
         {/* Dropdown Filter Album */}
-        <div className="relative mb-[calc(16*var(--u))] inline-block">
+        <div className="relative mb-[calc(16*var(--u))] inline-block self-start">
           <button
             type="button"
             onClick={() => {
@@ -514,11 +456,10 @@ export default function GalleryPickerOverlay({
           )}
         </div>
 
-        {/* Grid 3 Kolom */}
+        {/* Grid 3 Kolom + Slot Pilih Foto Perangkat */}
         <div className="grid grid-cols-3 gap-[calc(10*var(--u))]">
           {visibleItems.map((item) => {
             const isSelected = item.id === selectedId;
-            const isBroken = Boolean(brokenIds[item.id]);
 
             return (
               <button
@@ -536,23 +477,13 @@ export default function GalleryPickerOverlay({
                     : "ring-1 ring-black/5"
                 }`}
               >
-                {!isBroken ? (
-                  <img
-                    src={item.src}
-                    alt={item.label}
-                    draggable={false}
-                    onError={() =>
-                      setBrokenIds((prev) => ({ ...prev, [item.id]: true }))
-                    }
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[#FCECEF] p-[calc(8*var(--u))] text-center text-[calc(11*var(--u))] font-medium text-[#740319]">
-                    {item.label}
-                  </div>
-                )}
+                <img
+                  src={item.src}
+                  alt={item.label}
+                  draggable={false}
+                  className="h-full w-full object-cover"
+                />
 
-                {/* Indikator Centang / Lingkaran Kosong di Pojok Kanan Atas */}
                 <span
                   aria-hidden="true"
                   className={`absolute right-[calc(8*var(--u))] top-[calc(8*var(--u))] flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
@@ -571,6 +502,24 @@ export default function GalleryPickerOverlay({
               </button>
             );
           })}
+
+          {/* Kartu Pilih Foto dari Galeri Perangkat */}
+          <button
+            type="button"
+            onClick={openDevicePicker}
+            aria-label="Pilih Foto dari Perangkat"
+            className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(12*var(--u))] border border-dashed border-[#D4D4DC] bg-[#FAFAFB] p-[calc(8*var(--u))] text-center transition-colors active:bg-[#FDF2F4]"
+          >
+            <span className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+              <ImageIcon
+                weight="regular"
+                className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
+              />
+            </span>
+            <span className="text-[calc(11*var(--u))] font-medium leading-tight text-[#52525B]">
+              Pilih dari Perangkat
+            </span>
+          </button>
         </div>
       </div>
 
