@@ -21,6 +21,7 @@ import {
   LockSimple,
   Phone,
   User,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 
@@ -32,9 +33,46 @@ const MOBILE_SCALE_VARS = {
 
 const SNACKBAR_EXIT_MS = 320;
 
+type FieldKey = "fullName" | "username" | "email" | "phone";
+type FieldErrors = Partial<Record<FieldKey, string>>;
+
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
+  }
+}
+
+function validateField(field: FieldKey, value: string): string | undefined {
+  const trimmed = value.trim();
+
+  switch (field) {
+    case "fullName":
+      if (!trimmed) return "Nama lengkap wajib diisi.";
+      if (trimmed.length < 3) return "Nama lengkap minimal 3 karakter.";
+      return undefined;
+    case "username":
+      if (!trimmed) return "Username wajib diisi.";
+      if (trimmed.length < 4) return "Username minimal 4 karakter.";
+      if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) {
+        return "Username hanya boleh huruf, angka, titik, atau underscore.";
+      }
+      return undefined;
+    case "email":
+      if (!trimmed) return "Email wajib diisi.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        return "Format email tidak valid.";
+      }
+      return undefined;
+    case "phone": {
+      const digits = trimmed.replace(/\D/g, "");
+      if (!digits) return "Nomor telepon wajib diisi.";
+      if (digits.length < 9 || digits.length > 13) {
+        return "Nomor telepon harus terdiri dari 9–13 digit.";
+      }
+      return undefined;
+    }
+    default:
+      return undefined;
   }
 }
 
@@ -47,11 +85,14 @@ export default function EditAccountInfoPage() {
   const [username, setUsername] = useState("budisantoso");
   const [email, setEmail] = useState("budi.santoso@moku.id");
   const [phone, setPhone] = useState("812-3456-7890");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  const [toast, setToast] = useState<{ id: number; message: string } | null>(
-    null
-  );
+  const [toast, setToast] = useState<{
+    id: number;
+    message: string;
+    tone: "success" | "error";
+  } | null>(null);
   const [isToastClosing, setIsToastClosing] = useState(false);
 
   const toastAutoRef = useRef<number | null>(null);
@@ -82,7 +123,7 @@ export default function EditAccountInfoPage() {
   }, []);
 
   const triggerToast = useCallback(
-    (message: string) => {
+    (message: string, tone: "success" | "error" = "success") => {
       if (toastAutoRef.current !== null) {
         window.clearTimeout(toastAutoRef.current);
       }
@@ -90,7 +131,7 @@ export default function EditAccountInfoPage() {
         window.clearTimeout(toastExitRef.current);
       }
       setIsToastClosing(false);
-      setToast({ id: Date.now(), message });
+      setToast({ id: Date.now(), message, tone });
       toastAutoRef.current = window.setTimeout(() => {
         dismissToast();
       }, 2800);
@@ -118,23 +159,76 @@ export default function EditAccountInfoPage() {
     }
   };
 
+  const clearFieldError = (field: FieldKey) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleBlur = (field: FieldKey, value: string) => {
+    const err = validateField(field, value);
+    setErrors((prev) => {
+      if (!err && !prev[field]) return prev;
+      const next = { ...prev };
+      if (err) next[field] = err;
+      else delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !username.trim() || !email.trim() || !phone.trim()) {
-      triggerHaptic(12);
-      triggerToast("Mohon lengkapi semua kolom bertanda *.");
+
+    const nextErrors: FieldErrors = {};
+    const fields: Array<{ key: FieldKey; value: string; id: string }> = [
+      { key: "fullName", value: fullName, id: "edit-fullname" },
+      { key: "username", value: username, id: "edit-username" },
+      { key: "email", value: email, id: "edit-email" },
+      { key: "phone", value: phone, id: "edit-phone" },
+    ];
+
+    let firstInvalidId: string | null = null;
+    for (const item of fields) {
+      const err = validateField(item.key, item.value);
+      if (err) {
+        nextErrors[item.key] = err;
+        if (!firstInvalidId) firstInvalidId = item.id;
+      }
+    }
+
+    setErrors(nextErrors);
+
+    if (firstInvalidId) {
+      triggerHaptic(14);
+      triggerToast("Periksa kembali kolom yang bertanda merah.", "error");
+      const targetEl = document.getElementById(firstInvalidId);
+      if (targetEl) {
+        targetEl.focus();
+        targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
+
     triggerHaptic(10);
     setIsSaving(true);
     window.setTimeout(() => {
       setIsSaving(false);
-      triggerToast("Informasi akun berhasil disimpan.");
+      triggerToast("Informasi akun berhasil disimpan.", "success");
       window.setTimeout(() => {
         handleBack();
       }, 650);
     }, 450);
   };
+
+  const getInputClass = (hasError: boolean) =>
+    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-[#9E9EA9] ${
+      hasError
+        ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15"
+        : "border-[#DDDDE4] bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
+    }`;
 
   return (
     <main
@@ -236,7 +330,7 @@ export default function EditAccountInfoPage() {
           </button>
         </section>
 
-        {/* Kartu 1: Data Pribadi (Editable) */}
+        {/* Kartu 1: Data Pribadi (Editable + Error State) */}
         <section
           style={{ marginTop: "calc(20 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -250,8 +344,13 @@ export default function EditAccountInfoPage() {
 
           <div className="space-y-[calc(16*var(--u))]">
             {/* Nama Lengkap */}
-            <div className="flex items-end gap-[calc(12*var(--u))]">
-              <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
+            <div className="flex items-start gap-[calc(12*var(--u))]">
+              <div
+                style={{ marginTop: "calc(22 * var(--u))" }}
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                  errors.fullName ? "text-[#C8102E]" : "text-[#1E1E24]"
+                }`}
+              >
                 <User
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -268,16 +367,43 @@ export default function EditAccountInfoPage() {
                   id="edit-fullname"
                   type="text"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={
+                    errors.fullName ? "edit-fullname-error" : undefined
+                  }
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    clearFieldError("fullName");
+                  }}
+                  onBlur={() => handleBlur("fullName", fullName)}
                   placeholder="Masukkan nama lengkap"
-                  className="h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#9E9EA9] focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
+                  className={getInputClass(Boolean(errors.fullName))}
                 />
+                {errors.fullName && (
+                  <p
+                    id="edit-fullname-error"
+                    role="alert"
+                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
+                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                  >
+                    <WarningCircle
+                      weight="fill"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    />
+                    <span>{errors.fullName}</span>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Username */}
-            <div className="flex items-end gap-[calc(12*var(--u))]">
-              <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
+            <div className="flex items-start gap-[calc(12*var(--u))]">
+              <div
+                style={{ marginTop: "calc(22 * var(--u))" }}
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                  errors.username ? "text-[#C8102E]" : "text-[#1E1E24]"
+                }`}
+              >
                 <At
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -294,16 +420,43 @@ export default function EditAccountInfoPage() {
                   id="edit-username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  aria-invalid={Boolean(errors.username)}
+                  aria-describedby={
+                    errors.username ? "edit-username-error" : undefined
+                  }
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    clearFieldError("username");
+                  }}
+                  onBlur={() => handleBlur("username", username)}
                   placeholder="Masukkan username"
-                  className="h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#9E9EA9] focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
+                  className={getInputClass(Boolean(errors.username))}
                 />
+                {errors.username && (
+                  <p
+                    id="edit-username-error"
+                    role="alert"
+                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
+                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                  >
+                    <WarningCircle
+                      weight="fill"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    />
+                    <span>{errors.username}</span>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Email */}
-            <div className="flex items-end gap-[calc(12*var(--u))]">
-              <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
+            <div className="flex items-start gap-[calc(12*var(--u))]">
+              <div
+                style={{ marginTop: "calc(22 * var(--u))" }}
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                  errors.email ? "text-[#C8102E]" : "text-[#1E1E24]"
+                }`}
+              >
                 <EnvelopeSimple
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -320,16 +473,43 @@ export default function EditAccountInfoPage() {
                   id="edit-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={
+                    errors.email ? "edit-email-error" : undefined
+                  }
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError("email");
+                  }}
+                  onBlur={() => handleBlur("email", email)}
                   placeholder="Masukkan email"
-                  className="h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#9E9EA9] focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
+                  className={getInputClass(Boolean(errors.email))}
                 />
+                {errors.email && (
+                  <p
+                    id="edit-email-error"
+                    role="alert"
+                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
+                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                  >
+                    <WarningCircle
+                      weight="fill"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    />
+                    <span>{errors.email}</span>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Nomor Telepon */}
-            <div className="flex items-end gap-[calc(12*var(--u))]">
-              <div className="flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center text-[#1E1E24]">
+            <div className="flex items-start gap-[calc(12*var(--u))]">
+              <div
+                style={{ marginTop: "calc(22 * var(--u))" }}
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                  errors.phone ? "text-[#C8102E]" : "text-[#1E1E24]"
+                }`}
+              >
                 <Phone
                   weight="regular"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
@@ -350,7 +530,11 @@ export default function EditAccountInfoPage() {
                       triggerHaptic(6);
                       triggerToast("Kode negara aktif: Indonesia (+62).");
                     }}
-                    className="flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-150 active:bg-[#F4F4F7]"
+                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-150 active:bg-[#F4F4F7] ${
+                      errors.phone
+                        ? "border-[#C8102E] bg-[#FFF9FA]"
+                        : "border-[#DDDDE4] bg-white"
+                    }`}
                   >
                     <span
                       aria-hidden="true"
@@ -372,11 +556,35 @@ export default function EditAccountInfoPage() {
                     type="tel"
                     inputMode="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    aria-invalid={Boolean(errors.phone)}
+                    aria-describedby={
+                      errors.phone ? "edit-phone-error" : undefined
+                    }
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      clearFieldError("phone");
+                    }}
+                    onBlur={() => handleBlur("phone", phone)}
                     placeholder="812-3456-7890"
-                    className="h-[calc(44*var(--u))] min-w-0 flex-1 rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#9E9EA9] focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
+                    className={`min-w-0 flex-1 ${getInputClass(
+                      Boolean(errors.phone)
+                    )}`}
                   />
                 </div>
+                {errors.phone && (
+                  <p
+                    id="edit-phone-error"
+                    role="alert"
+                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
+                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                  >
+                    <WarningCircle
+                      weight="fill"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    />
+                    <span>{errors.phone}</span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -460,7 +668,7 @@ export default function EditAccountInfoPage() {
             </div>
 
             {/* Banner Info */}
-            <div className="flex items-start gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
+            <div className="flex items-start gap-[calc(12*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <Info
                 weight="regular"
                 className="mt-[1px] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#740319]"
@@ -514,10 +722,17 @@ export default function EditAccountInfoPage() {
                 : "moku-toast-enter"
             }`}
           >
-            <CheckCircle
-              weight="fill"
-              className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#22C55E]"
-            />
+            {toast.tone === "error" ? (
+              <WarningCircle
+                weight="fill"
+                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#F87171]"
+              />
+            ) : (
+              <CheckCircle
+                weight="fill"
+                className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#22C55E]"
+              />
+            )}
             <span className="truncate text-[calc(12.5*var(--u))] font-medium text-white">
               {toast.message}
             </span>
