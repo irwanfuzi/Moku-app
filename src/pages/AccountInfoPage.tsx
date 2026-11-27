@@ -20,7 +20,7 @@ import {
   UserCircle,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
-import { useAccountProfile } from "@/lib/account-profile";
+import { DEFAULT_AVATAR_URL, useAccountProfile } from "@/lib/account-profile";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -32,13 +32,6 @@ function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "BS";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 export default function AccountInfoPage() {
@@ -108,7 +101,6 @@ export default function AccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -138,7 +130,6 @@ export default function AccountInfoPage() {
         </div>
       </header>
 
-      {/* Konten Utama (Tanpa Icon Kamera di Mode Lihat) */}
       <div className="moku-account-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
         <section className="flex flex-col items-center text-center">
           <div
@@ -149,17 +140,18 @@ export default function AccountInfoPage() {
             }}
             className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
           >
-            {profile.avatarUrl && !avatarError ? (
+            {!avatarError ? (
               <img
-                src={profile.avatarUrl}
+                src={profile.avatarUrl || DEFAULT_AVATAR_URL}
                 alt={profile.fullName}
                 onError={() => setAvatarError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
-                {getInitials(profile.fullName)}
-              </span>
+              <User
+                weight="fill"
+                className="h-[calc(42*var(--u))] w-[calc(42*var(--u))] text-[#740319]"
+              />
             )}
           </div>
 
@@ -177,7 +169,6 @@ export default function AccountInfoPage() {
           </p>
         </section>
 
-        {/* Kartu 1: Data Pribadi */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -244,7 +235,6 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Kartu 2: Data Operasional */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -298,7 +288,6 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Ubah Informasi Akun */}
         <section style={{ marginTop: "calc(24 * var(--u))" }}>
           <button
             type="button"
@@ -317,7 +306,6 @@ export default function AccountInfoPage() {
         </section>
       </div>
 
-      {/* Snackbar Feedback */}
       {toast &&
         typeof document !== "undefined" &&
         createPortal(
