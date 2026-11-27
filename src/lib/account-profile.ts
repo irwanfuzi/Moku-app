@@ -8,12 +8,14 @@ export interface AccountProfile {
   role: string;
   branch: string;
   joinedAt: string;
-  avatarUrl: string | null; // null = pakai inisial / default
+  avatarUrl: string | null; // null = tampil inisial, DEFAULT_AVATAR_URL = robot moku
 }
 
 const STORAGE_KEY = "moku_account_profile_v1";
 const PROFILE_UPDATED_EVENT = "moku:account-profile-updated";
+
 export const DEFAULT_AVATAR_URL = "/images/moku/brand/moku-avatar.png";
+export const REMOVED_AVATAR_VALUE = "__removed__";
 
 export const DEFAULT_ACCOUNT_PROFILE: AccountProfile = {
   fullName: "Budi Santoso",
@@ -40,6 +42,16 @@ export const TAKEN_USERNAMES = new Set([
   "teknisi.jkt3",
 ]);
 
+function resolveAvatarUrl(rawAvatar: unknown): string | null {
+  if (rawAvatar === REMOVED_AVATAR_VALUE) {
+    return null;
+  }
+  if (typeof rawAvatar === "string" && rawAvatar.trim().length > 0) {
+    return rawAvatar;
+  }
+  return DEFAULT_AVATAR_URL;
+}
+
 export function getAccountProfile(): AccountProfile {
   if (typeof window === "undefined") return DEFAULT_ACCOUNT_PROFILE;
   try {
@@ -49,10 +61,7 @@ export function getAccountProfile(): AccountProfile {
     return {
       ...DEFAULT_ACCOUNT_PROFILE,
       ...parsed,
-      avatarUrl:
-        "avatarUrl" in parsed
-          ? (parsed.avatarUrl ?? null)
-          : DEFAULT_ACCOUNT_PROFILE.avatarUrl,
+      avatarUrl: resolveAvatarUrl(parsed.avatarUrl),
     };
   } catch {
     return DEFAULT_ACCOUNT_PROFILE;
@@ -62,13 +71,26 @@ export function getAccountProfile(): AccountProfile {
 export function saveAccountProfile(
   patch: Partial<AccountProfile>
 ): AccountProfile {
+  const current = getAccountProfile();
+  const nextAvatar =
+    "avatarUrl" in patch
+      ? resolveAvatarUrl(patch.avatarUrl)
+      : current.avatarUrl;
+
   const next: AccountProfile = {
-    ...getAccountProfile(),
+    ...current,
     ...patch,
+    avatarUrl: nextAvatar,
   };
+
   if (typeof window !== "undefined") {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const toStore: Partial<AccountProfile> = {
+        ...next,
+        avatarUrl:
+          next.avatarUrl === null ? REMOVED_AVATAR_VALUE : next.avatarUrl,
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
     } catch {
       // Abaikan jika localStorage penuh akibat ukuran gambar besar; tetap kirim event
     }
