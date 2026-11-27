@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
@@ -15,13 +16,16 @@ import {
   Buildings,
   Camera,
   CaretDown,
+  CaretRight,
   CheckCircle,
   CircleNotch,
   EnvelopeSimple,
+  Image as ImageIcon,
   Info,
   LockSimple,
   Phone,
   ShieldCheck,
+  Trash,
   User,
   WarningCircle,
 } from "@phosphor-icons/react";
@@ -33,13 +37,12 @@ import {
   saveAccountProfile,
 } from "@/lib/account-profile";
 
-const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
-
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
 const SNACKBAR_EXIT_MS = 420;
+const PHOTO_SHEET_EXIT_MS = 380;
 const DEMO_OTP_CODE = "123456";
 
 const VALID_DOMAINS = new Set([
@@ -86,6 +89,13 @@ function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "BS";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 function isRepeatedOrMash(text: string): boolean {
@@ -197,7 +207,14 @@ export default function EditAccountInfoPage() {
 
   const initialProfile = useRef(getAccountProfile());
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    initialProfile.current.avatarUrl
+  );
   const [avatarError, setAvatarError] = useState(false);
+
+  const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
+  const [isPhotoSheetClosing, setIsPhotoSheetClosing] = useState(false);
+
   const [fullName, setFullName] = useState(initialProfile.current.fullName);
   const [username, setUsername] = useState(initialProfile.current.username);
   const [email, setEmail] = useState(initialProfile.current.email);
@@ -207,7 +224,6 @@ export default function EditAccountInfoPage() {
     useState<UsernameCheckStatus>("idle");
   const [savePhase, setSavePhase] = useState<SavePhase>("idle");
 
-  // Transisi bertahap antara error email dan banner verifikasi OTP
   const [showEmailOtpNotice, setShowEmailOtpNotice] = useState(false);
 
   const [verifiedEmail, setVerifiedEmail] = useState<string>(
@@ -225,8 +241,12 @@ export default function EditAccountInfoPage() {
   } | null>(null);
   const [isToastClosing, setIsToastClosing] = useState(false);
 
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
+  const photoSheetExitRef = useRef<number | null>(null);
   const usernameCheckRef = useRef<number | null>(null);
   const emailTypingRef = useRef<number | null>(null);
   const emailOtpNoticeRef = useRef<number | null>(null);
@@ -319,6 +339,65 @@ export default function EditAccountInfoPage() {
     [dismissToast]
   );
 
+  const openPhotoSheet = useCallback(() => {
+    if (isBusy) return;
+    if (photoSheetExitRef.current !== null) {
+      window.clearTimeout(photoSheetExitRef.current);
+      photoSheetExitRef.current = null;
+    }
+    triggerHaptic(8);
+    setIsPhotoSheetClosing(false);
+    setIsPhotoSheetOpen(true);
+  }, [isBusy]);
+
+  const closePhotoSheet = useCallback(() => {
+    if (!isPhotoSheetOpen || isPhotoSheetClosing) return;
+    triggerHaptic(6);
+    setIsPhotoSheetClosing(true);
+    if (photoSheetExitRef.current !== null) {
+      window.clearTimeout(photoSheetExitRef.current);
+    }
+    photoSheetExitRef.current = window.setTimeout(() => {
+      setIsPhotoSheetOpen(false);
+      setIsPhotoSheetClosing(false);
+      photoSheetExitRef.current = null;
+    }, PHOTO_SHEET_EXIT_MS);
+  }, [isPhotoSheetClosing, isPhotoSheetOpen]);
+
+  const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      triggerHaptic(12);
+      triggerToast("Pilih file gambar yang valid.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      if (!result) return;
+      triggerHaptic([8, 25, 10]);
+      setAvatarError(false);
+      setAvatarUrl(result);
+      saveAccountProfile({ avatarUrl: result });
+      closePhotoSheet();
+      triggerToast("Foto profil diperbarui.", "success");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    triggerHaptic(10);
+    setAvatarError(false);
+    setAvatarUrl(null);
+    saveAccountProfile({ avatarUrl: null });
+    closePhotoSheet();
+    triggerToast("Foto profil dihapus.", "success");
+  };
+
   useEffect(() => {
     return () => {
       if (toastAutoRef.current !== null) {
@@ -326,6 +405,9 @@ export default function EditAccountInfoPage() {
       }
       if (toastExitRef.current !== null) {
         window.clearTimeout(toastExitRef.current);
+      }
+      if (photoSheetExitRef.current !== null) {
+        window.clearTimeout(photoSheetExitRef.current);
       }
       if (usernameCheckRef.current !== null) {
         window.clearTimeout(usernameCheckRef.current);
@@ -563,6 +645,7 @@ export default function EditAccountInfoPage() {
         username: username.trim().toLowerCase(),
         email: email.trim(),
         phone: phone.trim(),
+        avatarUrl,
       });
       initialProfile.current = updated;
       setVerifiedEmail(updated.email.trim().toLowerCase());
@@ -637,6 +720,23 @@ export default function EditAccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
+      {/* Hidden File Inputs untuk Kamera & Galeri */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handlePhotoFileChange}
+        className="sr-only"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoFileChange}
+        className="sr-only"
+      />
+
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -685,26 +785,23 @@ export default function EditAccountInfoPage() {
               }}
               className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
             >
-              {!avatarError ? (
+              {avatarUrl && !avatarError ? (
                 <img
-                  src={AVATAR_URL}
+                  src={avatarUrl}
                   alt={fullName || "Profil"}
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
-                  BS
+                  {getInitials(fullName)}
                 </span>
               )}
             </div>
 
             <button
               type="button"
-              onClick={() => {
-                triggerHaptic(6);
-                triggerToast("Fitur ubah foto profil segera tersedia.");
-              }}
+              onClick={openPhotoSheet}
               aria-label="Ubah Foto Profil"
               style={{
                 width: "calc(32 * var(--u))",
@@ -721,10 +818,7 @@ export default function EditAccountInfoPage() {
 
           <button
             type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              triggerToast("Fitur ubah foto profil segera tersedia.");
-            }}
+            onClick={openPhotoSheet}
             className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-260 active:bg-[#F0F0F4] active:text-[#171717]"
           >
             Ubah Foto Profil
@@ -875,7 +969,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email + Transisi Smooth Error -> Hilang -> Info Verifikasi OTP */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -970,7 +1063,6 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Nomor Telepon + Tombol Verifikasi di Dalam Kolom + Info Compact */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -1228,6 +1320,138 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
+      {/* Bottom Sheet Ubah Foto Profil */}
+      {isPhotoSheetOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={MOBILE_SCALE_VARS}
+            className={`fixed inset-0 z-[9996] flex items-end justify-center ${
+              isPhotoSheetClosing ? "moku-backdrop-out" : "moku-backdrop-in"
+            }`}
+          >
+            <div
+              onClick={closePhotoSheet}
+              aria-hidden="true"
+              className="fixed inset-0 bg-black/45"
+            />
+
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="photo-sheet-title"
+              style={{
+                paddingBottom: "calc(env(safe-area-inset-bottom) + 16 * var(--u))",
+              }}
+              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))] shadow-[0_-8px_28px_rgba(0,0,0,0.16)] ${
+                isPhotoSheetClosing ? "moku-sheet-down" : "moku-sheet-up"
+              }`}
+            >
+              {/* Drag Handle */}
+              <div
+                style={{
+                  width: "calc(38 * var(--u))",
+                  height: "calc(4 * var(--u))",
+                  marginBottom: "calc(14 * var(--u))",
+                }}
+                className="mx-auto rounded-full bg-[#D6D6DC]"
+              />
+
+              <h3
+                id="photo-sheet-title"
+                style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
+                className="text-center font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
+              >
+                Ubah Foto Profil
+              </h3>
+
+              <div className="divide-y divide-[#F0F0F4]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(6);
+                    cameraInputRef.current?.click();
+                  }}
+                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
+                >
+                  <span className="flex items-center gap-[calc(12*var(--u))]">
+                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#C8102E]">
+                      <Camera
+                        weight="regular"
+                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                      />
+                    </span>
+                    <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
+                      Ambil Foto
+                    </span>
+                  </span>
+                  <CaretRight
+                    weight="regular"
+                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(6);
+                    galleryInputRef.current?.click();
+                  }}
+                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
+                >
+                  <span className="flex items-center gap-[calc(12*var(--u))]">
+                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#C8102E]">
+                      <ImageIcon
+                        weight="regular"
+                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                      />
+                    </span>
+                    <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
+                      Pilih dari Galeri
+                    </span>
+                  </span>
+                  <CaretRight
+                    weight="regular"
+                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FFF9FA]"
+                >
+                  <span className="flex items-center gap-[calc(12*var(--u))]">
+                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#C8102E]">
+                      <Trash
+                        weight="regular"
+                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                      />
+                    </span>
+                    <span className="text-[calc(14*var(--u))] font-medium text-[#C8102E]">
+                      Hapus Foto
+                    </span>
+                  </span>
+                  <CaretRight
+                    weight="regular"
+                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#C8102E]/70"
+                  />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={closePhotoSheet}
+                style={{ marginTop: "calc(16 * var(--u))" }}
+                className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4]"
+              >
+                Batal
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
       {otpModal &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1396,6 +1620,18 @@ export default function EditAccountInfoPage() {
         .moku-smooth-swap {
           animation: moku-swap-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
+        .moku-backdrop-in {
+          animation: moku-fade-in 380ms cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+        .moku-backdrop-out {
+          animation: moku-fade-out 360ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .moku-sheet-up {
+          animation: moku-sheet-in 460ms cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+        .moku-sheet-down {
+          animation: moku-sheet-exit 380ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
         .moku-spin-slow {
           animation: moku-spin 950ms linear infinite;
         }
@@ -1429,6 +1665,42 @@ export default function EditAccountInfoPage() {
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes moku-fade-out {
+          from {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+          }
+        }
+        @keyframes moku-sheet-in {
+          from {
+            opacity: 0.4;
+            transform: translate3d(0, 100%, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-sheet-exit {
+          from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            opacity: 0;
+            transform: translate3d(0, 100%, 0);
           }
         }
         @keyframes moku-spin {
@@ -1484,4 +1756,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-                      }
+    }
