@@ -1399,7 +1399,7 @@ export default function EditAccountInfoPage() {
               aria-modal="true"
               aria-labelledby="photo-sheet-title"
               style={{
-                paddingBottom: "calc(env(safe-area-inset-bottom) + 16 * var(--u))",
+                paddingBottom: "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
               }}
               className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))] shadow-[0_-8px_28px_rgba(0,0,0,0.16)] ${
                 isPhotoSheetClosing ? "moku-sheet-down" : "moku-sheet-up"
@@ -1409,18 +1409,32 @@ export default function EditAccountInfoPage() {
                 style={{
                   width: "calc(38 * var(--u))",
                   height: "calc(4 * var(--u))",
-                  marginBottom: "calc(14 * var(--u))",
+                  marginBottom: "calc(12 * var(--u))",
                 }}
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
-              <h3
-                id="photo-sheet-title"
-                style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
-                className="text-center font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
+              {/* Header Sheet dengan Tombol Batal Compact di Kanan */}
+              <div
+                style={{ marginBottom: "calc(12 * var(--u))" }}
+                className="flex items-center justify-between gap-[calc(12*var(--u))]"
               >
-                Ubah Foto Profil
-              </h3>
+                <div className="w-[calc(54*var(--u))]" aria-hidden="true" />
+                <h3
+                  id="photo-sheet-title"
+                  style={{ margin: 0 }}
+                  className="text-center font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
+                >
+                  Ubah Foto Profil
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => closePhotoSheet()}
+                  className="flex h-[calc(28*var(--u))] cursor-pointer items-center justify-center rounded-full bg-[#FDF2F4] px-[calc(11*var(--u))] text-[calc(11.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-92 active:bg-[#F9DCE2]"
+                >
+                  Batal
+                </button>
+              </div>
 
               <div className="divide-y divide-[#F0F0F4]">
                 <button
@@ -1489,15 +1503,6 @@ export default function EditAccountInfoPage() {
                   />
                 </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => closePhotoSheet()}
-                style={{ marginTop: "calc(16 * var(--u))" }}
-                className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4]"
-              >
-                Batal
-              </button>
             </div>
           </div>,
           document.body
@@ -1539,7 +1544,6 @@ export default function EditAccountInfoPage() {
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
-              {/* Ilustrasi Hapus Foto & Tempat Sampah */}
               <div
                 aria-hidden="true"
                 style={{ marginBottom: "calc(18 * var(--u))" }}
@@ -1547,7 +1551,6 @@ export default function EditAccountInfoPage() {
               >
                 <div className="h-[calc(86*var(--u))] w-[calc(104*var(--u))] rounded-[44%_56%_52%_48%/48%_44%_56%_52%] bg-[#FCECEF]" />
 
-                {/* Aksen garis di kanan atas */}
                 <span
                   style={{
                     top: "calc(8 * var(--u))",
@@ -1563,7 +1566,6 @@ export default function EditAccountInfoPage() {
                   className="absolute h-[calc(8*var(--u))] w-[calc(2.5*var(--u))] rotate-[62deg] rounded-full bg-[#9E1B32]"
                 />
 
-                {/* Kartu foto miring */}
                 <div
                   style={{
                     top: "calc(12 * var(--u))",
@@ -1579,7 +1581,6 @@ export default function EditAccountInfoPage() {
                   />
                 </div>
 
-                {/* Badan & tutup tempat sampah marun */}
                 <div
                   style={{
                     bottom: "calc(14 * var(--u))",
