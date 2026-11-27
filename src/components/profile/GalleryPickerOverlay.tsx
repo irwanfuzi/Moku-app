@@ -6,7 +6,6 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
-  type MouseEvent,
   type PointerEvent,
   type TouchEvent,
 } from "react";
@@ -15,11 +14,13 @@ import {
   ArrowClockwise,
   ArrowLeft,
   Check,
+  FolderOpen,
   Image as ImageIcon,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
   Trash,
 } from "@phosphor-icons/react";
+import { DEFAULT_AVATAR_URL } from "@/lib/account-profile";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -32,10 +33,10 @@ const DISMISS_VELOCITY_PX_MS = 0.35;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 
-interface DevicePhotoItem {
+interface GalleryItem {
   id: string;
-  src: string;
   label: string;
+  src: string;
 }
 
 interface GalleryPickerOverlayProps {
@@ -48,6 +49,60 @@ function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
+}
+
+function buildPresetGalleryItems(): GalleryItem[] {
+  const presets: Array<{
+    id: string;
+    label: string;
+    bg: string;
+    accent: string;
+    badgeBg: string;
+  }> = [
+    {
+      id: "preset-1",
+      label: "Foto 1",
+      bg: "#F8E8EC",
+      accent: "#740319",
+      badgeBg: "#FCECEF",
+    },
+    {
+      id: "preset-2",
+      label: "Foto 2",
+      bg: "#E8EFFB",
+      accent: "#1D4ED8",
+      badgeBg: "#DBEAFE",
+    },
+    {
+      id: "preset-3",
+      label: "Foto 3",
+      bg: "#EAF6EE",
+      accent: "#15803D",
+      badgeBg: "#DCFCE7",
+    },
+    {
+      id: "preset-4",
+      label: "Foto 4",
+      bg: "#FEF3E2",
+      accent: "#B45309",
+      badgeBg: "#FDE68A",
+    },
+  ];
+
+  return presets.map((item) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+      <rect width="360" height="360" fill="${item.bg}" />
+      <circle cx="180" cy="142" r="56" fill="${item.accent}" opacity="0.88" />
+      <path d="M72 318 C72 246, 288 246, 288 318 Z" fill="${item.accent}" opacity="0.88" />
+      <rect x="232" y="24" width="104" height="34" rx="17" fill="${item.badgeBg}" />
+      <text x="284" y="46" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="${item.accent}">${item.label}</text>
+    </svg>`;
+    return {
+      id: item.id,
+      label: item.label,
+      src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    };
+  });
 }
 
 export default function GalleryPickerOverlay({
@@ -96,14 +151,15 @@ export default function GalleryPickerOverlay({
     originY: 0,
   });
 
+  const presetItems = useMemo(() => buildPresetGalleryItems(), []);
+  const [customItems, setCustomItems] = useState<GalleryItem[]>([]);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
+  const [selectedId, setSelectedId] = useState<string>("preset-1");
+
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const [devicePhotos, setDevicePhotos] = useState<DevicePhotoItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
-
-  // Mode layar Sesuaikan Foto setelah tombol "Gunakan Foto" diklik
   const [adjustingUrl, setAdjustingUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1.15);
   const [rotation, setRotation] = useState<number>(0);
@@ -113,17 +169,10 @@ export default function GalleryPickerOverlay({
   });
   const [isPanning, setIsPanning] = useState(false);
 
-  const selectedItem = useMemo(
-    () => devicePhotos.find((item) => item.id === selectedId) ?? null,
-    [devicePhotos, selectedId]
-  );
-
-  const selectedCount = selectedItem ? 1 : 0;
-
-  const openDevicePicker = useCallback(() => {
-    triggerHaptic(6);
-    fileInputRef.current?.click();
-  }, []);
+  const visibleItems = useMemo(() => {
+    const combined = [...customItems, ...presetItems];
+    return combined.filter((item) => !deletedIds.has(item.id));
+  }, [customItems, deletedIds, presetItems]);
 
   const resetAdjustState = useCallback(() => {
     setAdjustingUrl(null);
@@ -156,6 +205,19 @@ export default function GalleryPickerOverlay({
     },
     [onClose, resetAdjustState]
   );
+
+  // Jalur back tunggal: jika sedang menyesuaikan foto kembali ke galeri, jika di galeri tutup overlay
+  const triggerBackStep = useCallback(() => {
+    if (isClosingRef.current) return;
+    if (adjustingUrl) {
+      triggerHaptic(6);
+      setIsDragging(false);
+      setDragX(0);
+      resetAdjustState();
+    } else {
+      triggerOverlayClose();
+    }
+  }, [adjustingUrl, resetAdjustState, triggerOverlayClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -205,12 +267,7 @@ export default function GalleryPickerOverlay({
         "",
         lockedUrlRef.current
       );
-      if (adjustingUrl) {
-        triggerHaptic(6);
-        resetAdjustState();
-      } else {
-        triggerOverlayClose();
-      }
+      triggerBackStep();
     };
 
     const handleIonBack = (ev: Event) => {
@@ -221,16 +278,10 @@ export default function GalleryPickerOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          if (adjustingUrl) {
-            resetAdjustState();
-          } else {
-            triggerOverlayClose();
-          }
+          triggerBackStep();
         });
-      } else if (adjustingUrl) {
-        resetAdjustState();
       } else {
-        triggerOverlayClose();
+        triggerBackStep();
       }
     };
 
@@ -242,12 +293,12 @@ export default function GalleryPickerOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [adjustingUrl, isOpen, resetAdjustState, triggerOverlayClose]);
+  }, [isOpen, triggerBackStep]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if (adjustingUrl || isClosingRef.current || e.touches.length !== 1) return;
+    if (isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
     const vw = window.innerWidth;
     const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
@@ -270,12 +321,7 @@ export default function GalleryPickerOverlay({
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     const state = swipeStartRef.current;
-    if (
-      adjustingUrl ||
-      !state.active ||
-      isClosingRef.current ||
-      e.touches.length !== 1
-    ) {
+    if (!state.active || isClosingRef.current || e.touches.length !== 1) {
       return;
     }
 
@@ -317,63 +363,66 @@ export default function GalleryPickerOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      triggerOverlayClose();
+      triggerBackStep();
     } else {
       setIsDragging(false);
       setDragX(0);
     }
   };
 
-  const handleDeviceFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      if (!result) return;
-      const newId = `gal-${Date.now()}`;
-      const newItem: DevicePhotoItem = {
-        id: newId,
-        src: result,
-        label: file.name || "Foto Galeri",
-      };
-      triggerHaptic([8, 20, 8]);
-      setDevicePhotos((prev) => [newItem, ...prev]);
-      setSelectedId(newId);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDeleteGalleryItem = (
-    e: MouseEvent<HTMLButtonElement>,
-    targetId: string
-  ) => {
-    e.stopPropagation();
-    triggerHaptic(8);
-    setDevicePhotos((prev) => prev.filter((item) => item.id !== targetId));
-    setSelectedId((prev) => (prev === targetId ? "" : prev));
-  };
-
-  const handleStartAdjustPhoto = () => {
-    if (!selectedItem || isClosingRef.current) return;
+  const openAdjustForSrc = (src: string) => {
     triggerHaptic(8);
     setZoom(1.15);
     setRotation(0);
     setOffset({ x: 0, y: 0 });
-    setAdjustingUrl(selectedItem.src);
+    setAdjustingUrl(src);
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        const newId = `custom-${Date.now()}`;
+        const newItem: GalleryItem = {
+          id: newId,
+          label: file.name || "Foto Galeri",
+          src: reader.result,
+        };
+        setCustomItems((prev) => [newItem, ...prev]);
+        setSelectedId(newId);
+        openAdjustForSrc(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteThumbnail = (id: string) => {
+    triggerHaptic(8);
+    setDeletedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    if (selectedId === id) {
+      const remaining = visibleItems.filter((item) => item.id !== id);
+      setSelectedId(remaining[0]?.id || "");
+    }
+  };
+
+  const handleConfirmSelectedThumbnail = () => {
+    const activeItem =
+      visibleItems.find((item) => item.id === selectedId) || visibleItems[0];
+    if (!activeItem) return;
+    openAdjustForSrc(activeItem.src);
   };
 
   const handleRotateClockwise = () => {
     triggerHaptic(7);
     setRotation((prev) => prev + 90);
-  };
-
-  const handleCancelAdjust = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic(6);
-    resetAdjustState();
   };
 
   const handlePanPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -482,7 +531,7 @@ export default function GalleryPickerOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
-  // Layar "Sesuaikan Foto" setelah "Gunakan Foto" diklik
+  // Mode Sesuaikan Foto
   if (adjustingUrl) {
     const zoomPercent = Math.round(
       ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100
@@ -491,13 +540,16 @@ export default function GalleryPickerOverlay({
     return createPortal(
       <div
         style={overlayStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label="Sesuaikan Foto"
-        className="moku-crop-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#1F1F23] text-white select-none"
+        className="moku-gal-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#1F1F23] text-white select-none"
       >
-        {/* Top Header Marun */}
         <header className="w-full bg-[#740319] text-white">
           <div
             style={{
@@ -508,7 +560,7 @@ export default function GalleryPickerOverlay({
           >
             <button
               type="button"
-              onClick={handleCancelAdjust}
+              onClick={triggerBackStep}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -526,7 +578,6 @@ export default function GalleryPickerOverlay({
           </div>
         </header>
 
-        {/* Area Crop + Grid 3x3 + Lingkaran Avatar + Teks Panduan */}
         <div
           ref={cropStageRef}
           onPointerDown={handlePanPointerDown}
@@ -539,14 +590,13 @@ export default function GalleryPickerOverlay({
         >
           <img
             ref={cropImageRef}
-            src={adjustingUrl}
+            src={adjustingUrl || DEFAULT_AVATAR_URL}
             alt="Sesuaikan Foto Profil"
             draggable={false}
             onContextMenu={(e) => e.preventDefault()}
             style={{
               width: "min(86vw, 356 * var(--u))",
               height: "min(86vw, 356 * var(--u))",
-              WebkitTouchCallout: "none",
               transform: `translate3d(${offset.x}px, ${offset.y}px, 0) rotate(${rotation}deg) scale(${zoom})`,
               transition: isPanning
                 ? "none"
@@ -586,7 +636,6 @@ export default function GalleryPickerOverlay({
           </p>
         </div>
 
-        {/* Panel Bawah Putih */}
         <div
           style={{
             paddingTop: "calc(18 * var(--u))",
@@ -641,7 +690,7 @@ export default function GalleryPickerOverlay({
                       width: "calc(16 * var(--u))",
                       height: "calc(16 * var(--u))",
                     }}
-                    className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
+                    className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white"
                   />
                 </div>
 
@@ -683,7 +732,7 @@ export default function GalleryPickerOverlay({
             <div className="grid grid-cols-2 gap-[calc(12*var(--u))]">
               <button
                 type="button"
-                onClick={handleCancelAdjust}
+                onClick={triggerBackStep}
                 className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
               >
                 Batal
@@ -703,17 +752,17 @@ export default function GalleryPickerOverlay({
         <canvas ref={exportCanvasRef} className="hidden" />
 
         <style>{`
-          .moku-crop-enter {
-            animation: moku-crop-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          .moku-gal-enter {
+            animation: moku-gal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
-          @keyframes moku-crop-in {
+          @keyframes moku-gal-in {
             from {
               opacity: 0;
-              transform: scale(0.97) translate3d(0, 10px, 0);
+              transform: translate3d(24px, 0, 0);
             }
             to {
               opacity: 1;
-              transform: scale(1) translate3d(0, 0, 0);
+              transform: translate3d(0, 0, 0);
             }
           }
         `}</style>
@@ -733,168 +782,194 @@ export default function GalleryPickerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="Pilih dari Galeri"
-      className="moku-gal-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
+      className="moku-gal-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#FAFAFB] text-[#171717] select-none"
     >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleDeviceFileChange}
-        className="sr-only"
-      />
-
       {/* Top Header Marun */}
-      <header className="sticky top-0 z-30 w-full bg-[#740319] text-white">
+      <header className="sticky top-0 z-10 w-full bg-[#740319] text-white">
         <div
           style={{
             paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
             paddingBottom: "calc(12 * var(--u))",
           }}
-          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
+          className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
         >
+          <div className="flex items-center gap-[calc(8*var(--u))]">
+            <button
+              type="button"
+              onClick={triggerBackStep}
+              aria-label="Kembali"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            >
+              <ArrowLeft
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            </button>
+            <h2
+              style={{ margin: 0 }}
+              className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
+            >
+              Pilih dari Galeri
+            </h2>
+          </div>
+
           <button
             type="button"
-            onClick={() => triggerOverlayClose()}
-            aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            onClick={() => {
+              triggerHaptic(7);
+              fileInputRef.current?.click();
+            }}
+            aria-label="Pilih File dari Perangkat"
+            className="flex h-[calc(34*var(--u))] cursor-pointer items-center gap-[calc(6*var(--u))] rounded-full bg-white/14 px-[calc(12*var(--u))] text-[calc(12*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-95 active:bg-white/25"
           >
-            <ArrowLeft
-              weight="regular"
-              className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+            <FolderOpen
+              weight="bold"
+              className="h-[calc(14*var(--u))] w-[calc(14*var(--u))]"
             />
+            <span>File</span>
           </button>
-          <h2
-            style={{ margin: 0 }}
-            className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
-          >
-            Pilih dari Galeri
-          </h2>
         </div>
       </header>
 
-      {/* Grid Foto 3 Kolom dari Perangkat */}
-      <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col overflow-y-auto px-[calc(16*var(--u))] pt-[calc(16*var(--u))] pb-[calc(20*var(--u))]">
-        <div className="grid grid-cols-3 gap-[calc(10*var(--u))]">
-          {devicePhotos.map((item) => {
-            const isSelected = item.id === selectedId;
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => {
-                  triggerHaptic(6);
-                  setSelectedId(isSelected ? "" : item.id);
-                }}
-                onContextMenu={(e) => e.preventDefault()}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    triggerHaptic(6);
-                    setSelectedId(isSelected ? "" : item.id);
-                  }
-                }}
-                aria-pressed={isSelected}
-                aria-label={item.label}
-                style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
-                className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-[calc(12*var(--u))] bg-[#F3F4F6] text-left select-none transition-[transform,box-shadow] duration-200 active:scale-[0.97] ${
-                  isSelected
-                    ? "ring-[calc(2*var(--u))] ring-[#740319]"
-                    : "ring-1 ring-black/5"
-                }`}
-              >
-                <img
-                  src={item.src}
-                  alt={item.label}
-                  draggable={false}
-                  onContextMenu={(e) => e.preventDefault()}
-                  style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
-                  className="pointer-events-none h-full w-full object-cover select-none"
-                />
-
-                {/* Tombol Compact Hapus Foto di Pojok Kiri Atas */}
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteGalleryItem(e, item.id)}
-                  onContextMenu={(e) => e.preventDefault()}
-                  aria-label={`Hapus ${item.label}`}
-                  style={{
-                    width: "calc(24 * var(--u))",
-                    height: "calc(24 * var(--u))",
-                  }}
-                  className="absolute left-[calc(8*var(--u))] top-[calc(8*var(--u))] z-10 flex cursor-pointer items-center justify-center rounded-full bg-black/55 text-white transition-[transform,background-color] duration-150 active:scale-90 active:bg-[#C8102E]"
-                >
-                  <Trash
-                    weight="bold"
-                    className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
-                  />
-                </button>
-
-                {/* Indikator Centang / Lingkaran Kosong di Pojok Kanan Atas */}
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute right-[calc(8*var(--u))] top-[calc(8*var(--u))] flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
+      {/* Grid Thumbnail Galeri */}
+      <div className="mx-auto w-full max-w-[680px] flex-1 overflow-y-auto px-[calc(16*var(--u))] pt-[calc(18*var(--u))]">
+        {visibleItems.length === 0 ? (
+          <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-[calc(16*var(--u))] border border-dashed border-[#DDDDE4] bg-white px-[calc(20*var(--u))] text-center">
+            <ImageIcon
+              weight="regular"
+              className="h-[calc(36*var(--u))] w-[calc(36*var(--u))] text-[#8A8A96]"
+            />
+            <p
+              style={{ margin: 0, marginTop: "calc(10 * var(--u))" }}
+              className="text-[calc(13.5*var(--u))] font-medium text-[#52525B]"
+            >
+              Belum ada foto di galeri ini.
+            </p>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ marginTop: "calc(14 * var(--u))" }}
+              className="flex h-[calc(38*var(--u))] cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(14*var(--u))] text-[calc(12.5*var(--u))] font-semibold text-white active:bg-[#5B0213]"
+            >
+              <FolderOpen
+                weight="bold"
+                className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
+              />
+              <span>Pilih dari Perangkat</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-[calc(12*var(--u))]">
+            {visibleItems.map((item) => {
+              const isSelected = item.id === selectedId;
+              return (
+                <div
+                  key={item.id}
+                  style={{ aspectRatio: "1 / 1" }}
+                  className={`relative overflow-hidden rounded-[calc(14*var(--u))] border bg-white transition-[transform,border-color] duration-200 ${
                     isSelected
-                      ? "bg-[#740319] text-white"
-                      : "border-[calc(1.8*var(--u))] border-white bg-black/20"
+                      ? "border-[calc(2.5*var(--u))] border-[#740319]"
+                      : "border-[#EFEFF3]"
                   }`}
                 >
-                  {isSelected && (
-                    <Check
-                      weight="bold"
-                      className="h-[calc(13*var(--u))] w-[calc(13*var(--u))] text-white"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic(6);
+                      setSelectedId(item.id);
+                    }}
+                    className="h-full w-full cursor-pointer"
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.label}
+                      draggable={false}
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="h-full w-full object-cover select-none"
                     />
-                  )}
-                </span>
-              </div>
-            );
-          })}
+                  </button>
 
-          {/* Kartu Pilih dari Perangkat */}
-          <button
-            type="button"
-            onClick={openDevicePicker}
-            onContextMenu={(e) => e.preventDefault()}
-            aria-label="Pilih dari Perangkat"
-            className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(12*var(--u))] border border-dashed border-[#D4D4DC] bg-[#FAFAFB] p-[calc(8*var(--u))] text-center transition-colors active:bg-[#FDF2F4]"
-          >
-            <span className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
-              <ImageIcon
-                weight="regular"
-                className="h-[calc(18*var(--u))] w-[calc(18*var(--u))]"
-              />
-            </span>
-            <span className="text-[calc(11*var(--u))] font-medium leading-tight text-[#52525B]">
-              Pilih dari Perangkat
-            </span>
-          </button>
-        </div>
+                  {/* Tombol Hapus Thumbnail Compact */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteThumbnail(item.id);
+                    }}
+                    aria-label={`Hapus ${item.label}`}
+                    style={{
+                      width: "calc(28 * var(--u))",
+                      height: "calc(28 * var(--u))",
+                      top: "calc(8 * var(--u))",
+                      left: "calc(8 * var(--u))",
+                    }}
+                    className="flex cursor-pointer items-center justify-center rounded-full bg-black/55 text-white transition-transform active:scale-90"
+                  >
+                    <Trash
+                      weight="bold"
+                      className="h-[calc(13*var(--u))] w-[calc(13*var(--u))]"
+                    />
+                  </button>
+
+                  {isSelected && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: "calc(26 * var(--u))",
+                        height: "calc(26 * var(--u))",
+                        top: "calc(8 * var(--u))",
+                        right: "calc(8 * var(--u))",
+                      }}
+                      className="pointer-events-none flex items-center justify-center rounded-full bg-[#740319] text-white"
+                    >
+                      <Check
+                        weight="bold"
+                        className="h-[calc(14*var(--u))] w-[calc(14*var(--u))]"
+                      />
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Bottom Bar: Counter & Tombol "Gunakan Foto" */}
+      {/* Footer Aksi */}
       <div
         style={{
-          paddingTop: "calc(12 * var(--u))",
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
+          paddingTop: "calc(14 * var(--u))",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 18 * var(--u))",
         }}
-        className="sticky bottom-0 z-30 w-full border-t border-[#EFEFF3] bg-white px-[calc(16*var(--u))]"
+        className="w-full border-t border-[#EFEFF3] bg-white px-[calc(16*var(--u))]"
       >
-        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-[calc(16*var(--u))]">
-          <span className="text-[calc(14*var(--u))] font-normal text-[#171717]">
-            {selectedCount} foto dipilih
-          </span>
+        <div className="mx-auto grid w-full max-w-[680px] grid-cols-2 gap-[calc(12*var(--u))]">
+          <button
+            type="button"
+            onClick={() => triggerOverlayClose()}
+            className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+          >
+            Batal
+          </button>
 
           <button
             type="button"
-            onClick={handleStartAdjustPhoto}
-            disabled={!selectedItem}
-            className="flex h-[calc(44*var(--u))] min-w-[calc(168*var(--u))] cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(20*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-200 active:scale-[0.98] active:bg-[#5B0213] disabled:cursor-not-allowed disabled:opacity-45"
+            onClick={handleConfirmSelectedThumbnail}
+            disabled={visibleItems.length === 0}
+            className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-200 active:scale-[0.985] active:bg-[#5B0213] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Gunakan Foto
+            Pilih Foto
           </button>
         </div>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
 
       <style>{`
         .moku-gal-enter {
