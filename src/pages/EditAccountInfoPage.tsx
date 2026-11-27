@@ -1318,7 +1318,7 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Batal (Kiri) & Simpan (Kanan) */}
+        {/* Tombol Batal (Kiri - Soft Tonal) & Simpan (Kanan - Solid Primary) */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="grid grid-cols-2 gap-[calc(12*var(--u))]"
@@ -1327,7 +1327,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleBack}
             disabled={isBusy}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(14*var(--u))] bg-[#F4F4F6] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#3F3F46] transition-[transform,background-color,opacity] duration-220 ease-out hover:bg-[#EAEAEF] active:scale-[0.97] active:bg-[#E2E2E8] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Batal
           </button>
@@ -1336,12 +1336,12 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleSave}
             disabled={isBusy || usernameStatus === "checking"}
-            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-260 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
+            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(14*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-220 ease-out active:scale-[0.97] disabled:cursor-not-allowed ${
               savePhase === "saved"
-                ? "bg-[#15803D] shadow-[0_4px_14px_rgba(21,128,61,0.28)]"
+                ? "bg-[#15803D] shadow-[0_6px_18px_rgba(21,128,61,0.26)]"
                 : savePhase === "saving"
-                ? "moku-save-pulse bg-[#5B0213] shadow-[0_4px_14px_rgba(116,3,25,0.28)]"
-                : "bg-[#740319] shadow-[0_4px_12px_rgba(116,3,25,0.22)] hover:bg-[#620215] active:bg-[#5B0213] disabled:opacity-65"
+                ? "moku-save-pulse bg-[#5B0213] shadow-[0_6px_18px_rgba(116,3,25,0.28)]"
+                : "bg-[#740319] shadow-[0_6px_16px_rgba(116,3,25,0.24)] hover:bg-[#620215] active:bg-[#5B0213] disabled:opacity-65"
             }`}
           >
             {savePhase === "saving" && (
