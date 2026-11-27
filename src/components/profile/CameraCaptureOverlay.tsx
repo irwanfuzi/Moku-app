@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -20,6 +21,11 @@ import {
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
+
+const CLOSE_ANIMATION_MS = 280;
+const EDGE_SWIPE_THRESHOLD_PX = 36;
+const DISMISS_DISTANCE_PX = 96;
+const DISMISS_VELOCITY_PX_MS = 0.45;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -46,6 +52,27 @@ export default function CameraCaptureOverlay({
   const circleGuideRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
+
+  // State pelacakan swipe-back gesture dari tepi kiri
+  const swipeStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    active: boolean;
+    lockedHorizontal: boolean;
+  }>({
+    x: 0,
+    y: 0,
+    time: 0,
+    active: false,
+    lockedHorizontal: false,
+  });
+
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [flashMode, setFlashMode] = useState<FlashMode>("auto");
@@ -59,6 +86,27 @@ export default function CameraCaptureOverlay({
       streamRef.current = null;
     }
   }, []);
+
+  // Fungsi penutup tunggal — dipakai oleh tombol Back, Swipe-Back, dan tombol Back sistem
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    triggerHaptic(6);
+    stopStream();
+    setIsDragging(false);
+    setIsExiting(true);
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      isClosingRef.current = false;
+      setIsExiting(false);
+      setDragX(0);
+      onClose();
+    }, CLOSE_ANIMATION_MS);
+  }, [onClose, stopStream]);
 
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
@@ -105,8 +153,17 @@ export default function CameraCaptureOverlay({
     if (!isOpen) {
       stopStream();
       setCameraReady(false);
+      setDragX(0);
+      setIsDragging(false);
+      setIsExiting(false);
+      isClosingRef.current = false;
       return;
     }
+
+    isClosingRef.current = false;
+    setDragX(0);
+    setIsDragging(false);
+    setIsExiting(false);
 
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#000000"));
@@ -115,9 +172,45 @@ export default function CameraCaptureOverlay({
 
     return () => {
       stopStream();
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
       metas.forEach((meta) => meta.setAttribute("content", "#740319"));
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
+
+  // Sinkronkan tombol Back hardware / Ionic back button / history popstate saat overlay kamera terbuka
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleIonBack = (ev: Event) => {
+      const customEv = ev as CustomEvent<{
+        register: (priority: number, handler: () => void) => void;
+      }>;
+      if (customEv.detail?.register) {
+        customEv.detail.register(999, () => {
+          handleClose();
+        });
+      }
+    };
+
+    window.history.pushState({ mokuCameraOverlay: true }, "");
+    const handlePopState = () => {
+      handleClose();
+    };
+
+    document.addEventListener("ionBackButton", handleIonBack);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("ionBackButton", handleIonBack);
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.mokuCameraOverlay) {
+        window.history.back();
+      }
+    };
+  }, [handleClose, isOpen]);
 
   useEffect(() => {
     const stream = streamRef.current;
@@ -139,6 +232,73 @@ export default function CameraCaptureOverlay({
 
   if (!isOpen || typeof document === "undefined") return null;
 
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    if (isClosingRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    if (touch.clientX > EDGE_SWIPE_THRESHOLD_PX) {
+      swipeStartRef.current.active = false;
+      return;
+    }
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: performance.now(),
+      active: true,
+      lockedHorizontal: false,
+    };
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    const state = swipeStartRef.current;
+    if (!state.active || isClosingRef.current || e.touches.length !== 1) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - state.x;
+    const dy = touch.clientY - state.y;
+
+    if (!state.lockedHorizontal) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+        state.active = false;
+        setIsDragging(false);
+        setDragX(0);
+        return;
+      }
+      if (dx > 8) {
+        state.lockedHorizontal = true;
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+    setDragX(Math.max(0, dx));
+  };
+
+  const handleTouchEnd = () => {
+    const state = swipeStartRef.current;
+    if (!state.active) return;
+    state.active = false;
+
+    if (!state.lockedHorizontal) {
+      setIsDragging(false);
+      setDragX(0);
+      return;
+    }
+
+    const elapsed = Math.max(1, performance.now() - state.time);
+    const velocity = dragX / elapsed;
+
+    if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
+      handleClose();
+    } else {
+      setIsDragging(false);
+      setDragX(0);
+    }
+  };
+
   const handleCycleFlash = () => {
     triggerHaptic(6);
     setFlashMode((prev) =>
@@ -155,7 +315,7 @@ export default function CameraCaptureOverlay({
     const video = videoRef.current;
     const circleEl = circleGuideRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !cameraReady) return;
+    if (!video || !canvas || !cameraReady || isClosingRef.current) return;
 
     triggerHaptic([10, 20, 10]);
 
@@ -167,7 +327,6 @@ export default function CameraCaptureOverlay({
     const vw = video.videoWidth || 720;
     const vh = video.videoHeight || 720;
 
-    // Hitung area potong presisi sesuai kotak bounding lingkaran panduan pada layar (object-cover)
     const videoRect = video.getBoundingClientRect();
     const circleRect = circleEl?.getBoundingClientRect();
 
@@ -194,12 +353,10 @@ export default function CameraCaptureOverlay({
       sx = circleLeftInVideo / scale;
       sy = circleTopInVideo / scale;
 
-      // Jika kamera depan di-mirror secara visual (-scale-x-100), balik koordinat X sumber video
       if (facingMode === "user") {
         sx = vw - sx - sSize;
       }
 
-      // Jaga agar tetap berada di dalam batas frame video
       sSize = Math.min(sSize, vw, vh);
       sx = Math.max(0, Math.min(vw - sSize, sx));
       sy = Math.max(0, Math.min(vh - sSize, sy));
@@ -234,21 +391,31 @@ export default function CameraCaptureOverlay({
     onCapture(dataUrl);
   };
 
-  const handleClose = () => {
-    triggerHaptic(6);
-    stopStream();
-    onClose();
+  const overlayStyle: CSSProperties = {
+    ...MOBILE_SCALE_VARS,
+    transform: isExiting
+      ? "translate3d(100%, 0, 0)"
+      : dragX > 0
+      ? `translate3d(${dragX}px, 0, 0)`
+      : undefined,
+    opacity: isExiting ? 0.6 : dragX > 0 ? Math.max(0.55, 1 - dragX / 480) : 1,
+    transition: isDragging
+      ? "none"
+      : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1)`,
   };
 
   return createPortal(
     <div
-      style={MOBILE_SCALE_VARS}
+      style={overlayStyle}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       role="dialog"
       aria-modal="true"
       aria-label="Ambil Foto"
       className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-black text-white select-none"
     >
-      {/* Kilatan layar saat mode flash aktif */}
       {isFlashingScreen && (
         <div
           aria-hidden="true"
@@ -312,7 +479,6 @@ export default function CameraCaptureOverlay({
           </button>
         </div>
 
-        {/* Pill Instruksi Posisi Wajah */}
         <div
           style={{ marginTop: "calc(12 * var(--u))" }}
           className="mx-auto flex items-center gap-[calc(8*var(--u))] rounded-full bg-[#1F1F23] px-[calc(14*var(--u))] py-[calc(7*var(--u))]"
@@ -339,21 +505,16 @@ export default function CameraCaptureOverlay({
           } ${cameraReady ? "opacity-100" : "opacity-0"}`}
         />
 
-        {/* Overlay Grid Rule-of-Thirds + Lingkaran Panduan */}
         {!cameraError && (
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            {/* Garis Vertikal 1/3 & 2/3 */}
             <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
             <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
-
-            {/* Garis Horizontal 1/3 & 2/3 */}
             <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
             <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
 
-            {/* Lingkaran Putih Panduan Wajah (Area yang akan di-crop) */}
             <div
               ref={circleGuideRef}
               style={{
@@ -365,7 +526,6 @@ export default function CameraCaptureOverlay({
           </div>
         )}
 
-        {/* State Error / Akses Kamera */}
         {cameraError && (
           <div className="relative z-10 mx-[calc(24*var(--u))] flex max-w-[340px] flex-col items-center rounded-[calc(16*var(--u))] bg-[#1F1F23] p-[calc(20*var(--u))] text-center">
             <WarningCircle
@@ -454,7 +614,7 @@ export default function CameraCaptureOverlay({
         @keyframes moku-cam-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 14px, 0);
+            transform: translate3d(24px, 0, 0);
           }
           to {
             opacity: 1;
