@@ -31,10 +31,10 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import {
+  DEFAULT_AVATAR_URL,
   getAccountProfile,
   isUsernameAlignedWithIdentity,
   isUsernameTaken,
-  REMOVED_AVATAR_VALUE,
   saveAccountProfile,
 } from "@/lib/account-profile";
 
@@ -90,13 +90,6 @@ function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "BS";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 function isRepeatedOrMash(text: string): boolean {
@@ -208,8 +201,8 @@ export default function EditAccountInfoPage() {
 
   const initialProfile = useRef(getAccountProfile());
 
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(
-    initialProfile.current.avatarUrl
+  const [avatarUrl, setAvatarUrl] = useState<string>(
+    initialProfile.current.avatarUrl || DEFAULT_AVATAR_URL
   );
   const [avatarError, setAvatarError] = useState(false);
 
@@ -393,8 +386,8 @@ export default function EditAccountInfoPage() {
   const handleRemovePhoto = () => {
     triggerHaptic(10);
     setAvatarError(false);
-    setAvatarUrl(null);
-    saveAccountProfile({ avatarUrl: REMOVED_AVATAR_VALUE });
+    setAvatarUrl(DEFAULT_AVATAR_URL);
+    saveAccountProfile({ avatarUrl: DEFAULT_AVATAR_URL });
     closePhotoSheet();
     triggerToast("Foto profil dihapus.", "success");
   };
@@ -785,17 +778,18 @@ export default function EditAccountInfoPage() {
               }}
               className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
             >
-              {avatarUrl && !avatarError ? (
+              {!avatarError ? (
                 <img
-                  src={avatarUrl}
+                  src={avatarUrl || DEFAULT_AVATAR_URL}
                   alt={fullName || "Profil"}
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
-                  {getInitials(fullName)}
-                </span>
+                <User
+                  weight="fill"
+                  className="h-[calc(42*var(--u))] w-[calc(42*var(--u))] text-[#740319]"
+                />
               )}
             </div>
 
@@ -1754,4 +1748,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-                  }
+                            }
