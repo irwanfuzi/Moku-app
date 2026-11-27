@@ -12,8 +12,7 @@ import {
   ArrowClockwise,
   ArrowLeft,
   Camera,
-  Check,
-  FlipCameraAndroid,
+  CameraRotate,
   Image as ImageIcon,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
@@ -130,7 +129,10 @@ export default function CameraCaptureOverlay({
 
   const startCameraStream = useCallback(
     async (mode: "user" | "environment") => {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
         setCameraError("Kamera tidak didukung di perangkat ini.");
         setCameraReady(false);
         return;
@@ -162,7 +164,6 @@ export default function CameraCaptureOverlay({
     [stopCameraStream]
   );
 
-  // Jalur penutup tunggal: dipakai tombol panah kiri atas, swipe kiri/kanan, dan popstate/ionBackButton
   const triggerOverlayClose = useCallback(
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
@@ -406,7 +407,17 @@ export default function CameraCaptureOverlay({
           ctx.translate(canvas.width, 0);
           ctx.scale(-1, 1);
         }
-        ctx.drawImage(video, sx, sy, side, side, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          video,
+          sx,
+          sy,
+          side,
+          side,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
         ctx.restore();
 
         const shotUrl = canvas.toDataURL("image/jpeg", 0.92);
@@ -419,7 +430,6 @@ export default function CameraCaptureOverlay({
       }
     }
 
-    // Fallback pratinjau jika kamera belum aktif
     stopCameraStream();
     setZoom(1.15);
     setRotation(0);
@@ -538,7 +548,6 @@ export default function CameraCaptureOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
-  // Mode Sesuaikan Foto setelah jepretan diambil
   if (capturedUrl) {
     const zoomPercent = Math.round(
       ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100
@@ -791,7 +800,6 @@ export default function CameraCaptureOverlay({
       aria-label="Ambil Foto"
       className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#141417] text-white select-none"
     >
-      {/* Top Header Marun */}
       <header className="w-full bg-[#740319] text-white">
         <div
           style={{
@@ -826,12 +834,14 @@ export default function CameraCaptureOverlay({
             aria-label="Ganti Kamera"
             className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
           >
-            <FlipCameraAndroid className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]" />
+            <CameraRotate
+              weight="regular"
+              className="h-[calc(21*var(--u))] w-[calc(21*var(--u))]"
+            />
           </button>
         </div>
       </header>
 
-      {/* Area Viewfinder Kamera */}
       <div className="relative mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center overflow-hidden bg-[#19191E]">
         <video
           ref={videoRef}
@@ -872,7 +882,6 @@ export default function CameraCaptureOverlay({
           </div>
         )}
 
-        {/* Panduan Lingkaran Wajah */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
@@ -893,7 +902,6 @@ export default function CameraCaptureOverlay({
         </div>
       </div>
 
-      {/* Bottom Kontrol Shutter & Galeri */}
       <div
         style={{
           paddingTop: "calc(18 * var(--u))",
@@ -984,4 +992,4 @@ function buildFallbackAvatarDataUrl(): string {
   ctx.fill();
 
   return canvas.toDataURL("image/jpeg", 0.92);
-      }
+                        }
