@@ -30,6 +30,7 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import CameraCaptureOverlay from "@/components/profile/CameraCaptureOverlay";
 import {
   DEFAULT_AVATAR_URL,
   getAccountProfile,
@@ -208,6 +209,7 @@ export default function EditAccountInfoPage() {
 
   const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
   const [isPhotoSheetClosing, setIsPhotoSheetClosing] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const [fullName, setFullName] = useState(initialProfile.current.fullName);
   const [username, setUsername] = useState(initialProfile.current.username);
@@ -235,7 +237,6 @@ export default function EditAccountInfoPage() {
   } | null>(null);
   const [isToastClosing, setIsToastClosing] = useState(false);
 
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const toastAutoRef = useRef<number | null>(null);
@@ -358,6 +359,21 @@ export default function EditAccountInfoPage() {
     }, PHOTO_SHEET_EXIT_MS);
   }, [isPhotoSheetClosing, isPhotoSheetOpen]);
 
+  const handleOpenCameraOverlay = () => {
+    triggerHaptic(8);
+    setIsPhotoSheetOpen(false);
+    setIsPhotoSheetClosing(false);
+    setIsCameraOpen(true);
+  };
+
+  const handleCameraCaptured = (dataUrl: string) => {
+    setAvatarError(false);
+    setAvatarUrl(dataUrl);
+    saveAccountProfile({ avatarUrl: dataUrl });
+    setIsCameraOpen(false);
+    triggerToast("Foto profil diperbarui.", "success");
+  };
+
   const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -377,6 +393,7 @@ export default function EditAccountInfoPage() {
       setAvatarError(false);
       setAvatarUrl(result);
       saveAccountProfile({ avatarUrl: result });
+      setIsCameraOpen(false);
       closePhotoSheet();
       triggerToast("Foto profil diperbarui.", "success");
     };
@@ -714,14 +731,6 @@ export default function EditAccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handlePhotoFileChange}
-        className="sr-only"
-      />
       <input
         ref={galleryInputRef}
         type="file"
@@ -1314,6 +1323,18 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
+      {/* Fullscreen Camera Capture Overlay */}
+      <CameraCaptureOverlay
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCaptured}
+        onOpenGallery={() => {
+          setIsCameraOpen(false);
+          galleryInputRef.current?.click();
+        }}
+      />
+
+      {/* Bottom Sheet Ubah Foto Profil */}
       {isPhotoSheetOpen &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1360,10 +1381,7 @@ export default function EditAccountInfoPage() {
               <div className="divide-y divide-[#F0F0F4]">
                 <button
                   type="button"
-                  onClick={() => {
-                    triggerHaptic(6);
-                    cameraInputRef.current?.click();
-                  }}
+                  onClick={handleOpenCameraOverlay}
                   className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
                 >
                   <span className="flex items-center gap-[calc(12*var(--u))]">
@@ -1748,4 +1766,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-                            }
+        }
