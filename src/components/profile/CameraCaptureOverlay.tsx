@@ -83,6 +83,9 @@ export default function CameraCaptureOverlay({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isFlashingScreen, setIsFlashingScreen] = useState(false);
 
+  // State Pratinjau Foto setelah jepret
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const stopStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -108,6 +111,7 @@ export default function CameraCaptureOverlay({
       isClosingRef.current = false;
       setIsExiting(false);
       setDragX(0);
+      setPreviewUrl(null);
       onClose();
     }, CLOSE_ANIMATION_MS);
   }, [onClose, stopStream]);
@@ -153,10 +157,27 @@ export default function CameraCaptureOverlay({
     [stopStream]
   );
 
+  // Jalankan kamera hanya saat overlay terbuka dan belum berada di mode Pratinjau Foto
+  useEffect(() => {
+    if (!isOpen || previewUrl) {
+      stopStream();
+      setCameraReady(false);
+      return;
+    }
+
+    startCamera(facingMode);
+
+    return () => {
+      stopStream();
+    };
+  }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
+
+  // Sinkronisasi theme-color & reset state saat overlay dibuka/ditutup
   useEffect(() => {
     if (!isOpen) {
       stopStream();
       setCameraReady(false);
+      setPreviewUrl(null);
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -166,24 +187,24 @@ export default function CameraCaptureOverlay({
     }
 
     isClosingRef.current = false;
+    setPreviewUrl(null);
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
 
     const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) => meta.setAttribute("content", "#000000"));
-
-    startCamera(facingMode);
+    metas.forEach((meta) =>
+      meta.setAttribute("content", previewUrl ? "#740319" : "#000000")
+    );
 
     return () => {
-      stopStream();
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
       metas.forEach((meta) => meta.setAttribute("content", "#740319"));
     };
-  }, [facingMode, isOpen, startCamera, stopStream]);
+  }, [isOpen, previewUrl, stopStream]);
 
   // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
@@ -201,7 +222,6 @@ export default function CameraCaptureOverlay({
       if (!guardActiveRef.current) return;
       ev.stopImmediatePropagation();
 
-      // Pertahankan posisi stack di halaman Ubah Informasi Akun agar tidak keluar ke home screen / dashboard
       window.history.pushState(
         { mokuCameraRestored: true },
         "",
@@ -415,8 +435,21 @@ export default function CameraCaptureOverlay({
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     stopStream();
+    setPreviewUrl(dataUrl);
+  };
+
+  const handleUsePhoto = () => {
+    if (!previewUrl) return;
+    triggerHaptic([8, 25, 10]);
+    const finalUrl = previewUrl;
     guardActiveRef.current = false;
-    onCapture(dataUrl);
+    setPreviewUrl(null);
+    onCapture(finalUrl);
+  };
+
+  const handleRetakePhoto = () => {
+    triggerHaptic(6);
+    setPreviewUrl(null);
   };
 
   const overlayStyle: CSSProperties = {
@@ -431,6 +464,118 @@ export default function CameraCaptureOverlay({
       ? "none"
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1)`,
   };
+
+  // Tampilan Pratinjau Foto setelah tombol shutter ditekan
+  if (previewUrl) {
+    return createPortal(
+      <div
+        style={overlayStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pratinjau Foto"
+        className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
+      >
+        {/* Header Marun */}
+        <header className="w-full bg-[#740319] text-white">
+          <div
+            style={{
+              paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
+              paddingBottom: "calc(12 * var(--u))",
+            }}
+            className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
+          >
+            <button
+              type="button"
+              onClick={triggerOverlayClose}
+              aria-label="Kembali"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            >
+              <ArrowLeft
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            </button>
+            <h2
+              style={{ margin: 0 }}
+              className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
+            >
+              Pratinjau Foto
+            </h2>
+          </div>
+        </header>
+
+        {/* Lingkaran Pratinjau + Teks Panduan */}
+        <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
+          <div
+            style={{
+              width: "min(76vw, 312 * var(--u))",
+              height: "min(76vw, 312 * var(--u))",
+              marginBottom: "calc(28 * var(--u))",
+            }}
+            className="overflow-hidden rounded-full bg-[#F3F4F6] shadow-[0_6px_24px_rgba(0,0,0,0.08)]"
+          >
+            <img
+              src={previewUrl}
+              alt="Pratinjau Foto Profil"
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <p
+            style={{ margin: 0 }}
+            className="max-w-[260px] text-[calc(13.5*var(--u))] font-normal leading-relaxed text-[#6B6B76]"
+          >
+            Pastikan foto sudah sesuai untuk digunakan sebagai foto profil.
+          </p>
+        </div>
+
+        {/* Tombol Aksi Bawah: Gunakan Foto & Ambil Ulang */}
+        <div
+          style={{
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
+          }}
+          className="mx-auto w-full max-w-[680px] space-y-[calc(12*var(--u))] px-[calc(16*var(--u))]"
+        >
+          <button
+            type="button"
+            onClick={handleUsePhoto}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
+          >
+            Gunakan Foto
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRetakePhoto}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+          >
+            Ambil Ulang
+          </button>
+        </div>
+
+        <style>{`
+          .moku-cam-enter {
+            animation: moku-cam-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+          }
+          @keyframes moku-cam-in {
+            from {
+              opacity: 0;
+              transform: translate3d(24px, 0, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
+          }
+        `}</style>
+      </div>,
+      document.body
+    );
+  }
 
   return createPortal(
     <div
