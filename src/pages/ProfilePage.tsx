@@ -23,6 +23,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
+import { useAccountProfile } from "@/lib/account-profile";
 
 const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
 
@@ -40,6 +41,7 @@ function triggerHaptic(duration = 8) {
 
 export default function ProfilePage() {
   const { isMobile, isReady, navigateWithTransition } = useAppLayout();
+  const profile = useAccountProfile();
 
   const [avatarError, setAvatarError] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -146,7 +148,7 @@ export default function ProfilePage() {
             {!avatarError ? (
               <img
                 src={AVATAR_URL}
-                alt="Budi Santoso"
+                alt={profile.fullName}
                 onError={() => setAvatarError(true)}
                 className="h-full w-full object-cover"
               />
@@ -162,13 +164,13 @@ export default function ProfilePage() {
             style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
             className="font-display text-[calc(22*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white"
           >
-            Budi Santoso
+            {profile.fullName}
           </h1>
           <p
             style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
             className="text-[calc(14*var(--u))] font-normal leading-snug text-white/90"
           >
-            budi.santoso@moku.id
+            {profile.email}
           </p>
 
           {/* Grup Metadata Operasional: Jabatan | Cabang (terpisah 16u) */}
@@ -178,7 +180,7 @@ export default function ProfilePage() {
                 weight="regular"
                 className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
               />
-              Teknisi
+              {profile.role}
             </span>
 
             <span className="h-[calc(12*var(--u))] w-[1px] bg-white/45" />
@@ -188,7 +190,7 @@ export default function ProfilePage() {
                 weight="regular"
                 className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
               />
-              Cabang Jakarta 3
+              {profile.branch}
             </span>
           </div>
         </div>
