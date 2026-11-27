@@ -587,12 +587,12 @@ export default function EditAccountInfoPage() {
     }
 
     if (needsEmailOtp) {
-      openOtpVerification("email", normalizedEmail);
+      triggerToast("Klik Verifikasi untuk memvalidasi email baru Anda.", "error");
       return;
     }
 
     if (needsPhoneOtp) {
-      openOtpVerification("phone", normalizedPhone);
+      triggerToast("Klik Verifikasi untuk memvalidasi nomor baru Anda.", "error");
       return;
     }
 
@@ -851,7 +851,7 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email + Informasi Verifikasi OTP (1 baris) */}
+            {/* Email + Tombol Verifikasi di Kanan Atas + Informasi 1 Baris */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -867,12 +867,26 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <label
-                  htmlFor="edit-email"
-                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                >
-                  Email <span className="text-[#C8102E]">*</span>
-                </label>
+                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
+                  <label
+                    htmlFor="edit-email"
+                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                  >
+                    Email <span className="text-[#C8102E]">*</span>
+                  </label>
+                  {needsEmailOtp && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openOtpVerification("email", normalizedEmail)
+                      }
+                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
+                    >
+                      Verifikasi
+                    </button>
+                  )}
+                </div>
+
                 <input
                   id="edit-email"
                   type="email"
@@ -908,27 +922,23 @@ export default function EditAccountInfoPage() {
                 )}
 
                 {needsEmailOtp && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openOtpVerification("email", normalizedEmail)
-                    }
+                  <div
                     style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
+                    className="moku-field-msg flex w-full items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))]"
                   >
                     <Info
                       weight="regular"
                       className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
                     />
                     <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
-                      Klik verifikasi OTP email baru.
+                      Klik Verifikasi untuk memvalidasi email baru Anda.
                     </span>
-                  </button>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Nomor Telepon + Informasi Verifikasi OTP (1 baris) */}
+            {/* Nomor Telepon + Tombol Verifikasi di Kanan Atas + Informasi 1 Baris */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -944,12 +954,26 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <label
-                  htmlFor="edit-phone"
-                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                >
-                  Nomor Telepon <span className="text-[#C8102E]">*</span>
-                </label>
+                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
+                  <label
+                    htmlFor="edit-phone"
+                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                  >
+                    Nomor Telepon <span className="text-[#C8102E]">*</span>
+                  </label>
+                  {needsPhoneOtp && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openOtpVerification("phone", normalizedPhone)
+                      }
+                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
+                    >
+                      Verifikasi
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-[calc(8*var(--u))]">
                   <button
                     type="button"
@@ -1017,22 +1041,18 @@ export default function EditAccountInfoPage() {
                 )}
 
                 {needsPhoneOtp && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openOtpVerification("phone", normalizedPhone)
-                    }
+                  <div
                     style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
+                    className="moku-field-msg flex w-full items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))]"
                   >
                     <Info
                       weight="regular"
                       className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
                     />
                     <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
-                      Klik verifikasi OTP nomor baru.
+                      Klik Verifikasi untuk memvalidasi nomor baru Anda.
                     </span>
-                  </button>
+                  </div>
                 )}
               </div>
             </div>
