@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import {
+  ArrowClockwise,
   ArrowLeft,
   Check,
   Image as ImageIcon,
@@ -103,6 +104,7 @@ export default function GalleryPickerOverlay({
   // Mode layar Sesuaikan Foto setelah tombol "Gunakan Foto" diklik
   const [adjustingUrl, setAdjustingUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1.15);
+  const [rotation, setRotation] = useState<number>(0);
   const [offset, setOffset] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
@@ -119,6 +121,13 @@ export default function GalleryPickerOverlay({
   const openDevicePicker = useCallback(() => {
     triggerHaptic(6);
     fileInputRef.current?.click();
+  }, []);
+
+  const resetAdjustState = useCallback(() => {
+    setAdjustingUrl(null);
+    setZoom(1.15);
+    setRotation(0);
+    setOffset({ x: 0, y: 0 });
   }, []);
 
   const triggerOverlayClose = useCallback(
@@ -138,21 +147,17 @@ export default function GalleryPickerOverlay({
         isClosingRef.current = false;
         setIsExiting(false);
         setDragX(0);
-        setAdjustingUrl(null);
-        setZoom(1.15);
-        setOffset({ x: 0, y: 0 });
+        resetAdjustState();
         onClose();
         afterClose?.();
       }, CLOSE_ANIMATION_MS);
     },
-    [onClose]
+    [onClose, resetAdjustState]
   );
 
   useEffect(() => {
     if (!isOpen) {
-      setAdjustingUrl(null);
-      setZoom(1.15);
-      setOffset({ x: 0, y: 0 });
+      resetAdjustState();
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -162,9 +167,7 @@ export default function GalleryPickerOverlay({
     }
 
     isClosingRef.current = false;
-    setAdjustingUrl(null);
-    setZoom(1.15);
-    setOffset({ x: 0, y: 0 });
+    resetAdjustState();
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
@@ -178,7 +181,7 @@ export default function GalleryPickerOverlay({
         closeTimerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, resetAdjustState]);
 
   // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
@@ -203,9 +206,7 @@ export default function GalleryPickerOverlay({
       );
       if (adjustingUrl) {
         triggerHaptic(6);
-        setAdjustingUrl(null);
-        setZoom(1.15);
-        setOffset({ x: 0, y: 0 });
+        resetAdjustState();
       } else {
         triggerOverlayClose();
       }
@@ -220,17 +221,13 @@ export default function GalleryPickerOverlay({
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
           if (adjustingUrl) {
-            setAdjustingUrl(null);
-            setZoom(1.15);
-            setOffset({ x: 0, y: 0 });
+            resetAdjustState();
           } else {
             triggerOverlayClose();
           }
         });
       } else if (adjustingUrl) {
-        setAdjustingUrl(null);
-        setZoom(1.15);
-        setOffset({ x: 0, y: 0 });
+        resetAdjustState();
       } else {
         triggerOverlayClose();
       }
@@ -244,7 +241,7 @@ export default function GalleryPickerOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [adjustingUrl, isOpen, triggerOverlayClose]);
+  }, [adjustingUrl, isOpen, resetAdjustState, triggerOverlayClose]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -348,21 +345,24 @@ export default function GalleryPickerOverlay({
     reader.readAsDataURL(file);
   };
 
-  // Saat klik "Gunakan Foto" di grid galeri, buka layar "Sesuaikan Foto"
   const handleStartAdjustPhoto = () => {
     if (!selectedItem || isClosingRef.current) return;
     triggerHaptic(8);
     setZoom(1.15);
+    setRotation(0);
     setOffset({ x: 0, y: 0 });
     setAdjustingUrl(selectedItem.src);
+  };
+
+  const handleRotatePhoto = () => {
+    triggerHaptic(7);
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   const handleCancelAdjust = () => {
     if (isClosingRef.current) return;
     triggerHaptic(6);
-    setAdjustingUrl(null);
-    setZoom(1.15);
-    setOffset({ x: 0, y: 0 });
+    resetAdjustState();
   };
 
   const handlePanPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -410,9 +410,8 @@ export default function GalleryPickerOverlay({
 
     const natW = imgEl.naturalWidth || 720;
     const natH = imgEl.naturalHeight || 720;
-
-    const imgRect = imgEl.getBoundingClientRect();
     const circleRect = circleEl.getBoundingClientRect();
+    const circleSizePx = Math.max(1, circleRect.width);
 
     canvas.width = 720;
     canvas.height = 720;
@@ -422,45 +421,28 @@ export default function GalleryPickerOverlay({
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (
-      imgRect.width > 0 &&
-      imgRect.height > 0 &&
-      circleRect.width > 0 &&
-      circleRect.height > 0
-    ) {
-      const scaleX = natW / imgRect.width;
-      const scaleY = natH / imgRect.height;
+    // Hitung transformasi relatif terhadap pusat lingkaran crop
+    const imgRect = imgEl.getBoundingClientRect();
+    const imgCenterX = imgRect.left + imgRect.width / 2;
+    const imgCenterY = imgRect.top + imgRect.height / 2;
+    const circleCenterX = circleRect.left + circleRect.width / 2;
+    const circleCenterY = circleRect.top + circleRect.height / 2;
 
-      const sx = (circleRect.left - imgRect.left) * scaleX;
-      const sy = (circleRect.top - imgRect.top) * scaleY;
-      const sWidth = circleRect.width * scaleX;
-      const sHeight = circleRect.height * scaleY;
+    const outputScale = canvas.width / circleSizePx;
+    const baseFitScale = Math.max(
+      circleSizePx / Math.max(1, natW),
+      circleSizePx / Math.max(1, natH)
+    );
 
-      ctx.drawImage(
-        imgEl,
-        sx,
-        sy,
-        sWidth,
-        sHeight,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-    } else {
-      const size = Math.min(natW, natH);
-      ctx.drawImage(
-        imgEl,
-        (natW - size) / 2,
-        (natH - size) / 2,
-        size,
-        size,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-    }
+    const relCenterX = (imgCenterX - circleCenterX) * outputScale;
+    const relCenterY = (imgCenterY - circleCenterY) * outputScale;
+
+    ctx.save();
+    ctx.translate(canvas.width / 2 + relCenterX, canvas.height / 2 + relCenterY);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom * outputScale * baseFitScale, zoom * outputScale * baseFitScale);
+    ctx.drawImage(imgEl, -natW / 2, -natH / 2, natW, natH);
+    ctx.restore();
 
     const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
     triggerOverlayClose(() => {
@@ -534,7 +516,7 @@ export default function GalleryPickerOverlay({
           style={{ touchAction: "none" }}
           className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-grab flex-col items-center justify-center overflow-hidden bg-[#26262A] active:cursor-grabbing"
         >
-          {/* Foto yang dapat di-pan & di-zoom */}
+          {/* Foto yang dapat di-pan, di-zoom, dan di-rotasi */}
           <img
             ref={cropImageRef}
             src={adjustingUrl}
@@ -543,10 +525,10 @@ export default function GalleryPickerOverlay({
             style={{
               width: "min(86vw, 356 * var(--u))",
               height: "min(86vw, 356 * var(--u))",
-              transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
+              transform: `translate3d(${offset.x}px, ${offset.y}px, 0) rotate(${rotation}deg) scale(${zoom})`,
               transition: isPanning
                 ? "none"
-                : "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)",
+                : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
             className="pointer-events-none object-cover"
           />
@@ -577,13 +559,14 @@ export default function GalleryPickerOverlay({
               margin: 0,
               marginTop: "calc(22 * var(--u))",
             }}
-            className="relative z-10 max-w-[260px] text-center text-[calc(13*var(--u))] font-normal leading-relaxed text-white/90"
+            className="relative z-10 max-w-[270px] text-center text-[calc(13*var(--u))] font-normal leading-relaxed text-white/90"
           >
-            Atur posisi dan ukuran foto agar sesuai dengan lingkaran avatar.
+            Atur posisi, ukuran, dan rotasi foto agar sesuai dengan lingkaran
+            avatar.
           </p>
         </div>
 
-        {/* Panel Bawah Putih: Slider Zoom + Tombol Batal & Simpan */}
+        {/* Panel Bawah Putih: Slider Zoom + Tombol Rotasi + Tombol Batal & Simpan */}
         <div
           style={{
             paddingTop: "calc(18 * var(--u))",
@@ -592,69 +575,87 @@ export default function GalleryPickerOverlay({
           className="w-full bg-white px-[calc(16*var(--u))] text-[#171717]"
         >
           <div className="mx-auto w-full max-w-[680px]">
-            {/* Kontrol Zoom (- / Slider / +) */}
+            {/* Kontrol Zoom (- / Slider / +) + Tombol Rotasi (↻) */}
             <div
               style={{ marginBottom: "calc(20 * var(--u))" }}
-              className="mx-auto flex w-full max-w-[440px] items-center gap-[calc(14*var(--u))]"
+              className="mx-auto flex w-full max-w-[520px] items-center gap-[calc(12*var(--u))]"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic(5);
-                  setZoom((prev) =>
-                    Math.max(MIN_ZOOM, Number((prev - 0.2).toFixed(2)))
-                  );
-                }}
-                aria-label="Perkecil Foto"
-                className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
-              >
-                <MagnifyingGlassMinus
-                  weight="regular"
-                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                />
-              </button>
+              <div className="flex min-w-0 flex-1 items-center gap-[calc(12*var(--u))]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(5);
+                    setZoom((prev) =>
+                      Math.max(MIN_ZOOM, Number((prev - 0.2).toFixed(2)))
+                    );
+                  }}
+                  aria-label="Perkecil Foto"
+                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
+                >
+                  <MagnifyingGlassMinus
+                    weight="regular"
+                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                  />
+                </button>
 
-              <div className="relative flex flex-1 items-center">
-                <div className="h-[calc(4*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+                <div className="relative flex flex-1 items-center">
+                  <div className="h-[calc(4*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+                    <div
+                      style={{ width: `${zoomPercent}%` }}
+                      className="h-full bg-[#740319] transition-[width] duration-100"
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={MIN_ZOOM}
+                    max={MAX_ZOOM}
+                    step={0.02}
+                    value={zoom}
+                    aria-label="Tingkat Zoom Foto"
+                    onChange={(e) => setZoom(parseFloat(e.target.value))}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
                   <div
-                    style={{ width: `${zoomPercent}%` }}
-                    className="h-full bg-[#740319] transition-[width] duration-100"
+                    aria-hidden="true"
+                    style={{
+                      left: `calc(${zoomPercent}% - 8 * var(--u))`,
+                      width: "calc(16 * var(--u))",
+                      height: "calc(16 * var(--u))",
+                    }}
+                    className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
                   />
                 </div>
-                <input
-                  type="range"
-                  min={MIN_ZOOM}
-                  max={MAX_ZOOM}
-                  step={0.02}
-                  value={zoom}
-                  aria-label="Tingkat Zoom Foto"
-                  onChange={(e) => setZoom(parseFloat(e.target.value))}
-                  className="moku-zoom-range absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <div
-                  aria-hidden="true"
-                  style={{
-                    left: `calc(${zoomPercent}% - 8 * var(--u))`,
-                    width: "calc(16 * var(--u))",
-                    height: "calc(16 * var(--u))",
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(5);
+                    setZoom((prev) =>
+                      Math.min(MAX_ZOOM, Number((prev + 0.2).toFixed(2)))
+                    );
                   }}
-                  className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
-                />
+                  aria-label="Perbesar Foto"
+                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
+                >
+                  <MagnifyingGlassPlus
+                    weight="regular"
+                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                  />
+                </button>
               </div>
 
               <button
                 type="button"
-                onClick={() => {
-                  triggerHaptic(5);
-                  setZoom((prev) =>
-                    Math.min(MAX_ZOOM, Number((prev + 0.2).toFixed(2)))
-                  );
+                onClick={handleRotatePhoto}
+                aria-label="Putar Foto 90 Derajat"
+                style={{
+                  width: "calc(54 * var(--u))",
+                  height: "calc(40 * var(--u))",
                 }}
-                aria-label="Perbesar Foto"
-                className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
+                className="flex shrink-0 cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#F3F4F6] text-[#171717] transition-[transform,background-color] duration-200 active:scale-92 active:bg-[#E5E7EB]"
               >
-                <MagnifyingGlassPlus
-                  weight="regular"
+                <ArrowClockwise
+                  weight="bold"
                   className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
                 />
               </button>
