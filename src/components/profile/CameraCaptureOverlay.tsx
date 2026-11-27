@@ -1,0 +1,423 @@
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  ArrowLeft,
+  CameraRotate,
+  Image as ImageIcon,
+  Info,
+  Lightning,
+  LightningA,
+  LightningSlash,
+  WarningCircle,
+} from "@phosphor-icons/react";
+
+const MOBILE_SCALE_VARS = {
+  "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
+} as CSSProperties;
+
+type FlashMode = "auto" | "on" | "off";
+
+interface CameraCaptureOverlayProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCapture: (dataUrl: string) => void;
+  onOpenGallery: () => void;
+}
+
+function triggerHaptic(duration = 8) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(duration);
+  }
+}
+
+export default function CameraCaptureOverlay({
+  isOpen,
+  onClose,
+  onCapture,
+  onOpenGallery,
+}: CameraCaptureOverlayProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [flashMode, setFlashMode] = useState<FlashMode>("auto");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isFlashingScreen, setIsFlashingScreen] = useState(false);
+
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  const startCamera = useCallback(
+    async (targetFacing: "user" | "environment") => {
+      stopStream();
+      setCameraReady(false);
+      setCameraError(null);
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setCameraError("Perangkat atau browser tidak mendukung akses kamera.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: targetFacing },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
+          audio: false,
+        });
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          setCameraReady(true);
+        }
+      } catch {
+        setCameraError(
+          "Izin kamera ditolak atau kamera sedang digunakan aplikasi lain."
+        );
+      }
+    },
+    [stopStream]
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopStream();
+      setCameraReady(false);
+      return;
+    }
+
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    metas.forEach((meta) => meta.setAttribute("content", "#000000"));
+
+    startCamera(facingMode);
+
+    return () => {
+      stopStream();
+      metas.forEach((meta) => meta.setAttribute("content", "#740319"));
+    };
+  }, [facingMode, isOpen, startCamera, stopStream]);
+
+  useEffect(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track || !track.getCapabilities) return;
+
+    const caps = track.getCapabilities() as MediaTrackCapabilities & {
+      torch?: boolean;
+    };
+    if (caps.torch && facingMode === "environment") {
+      track
+        .applyConstraints({
+          advanced: [{ torch: flashMode === "on" } as MediaTrackConstraintSet],
+        })
+        .catch(() => {});
+    }
+  }, [flashMode, facingMode, cameraReady]);
+
+  if (!isOpen || typeof document === "undefined") return null;
+
+  const handleCycleFlash = () => {
+    triggerHaptic(6);
+    setFlashMode((prev) =>
+      prev === "auto" ? "on" : prev === "on" ? "off" : "auto"
+    );
+  };
+
+  const handleSwitchCamera = () => {
+    triggerHaptic(8);
+    setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
+  };
+
+  const handleTakeSnapshot = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || !cameraReady) return;
+
+    triggerHaptic([10, 20, 10]);
+
+    if (flashMode === "on" || (flashMode === "auto" && facingMode === "user")) {
+      setIsFlashingScreen(true);
+      window.setTimeout(() => setIsFlashingScreen(false), 180);
+    }
+
+    const vw = video.videoWidth || 720;
+    const vh = video.videoHeight || 720;
+    const size = Math.min(vw, vh);
+    const sx = (vw - size) / 2;
+    const sy = (vh - size) / 2;
+
+    canvas.width = 720;
+    canvas.height = 720;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.save();
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, sx, sy, size, size, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    stopStream();
+    onCapture(dataUrl);
+  };
+
+  const handleClose = () => {
+    triggerHaptic(6);
+    stopStream();
+    onClose();
+  };
+
+  return createPortal(
+    <div
+      style={MOBILE_SCALE_VARS}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ambil Foto"
+      className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-black text-white select-none"
+    >
+      {/* Kilatan layar saat mode flash aktif */}
+      {isFlashingScreen && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 bg-white/90 transition-opacity duration-150"
+        />
+      )}
+
+      {/* Top Bar + Instruksi Pill */}
+      <div
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
+          paddingBottom: "calc(14 * var(--u))",
+        }}
+        className="relative z-20 flex flex-col bg-black px-[calc(12*var(--u))]"
+      >
+        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between">
+          <div className="flex items-center gap-[calc(8*var(--u))]">
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Kembali"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            >
+              <ArrowLeft
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            </button>
+            <h2
+              style={{ margin: 0 }}
+              className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
+            >
+              Ambil Foto
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCycleFlash}
+            aria-label={`Mode Flash: ${flashMode}`}
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+          >
+            {flashMode === "auto" && (
+              <LightningA
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))]"
+              />
+            )}
+            {flashMode === "on" && (
+              <Lightning
+                weight="fill"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-[#FACC15]"
+              />
+            )}
+            {flashMode === "off" && (
+              <LightningSlash
+                weight="regular"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white/70"
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Pill Instruksi Posisi Wajah */}
+        <div
+          style={{ marginTop: "calc(12 * var(--u))" }}
+          className="mx-auto flex items-center gap-[calc(8*var(--u))] rounded-full bg-[#1F1F23] px-[calc(14*var(--u))] py-[calc(7*var(--u))]"
+        >
+          <Info
+            weight="regular"
+            className="h-[calc(17*var(--u))] w-[calc(17*var(--u))] shrink-0 text-white"
+          />
+          <span className="text-[calc(12.5*var(--u))] font-normal text-white/95">
+            Posisikan wajah Anda di dalam lingkaran
+          </span>
+        </div>
+      </div>
+
+      {/* Area Viewfinder Kamera + Grid 3x3 + Lingkaran Panduan */}
+      <div className="relative mx-auto flex w-full max-w-[680px] flex-1 items-center justify-center overflow-hidden bg-[#17171A]">
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          autoPlay
+          className={`h-full w-full object-cover transition-opacity duration-300 ${
+            facingMode === "user" ? "-scale-x-100" : ""
+          } ${cameraReady ? "opacity-100" : "opacity-0"}`}
+        />
+
+        {/* Overlay Grid Rule-of-Thirds + Lingkaran Panduan */}
+        {!cameraError && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            {/* Garis Vertikal 1/3 & 2/3 */}
+            <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
+            <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
+
+            {/* Garis Horizontal 1/3 & 2/3 */}
+            <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
+            <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
+
+            {/* Lingkaran Putih Panduan Wajah */}
+            <div
+              style={{
+                width: "min(84vw, 336 * var(--u))",
+                height: "min(84vw, 336 * var(--u))",
+              }}
+              className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.14)]"
+            />
+          </div>
+        )}
+
+        {/* State Error / Akses Kamera */}
+        {cameraError && (
+          <div className="relative z-10 mx-[calc(24*var(--u))] flex max-w-[340px] flex-col items-center rounded-[calc(16*var(--u))] bg-[#1F1F23] p-[calc(20*var(--u))] text-center">
+            <WarningCircle
+              weight="fill"
+              className="mb-[calc(10*var(--u))] h-[calc(32*var(--u))] w-[calc(32*var(--u))] text-[#F87171]"
+            />
+            <p
+              style={{ margin: 0, marginBottom: "calc(14 * var(--u))" }}
+              className="text-[calc(13*var(--u))] leading-relaxed text-white/90"
+            >
+              {cameraError}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                stopStream();
+                onOpenGallery();
+              }}
+              className="cursor-pointer rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white active:bg-[#5B0213]"
+            >
+              Pilih dari Galeri
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Controls: Switch Camera | Shutter | Gallery */}
+      <div
+        style={{
+          paddingTop: "calc(22 * var(--u))",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 26 * var(--u))",
+        }}
+        className="relative z-20 bg-black px-[calc(28*var(--u))]"
+      >
+        <div className="mx-auto flex w-full max-w-[420px] items-center justify-between">
+          {/* Balik Kamera */}
+          <button
+            type="button"
+            onClick={handleSwitchCamera}
+            aria-label="Ganti Kamera"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+          >
+            <CameraRotate
+              weight="regular"
+              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))]"
+            />
+          </button>
+
+          {/* Tombol Shutter Lingkaran Ganda */}
+          <button
+            type="button"
+            onClick={handleTakeSnapshot}
+            disabled={!cameraReady}
+            aria-label="Jepret Foto"
+            style={{
+              width: "calc(72 * var(--u))",
+              height: "calc(72 * var(--u))",
+            }}
+            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white p-[calc(4*var(--u))] transition-transform duration-150 active:scale-92 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <span className="h-full w-full rounded-full bg-white" />
+          </button>
+
+          {/* Buka Galeri */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(6);
+              stopStream();
+              onOpenGallery();
+            }}
+            aria-label="Pilih dari Galeri"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+          >
+            <ImageIcon
+              weight="regular"
+              className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
+            />
+          </button>
+        </div>
+      </div>
+
+      <canvas ref={canvasRef} className="hidden" />
+
+      <style>{`
+        .moku-cam-enter {
+          animation: moku-cam-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+        @keyframes moku-cam-in {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 14px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+      `}</style>
+    </div>,
+    document.body
+  );
+      }
