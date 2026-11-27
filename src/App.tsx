@@ -6,7 +6,6 @@ import {
   IonPage,
   IonRouterOutlet,
   createAnimation,
-  isPlatform,
   setupIonicReact,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
@@ -62,7 +61,7 @@ const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
 setupIonicReact({
   mode: "ios",
   animated: true,
-  swipeBackEnabled: isPlatform("ios"),
+  swipeBackEnabled: true,
   navAnimation: seamlessSlideAnimation,
 });
 
