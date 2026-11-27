@@ -43,6 +43,8 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
+const SNACKBAR_SHOW_DELAY_MS = 140;
+const SNACKBAR_VISIBLE_MS = 3600;
 const SNACKBAR_EXIT_MS = 420;
 const PHOTO_SHEET_EXIT_MS = 380;
 const DEMO_OTP_CODE = "123456";
@@ -239,6 +241,7 @@ export default function EditAccountInfoPage() {
 
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
+  const toastDelayRef = useRef<number | null>(null);
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
   const photoSheetExitRef = useRef<number | null>(null);
@@ -318,18 +321,40 @@ export default function EditAccountInfoPage() {
   }, []);
 
   const triggerToast = useCallback(
-    (message: string, tone: "success" | "error" = "success") => {
+    (
+      message: string,
+      tone: "success" | "error" = "success",
+      delayMs = 0
+    ) => {
+      if (toastDelayRef.current !== null) {
+        window.clearTimeout(toastDelayRef.current);
+        toastDelayRef.current = null;
+      }
       if (toastAutoRef.current !== null) {
         window.clearTimeout(toastAutoRef.current);
+        toastAutoRef.current = null;
       }
       if (toastExitRef.current !== null) {
         window.clearTimeout(toastExitRef.current);
+        toastExitRef.current = null;
       }
-      setIsToastClosing(false);
-      setToast({ id: Date.now(), message, tone });
-      toastAutoRef.current = window.setTimeout(() => {
-        dismissToast();
-      }, 2800);
+
+      const showNow = () => {
+        setIsToastClosing(false);
+        setToast({ id: Date.now(), message, tone });
+        toastAutoRef.current = window.setTimeout(() => {
+          dismissToast();
+        }, SNACKBAR_VISIBLE_MS);
+      };
+
+      if (delayMs > 0) {
+        toastDelayRef.current = window.setTimeout(() => {
+          toastDelayRef.current = null;
+          showNow();
+        }, delayMs);
+      } else {
+        showNow();
+      }
     },
     [dismissToast]
   );
@@ -371,7 +396,7 @@ export default function EditAccountInfoPage() {
     setAvatarUrl(dataUrl);
     saveAccountProfile({ avatarUrl: dataUrl });
     setIsCameraOpen(false);
-    triggerToast("Foto profil diperbarui.", "success");
+    triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
   };
 
   const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -395,7 +420,7 @@ export default function EditAccountInfoPage() {
       saveAccountProfile({ avatarUrl: result });
       setIsCameraOpen(false);
       closePhotoSheet();
-      triggerToast("Foto profil diperbarui.", "success");
+      triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
     };
     reader.readAsDataURL(file);
   };
@@ -406,11 +431,14 @@ export default function EditAccountInfoPage() {
     setAvatarUrl(DEFAULT_AVATAR_URL);
     saveAccountProfile({ avatarUrl: DEFAULT_AVATAR_URL });
     closePhotoSheet();
-    triggerToast("Foto profil dihapus.", "success");
+    triggerToast("Foto profil dihapus.", "success", SNACKBAR_SHOW_DELAY_MS);
   };
 
   useEffect(() => {
     return () => {
+      if (toastDelayRef.current !== null) {
+        window.clearTimeout(toastDelayRef.current);
+      }
       if (toastAutoRef.current !== null) {
         window.clearTimeout(toastAutoRef.current);
       }
@@ -781,11 +809,12 @@ export default function EditAccountInfoPage() {
             className="relative"
           >
             <div
+              key={avatarUrl}
               style={{
                 width: "calc(104 * var(--u))",
                 height: "calc(104 * var(--u))",
               }}
-              className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
+              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
             >
               {!avatarError ? (
                 <img
@@ -1323,7 +1352,6 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
-      {/* Fullscreen Camera Capture Overlay */}
       <CameraCaptureOverlay
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
@@ -1334,7 +1362,6 @@ export default function EditAccountInfoPage() {
         }}
       />
 
-      {/* Bottom Sheet Ubah Foto Profil */}
       {isPhotoSheetOpen &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1627,6 +1654,9 @@ export default function EditAccountInfoPage() {
         .moku-edit-enter {
           animation: moku-edit-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
+        .moku-avatar-pop {
+          animation: moku-avatar-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
         .moku-smooth-swap {
           animation: moku-swap-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
@@ -1652,10 +1682,10 @@ export default function EditAccountInfoPage() {
           animation: moku-saved-scale 440ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 460ms cubic-bezier(0.25, 1, 0.5, 1) both;
+          animation: moku-toast-up 520ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 420ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          animation: moku-toast-down 460ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         @keyframes moku-edit-in {
           from {
@@ -1665,6 +1695,16 @@ export default function EditAccountInfoPage() {
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-avatar-in {
+          from {
+            opacity: 0.35;
+            transform: scale(0.94);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
           }
         }
         @keyframes moku-swap-in {
