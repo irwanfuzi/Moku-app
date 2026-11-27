@@ -18,6 +18,7 @@ import CreateVisitPage from "@/pages/CreateVisitPage";
 import VisitDetailPage from "@/pages/VisitDetailPage";
 import EditVisitPage from "@/pages/EditVisitPage";
 import ProfilePage from "@/pages/ProfilePage";
+import AccountInfoPage from "@/pages/AccountInfoPage";
 import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
@@ -137,6 +138,18 @@ function ProfileRoute() {
   );
 }
 
+function AccountInfoRoute() {
+  return (
+    <IonPage>
+      <IonContent fullscreen scrollEvents={true}>
+        <AppShell>
+          <AccountInfoPage />
+        </AppShell>
+      </IonContent>
+    </IonPage>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -165,6 +178,11 @@ export default function App() {
           <Route exact path="/visit-detail" component={VisitDetailRoute} />
           <Route exact path="/profile" component={ProfileRoute} />
           <Route exact path="/profil" component={ProfileRoute} />
+          <Route
+            exact
+            path="/profile/account-info"
+            component={AccountInfoRoute}
+          />
         </IonRouterOutlet>
       </IonReactRouter>
     </IonApp>
