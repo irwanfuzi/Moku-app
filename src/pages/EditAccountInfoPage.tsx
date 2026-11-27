@@ -4,7 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type FormEvent,
+  type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import { useIonRouter } from "@ionic/react";
@@ -16,6 +16,7 @@ import {
   Camera,
   CaretDown,
   CheckCircle,
+  CircleNotch,
   EnvelopeSimple,
   Info,
   LockSimple,
@@ -24,6 +25,12 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
+import {
+  getAccountProfile,
+  isUsernameAlignedWithIdentity,
+  isUsernameTaken,
+  saveAccountProfile,
+} from "@/lib/account-profile";
 
 const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
 
@@ -35,6 +42,7 @@ const SNACKBAR_EXIT_MS = 320;
 
 type FieldKey = "fullName" | "username" | "email" | "phone";
 type FieldErrors = Partial<Record<FieldKey, string>>;
+type UsernameCheckStatus = "idle" | "checking" | "available" | "taken";
 
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -42,50 +50,20 @@ function triggerHaptic(duration = 8) {
   }
 }
 
-function validateField(field: FieldKey, value: string): string | undefined {
-  const trimmed = value.trim();
-
-  switch (field) {
-    case "fullName":
-      if (!trimmed) return "Nama lengkap wajib diisi.";
-      if (trimmed.length < 3) return "Nama lengkap minimal 3 karakter.";
-      return undefined;
-    case "username":
-      if (!trimmed) return "Username wajib diisi.";
-      if (trimmed.length < 4) return "Username minimal 4 karakter.";
-      if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) {
-        return "Username hanya boleh huruf, angka, titik, atau underscore.";
-      }
-      return undefined;
-    case "email":
-      if (!trimmed) return "Email wajib diisi.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        return "Format email tidak valid.";
-      }
-      return undefined;
-    case "phone": {
-      const digits = trimmed.replace(/\D/g, "");
-      if (!digits) return "Nomor telepon wajib diisi.";
-      if (digits.length < 9 || digits.length > 13) {
-        return "Nomor telepon harus terdiri dari 9–13 digit.";
-      }
-      return undefined;
-    }
-    default:
-      return undefined;
-  }
-}
-
 export default function EditAccountInfoPage() {
   const { isMobile, isReady, navigateWithTransition } = useAppLayout();
   const ionRouter = useIonRouter();
 
+  const initialProfile = useRef(getAccountProfile());
+
   const [avatarError, setAvatarError] = useState(false);
-  const [fullName, setFullName] = useState("Budi Santoso");
-  const [username, setUsername] = useState("budisantoso");
-  const [email, setEmail] = useState("budi.santoso@moku.id");
-  const [phone, setPhone] = useState("812-3456-7890");
+  const [fullName, setFullName] = useState(initialProfile.current.fullName);
+  const [username, setUsername] = useState(initialProfile.current.username);
+  const [email, setEmail] = useState(initialProfile.current.email);
+  const [phone, setPhone] = useState(initialProfile.current.phone);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [usernameStatus, setUsernameStatus] =
+    useState<UsernameCheckStatus>("idle");
   const [isSaving, setIsSaving] = useState(false);
 
   const [toast, setToast] = useState<{
@@ -97,6 +75,7 @@ export default function EditAccountInfoPage() {
 
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
+  const usernameCheckRef = useRef<number | null>(null);
 
   const isMobileView = !isReady || isMobile;
 
@@ -147,8 +126,103 @@ export default function EditAccountInfoPage() {
       if (toastExitRef.current !== null) {
         window.clearTimeout(toastExitRef.current);
       }
+      if (usernameCheckRef.current !== null) {
+        window.clearTimeout(usernameCheckRef.current);
+      }
     };
   }, []);
+
+  const validateField = useCallback(
+    (
+      field: FieldKey,
+      value: string,
+      ctx?: { fullName?: string; email?: string }
+    ): string | undefined => {
+      const trimmed = value.trim();
+      const activeName = ctx?.fullName ?? fullName;
+      const activeEmail = ctx?.email ?? email;
+
+      switch (field) {
+        case "fullName":
+          if (!trimmed) return "Nama lengkap wajib diisi.";
+          if (trimmed.length < 3) return "Nama lengkap minimal 3 karakter.";
+          return undefined;
+        case "username":
+          if (!trimmed) return "Username wajib diisi.";
+          if (trimmed.length < 4) return "Username minimal 4 karakter.";
+          if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) {
+            return "Username hanya boleh huruf, angka, titik, atau underscore.";
+          }
+          if (!isUsernameAlignedWithIdentity(trimmed, activeName, activeEmail)) {
+            return "Username harus mengacu pada nama atau alamat email Anda.";
+          }
+          if (isUsernameTaken(trimmed, initialProfile.current.username)) {
+            return "Username sudah digunakan pengguna lain.";
+          }
+          return undefined;
+        case "email":
+          if (!trimmed) return "Email wajib diisi.";
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+            return "Format email tidak valid.";
+          }
+          return undefined;
+        case "phone": {
+          const digits = trimmed.replace(/\D/g, "");
+          if (!digits) return "Nomor telepon wajib diisi.";
+          if (digits.length < 9 || digits.length > 13) {
+            return "Nomor telepon harus terdiri dari 9–13 digit.";
+          }
+          return undefined;
+        }
+        default:
+          return undefined;
+      }
+    },
+    [email, fullName]
+  );
+
+  // Cek ketersediaan username secara real-time (debounced)
+  useEffect(() => {
+    if (usernameCheckRef.current !== null) {
+      window.clearTimeout(usernameCheckRef.current);
+    }
+
+    const trimmed = username.trim();
+    const isSameAsInitial =
+      trimmed.toLowerCase() ===
+      initialProfile.current.username.trim().toLowerCase();
+
+    if (
+      !trimmed ||
+      trimmed.length < 4 ||
+      !/^[a-zA-Z0-9._]+$/.test(trimmed) ||
+      !isUsernameAlignedWithIdentity(trimmed, fullName, email) ||
+      isSameAsInitial
+    ) {
+      setUsernameStatus("idle");
+      return;
+    }
+
+    setUsernameStatus("checking");
+    usernameCheckRef.current = window.setTimeout(() => {
+      const taken = isUsernameTaken(trimmed, initialProfile.current.username);
+      if (taken) {
+        setUsernameStatus("taken");
+        setErrors((prev) => ({
+          ...prev,
+          username: "Username sudah digunakan pengguna lain.",
+        }));
+      } else {
+        setUsernameStatus("available");
+        setErrors((prev) => {
+          if (!prev.username) return prev;
+          const next = { ...prev };
+          delete next.username;
+          return next;
+        });
+      }
+    }, 380);
+  }, [username, fullName, email]);
 
   const handleBack = () => {
     triggerHaptic(6);
@@ -179,8 +253,15 @@ export default function EditAccountInfoPage() {
     });
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  // Blokir tombol Enter di seluruh form (termasuk simulator mobile di desktop)
+  const handlePreventEnter = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+    }
+  };
+
+  const handleSave = () => {
+    if (isSaving || usernameStatus === "checking") return;
 
     const nextErrors: FieldErrors = {};
     const fields: Array<{ key: FieldKey; value: string; id: string }> = [
@@ -214,7 +295,15 @@ export default function EditAccountInfoPage() {
 
     triggerHaptic(10);
     setIsSaving(true);
+
     window.setTimeout(() => {
+      const updated = saveAccountProfile({
+        fullName: fullName.trim(),
+        username: username.trim().toLowerCase(),
+        email: email.trim(),
+        phone: phone.trim(),
+      });
+      initialProfile.current = updated;
       setIsSaving(false);
       triggerToast("Informasi akun berhasil disimpan.", "success");
       window.setTimeout(() => {
@@ -233,7 +322,7 @@ export default function EditAccountInfoPage() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
+      className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
       {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
@@ -265,9 +354,10 @@ export default function EditAccountInfoPage() {
         </div>
       </header>
 
-      {/* Form Utama */}
+      {/* Form Utama (Submit Enter dinonaktifkan) */}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => e.preventDefault()}
+        onKeyDown={handlePreventEnter}
         noValidate
         className="moku-edit-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]"
       >
@@ -287,7 +377,7 @@ export default function EditAccountInfoPage() {
               {!avatarError ? (
                 <img
                   src={AVATAR_URL}
-                  alt="Budi Santoso"
+                  alt={fullName || "Profil"}
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
@@ -416,23 +506,40 @@ export default function EditAccountInfoPage() {
                 >
                   Username <span className="text-[#C8102E]">*</span>
                 </label>
-                <input
-                  id="edit-username"
-                  type="text"
-                  value={username}
-                  aria-invalid={Boolean(errors.username)}
-                  aria-describedby={
-                    errors.username ? "edit-username-error" : undefined
-                  }
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    clearFieldError("username");
-                  }}
-                  onBlur={() => handleBlur("username", username)}
-                  placeholder="Masukkan username"
-                  className={getInputClass(Boolean(errors.username))}
-                />
-                {errors.username && (
+                <div className="relative flex items-center">
+                  <input
+                    id="edit-username"
+                    type="text"
+                    value={username}
+                    aria-invalid={Boolean(errors.username)}
+                    aria-describedby={
+                      errors.username ? "edit-username-error" : undefined
+                    }
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      clearFieldError("username");
+                    }}
+                    onBlur={() => handleBlur("username", username)}
+                    placeholder="Masukkan username"
+                    className={`${getInputClass(
+                      Boolean(errors.username)
+                    )} pr-[calc(36*var(--u))]`}
+                  />
+                  {usernameStatus === "checking" && (
+                    <CircleNotch
+                      weight="bold"
+                      className="pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(16*var(--u))] w-[calc(16*var(--u))] animate-spin text-[#6B6B76]"
+                    />
+                  )}
+                  {usernameStatus === "available" && !errors.username && (
+                    <CheckCircle
+                      weight="fill"
+                      className="pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-[#16A34A]"
+                    />
+                  )}
+                </div>
+
+                {errors.username ? (
                   <p
                     id="edit-username-error"
                     role="alert"
@@ -445,7 +552,18 @@ export default function EditAccountInfoPage() {
                     />
                     <span>{errors.username}</span>
                   </p>
-                )}
+                ) : usernameStatus === "available" ? (
+                  <p
+                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
+                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#16A34A]"
+                  >
+                    <CheckCircle
+                      weight="fill"
+                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    />
+                    <span>Username tersedia.</span>
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -622,7 +740,7 @@ export default function EditAccountInfoPage() {
                   <input
                     id="edit-role"
                     type="text"
-                    value="Teknisi"
+                    value={initialProfile.current.role}
                     disabled
                     readOnly
                     className="h-[calc(44*var(--u))] w-full cursor-not-allowed rounded-[calc(10*var(--u))] border border-[#E4E4EA] bg-[#F2F2F5] pl-[calc(12*var(--u))] pr-[calc(38*var(--u))] text-[calc(14*var(--u))] font-normal text-[#52525B]"
@@ -654,7 +772,7 @@ export default function EditAccountInfoPage() {
                   <input
                     id="edit-branch"
                     type="text"
-                    value="Cabang Jakarta 3"
+                    value={initialProfile.current.branch}
                     disabled
                     readOnly
                     className="h-[calc(44*var(--u))] w-full cursor-not-allowed rounded-[calc(10*var(--u))] border border-[#E4E4EA] bg-[#F2F2F5] pl-[calc(12*var(--u))] pr-[calc(38*var(--u))] text-[calc(14*var(--u))] font-normal text-[#52525B]"
@@ -684,14 +802,15 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Aksi (Terpisah 24u dari kartu, jarak antar-tombol 12u) */}
+        {/* Tombol Aksi (type="button" agar tidak terpicu tombol Enter) */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="space-y-[calc(12*var(--u))]"
         >
           <button
-            type="submit"
-            disabled={isSaving}
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || usernameStatus === "checking"}
             className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(116,3,25,0.22)] transition-[transform,background-color,opacity] duration-150 active:scale-[0.985] active:bg-[#5B0213] disabled:cursor-not-allowed disabled:opacity-65"
           >
             {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
@@ -716,7 +835,7 @@ export default function EditAccountInfoPage() {
             style={MOBILE_SCALE_VARS}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+            className={`fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
               isToastClosing
                 ? "moku-toast-exit pointer-events-none"
                 : "moku-toast-enter"
