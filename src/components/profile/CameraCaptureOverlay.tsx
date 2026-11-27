@@ -992,4 +992,4 @@ function buildFallbackAvatarDataUrl(): string {
   ctx.fill();
 
   return canvas.toDataURL("image/jpeg", 0.92);
-                        }
+  }
