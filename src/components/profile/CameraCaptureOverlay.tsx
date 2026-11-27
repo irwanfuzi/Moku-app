@@ -23,9 +23,9 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const CLOSE_ANIMATION_MS = 280;
-const EDGE_SWIPE_THRESHOLD_PX = 72;
-const DISMISS_DISTANCE_PX = 88;
-const DISMISS_VELOCITY_PX_MS = 0.4;
+const EDGE_SWIPE_THRESHOLD_PX = 80;
+const DISMISS_DISTANCE_PX = 84;
+const DISMISS_VELOCITY_PX_MS = 0.38;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -54,7 +54,6 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const hasHistoryEntryRef = useRef(false);
 
   const swipeStartRef = useRef<{
     x: number;
@@ -87,8 +86,8 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Jalankan animasi penutupan overlay tanpa mengubah history lagi
-  const runDismissTransition = useCallback(() => {
+  // Fungsi penutup tunggal — dipakai tombol Back UI, Swipe-Back, dan Hardware Back
+  const handleClose = useCallback(() => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
     triggerHaptic(6);
@@ -107,17 +106,6 @@ export default function CameraCaptureOverlay({
       onClose();
     }, CLOSE_ANIMATION_MS);
   }, [onClose, stopStream]);
-
-  // Dipanggil dari tombol Back UI atau in-app swipe gesture
-  const handleClose = useCallback(() => {
-    if (isClosingRef.current) return;
-    if (hasHistoryEntryRef.current) {
-      hasHistoryEntryRef.current = false;
-      // Mundurkan dummy state yang ditambahkan saat kamera dibuka (memicu popstate -> runDismissTransition)
-      window.history.back();
-    }
-    runDismissTransition();
-  }, [runDismissTransition]);
 
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
@@ -191,19 +179,9 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
 
-  // Cegah system swipe-back / hardware back menutup aplikasi saat overlay kamera aktif
+  // Tangkap tombol Back hardware / Ionic back button tanpa mengubah history browser
   useEffect(() => {
     if (!isOpen) return;
-
-    const currentHref = window.location.href;
-    window.history.pushState({ mokuCameraOverlay: true }, "", currentHref);
-    hasHistoryEntryRef.current = true;
-
-    const handlePopState = (ev: PopStateEvent) => {
-      ev.stopImmediatePropagation();
-      hasHistoryEntryRef.current = false;
-      runDismissTransition();
-    };
 
     const handleIonBack = (ev: Event) => {
       ev.stopImmediatePropagation();
@@ -219,27 +197,20 @@ export default function CameraCaptureOverlay({
       }
     };
 
-    // Tangkap event backbutton Cordova/Capacitor jika berjalan di WebView native
     const handleNativeBackButton = (ev: Event) => {
       ev.preventDefault();
       ev.stopImmediatePropagation();
       handleClose();
     };
 
-    window.addEventListener("popstate", handlePopState, true);
     document.addEventListener("ionBackButton", handleIonBack, true);
     document.addEventListener("backbutton", handleNativeBackButton, true);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
       document.removeEventListener("backbutton", handleNativeBackButton, true);
-      if (hasHistoryEntryRef.current) {
-        hasHistoryEntryRef.current = false;
-        window.history.back();
-      }
     };
-  }, [handleClose, isOpen, runDismissTransition]);
+  }, [handleClose, isOpen]);
 
   useEffect(() => {
     const stream = streamRef.current;
