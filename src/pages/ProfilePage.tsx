@@ -210,7 +210,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => {
                 triggerHaptic(6);
-                triggerToast("Halaman Informasi Akun segera tersedia.");
+                navigateWithTransition("/profile/account-info", "forward");
               }}
               className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
             >
