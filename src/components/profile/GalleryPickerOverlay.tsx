@@ -190,6 +190,16 @@ export default function GalleryPickerOverlay({
     setIsDragging(false);
     setIsExiting(false);
 
+    if (typeof window !== "undefined") {
+      lockedUrlRef.current = window.location.href;
+      window.history.pushState(
+        { mokuGalleryOverlay: true },
+        "",
+        lockedUrlRef.current
+      );
+      guardActiveRef.current = true;
+    }
+
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
 
@@ -202,30 +212,24 @@ export default function GalleryPickerOverlay({
   }, [isOpen, resetAdjustState]);
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    lockedUrlRef.current = window.location.href;
-    window.history.pushState(
-      { mokuGalleryOverlay: true },
-      "",
-      lockedUrlRef.current
-    );
-    guardActiveRef.current = true;
+    if (!isOpen || typeof window === "undefined") return;
 
     const handlePopState = (ev: PopStateEvent) => {
       if (!guardActiveRef.current) return;
+      ev.preventDefault();
       ev.stopImmediatePropagation();
 
       window.history.pushState(
         { mokuGalleryRestored: true },
         "",
-        lockedUrlRef.current
+        lockedUrlRef.current || window.location.href
       );
       triggerBackStep();
     };
 
     const handleIonBack = (ev: Event) => {
       if (!guardActiveRef.current) return;
+      ev.preventDefault();
       ev.stopImmediatePropagation();
       const customEv = ev as CustomEvent<{
         register: (priority: number, handler: () => void) => void;
@@ -245,7 +249,6 @@ export default function GalleryPickerOverlay({
     return () => {
       window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
-      guardActiveRef.current = false;
     };
   }, [isOpen, triggerBackStep]);
 
