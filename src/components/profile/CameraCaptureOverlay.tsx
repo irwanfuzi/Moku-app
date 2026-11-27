@@ -129,6 +129,14 @@ export default function CameraCaptureOverlay({
     [onClose, stopStream]
   );
 
+  const handleRetakePhoto = useCallback(() => {
+    if (isClosingRef.current) return;
+    triggerHaptic(6);
+    setDragX(0);
+    setIsDragging(false);
+    setPreviewUrl(null);
+  }, []);
+
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
       stopStream();
@@ -250,7 +258,11 @@ export default function CameraCaptureOverlay({
         "",
         lockedUrlRef.current
       );
-      triggerOverlayClose();
+      if (previewUrl) {
+        handleRetakePhoto();
+      } else {
+        triggerOverlayClose();
+      }
     };
 
     const handleIonBack = (ev: Event) => {
@@ -261,8 +273,14 @@ export default function CameraCaptureOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          triggerOverlayClose();
+          if (previewUrl) {
+            handleRetakePhoto();
+          } else {
+            triggerOverlayClose();
+          }
         });
+      } else if (previewUrl) {
+        handleRetakePhoto();
       } else {
         triggerOverlayClose();
       }
@@ -276,25 +294,7 @@ export default function CameraCaptureOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [isOpen, triggerOverlayClose]);
-
-  useEffect(() => {
-    const stream = streamRef.current;
-    if (!stream) return;
-    const track = stream.getVideoTracks()[0];
-    if (!track || !track.getCapabilities) return;
-
-    const caps = track.getCapabilities() as MediaTrackCapabilities & {
-      torch?: boolean;
-    };
-    if (caps.torch && facingMode === "environment") {
-      track
-        .applyConstraints({
-          advanced: [{ torch: flashMode === "on" } as MediaTrackConstraintSet],
-        })
-        .catch(() => {});
-    }
-  }, [flashMode, facingMode, cameraReady]);
+  }, [handleRetakePhoto, isOpen, previewUrl, triggerOverlayClose]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -417,7 +417,11 @@ export default function CameraCaptureOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      triggerOverlayClose();
+      if (previewUrl) {
+        handleRetakePhoto();
+      } else {
+        triggerOverlayClose();
+      }
     } else {
       setIsDragging(false);
       setDragX(0);
@@ -520,7 +524,6 @@ export default function CameraCaptureOverlay({
     setPreviewUrl(dataUrl);
   };
 
-  // Transisi keluar mulus sebelum menerapkan foto ke halaman Ubah Informasi Akun
   const handleUsePhoto = () => {
     if (!previewUrl || isClosingRef.current) return;
     triggerHaptic([8, 25, 10]);
@@ -528,12 +531,6 @@ export default function CameraCaptureOverlay({
     triggerOverlayClose(() => {
       onCapture(finalUrl);
     });
-  };
-
-  const handleRetakePhoto = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic(6);
-    setPreviewUrl(null);
   };
 
   const overlayStyle: CSSProperties = {
@@ -574,7 +571,7 @@ export default function CameraCaptureOverlay({
           >
             <button
               type="button"
-              onClick={() => triggerOverlayClose()}
+              onClick={handleRetakePhoto}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -705,7 +702,6 @@ export default function CameraCaptureOverlay({
         />
       )}
 
-      {/* Top Bar + Instruksi Pill */}
       <div
         style={{
           paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
@@ -775,7 +771,6 @@ export default function CameraCaptureOverlay({
         </div>
       </div>
 
-      {/* Area Viewfinder Kamera + Tap-to-Focus + Grid 3x3 + Lingkaran Panduan */}
       <div
         ref={viewfinderRef}
         onPointerDown={handleViewfinderPointerDown}
@@ -860,7 +855,6 @@ export default function CameraCaptureOverlay({
         )}
       </div>
 
-      {/* Bottom Controls: Switch Camera | Shutter | Gallery */}
       <div
         style={{
           paddingTop: "calc(22 * var(--u))",
@@ -950,4 +944,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-}
+                    }
