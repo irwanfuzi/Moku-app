@@ -34,6 +34,7 @@ import {
   getAccountProfile,
   isUsernameAlignedWithIdentity,
   isUsernameTaken,
+  REMOVED_AVATAR_VALUE,
   saveAccountProfile,
 } from "@/lib/account-profile";
 
@@ -393,7 +394,7 @@ export default function EditAccountInfoPage() {
     triggerHaptic(10);
     setAvatarError(false);
     setAvatarUrl(null);
-    saveAccountProfile({ avatarUrl: null });
+    saveAccountProfile({ avatarUrl: REMOVED_AVATAR_VALUE });
     closePhotoSheet();
     triggerToast("Foto profil dihapus.", "success");
   };
@@ -720,7 +721,6 @@ export default function EditAccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Hidden File Inputs untuk Kamera & Galeri */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -1320,7 +1320,6 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
-      {/* Bottom Sheet Ubah Foto Profil */}
       {isPhotoSheetOpen &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1347,7 +1346,6 @@ export default function EditAccountInfoPage() {
                 isPhotoSheetClosing ? "moku-sheet-down" : "moku-sheet-up"
               }`}
             >
-              {/* Drag Handle */}
               <div
                 style={{
                   width: "calc(38 * var(--u))",
@@ -1756,4 +1754,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-    }
+}
