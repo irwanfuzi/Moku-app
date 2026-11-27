@@ -12,7 +12,6 @@ import {
   Briefcase,
   Buildings,
   CalendarBlank,
-  Camera,
   CheckCircle,
   EnvelopeSimple,
   PencilSimple,
@@ -117,7 +116,6 @@ export default function AccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -147,54 +145,28 @@ export default function AccountInfoPage() {
         </div>
       </header>
 
-      {/* Konten Utama */}
       <div className="moku-account-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* Grup Identitas: Avatar → Nama (12u) → Role (4u) */}
         <section className="flex flex-col items-center text-center">
           <div
-            style={{ marginBottom: "calc(12 * var(--u))" }}
-            className="relative"
+            style={{
+              width: "calc(104 * var(--u))",
+              height: "calc(104 * var(--u))",
+              marginBottom: "calc(12 * var(--u))",
+            }}
+            className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
           >
-            <div
-              style={{
-                width: "calc(104 * var(--u))",
-                height: "calc(104 * var(--u))",
-              }}
-              className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
-            >
-              {!avatarError ? (
-                <img
-                  src={AVATAR_URL}
-                  alt={profile.fullName}
-                  onError={() => setAvatarError(true)}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
-                  BS
-                </span>
-              )}
-            </div>
-
-            {/* Badge Tombol Kamera (Interaktif) */}
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic(6);
-                triggerToast("Fitur ubah foto profil segera tersedia.");
-              }}
-              aria-label="Ubah Foto Profil"
-              style={{
-                width: "calc(32 * var(--u))",
-                height: "calc(32 * var(--u))",
-              }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-150 active:scale-90 active:bg-[#5B0213]"
-            >
-              <Camera
-                weight="fill"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
+            {!avatarError ? (
+              <img
+                src={AVATAR_URL}
+                alt={profile.fullName}
+                onError={() => setAvatarError(true)}
+                className="h-full w-full object-cover"
               />
-            </button>
+            ) : (
+              <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
+                BS
+              </span>
+            )}
           </div>
 
           <h2
@@ -211,7 +183,6 @@ export default function AccountInfoPage() {
           </p>
         </section>
 
-        {/* Kartu 1: Data Pribadi (Terpisah 24u dari identitas) */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -278,7 +249,6 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Kartu 2: Data Operasional (Jarak antar-kartu data 16u) */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -332,7 +302,6 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Ubah Informasi Akun (Terpisah 24u dari kartu data) */}
         <section style={{ marginTop: "calc(24 * var(--u))" }}>
           <button
             type="button"
@@ -351,7 +320,6 @@ export default function AccountInfoPage() {
         </section>
       </div>
 
-      {/* Snackbar Feedback */}
       {toast &&
         typeof document !== "undefined" &&
         createPortal(
