@@ -211,6 +211,8 @@ export default function EditAccountInfoPage() {
 
   const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
   const [isPhotoSheetClosing, setIsPhotoSheetClosing] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleteConfirmClosing, setIsDeleteConfirmClosing] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -244,6 +246,7 @@ export default function EditAccountInfoPage() {
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
   const photoSheetExitRef = useRef<number | null>(null);
+  const deleteConfirmExitRef = useRef<number | null>(null);
   const usernameCheckRef = useRef<number | null>(null);
   const emailTypingRef = useRef<number | null>(null);
   const emailOtpNoticeRef = useRef<number | null>(null);
@@ -369,8 +372,11 @@ export default function EditAccountInfoPage() {
     setIsPhotoSheetOpen(true);
   }, [isBusy]);
 
-  const closePhotoSheet = useCallback(() => {
-    if (!isPhotoSheetOpen || isPhotoSheetClosing) return;
+  const closePhotoSheet = useCallback((afterClose?: () => void) => {
+    if (!isPhotoSheetOpen || isPhotoSheetClosing) {
+      afterClose?.();
+      return;
+    }
     triggerHaptic(6);
     setIsPhotoSheetClosing(true);
     if (photoSheetExitRef.current !== null) {
@@ -380,8 +386,39 @@ export default function EditAccountInfoPage() {
       setIsPhotoSheetOpen(false);
       setIsPhotoSheetClosing(false);
       photoSheetExitRef.current = null;
+      afterClose?.();
     }, PHOTO_SHEET_EXIT_MS);
   }, [isPhotoSheetClosing, isPhotoSheetOpen]);
+
+  const openDeleteConfirmSheet = useCallback(() => {
+    if (deleteConfirmExitRef.current !== null) {
+      window.clearTimeout(deleteConfirmExitRef.current);
+      deleteConfirmExitRef.current = null;
+    }
+    triggerHaptic(8);
+    setIsPhotoSheetOpen(false);
+    setIsPhotoSheetClosing(false);
+    setIsDeleteConfirmClosing(false);
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
+  const closeDeleteConfirmSheet = useCallback((afterClose?: () => void) => {
+    if (!isDeleteConfirmOpen || isDeleteConfirmClosing) {
+      afterClose?.();
+      return;
+    }
+    triggerHaptic(6);
+    setIsDeleteConfirmClosing(true);
+    if (deleteConfirmExitRef.current !== null) {
+      window.clearTimeout(deleteConfirmExitRef.current);
+    }
+    deleteConfirmExitRef.current = window.setTimeout(() => {
+      setIsDeleteConfirmOpen(false);
+      setIsDeleteConfirmClosing(false);
+      deleteConfirmExitRef.current = null;
+      afterClose?.();
+    }, PHOTO_SHEET_EXIT_MS);
+  }, [isDeleteConfirmClosing, isDeleteConfirmOpen]);
 
   const handleOpenCameraOverlay = () => {
     triggerHaptic(8);
@@ -406,13 +443,14 @@ export default function EditAccountInfoPage() {
     triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
   };
 
-  const handleRemovePhoto = () => {
-    triggerHaptic(10);
-    setAvatarError(false);
-    setAvatarUrl(DEFAULT_AVATAR_URL);
-    saveAccountProfile({ avatarUrl: DEFAULT_AVATAR_URL });
-    closePhotoSheet();
-    triggerToast("Foto profil dihapus.", "success", SNACKBAR_SHOW_DELAY_MS);
+  const handleConfirmRemovePhoto = () => {
+    triggerHaptic([8, 20, 10]);
+    closeDeleteConfirmSheet(() => {
+      setAvatarError(false);
+      setAvatarUrl(DEFAULT_AVATAR_URL);
+      saveAccountProfile({ avatarUrl: DEFAULT_AVATAR_URL });
+      triggerToast("Foto profil dihapus.", "success", SNACKBAR_SHOW_DELAY_MS);
+    });
   };
 
   useEffect(() => {
@@ -428,6 +466,9 @@ export default function EditAccountInfoPage() {
       }
       if (photoSheetExitRef.current !== null) {
         window.clearTimeout(photoSheetExitRef.current);
+      }
+      if (deleteConfirmExitRef.current !== null) {
+        window.clearTimeout(deleteConfirmExitRef.current);
       }
       if (usernameCheckRef.current !== null) {
         window.clearTimeout(usernameCheckRef.current);
@@ -1348,7 +1389,7 @@ export default function EditAccountInfoPage() {
             }`}
           >
             <div
-              onClick={closePhotoSheet}
+              onClick={() => closePhotoSheet()}
               aria-hidden="true"
               className="fixed inset-0 bg-black/45"
             />
@@ -1428,7 +1469,7 @@ export default function EditAccountInfoPage() {
 
                 <button
                   type="button"
-                  onClick={handleRemovePhoto}
+                  onClick={openDeleteConfirmSheet}
                   className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FFF9FA]"
                 >
                   <span className="flex items-center gap-[calc(12*var(--u))]">
@@ -1451,12 +1492,142 @@ export default function EditAccountInfoPage() {
 
               <button
                 type="button"
-                onClick={closePhotoSheet}
+                onClick={() => closePhotoSheet()}
                 style={{ marginTop: "calc(16 * var(--u))" }}
                 className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4]"
               >
                 Batal
               </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Bottom Sheet Konfirmasi "Hapus Foto Profil?" */}
+      {isDeleteConfirmOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={MOBILE_SCALE_VARS}
+            className={`fixed inset-0 z-[9997] flex items-end justify-center ${
+              isDeleteConfirmClosing ? "moku-backdrop-out" : "moku-backdrop-in"
+            }`}
+          >
+            <div
+              onClick={() => closeDeleteConfirmSheet()}
+              aria-hidden="true"
+              className="fixed inset-0 bg-black/50"
+            />
+
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-photo-title"
+              style={{
+                paddingBottom: "calc(env(safe-area-inset-bottom) + 18 * var(--u))",
+              }}
+              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] pt-[calc(10*var(--u))] text-center shadow-[0_-8px_28px_rgba(0,0,0,0.18)] ${
+                isDeleteConfirmClosing ? "moku-sheet-down" : "moku-sheet-up"
+              }`}
+            >
+              <div
+                style={{
+                  width: "calc(38 * var(--u))",
+                  height: "calc(4 * var(--u))",
+                  marginBottom: "calc(18 * var(--u))",
+                }}
+                className="mx-auto rounded-full bg-[#D6D6DC]"
+              />
+
+              {/* Ilustrasi Hapus Foto & Tempat Sampah */}
+              <div
+                aria-hidden="true"
+                style={{ marginBottom: "calc(18 * var(--u))" }}
+                className="relative mx-auto flex h-[calc(112*var(--u))] w-[calc(132*var(--u))] items-center justify-center"
+              >
+                <div className="h-[calc(86*var(--u))] w-[calc(104*var(--u))] rounded-[44%_56%_52%_48%/48%_44%_56%_52%] bg-[#FCECEF]" />
+
+                {/* Aksen garis di kanan atas */}
+                <span
+                  style={{
+                    top: "calc(8 * var(--u))",
+                    right: "calc(22 * var(--u))",
+                  }}
+                  className="absolute h-[calc(10*var(--u))] w-[calc(2.5*var(--u))] rotate-[28deg] rounded-full bg-[#9E1B32]"
+                />
+                <span
+                  style={{
+                    top: "calc(16 * var(--u))",
+                    right: "calc(12 * var(--u))",
+                  }}
+                  className="absolute h-[calc(8*var(--u))] w-[calc(2.5*var(--u))] rotate-[62deg] rounded-full bg-[#9E1B32]"
+                />
+
+                {/* Kartu foto miring */}
+                <div
+                  style={{
+                    top: "calc(12 * var(--u))",
+                    left: "calc(46 * var(--u))",
+                    width: "calc(34 * var(--u))",
+                    height: "calc(28 * var(--u))",
+                  }}
+                  className="absolute flex -rotate-[16deg] items-center justify-center rounded-[calc(5*var(--u))] border-[calc(2*var(--u))] border-[#740319] bg-white shadow-xs"
+                >
+                  <ImageIcon
+                    weight="fill"
+                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#C8102E]"
+                  />
+                </div>
+
+                {/* Badan & tutup tempat sampah marun */}
+                <div
+                  style={{
+                    bottom: "calc(14 * var(--u))",
+                    width: "calc(56 * var(--u))",
+                  }}
+                  className="absolute flex flex-col items-center"
+                >
+                  <div className="h-[calc(6*var(--u))] w-[calc(64*var(--u))] rounded-full bg-[#740319]" />
+                  <div className="mt-[calc(2*var(--u))] flex h-[calc(44*var(--u))] w-full items-center justify-center gap-[calc(5*var(--u))] rounded-b-[calc(10*var(--u))] bg-[#740319] px-[calc(8*var(--u))]">
+                    <span className="h-[calc(22*var(--u))] w-[calc(4*var(--u))] rounded-full bg-white/90" />
+                    <span className="h-[calc(22*var(--u))] w-[calc(4*var(--u))] rounded-full bg-white/90" />
+                    <span className="h-[calc(22*var(--u))] w-[calc(4*var(--u))] rounded-full bg-white/90" />
+                  </div>
+                </div>
+              </div>
+
+              <h3
+                id="delete-photo-title"
+                style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
+                className="font-display text-[calc(18*var(--u))] font-bold text-[#171717]"
+              >
+                Hapus Foto Profil?
+              </h3>
+
+              <p
+                style={{ margin: 0, marginBottom: "calc(22 * var(--u))" }}
+                className="mx-auto max-w-[270px] text-[calc(13*var(--u))] font-normal leading-relaxed text-[#6B6B76]"
+              >
+                Foto profil kamu akan dihapus dan diganti dengan avatar default.
+              </p>
+
+              <div className="space-y-[calc(10*var(--u))]">
+                <button
+                  type="button"
+                  onClick={handleConfirmRemovePhoto}
+                  className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
+                >
+                  Hapus Foto
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => closeDeleteConfirmSheet()}
+                  className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+                >
+                  Batal
+                </button>
+              </div>
             </div>
           </div>,
           document.body
