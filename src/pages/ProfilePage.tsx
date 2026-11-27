@@ -205,14 +205,14 @@ export default function ProfilePage() {
             Akun
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] overflow-hidden rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 navigateWithTransition("/profile/account-info", "forward");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <User
@@ -223,7 +223,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Ubah Kata Sandi segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Lock
@@ -244,7 +244,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -254,7 +254,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Keamanan Akun segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <ShieldCheck
@@ -265,7 +265,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
           </div>
@@ -280,14 +280,14 @@ export default function ProfilePage() {
             Preferensi
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] overflow-hidden rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 navigateWithTransition("/notifications", "forward");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Bell
@@ -298,11 +298,11 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
 
-            <div className="flex items-center justify-between gap-[calc(10*var(--u))] py-[calc(13*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Moon
                   weight="regular"
@@ -317,14 +317,14 @@ export default function ProfilePage() {
                 aria-checked={darkMode}
                 aria-label="Mode Gelap"
                 onClick={handleToggleDarkMode}
-                className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(44*var(--u))] shrink-0 items-center rounded-full transition-colors duration-200 ${
+                className={`relative inline-flex h-[calc(25*var(--u))] w-[calc(45*var(--u))] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 active:scale-95 ${
                   darkMode ? "bg-[#740319]" : "bg-[#C8C8CE]"
                 }`}
               >
                 <span
-                  className={`inline-block h-[calc(19*var(--u))] w-[calc(19*var(--u))] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  className={`inline-block h-[calc(20*var(--u))] w-[calc(20*var(--u))] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.22)] transition-transform duration-200 ${
                     darkMode
-                      ? "translate-x-[calc(22*var(--u))]"
+                      ? "translate-x-[calc(22.5*var(--u))]"
                       : "translate-x-[calc(2.5*var(--u))]"
                   }`}
                 />
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Bahasa aktif: Bahasa Indonesia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Translate
@@ -353,7 +353,7 @@ export default function ProfilePage() {
                 </span>
                 <CaretRight
                   weight="regular"
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
                 />
               </span>
             </button>
@@ -369,14 +369,14 @@ export default function ProfilePage() {
             Lainnya
           </h2>
 
-          <div className="divide-y divide-[#F0F0F4] rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))]">
+          <div className="divide-y divide-[#F0F0F4] overflow-hidden rounded-[calc(14*var(--u))] border border-[#EFEFF3] bg-white">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(6);
                 triggerToast("Halaman Kebijakan Privasi segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <FileText
@@ -387,7 +387,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -397,7 +397,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Pusat Bantuan segera tersedia.");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Question
@@ -408,7 +408,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -418,7 +418,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("MOKU — Monitoring Operasional Kunjungan Unit v1.4.0");
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Info
@@ -434,7 +434,7 @@ export default function ProfilePage() {
                 </span>
                 <CaretRight
                   weight="regular"
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
                 />
               </span>
             </button>
@@ -445,7 +445,7 @@ export default function ProfilePage() {
                 triggerHaptic(10);
                 setShowLogoutModal(true);
               }}
-              className="flex w-full items-center justify-between gap-[calc(10*var(--u))] py-[calc(14*var(--u))] text-left transition-opacity active:opacity-70"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(10*var(--u))] px-[calc(16*var(--u))] py-[calc(13*var(--u))] text-left transition-colors duration-150 active:bg-[#FDF2F4]"
             >
               <span className="flex items-center gap-[calc(14*var(--u))] text-[calc(14.5*var(--u))] font-semibold text-[#C8102E]">
                 <SignOut
@@ -456,7 +456,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#4A4A54]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#C8102E]/70 transition-transform duration-150 group-active:translate-x-[2px]"
               />
             </button>
           </div>
