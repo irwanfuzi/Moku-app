@@ -336,7 +336,7 @@ export default function AccountInfoPage() {
             type="button"
             onClick={() => {
               triggerHaptic(8);
-              triggerToast("Form ubah informasi akun segera tersedia.");
+              navigateWithTransition("/profile/account-info/edit", "forward");
             }}
             className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
           >
