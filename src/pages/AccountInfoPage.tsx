@@ -1,8 +1,10 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
+  type TouchEvent,
 } from "react";
 import { useIonRouter, useIonViewWillEnter } from "@ionic/react";
 import {
@@ -23,6 +25,10 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
+const EDGE_SWIPE_ZONE_PX = 40;
+const SWIPE_TRIGGER_PX = 68;
+const SWIPE_VELOCITY_PX_MS = 0.35;
+
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
@@ -35,10 +41,32 @@ export default function AccountInfoPage() {
 
   const [profile, setProfile] = useState(() => getAccountProfile());
   const [avatarError, setAvatarError] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const isNavigatingBackRef = useRef(false);
+  const swipeStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    active: boolean;
+    direction: 1 | -1;
+    lockedHorizontal: boolean;
+  }>({
+    x: 0,
+    y: 0,
+    time: 0,
+    active: false,
+    direction: 1,
+    lockedHorizontal: false,
+  });
 
   const isMobileView = !isReady || isMobile;
 
   const refreshProfile = useCallback(() => {
+    isNavigatingBackRef.current = false;
+    setDragX(0);
+    setIsDragging(false);
     setProfile(getAccountProfile());
     setAvatarError(false);
   }, []);
@@ -57,7 +85,13 @@ export default function AccountInfoPage() {
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
   }, [isMobileView]);
 
-  const navigateBackSmooth = useCallback(() => {
+  const triggerBackAction = useCallback(() => {
+    if (isNavigatingBackRef.current) return;
+    isNavigatingBackRef.current = true;
+    triggerHaptic(6);
+    setIsDragging(false);
+    setDragX(0);
+
     if (ionRouter.canGoBack()) {
       ionRouter.goBack();
     } else {
@@ -72,8 +106,7 @@ export default function AccountInfoPage() {
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(100, () => {
-          triggerHaptic(6);
-          navigateBackSmooth();
+          triggerBackAction();
         });
       }
     };
@@ -82,16 +115,94 @@ export default function AccountInfoPage() {
     return () => {
       document.removeEventListener("ionBackButton", handleIonBack);
     };
-  }, [navigateBackSmooth]);
-
-  const handleBack = () => {
-    triggerHaptic(6);
-    navigateBackSmooth();
-  };
+  }, [triggerBackAction]);
 
   const handleOpenEdit = () => {
+    if (isNavigatingBackRef.current) return;
     triggerHaptic(8);
     navigateWithTransition("/profile/account-info/edit", "forward");
+  };
+
+  const handleTouchStart = (e: TouchEvent<HTMLElement>) => {
+    if (isNavigatingBackRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const vw = window.innerWidth;
+    const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
+    const isFromRightEdge = touch.clientX >= vw - EDGE_SWIPE_ZONE_PX;
+
+    if (!isFromLeftEdge && !isFromRightEdge) {
+      swipeStartRef.current.active = false;
+      return;
+    }
+
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: performance.now(),
+      active: true,
+      direction: isFromLeftEdge ? 1 : -1,
+      lockedHorizontal: false,
+    };
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLElement>) => {
+    const state = swipeStartRef.current;
+    if (!state.active || isNavigatingBackRef.current || e.touches.length !== 1) {
+      return;
+    }
+
+    const touch = e.touches[0];
+    const rawDx = touch.clientX - state.x;
+    const dy = touch.clientY - state.y;
+    const inwardDelta = rawDx * state.direction;
+
+    if (!state.lockedHorizontal) {
+      if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
+        state.active = false;
+        setIsDragging(false);
+        setDragX(0);
+        return;
+      }
+      if (inwardDelta > 10) {
+        state.lockedHorizontal = true;
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    setDragX(Math.max(0, inwardDelta));
+  };
+
+  const handleTouchEnd = () => {
+    const state = swipeStartRef.current;
+    if (!state.active) return;
+    state.active = false;
+
+    if (!state.lockedHorizontal) {
+      setIsDragging(false);
+      setDragX(0);
+      return;
+    }
+
+    const elapsed = Math.max(1, performance.now() - state.time);
+    const velocity = dragX / elapsed;
+
+    if (dragX >= SWIPE_TRIGGER_PX || velocity >= SWIPE_VELOCITY_PX_MS) {
+      triggerBackAction();
+    } else {
+      setIsDragging(false);
+      setDragX(0);
+    }
+  };
+
+  const pageStyle: CSSProperties = {
+    ...MOBILE_SCALE_VARS,
+    transform: dragX > 0 ? `translate3d(${dragX}px, 0, 0)` : undefined,
+    opacity: dragX > 0 ? Math.max(0.65, 1 - dragX / 480) : 1,
+    transition: isDragging
+      ? "none"
+      : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)",
   };
 
   const formattedPhone = profile.phone.startsWith("+62")
@@ -100,7 +211,11 @@ export default function AccountInfoPage() {
 
   return (
     <main
-      style={MOBILE_SCALE_VARS}
+      style={pageStyle}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
     >
       {/* Top Header Marun dengan Tombol Edit Icon-Only */}
@@ -115,7 +230,7 @@ export default function AccountInfoPage() {
           <div className="flex items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={handleBack}
+              onClick={triggerBackAction}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-white/15"
             >
