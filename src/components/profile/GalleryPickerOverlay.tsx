@@ -27,8 +27,8 @@ const MOBILE_SCALE_VARS = {
 
 const CLOSE_ANIMATION_MS = 260;
 const EDGE_SWIPE_ZONE_PX = 40;
-const DISMISS_DISTANCE_PX = 76;
-const DISMISS_VELOCITY_PX_MS = 0.35;
+const DISMISS_DISTANCE_PX = 72;
+const DISMISS_VELOCITY_PX_MS = 0.32;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 
@@ -63,8 +63,6 @@ export default function GalleryPickerOverlay({
 
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const guardActiveRef = useRef(false);
-  const lockedUrlRef = useRef<string>("");
 
   const swipeStartRef = useRef<{
     x: number;
@@ -135,7 +133,6 @@ export default function GalleryPickerOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      guardActiveRef.current = false;
       triggerHaptic(6);
       setIsDragging(false);
       setIsExiting(true);
@@ -180,7 +177,6 @@ export default function GalleryPickerOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      guardActiveRef.current = false;
       return;
     }
 
@@ -189,16 +185,6 @@ export default function GalleryPickerOverlay({
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
-
-    if (typeof window !== "undefined") {
-      lockedUrlRef.current = window.location.href;
-      window.history.pushState(
-        { mokuGalleryOverlay: true },
-        "",
-        lockedUrlRef.current
-      );
-      guardActiveRef.current = true;
-    }
 
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
@@ -212,24 +198,10 @@ export default function GalleryPickerOverlay({
   }, [isOpen, resetAdjustState]);
 
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") return;
-
-    const handlePopState = (ev: PopStateEvent) => {
-      if (!guardActiveRef.current) return;
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
-
-      window.history.pushState(
-        { mokuGalleryRestored: true },
-        "",
-        lockedUrlRef.current || window.location.href
-      );
-      triggerBackStep();
-    };
+    if (!isOpen) return;
 
     const handleIonBack = (ev: Event) => {
-      if (!guardActiveRef.current) return;
-      ev.preventDefault();
+      if (isClosingRef.current) return;
       ev.stopImmediatePropagation();
       const customEv = ev as CustomEvent<{
         register: (priority: number, handler: () => void) => void;
@@ -243,11 +215,8 @@ export default function GalleryPickerOverlay({
       }
     };
 
-    window.addEventListener("popstate", handlePopState, true);
     document.addEventListener("ionBackButton", handleIonBack, true);
-
     return () => {
-      window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
     };
   }, [isOpen, triggerBackStep]);
