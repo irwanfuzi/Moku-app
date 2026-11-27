@@ -23,9 +23,9 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const CLOSE_ANIMATION_MS = 260;
-const EDGE_SWIPE_THRESHOLD_PX = 80;
-const DISMISS_DISTANCE_PX = 84;
-const DISMISS_VELOCITY_PX_MS = 0.38;
+const EDGE_SWIPE_ZONE_PX = 48;
+const DISMISS_DISTANCE_PX = 76;
+const DISMISS_VELOCITY_PX_MS = 0.35;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -54,19 +54,22 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const historyPushedRef = useRef(false);
+  const guardEntryActiveRef = useRef(false);
+  const lockedUrlRef = useRef<string>("");
 
   const swipeStartRef = useRef<{
     x: number;
     y: number;
     time: number;
     active: boolean;
+    direction: 1 | -1; // 1 = geser dari kiri ke kanan, -1 = geser dari kanan ke kiri
     lockedHorizontal: boolean;
   }>({
     x: 0,
     y: 0,
     time: 0,
     active: false,
+    direction: 1,
     lockedHorizontal: false,
   });
 
@@ -87,7 +90,7 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Fungsi penutup tunggal — dipakai oleh tombol panah kiri atas & gestur swipe-back
+  // Fungsi penutup visual tunggal — identik untuk tombol Back & Swipe-Back
   const closeOverlayVisual = useCallback(() => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
@@ -108,12 +111,13 @@ export default function CameraCaptureOverlay({
     }, CLOSE_ANIMATION_MS);
   }, [onClose, stopStream]);
 
-  // Dipanggil saat tombol panah kiri atas diklik atau geseran layar selesai
+  // Dipanggil dari tombol panah kiri atas atau gestur swipe layar
   const handleBackAction = useCallback(() => {
     if (isClosingRef.current) return;
-    if (historyPushedRef.current) {
-      historyPushedRef.current = false;
-      window.history.back();
+    if (guardEntryActiveRef.current) {
+      guardEntryActiveRef.current = false;
+      // Ganti state guard menjadi state biasa tanpa memicu navigasi mundur ke Dashboard
+      window.history.replaceState(null, "", lockedUrlRef.current);
     }
     closeOverlayVisual();
   }, [closeOverlayVisual]);
@@ -190,17 +194,30 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
 
-  // Sinkronkan system swipe-back Android/iOS & hardware back agar kembali ke Ubah Informasi Akun
+  // Kunci rute aktif agar system edge-swipe Android (kiri maupun kanan) HANYA menutup kamera & tetap di Ubah Informasi Akun
   useEffect(() => {
     if (!isOpen) return;
 
-    window.history.pushState({ mokuCameraOverlay: true }, "");
-    historyPushedRef.current = true;
+    lockedUrlRef.current = window.location.href;
+    window.history.pushState(
+      { mokuCameraOverlay: true },
+      "",
+      lockedUrlRef.current
+    );
+    guardEntryActiveRef.current = true;
 
     const handlePopState = (ev: PopStateEvent) => {
+      // Cegah Ionic/React Router membaca popstate ini sebagai keluar dari Ubah Informasi Akun
       ev.stopImmediatePropagation();
-      historyPushedRef.current = false;
-      closeOverlayVisual();
+
+      if (guardEntryActiveRef.current) {
+        guardEntryActiveRef.current = false;
+        // Pastikan URL tetap terkunci pada halaman Ubah Informasi Akun
+        if (window.location.href !== lockedUrlRef.current) {
+          window.history.pushState(null, "", lockedUrlRef.current);
+        }
+        closeOverlayVisual();
+      }
     };
 
     const handleIonBack = (ev: Event) => {
@@ -223,9 +240,9 @@ export default function CameraCaptureOverlay({
     return () => {
       window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
-      if (historyPushedRef.current) {
-        historyPushedRef.current = false;
-        window.history.back();
+      if (guardEntryActiveRef.current) {
+        guardEntryActiveRef.current = false;
+        window.history.replaceState(null, "", lockedUrlRef.current);
       }
     };
   }, [closeOverlayVisual, handleBackAction, isOpen]);
@@ -250,19 +267,25 @@ export default function CameraCaptureOverlay({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  // Touch handlers lokal pada container (tidak memblokir klik tombol panah kiri atas)
+  // Mendukung in-app swipe dari tepi kiri maupun tepi kanan layar
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     if (isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
-    if (touch.clientX > EDGE_SWIPE_THRESHOLD_PX) {
+    const vw = window.innerWidth;
+    const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
+    const isFromRightEdge = touch.clientX >= vw - EDGE_SWIPE_ZONE_PX;
+
+    if (!isFromLeftEdge && !isFromRightEdge) {
       swipeStartRef.current.active = false;
       return;
     }
+
     swipeStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
       time: performance.now(),
       active: true,
+      direction: isFromLeftEdge ? 1 : -1,
       lockedHorizontal: false,
     };
   };
@@ -272,17 +295,18 @@ export default function CameraCaptureOverlay({
     if (!state.active || isClosingRef.current || e.touches.length !== 1) return;
 
     const touch = e.touches[0];
-    const dx = touch.clientX - state.x;
+    const rawDx = touch.clientX - state.x;
     const dy = touch.clientY - state.y;
+    const inwardDelta = rawDx * state.direction; // positif saat menggeser ke arah dalam layar
 
     if (!state.lockedHorizontal) {
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
         state.active = false;
         setIsDragging(false);
         setDragX(0);
         return;
       }
-      if (dx > 10) {
+      if (inwardDelta > 10) {
         state.lockedHorizontal = true;
         setIsDragging(true);
       } else {
@@ -290,7 +314,7 @@ export default function CameraCaptureOverlay({
       }
     }
 
-    setDragX(Math.max(0, dx));
+    setDragX(Math.max(0, inwardDelta));
   };
 
   const handleTouchEnd = () => {
@@ -404,9 +428,9 @@ export default function CameraCaptureOverlay({
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     stopStream();
-    if (historyPushedRef.current) {
-      historyPushedRef.current = false;
-      window.history.back();
+    if (guardEntryActiveRef.current) {
+      guardEntryActiveRef.current = false;
+      window.history.replaceState(null, "", lockedUrlRef.current);
     }
     onCapture(dataUrl);
   };
@@ -562,9 +586,9 @@ export default function CameraCaptureOverlay({
               type="button"
               onClick={() => {
                 stopStream();
-                if (historyPushedRef.current) {
-                  historyPushedRef.current = false;
-                  window.history.back();
+                if (guardEntryActiveRef.current) {
+                  guardEntryActiveRef.current = false;
+                  window.history.replaceState(null, "", lockedUrlRef.current);
                 }
                 onOpenGallery();
               }}
@@ -616,9 +640,9 @@ export default function CameraCaptureOverlay({
             onClick={() => {
               triggerHaptic(6);
               stopStream();
-              if (historyPushedRef.current) {
-                historyPushedRef.current = false;
-                window.history.back();
+              if (guardEntryActiveRef.current) {
+                guardEntryActiveRef.current = false;
+                window.history.replaceState(null, "", lockedUrlRef.current);
               }
               onOpenGallery();
             }}
