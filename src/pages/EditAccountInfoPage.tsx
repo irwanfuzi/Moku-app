@@ -817,6 +817,7 @@ export default function EditAccountInfoPage() {
         noValidate
         className="moku-edit-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]"
       >
+        {/* Avatar Besar Bersih Tanpa Teks Nama & Jabatan di Bawahnya */}
         <section className="flex flex-col items-center text-center">
           <div
             style={{ marginBottom: "calc(12 * var(--u))" }}
@@ -825,22 +826,22 @@ export default function EditAccountInfoPage() {
             <div
               key={avatarUrl}
               style={{
-                width: "calc(104 * var(--u))",
-                height: "calc(104 * var(--u))",
+                width: "calc(120 * var(--u))",
+                height: "calc(120 * var(--u))",
               }}
-              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
+              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] shadow-[0_6px_20px_rgba(116,3,25,0.08)]"
             >
               {!avatarError ? (
                 <img
                   src={avatarUrl || DEFAULT_AVATAR_URL}
-                  alt={fullName || "Profil"}
+                  alt="Foto Profil"
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <User
                   weight="fill"
-                  className="h-[calc(42*var(--u))] w-[calc(42*var(--u))] text-[#740319]"
+                  className="h-[calc(48*var(--u))] w-[calc(48*var(--u))] text-[#740319]"
                 />
               )}
             </div>
@@ -850,14 +851,14 @@ export default function EditAccountInfoPage() {
               onClick={openPhotoSheet}
               aria-label="Ubah Foto Profil"
               style={{
-                width: "calc(32 * var(--u))",
-                height: "calc(32 * var(--u))",
+                width: "calc(36 * var(--u))",
+                height: "calc(36 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
+                className="h-[calc(17*var(--u))] w-[calc(17*var(--u))]"
               />
             </button>
           </div>
@@ -1414,7 +1415,6 @@ export default function EditAccountInfoPage() {
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
-              {/* Header Sheet dengan Tombol Batal Compact di Kanan */}
               <div
                 style={{ marginBottom: "calc(12 * var(--u))" }}
                 className="flex items-center justify-between gap-[calc(12*var(--u))]"
@@ -1508,7 +1508,6 @@ export default function EditAccountInfoPage() {
           document.body
         )}
 
-      {/* Bottom Sheet Konfirmasi "Hapus Foto Profil?" */}
       {isDeleteConfirmOpen &&
         typeof document !== "undefined" &&
         createPortal(
