@@ -115,14 +115,14 @@ export default function AccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(40*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Marun */}
+      {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
-            paddingTop: "calc(env(safe-area-inset-top) + 10 * var(--u))",
+            paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
             paddingBottom: "calc(12 * var(--u))",
           }}
-          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(10*var(--u))]"
+          className="mx-auto flex w-full max-w-[680px] items-center gap-[calc(8*var(--u))] px-[calc(12*var(--u))]"
         >
           <button
             type="button"
@@ -147,10 +147,10 @@ export default function AccountInfoPage() {
 
       {/* Konten Utama */}
       <div className="moku-account-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* Avatar + Nama + Role */}
+        {/* Grup Identitas: Avatar → Nama (12u) → Role (4u) */}
         <section className="flex flex-col items-center text-center">
           <div
-            style={{ marginBottom: "calc(14 * var(--u))" }}
+            style={{ marginBottom: "calc(12 * var(--u))" }}
             className="relative"
           >
             <div
@@ -183,14 +183,14 @@ export default function AccountInfoPage() {
               }}
               aria-label="Ubah Foto Profil"
               style={{
-                width: "calc(34 * var(--u))",
-                height: "calc(34 * var(--u))",
+                width: "calc(32 * var(--u))",
+                height: "calc(32 * var(--u))",
               }}
               className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-150 active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
-                className="h-[calc(15.5*var(--u))] w-[calc(15.5*var(--u))]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
               />
             </button>
           </div>
@@ -209,24 +209,24 @@ export default function AccountInfoPage() {
           </p>
         </section>
 
-        {/* Kartu 1: Data Pribadi (Read-Only) */}
+        {/* Kartu 1: Data Pribadi (Terpisah 24u dari identitas) */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
         >
           <h3
-            style={{ margin: 0, marginBottom: "calc(6 * var(--u))" }}
+            style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
             className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]"
           >
             Data Pribadi
           </h3>
 
           <div className="divide-y divide-[#F0F0F4]">
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <User
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Nama Lengkap
               </span>
@@ -235,11 +235,11 @@ export default function AccountInfoPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <UserCircle
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Username
               </span>
@@ -248,11 +248,11 @@ export default function AccountInfoPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <EnvelopeSimple
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Email
               </span>
@@ -261,11 +261,11 @@ export default function AccountInfoPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <Phone
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Nomor Telepon
               </span>
@@ -276,24 +276,24 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Kartu 2: Data Operasional (Read-Only) */}
+        {/* Kartu 2: Data Operasional (Jarak antar-kartu data 16u) */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
         >
           <h3
-            style={{ margin: 0, marginBottom: "calc(6 * var(--u))" }}
+            style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
             className="font-display text-[calc(15.5*var(--u))] font-bold text-[#171717]"
           >
             Data Operasional
           </h3>
 
           <div className="divide-y divide-[#F0F0F4]">
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <Briefcase
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Jabatan / Role
               </span>
@@ -302,11 +302,11 @@ export default function AccountInfoPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <Buildings
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Cabang
               </span>
@@ -315,11 +315,11 @@ export default function AccountInfoPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-[calc(12*var(--u))] py-[calc(13.5*var(--u))]">
+            <div className="flex min-h-[calc(48*var(--u))] items-center justify-between gap-[calc(12*var(--u))] py-[calc(12*var(--u))]">
               <span className="flex shrink-0 items-center gap-[calc(12*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#6B6B76]">
                 <CalendarBlank
                   weight="regular"
-                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-[#52525B]"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] text-[#52525B]"
                 />
                 Bergabung Sejak
               </span>
@@ -330,15 +330,15 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Ubah Informasi Akun (Aksi Sekunder) */}
-        <section style={{ marginTop: "calc(22 * var(--u))" }}>
+        {/* Tombol Ubah Informasi Akun (Terpisah 24u dari kartu data) */}
+        <section style={{ marginTop: "calc(24 * var(--u))" }}>
           <button
             type="button"
             onClick={() => {
               triggerHaptic(8);
               triggerToast("Form ubah informasi akun segera tersedia.");
             }}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(10*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
           >
             <PencilSimple
               weight="regular"
@@ -358,7 +358,7 @@ export default function AccountInfoPage() {
             style={MOBILE_SCALE_VARS}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(10*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(14*var(--u))] py-[calc(11*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+            className={`fixed bottom-[calc(24px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
               isToastClosing
                 ? "moku-toast-exit pointer-events-none"
                 : "moku-toast-enter"
@@ -366,7 +366,7 @@ export default function AccountInfoPage() {
           >
             <CheckCircle
               weight="fill"
-              className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] shrink-0 text-[#22C55E]"
+              className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#22C55E]"
             />
             <span className="truncate text-[calc(12.5*var(--u))] font-medium text-white">
               {toast.message}
