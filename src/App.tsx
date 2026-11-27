@@ -18,6 +18,7 @@ import VisitDetailPage from "@/pages/VisitDetailPage";
 import EditVisitPage from "@/pages/EditVisitPage";
 import ProfilePage from "@/pages/ProfilePage";
 import AccountInfoPage from "@/pages/AccountInfoPage";
+import EditAccountInfoPage from "@/pages/EditAccountInfoPage";
 import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
@@ -149,6 +150,18 @@ function AccountInfoRoute() {
   );
 }
 
+function EditAccountInfoRoute() {
+  return (
+    <IonPage>
+      <IonContent fullscreen scrollEvents={true}>
+        <AppShell>
+          <EditAccountInfoPage />
+        </AppShell>
+      </IonContent>
+    </IonPage>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -181,6 +194,11 @@ export default function App() {
             exact
             path="/profile/account-info"
             component={AccountInfoRoute}
+          />
+          <Route
+            exact
+            path="/profile/account-info/edit"
+            component={EditAccountInfoRoute}
           />
         </IonRouterOutlet>
       </IonReactRouter>
