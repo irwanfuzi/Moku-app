@@ -109,9 +109,7 @@ export default function ProfilePage() {
     triggerHaptic(8);
     setDarkMode((prev) => {
       const next = !prev;
-      triggerToast(
-        next ? "Mode Gelap segera hadir." : "Mode Terang aktif."
-      );
+      triggerToast(next ? "Mode Gelap segera hadir." : "Mode Terang aktif.");
       return next;
     });
   };
@@ -129,7 +127,7 @@ export default function ProfilePage() {
     >
       {/* Header Profil Marun */}
       <header className="w-full bg-[#7A041B] text-white">
-        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(24*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(22*var(--u)))] text-center">
+        <div className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] pb-[calc(26*var(--u))] pt-[calc(env(safe-area-inset-top)+calc(22*var(--u)))] text-center">
           {/* Avatar Lingkaran + Border Putih */}
           <div className="flex h-[calc(94*var(--u))] w-[calc(94*var(--u))] items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]">
             {!avatarError ? (
@@ -147,15 +145,15 @@ export default function ProfilePage() {
           </div>
 
           {/* Nama & Email */}
-          <h1 className="mt-[calc(12*var(--u))] font-display text-[calc(21*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
+          <h1 className="mt-[calc(16*var(--u))] font-display text-[calc(21*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white">
             Budi Santoso
           </h1>
-          <p className="mt-[calc(3*var(--u))] text-[calc(13.5*var(--u))] font-normal text-white/90">
+          <p className="mt-[calc(6*var(--u))] text-[calc(13.5*var(--u))] font-normal text-white/90">
             budi.santoso@moku.id
           </p>
 
           {/* Jabatan | Cabang */}
-          <div className="mt-[calc(11*var(--u))] flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(12.5*var(--u))] font-normal text-white/95">
+          <div className="mt-[calc(14*var(--u))] flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(12.5*var(--u))] font-normal text-white/95">
             <span className="inline-flex items-center gap-[calc(5*var(--u))]">
               <User
                 weight="regular"
