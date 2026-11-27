@@ -23,7 +23,7 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 260;
+const CLOSE_ANIMATION_MS = 280;
 const EDGE_SWIPE_ZONE_PX = 48;
 const DISMISS_DISTANCE_PX = 76;
 const DISMISS_VELOCITY_PX_MS = 0.35;
@@ -61,7 +61,6 @@ export default function CameraCaptureOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
-  const focusTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
   const lockedUrlRef = useRef<string>("");
@@ -94,7 +93,6 @@ export default function CameraCaptureOverlay({
   const [focusIndicator, setFocusIndicator] =
     useState<FocusIndicatorState | null>(null);
 
-  // State Pratinjau Foto setelah jepret
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const stopStream = useCallback(() => {
@@ -104,29 +102,32 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Satu pintu penutupan yang dipakai tombol back kiri atas, swipe-back, dan system back
-  const triggerOverlayClose = useCallback(() => {
-    if (isClosingRef.current) return;
-    isClosingRef.current = true;
-    guardActiveRef.current = false;
-    triggerHaptic(6);
-    stopStream();
-    setIsDragging(false);
-    setIsExiting(true);
+  const triggerOverlayClose = useCallback(
+    (afterClose?: () => void) => {
+      if (isClosingRef.current) return;
+      isClosingRef.current = true;
+      guardActiveRef.current = false;
+      triggerHaptic(6);
+      stopStream();
+      setIsDragging(false);
+      setIsExiting(true);
 
-    if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current);
-    }
-    closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null;
-      isClosingRef.current = false;
-      setIsExiting(false);
-      setDragX(0);
-      setPreviewUrl(null);
-      setFocusIndicator(null);
-      onClose();
-    }, CLOSE_ANIMATION_MS);
-  }, [onClose, stopStream]);
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
+        isClosingRef.current = false;
+        setIsExiting(false);
+        setDragX(0);
+        setPreviewUrl(null);
+        setFocusIndicator(null);
+        onClose();
+        afterClose?.();
+      }, CLOSE_ANIMATION_MS);
+    },
+    [onClose, stopStream]
+  );
 
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
@@ -200,10 +201,6 @@ export default function CameraCaptureOverlay({
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
-      }
-      if (focusTimerRef.current !== null) {
-        window.clearTimeout(focusTimerRef.current);
-        focusTimerRef.current = null;
       }
     };
   }, [isOpen, stopStream]);
@@ -301,7 +298,6 @@ export default function CameraCaptureOverlay({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  // Tekan layar viewfinder untuk memicu fokus kamera pada titik sentuh
   const handleViewfinderPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (cameraError || isClosingRef.current || swipeStartRef.current.active) {
       return;
@@ -322,14 +318,6 @@ export default function CameraCaptureOverlay({
       y: localY,
     });
 
-    if (focusTimerRef.current !== null) {
-      window.clearTimeout(focusTimerRef.current);
-    }
-    focusTimerRef.current = window.setTimeout(() => {
-      setFocusIndicator(null);
-      focusTimerRef.current = null;
-    }, 950);
-
     const track = streamRef.current?.getVideoTracks()[0];
     if (track && track.getCapabilities && track.applyConstraints) {
       const caps = track.getCapabilities() as MediaTrackCapabilities & {
@@ -337,7 +325,8 @@ export default function CameraCaptureOverlay({
       };
       const constraints: Record<string, unknown>[] = [];
 
-      const normX = facingMode === "user" ? 1 - localX / rect.width : localX / rect.width;
+      const normX =
+        facingMode === "user" ? 1 - localX / rect.width : localX / rect.width;
       const normY = localY / rect.height;
 
       if (Array.isArray(caps.focusMode)) {
@@ -461,7 +450,7 @@ export default function CameraCaptureOverlay({
 
     if (flashMode === "on" || (flashMode === "auto" && facingMode === "user")) {
       setIsFlashingScreen(true);
-      window.setTimeout(() => setIsFlashingScreen(false), 180);
+      window.setTimeout(() => setIsFlashingScreen(false), 200);
     }
 
     const vw = video.videoWidth || 720;
@@ -531,16 +520,18 @@ export default function CameraCaptureOverlay({
     setPreviewUrl(dataUrl);
   };
 
+  // Transisi keluar mulus sebelum menerapkan foto ke halaman Ubah Informasi Akun
   const handleUsePhoto = () => {
-    if (!previewUrl) return;
+    if (!previewUrl || isClosingRef.current) return;
     triggerHaptic([8, 25, 10]);
     const finalUrl = previewUrl;
-    guardActiveRef.current = false;
-    setPreviewUrl(null);
-    onCapture(finalUrl);
+    triggerOverlayClose(() => {
+      onCapture(finalUrl);
+    });
   };
 
   const handleRetakePhoto = () => {
+    if (isClosingRef.current) return;
     triggerHaptic(6);
     setPreviewUrl(null);
   };
@@ -553,10 +544,10 @@ export default function CameraCaptureOverlay({
       : dragX > 0
       ? `translate3d(${dragX}px, 0, 0)`
       : undefined,
-    opacity: isExiting ? 0.6 : dragX > 0 ? Math.max(0.55, 1 - dragX / 480) : 1,
+    opacity: isExiting ? 0 : dragX > 0 ? Math.max(0.55, 1 - dragX / 480) : 1,
     transition: isDragging
       ? "none"
-      : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1)`,
+      : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
   if (previewUrl) {
@@ -571,7 +562,7 @@ export default function CameraCaptureOverlay({
         role="dialog"
         aria-modal="true"
         aria-label="Pratinjau Foto"
-        className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
+        className="moku-preview-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
       >
         <header className="w-full bg-[#740319] text-white">
           <div
@@ -583,7 +574,7 @@ export default function CameraCaptureOverlay({
           >
             <button
               type="button"
-              onClick={triggerOverlayClose}
+              onClick={() => triggerOverlayClose()}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -601,7 +592,7 @@ export default function CameraCaptureOverlay({
           </div>
         </header>
 
-        <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
+        <div className="moku-preview-content mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
           <div
             style={{
               width: "min(76vw, 312 * var(--u))",
@@ -631,7 +622,7 @@ export default function CameraCaptureOverlay({
           style={{
             paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
           }}
-          className="mx-auto w-full max-w-[680px] space-y-[calc(12*var(--u))] px-[calc(16*var(--u))]"
+          className="moku-preview-actions mx-auto w-full max-w-[680px] space-y-[calc(12*var(--u))] px-[calc(16*var(--u))]"
         >
           <button
             type="button"
@@ -651,13 +642,37 @@ export default function CameraCaptureOverlay({
         </div>
 
         <style>{`
-          .moku-cam-enter {
-            animation: moku-cam-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+          .moku-preview-enter {
+            animation: moku-preview-fade 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
-          @keyframes moku-cam-in {
+          .moku-preview-content {
+            animation: moku-preview-circle 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          .moku-preview-actions {
+            animation: moku-preview-btns 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          @keyframes moku-preview-fade {
             from {
               opacity: 0;
-              transform: translate3d(24px, 0, 0);
+            }
+            to {
+              opacity: 1;
+            }
+          }
+          @keyframes moku-preview-circle {
+            from {
+              opacity: 0;
+              transform: scale(0.92) translate3d(0, 12px, 0);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1) translate3d(0, 0, 0);
+            }
+          }
+          @keyframes moku-preview-btns {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 18px, 0);
             }
             to {
               opacity: 1;
@@ -686,7 +701,7 @@ export default function CameraCaptureOverlay({
       {isFlashingScreen && (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-50 bg-white/90 transition-opacity duration-150"
+          className="pointer-events-none fixed inset-0 z-50 bg-white/85 transition-opacity duration-200"
         />
       )}
 
@@ -702,7 +717,7 @@ export default function CameraCaptureOverlay({
           <div className="flex items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={triggerOverlayClose}
+              onClick={() => triggerOverlayClose()}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -803,7 +818,6 @@ export default function CameraCaptureOverlay({
           </div>
         )}
 
-        {/* Indikator Ring Fokus saat layar ditekan */}
         {focusIndicator && !cameraError && (
           <div
             key={focusIndicator.id}
@@ -903,10 +917,10 @@ export default function CameraCaptureOverlay({
 
       <style>{`
         .moku-cam-enter {
-          animation: moku-cam-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+          animation: moku-cam-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-focus-ring {
-          animation: moku-focus-pulse 900ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          animation: moku-focus-pulse 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes moku-cam-in {
           from {
