@@ -207,7 +207,6 @@ export default function EditAccountInfoPage() {
     useState<UsernameCheckStatus>("idle");
   const [savePhase, setSavePhase] = useState<SavePhase>("idle");
 
-  // Status verifikasi OTP untuk perubahan email & nomor HP
   const [verifiedEmail, setVerifiedEmail] = useState<string>(
     initialProfile.current.email.trim().toLowerCase()
   );
@@ -257,7 +256,9 @@ export default function EditAccountInfoPage() {
     if (!otpModal || otpModal.resendCooldown <= 0) return;
     const timer = window.setTimeout(() => {
       setOtpModal((prev) =>
-        prev ? { ...prev, resendCooldown: Math.max(0, prev.resendCooldown - 1) } : null
+        prev
+          ? { ...prev, resendCooldown: Math.max(0, prev.resendCooldown - 1) }
+          : null
       );
     }, 1000);
     return () => window.clearTimeout(timer);
@@ -407,7 +408,7 @@ export default function EditAccountInfoPage() {
           const fmtErr = getEmailError(value);
           if (fmtErr) return fmtErr;
           if (trimmed.toLowerCase() !== verifiedEmail) {
-            return "Email baru perlu diverifikasi melalui kode OTP.";
+            return "Klik Verifikasi untuk memvalidasi email baru Anda.";
           }
           return undefined;
         }
@@ -415,7 +416,7 @@ export default function EditAccountInfoPage() {
           const phErr = getPhoneError(value);
           if (phErr) return phErr;
           if (trimmed !== verifiedPhone) {
-            return "Nomor telepon baru perlu diverifikasi melalui kode OTP.";
+            return "Klik Verifikasi untuk memvalidasi nomor baru Anda.";
           }
           return undefined;
         }
@@ -857,7 +858,7 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email + Verifikasi OTP */}
+            {/* Email + Banner Verifikasi */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -871,24 +872,12 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
-                  <label
-                    htmlFor="edit-email"
-                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                  >
-                    Email <span className="text-[#C8102E]">*</span>
-                  </label>
-                  {isEmailChanged && !getEmailError(email) && (
-                    <button
-                      type="button"
-                      onClick={() => openOtpVerification("email", normalizedEmail)}
-                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
-                    >
-                      Verifikasi OTP
-                    </button>
-                  )}
-                </div>
-
+                <label
+                  htmlFor="edit-email"
+                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                >
+                  Email <span className="text-[#C8102E]">*</span>
+                </label>
                 <input
                   id="edit-email"
                   type="email"
@@ -908,7 +897,7 @@ export default function EditAccountInfoPage() {
                   className={getInputClass(Boolean(errors.email))}
                 />
 
-                {errors.email ? (
+                {errors.email && (
                   <p
                     id="edit-email-error"
                     role="alert"
@@ -921,22 +910,28 @@ export default function EditAccountInfoPage() {
                     />
                     <span>{errors.email}</span>
                   </p>
-                ) : isEmailChanged && !getEmailError(email) ? (
-                  <p
-                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#740319]"
+                )}
+
+                {isEmailChanged && !getEmailError(email) && (
+                  <button
+                    type="button"
+                    onClick={() => openOtpVerification("email", normalizedEmail)}
+                    style={{ marginTop: "calc(8 * var(--u))" }}
+                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
                   >
-                    <ShieldCheck
-                      weight="fill"
-                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    <Info
+                      weight="regular"
+                      className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span>Perlu verifikasi OTP untuk email baru.</span>
-                  </p>
-                ) : null}
+                    <span className="text-[calc(12*var(--u))] font-normal text-[#1F2937]">
+                      Klik Verifikasi untuk memvalidasi email baru Anda.
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Nomor Telepon + Verifikasi OTP */}
+            {/* Nomor Telepon + Banner Verifikasi */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
@@ -950,24 +945,12 @@ export default function EditAccountInfoPage() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="mb-[calc(4*var(--u))] flex items-center justify-between gap-[calc(8*var(--u))]">
-                  <label
-                    htmlFor="edit-phone"
-                    className="text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
-                  >
-                    Nomor Telepon <span className="text-[#C8102E]">*</span>
-                  </label>
-                  {isPhoneChanged && !getPhoneError(phone) && (
-                    <button
-                      type="button"
-                      onClick={() => openOtpVerification("phone", normalizedPhone)}
-                      className="cursor-pointer rounded-[calc(6*var(--u))] bg-[#FDF2F4] px-[calc(8*var(--u))] py-[calc(2*var(--u))] text-[calc(11*var(--u))] font-semibold text-[#740319] transition-colors duration-150 active:bg-[#F9DCE2]"
-                    >
-                      Verifikasi OTP
-                    </button>
-                  )}
-                </div>
-
+                <label
+                  htmlFor="edit-phone"
+                  className="mb-[calc(4*var(--u))] block text-[calc(12.5*var(--u))] font-medium text-[#2D2D34]"
+                >
+                  Nomor Telepon <span className="text-[#C8102E]">*</span>
+                </label>
                 <div className="flex items-center gap-[calc(8*var(--u))]">
                   <button
                     type="button"
@@ -1016,7 +999,7 @@ export default function EditAccountInfoPage() {
                   />
                 </div>
 
-                {errors.phone ? (
+                {errors.phone && (
                   <p
                     id="edit-phone-error"
                     role="alert"
@@ -1029,18 +1012,24 @@ export default function EditAccountInfoPage() {
                     />
                     <span>{errors.phone}</span>
                   </p>
-                ) : isPhoneChanged && !getPhoneError(phone) ? (
-                  <p
-                    style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#740319]"
+                )}
+
+                {isPhoneChanged && !getPhoneError(phone) && (
+                  <button
+                    type="button"
+                    onClick={() => openOtpVerification("phone", normalizedPhone)}
+                    style={{ marginTop: "calc(8 * var(--u))" }}
+                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
                   >
-                    <ShieldCheck
-                      weight="fill"
-                      className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
+                    <Info
+                      weight="regular"
+                      className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span>Perlu verifikasi OTP untuk nomor telepon baru.</span>
-                  </p>
-                ) : null}
+                    <span className="text-[calc(12*var(--u))] font-normal text-[#1F2937]">
+                      Klik Verifikasi untuk memvalidasi nomor baru Anda.
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1184,7 +1173,6 @@ export default function EditAccountInfoPage() {
         </section>
       </form>
 
-      {/* Modal Verifikasi Kode OTP (Email / Nomor HP Baru) */}
       {otpModal &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1236,7 +1224,9 @@ export default function EditAccountInfoPage() {
                 autoFocus
                 value={otpModal.code}
                 onChange={(e) => {
-                  const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  const digitsOnly = e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
                   setOtpModal((prev) =>
                     prev ? { ...prev, code: digitsOnly, error: undefined } : null
                   );
