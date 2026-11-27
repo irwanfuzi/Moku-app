@@ -22,18 +22,23 @@ import {
 import { useAppLayout } from "@/components/layout/app-shell";
 import { useAccountProfile } from "@/lib/account-profile";
 
-const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
-
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SNACKBAR_EXIT_MS = 320;
+const SNACKBAR_EXIT_MS = 380;
 
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "BS";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 export default function AccountInfoPage() {
@@ -51,6 +56,10 @@ export default function AccountInfoPage() {
   const toastExitRef = useRef<number | null>(null);
 
   const isMobileView = !isReady || isMobile;
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [profile.avatarUrl]);
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -73,23 +82,6 @@ export default function AccountInfoPage() {
       toastExitRef.current = null;
     }, SNACKBAR_EXIT_MS);
   }, []);
-
-  const triggerToast = useCallback(
-    (message: string) => {
-      if (toastAutoRef.current !== null) {
-        window.clearTimeout(toastAutoRef.current);
-      }
-      if (toastExitRef.current !== null) {
-        window.clearTimeout(toastExitRef.current);
-      }
-      setIsToastClosing(false);
-      setToast({ id: Date.now(), message });
-      toastAutoRef.current = window.setTimeout(() => {
-        dismissToast();
-      }, 2800);
-    },
-    [dismissToast]
-  );
 
   useEffect(() => {
     return () => {
@@ -116,6 +108,7 @@ export default function AccountInfoPage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
+      {/* Header Marun — Vertical Rhythm 4u */}
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -128,7 +121,7 @@ export default function AccountInfoPage() {
             type="button"
             onClick={handleBack}
             aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-150 active:scale-90 active:bg-white/15"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-220 ease-out active:scale-90 active:bg-white/15"
           >
             <ArrowLeft
               weight="regular"
@@ -145,6 +138,7 @@ export default function AccountInfoPage() {
         </div>
       </header>
 
+      {/* Konten Utama (Tanpa Icon Kamera di Mode Lihat) */}
       <div className="moku-account-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
         <section className="flex flex-col items-center text-center">
           <div
@@ -155,16 +149,16 @@ export default function AccountInfoPage() {
             }}
             className="flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
           >
-            {!avatarError ? (
+            {profile.avatarUrl && !avatarError ? (
               <img
-                src={AVATAR_URL}
+                src={profile.avatarUrl}
                 alt={profile.fullName}
                 onError={() => setAvatarError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (
               <span className="font-display text-[calc(32*var(--u))] font-bold text-[#740319]">
-                BS
+                {getInitials(profile.fullName)}
               </span>
             )}
           </div>
@@ -183,6 +177,7 @@ export default function AccountInfoPage() {
           </p>
         </section>
 
+        {/* Kartu 1: Data Pribadi */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -249,6 +244,7 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
+        {/* Kartu 2: Data Operasional */}
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pb-[calc(4*var(--u))] pt-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -302,6 +298,7 @@ export default function AccountInfoPage() {
           </div>
         </section>
 
+        {/* Tombol Ubah Informasi Akun */}
         <section style={{ marginTop: "calc(24 * var(--u))" }}>
           <button
             type="button"
@@ -309,7 +306,7 @@ export default function AccountInfoPage() {
               triggerHaptic(8);
               navigateWithTransition("/profile/account-info/edit", "forward");
             }}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4]"
           >
             <PencilSimple
               weight="regular"
@@ -320,6 +317,7 @@ export default function AccountInfoPage() {
         </section>
       </div>
 
+      {/* Snackbar Feedback */}
       {toast &&
         typeof document !== "undefined" &&
         createPortal(
@@ -347,18 +345,18 @@ export default function AccountInfoPage() {
 
       <style>{`
         .moku-account-enter {
-          animation: moku-account-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-account-in 520ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-toast-up 460ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+          animation: moku-toast-down 380ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         @keyframes moku-account-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 10px, 0);
+            transform: translate3d(0, 12px, 0);
           }
           to {
             opacity: 1;
