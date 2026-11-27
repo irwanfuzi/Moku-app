@@ -8,10 +8,12 @@ export interface AccountProfile {
   role: string;
   branch: string;
   joinedAt: string;
+  avatarUrl: string | null; // null = pakai inisial / default
 }
 
 const STORAGE_KEY = "moku_account_profile_v1";
 const PROFILE_UPDATED_EVENT = "moku:account-profile-updated";
+export const DEFAULT_AVATAR_URL = "/images/moku/brand/moku-avatar.png";
 
 export const DEFAULT_ACCOUNT_PROFILE: AccountProfile = {
   fullName: "Budi Santoso",
@@ -21,6 +23,7 @@ export const DEFAULT_ACCOUNT_PROFILE: AccountProfile = {
   role: "Teknisi",
   branch: "Cabang Jakarta 3",
   joinedAt: "12 Jan 2024",
+  avatarUrl: DEFAULT_AVATAR_URL,
 };
 
 // Simulasi daftar username yang sudah dipakai user lain di sistem
@@ -46,6 +49,10 @@ export function getAccountProfile(): AccountProfile {
     return {
       ...DEFAULT_ACCOUNT_PROFILE,
       ...parsed,
+      avatarUrl:
+        "avatarUrl" in parsed
+          ? (parsed.avatarUrl ?? null)
+          : DEFAULT_ACCOUNT_PROFILE.avatarUrl,
     };
   } catch {
     return DEFAULT_ACCOUNT_PROFILE;
@@ -63,7 +70,7 @@ export function saveAccountProfile(
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
-      // Abaikan jika storage penuh / private mode
+      // Abaikan jika localStorage penuh akibat ukuran gambar besar; tetap kirim event
     }
     window.dispatchEvent(
       new CustomEvent<AccountProfile>(PROFILE_UPDATED_EVENT, { detail: next })
