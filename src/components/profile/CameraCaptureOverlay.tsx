@@ -62,7 +62,7 @@ export default function CameraCaptureOverlay({
     y: number;
     time: number;
     active: boolean;
-    direction: 1 | -1; // 1 = geser dari kiri ke kanan, -1 = geser dari kanan ke kiri
+    direction: 1 | -1;
     lockedHorizontal: boolean;
   }>({
     x: 0,
@@ -116,8 +116,7 @@ export default function CameraCaptureOverlay({
     if (isClosingRef.current) return;
     if (guardEntryActiveRef.current) {
       guardEntryActiveRef.current = false;
-      // Ganti state guard menjadi state biasa tanpa memicu navigasi mundur ke Dashboard
-      window.history.replaceState(null, "", lockedUrlRef.current);
+      window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
     }
     closeOverlayVisual();
   }, [closeOverlayVisual]);
@@ -194,11 +193,12 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
 
-  // Kunci rute aktif agar system edge-swipe Android (kiri maupun kanan) HANYA menutup kamera & tetap di Ubah Informasi Akun
+  // Pasang anchor state + overlay state pada URL saat ini agar system swipe-back menutup kamera dan kembali ke Ubah Informasi Akun
   useEffect(() => {
     if (!isOpen) return;
 
     lockedUrlRef.current = window.location.href;
+    window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
     window.history.pushState(
       { mokuCameraOverlay: true },
       "",
@@ -207,15 +207,9 @@ export default function CameraCaptureOverlay({
     guardEntryActiveRef.current = true;
 
     const handlePopState = (ev: PopStateEvent) => {
-      // Cegah Ionic/React Router membaca popstate ini sebagai keluar dari Ubah Informasi Akun
       ev.stopImmediatePropagation();
-
       if (guardEntryActiveRef.current) {
         guardEntryActiveRef.current = false;
-        // Pastikan URL tetap terkunci pada halaman Ubah Informasi Akun
-        if (window.location.href !== lockedUrlRef.current) {
-          window.history.pushState(null, "", lockedUrlRef.current);
-        }
         closeOverlayVisual();
       }
     };
@@ -242,7 +236,7 @@ export default function CameraCaptureOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       if (guardEntryActiveRef.current) {
         guardEntryActiveRef.current = false;
-        window.history.replaceState(null, "", lockedUrlRef.current);
+        window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
       }
     };
   }, [closeOverlayVisual, handleBackAction, isOpen]);
@@ -267,7 +261,6 @@ export default function CameraCaptureOverlay({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  // Mendukung in-app swipe dari tepi kiri maupun tepi kanan layar
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     if (isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
@@ -297,7 +290,7 @@ export default function CameraCaptureOverlay({
     const touch = e.touches[0];
     const rawDx = touch.clientX - state.x;
     const dy = touch.clientY - state.y;
-    const inwardDelta = rawDx * state.direction; // positif saat menggeser ke arah dalam layar
+    const inwardDelta = rawDx * state.direction;
 
     if (!state.lockedHorizontal) {
       if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
@@ -430,7 +423,7 @@ export default function CameraCaptureOverlay({
     stopStream();
     if (guardEntryActiveRef.current) {
       guardEntryActiveRef.current = false;
-      window.history.replaceState(null, "", lockedUrlRef.current);
+      window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
     }
     onCapture(dataUrl);
   };
@@ -588,7 +581,7 @@ export default function CameraCaptureOverlay({
                 stopStream();
                 if (guardEntryActiveRef.current) {
                   guardEntryActiveRef.current = false;
-                  window.history.replaceState(null, "", lockedUrlRef.current);
+                  window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
                 }
                 onOpenGallery();
               }}
@@ -642,7 +635,7 @@ export default function CameraCaptureOverlay({
               stopStream();
               if (guardEntryActiveRef.current) {
                 guardEntryActiveRef.current = false;
-                window.history.replaceState(null, "", lockedUrlRef.current);
+                window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
               }
               onOpenGallery();
             }}
