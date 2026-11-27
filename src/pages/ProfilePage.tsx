@@ -25,18 +25,23 @@ import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
 import { useAccountProfile } from "@/lib/account-profile";
 
-const AVATAR_URL = "/images/moku/brand/moku-avatar.png";
-
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SNACKBAR_EXIT_MS = 320;
+const SNACKBAR_EXIT_MS = 380;
 
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "BS";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 export default function ProfilePage() {
@@ -56,6 +61,10 @@ export default function ProfilePage() {
   const toastExitRef = useRef<number | null>(null);
 
   const isMobileView = !isReady || isMobile;
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [profile.avatarUrl]);
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -127,7 +136,7 @@ export default function ProfilePage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Profil Marun — Vertical Rhythm 4u & Proximity */}
+      {/* Header Profil Marun */}
       <header className="w-full bg-[#740319] text-white">
         <div
           style={{
@@ -136,7 +145,6 @@ export default function ProfilePage() {
           }}
           className="mx-auto flex w-full max-w-[680px] flex-col items-center px-[calc(16*var(--u))] text-center"
         >
-          {/* Avatar Lingkaran + Border Putih */}
           <div
             style={{
               width: "calc(112 * var(--u))",
@@ -145,21 +153,20 @@ export default function ProfilePage() {
             }}
             className="flex items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
           >
-            {!avatarError ? (
+            {profile.avatarUrl && !avatarError ? (
               <img
-                src={AVATAR_URL}
+                src={profile.avatarUrl}
                 alt={profile.fullName}
                 onError={() => setAvatarError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (
               <span className="font-display text-[calc(34*var(--u))] font-bold text-[#740319]">
-                BS
+                {getInitials(profile.fullName)}
               </span>
             )}
           </div>
 
-          {/* Grup Identitas Inti: Nama & Email (rapat 4u) */}
           <h1
             style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
             className="font-display text-[calc(22*var(--u))] font-bold leading-tight tracking-[-0.02em] text-white"
@@ -173,7 +180,6 @@ export default function ProfilePage() {
             {profile.email}
           </p>
 
-          {/* Grup Metadata Operasional: Jabatan | Cabang (terpisah 16u) */}
           <div className="flex items-center justify-center gap-[calc(12*var(--u))] text-[calc(13*var(--u))] font-normal text-white/95">
             <span className="inline-flex items-center gap-[calc(6*var(--u))]">
               <User
@@ -196,7 +202,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* Konten Menu Profil — Jarak antar-seksi 24u, judul ke kartu 8u */}
+      {/* Konten Menu Profil */}
       <div className="moku-profile-enter mx-auto w-full max-w-[680px] space-y-[calc(24*var(--u))] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
         {/* 1. Seksi Akun */}
         <section>
@@ -214,7 +220,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 navigateWithTransition("/profile/account-info", "forward");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <User
@@ -225,7 +231,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -235,7 +241,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Ubah Kata Sandi segera tersedia.");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Lock
@@ -246,7 +252,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -256,7 +262,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Keamanan Akun segera tersedia.");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <ShieldCheck
@@ -267,7 +273,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
           </div>
@@ -289,7 +295,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 navigateWithTransition("/notifications", "forward");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Bell
@@ -300,7 +306,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -319,12 +325,12 @@ export default function ProfilePage() {
                 aria-checked={darkMode}
                 aria-label="Mode Gelap"
                 onClick={handleToggleDarkMode}
-                className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(44*var(--u))] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 active:scale-95 ${
+                className={`relative inline-flex h-[calc(24*var(--u))] w-[calc(44*var(--u))] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-250 active:scale-95 ${
                   darkMode ? "bg-[#740319]" : "bg-[#C8C8CE]"
                 }`}
               >
                 <span
-                  className={`inline-block h-[calc(20*var(--u))] w-[calc(20*var(--u))] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.22)] transition-transform duration-200 ${
+                  className={`inline-block h-[calc(20*var(--u))] w-[calc(20*var(--u))] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.22)] transition-transform duration-250 ${
                     darkMode
                       ? "translate-x-[calc(22*var(--u))]"
                       : "translate-x-[calc(2*var(--u))]"
@@ -339,7 +345,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Bahasa aktif: Bahasa Indonesia.");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Translate
@@ -355,7 +361,7 @@ export default function ProfilePage() {
                 </span>
                 <CaretRight
                   weight="regular"
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
                 />
               </span>
             </button>
@@ -378,7 +384,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Kebijakan Privasi segera tersedia.");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <FileText
@@ -389,7 +395,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -399,7 +405,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("Halaman Pusat Bantuan segera tersedia.");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Question
@@ -410,7 +416,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
 
@@ -420,7 +426,7 @@ export default function ProfilePage() {
                 triggerHaptic(6);
                 triggerToast("MOKU — Monitoring Operasional Kunjungan Unit v1.4.0");
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#F4F4F7]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#F4F4F7]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-normal text-[#171717]">
                 <Info
@@ -436,7 +442,7 @@ export default function ProfilePage() {
                 </span>
                 <CaretRight
                   weight="regular"
-                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-150 group-active:translate-x-[2px]"
+                  className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96] transition-transform duration-220 group-active:translate-x-[2px]"
                 />
               </span>
             </button>
@@ -447,7 +453,7 @@ export default function ProfilePage() {
                 triggerHaptic(10);
                 setShowLogoutModal(true);
               }}
-              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-150 active:bg-[#FDF2F4]"
+              className="group flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-between gap-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-left transition-colors duration-220 active:bg-[#FDF2F4]"
             >
               <span className="flex items-center gap-[calc(12*var(--u))] text-[calc(14.5*var(--u))] font-semibold text-[#C8102E]">
                 <SignOut
@@ -458,7 +464,7 @@ export default function ProfilePage() {
               </span>
               <CaretRight
                 weight="regular"
-                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#C8102E]/70 transition-transform duration-150 group-active:translate-x-[2px]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#C8102E]/70 transition-transform duration-220 group-active:translate-x-[2px]"
               />
             </button>
           </div>
@@ -511,18 +517,18 @@ export default function ProfilePage() {
 
       <style>{`
         .moku-profile-enter {
-          animation: moku-profile-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-profile-in 520ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-toast-up 460ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+          animation: moku-toast-down 380ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         @keyframes moku-profile-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 10px, 0);
+            transform: translate3d(0, 12px, 0);
           }
           to {
             opacity: 1;
