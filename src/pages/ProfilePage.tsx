@@ -23,7 +23,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAppLayout } from "@/components/layout/app-shell";
 import MokuModalDialog from "@/components/ui/moku-modal-dialog";
-import { useAccountProfile } from "@/lib/account-profile";
+import { DEFAULT_AVATAR_URL, useAccountProfile } from "@/lib/account-profile";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -35,13 +35,6 @@ function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "BS";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 export default function ProfilePage() {
@@ -136,7 +129,6 @@ export default function ProfilePage() {
       style={MOBILE_SCALE_VARS}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
-      {/* Header Profil Marun */}
       <header className="w-full bg-[#740319] text-white">
         <div
           style={{
@@ -153,17 +145,18 @@ export default function ProfilePage() {
             }}
             className="flex items-center justify-center overflow-hidden rounded-full border-[calc(3.5*var(--u))] border-white bg-[#FCECEF]"
           >
-            {profile.avatarUrl && !avatarError ? (
+            {!avatarError ? (
               <img
-                src={profile.avatarUrl}
+                src={profile.avatarUrl || DEFAULT_AVATAR_URL}
                 alt={profile.fullName}
                 onError={() => setAvatarError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="font-display text-[calc(34*var(--u))] font-bold text-[#740319]">
-                {getInitials(profile.fullName)}
-              </span>
+              <User
+                weight="fill"
+                className="h-[calc(44*var(--u))] w-[calc(44*var(--u))] text-[#740319]"
+              />
             )}
           </div>
 
@@ -202,9 +195,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* Konten Menu Profil */}
       <div className="moku-profile-enter mx-auto w-full max-w-[680px] space-y-[calc(24*var(--u))] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]">
-        {/* 1. Seksi Akun */}
         <section>
           <h2
             style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
@@ -279,7 +270,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* 2. Seksi Preferensi */}
         <section>
           <h2
             style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
@@ -368,7 +358,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* 3. Seksi Lainnya */}
         <section>
           <h2
             style={{ margin: 0, marginBottom: "calc(8 * var(--u))" }}
@@ -471,7 +460,6 @@ export default function ProfilePage() {
         </section>
       </div>
 
-      {/* Modal Konfirmasi Keluar */}
       <MokuModalDialog
         isOpen={showLogoutModal}
         title="Keluar dari Akun?"
@@ -489,7 +477,6 @@ export default function ProfilePage() {
         onCancel={() => setShowLogoutModal(false)}
       />
 
-      {/* Snackbar Feedback */}
       {toast &&
         typeof document !== "undefined" &&
         createPortal(
