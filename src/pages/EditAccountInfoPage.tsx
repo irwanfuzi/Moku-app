@@ -836,7 +836,7 @@ export default function EditAccountInfoPage() {
                 width: "calc(120 * var(--u))",
                 height: "calc(120 * var(--u))",
               }}
-              className="moku-avatar-pop flex cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] shadow-[0_6px_20px_rgba(116,3,25,0.08)] transition-transform duration-200 active:scale-[0.97]"
+              className="moku-avatar-pop flex cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] transition-transform duration-200 active:scale-[0.97]"
             >
               {!avatarError ? (
                 <img
@@ -873,7 +873,7 @@ export default function EditAccountInfoPage() {
 
         <section
           style={{ marginTop: "calc(20 * var(--u))" }}
-          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))]"
         >
           <h2
             style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
@@ -1230,7 +1230,7 @@ export default function EditAccountInfoPage() {
 
         <section
           style={{ marginTop: "calc(16 * var(--u))" }}
-          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+          className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))]"
         >
           <h2
             style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
@@ -1318,7 +1318,7 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Batal (Kiri - Soft Tonal) & Simpan (Kanan - Solid Primary) */}
+        {/* Tombol Batal (Kiri) & Simpan (Kanan) Tanpa Bayangan */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="grid grid-cols-2 gap-[calc(12*var(--u))]"
@@ -1327,7 +1327,7 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleBack}
             disabled={isBusy}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(14*var(--u))] bg-[#F4F4F6] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#3F3F46] transition-[transform,background-color,opacity] duration-220 ease-out hover:bg-[#EAEAEF] active:scale-[0.97] active:bg-[#E2E2E8] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Batal
           </button>
@@ -1336,12 +1336,12 @@ export default function EditAccountInfoPage() {
             type="button"
             onClick={handleSave}
             disabled={isBusy || usernameStatus === "checking"}
-            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(14*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-220 ease-out active:scale-[0.97] disabled:cursor-not-allowed ${
+            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
               savePhase === "saved"
-                ? "bg-[#15803D] shadow-[0_6px_18px_rgba(21,128,61,0.26)]"
+                ? "bg-[#15803D]"
                 : savePhase === "saving"
-                ? "moku-save-pulse bg-[#5B0213] shadow-[0_6px_18px_rgba(116,3,25,0.28)]"
-                : "bg-[#740319] shadow-[0_6px_16px_rgba(116,3,25,0.24)] hover:bg-[#620215] active:bg-[#5B0213] disabled:opacity-65"
+                ? "bg-[#5B0213]"
+                : "bg-[#740319] hover:bg-[#620215] active:bg-[#5B0213] disabled:opacity-65"
             }`}
           >
             {savePhase === "saving" && (
@@ -1403,7 +1403,7 @@ export default function EditAccountInfoPage() {
                 paddingBottom:
                   "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
               }}
-              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))] shadow-[0_-8px_28px_rgba(0,0,0,0.16)] ${
+              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))] ${
                 isPhotoSheetClosing ? "moku-sheet-down" : "moku-sheet-up"
               }`}
             >
@@ -1416,7 +1416,6 @@ export default function EditAccountInfoPage() {
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
-              {/* Header Sheet dengan Tombol Tutup Icon-Only (X) di Kanan */}
               <div
                 style={{ marginBottom: "calc(12 * var(--u))" }}
                 className="flex items-center justify-between gap-[calc(12*var(--u))]"
@@ -1537,7 +1536,7 @@ export default function EditAccountInfoPage() {
                 paddingBottom:
                   "calc(env(safe-area-inset-bottom) + 18 * var(--u))",
               }}
-              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] pt-[calc(10*var(--u))] text-center shadow-[0_-8px_28px_rgba(0,0,0,0.18)] ${
+              className={`relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] pt-[calc(10*var(--u))] text-center ${
                 isDeleteConfirmClosing ? "moku-sheet-down" : "moku-sheet-up"
               }`}
             >
@@ -1579,7 +1578,7 @@ export default function EditAccountInfoPage() {
                     width: "calc(34 * var(--u))",
                     height: "calc(28 * var(--u))",
                   }}
-                  className="absolute flex -rotate-[16deg] items-center justify-center rounded-[calc(5*var(--u))] border-[calc(2*var(--u))] border-[#740319] bg-white shadow-xs"
+                  className="absolute flex -rotate-[16deg] items-center justify-center rounded-[calc(5*var(--u))] border-[calc(2*var(--u))] border-[#740319] bg-white"
                 >
                   <ImageIcon
                     weight="fill"
@@ -1651,7 +1650,7 @@ export default function EditAccountInfoPage() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="otp-modal-title"
-              className="moku-smooth-swap w-full max-w-[420px] rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(20*var(--u))] shadow-[0_14px_34px_rgba(0,0,0,0.22)]"
+              className="moku-smooth-swap w-full max-w-[420px] rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(20*var(--u))]"
             >
               <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(10*var(--u))]">
                 <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
@@ -1777,7 +1776,7 @@ export default function EditAccountInfoPage() {
             style={MOBILE_SCALE_VARS}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+            className={`fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-4 right-4 z-[9998] mx-auto flex max-w-[600px] items-center gap-[calc(12*var(--u))] rounded-[calc(12*var(--u))] bg-[#22252A] px-[calc(16*var(--u))] py-[calc(12*var(--u))] text-white ${
               isToastClosing
                 ? "moku-toast-exit pointer-events-none"
                 : "moku-toast-enter"
@@ -1825,9 +1824,6 @@ export default function EditAccountInfoPage() {
         }
         .moku-spin-slow {
           animation: moku-spin 950ms linear infinite;
-        }
-        .moku-save-pulse {
-          animation: moku-save-ring 1200ms cubic-bezier(0.25, 1, 0.5, 1) infinite;
         }
         .moku-saved-pop {
           animation: moku-saved-scale 440ms cubic-bezier(0.25, 1, 0.5, 1) both;
@@ -1910,14 +1906,6 @@ export default function EditAccountInfoPage() {
           }
           to {
             transform: rotate(360deg);
-          }
-        }
-        @keyframes moku-save-ring {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(116, 3, 25, 0.32), 0 4px 14px rgba(116, 3, 25, 0.26);
-          }
-          50% {
-            box-shadow: 0 0 0 7px rgba(116, 3, 25, 0), 0 4px 14px rgba(116, 3, 25, 0.26);
           }
         }
         @keyframes moku-saved-scale {
