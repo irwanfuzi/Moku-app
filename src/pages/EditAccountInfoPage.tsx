@@ -37,7 +37,6 @@ import {
   isUsernameAlignedWithIdentity,
   isUsernameTaken,
   saveAccountProfile,
-  type AccountProfile,
 } from "@/lib/account-profile";
 
 const MOBILE_SCALE_VARS = {
@@ -90,63 +89,9 @@ interface OtpVerificationState {
   resendCooldown: number;
 }
 
-const FALLBACK_PROFILE: AccountProfile = {
-  fullName: "",
-  username: "",
-  email: "",
-  phone: "",
-  role: "Teknisi",
-  branch: "Cabang Jakarta 3",
-  avatarUrl: DEFAULT_AVATAR_URL || "",
-};
-
-function safeReadInitialProfile(): AccountProfile {
-  try {
-    const loaded = getAccountProfile();
-    return {
-      ...FALLBACK_PROFILE,
-      ...(loaded || {}),
-    };
-  } catch {
-    return { ...FALLBACK_PROFILE };
-  }
-}
-
-function safeCheckUsernameAligned(
-  candidate: string,
-  name: string,
-  mail: string
-): boolean {
-  try {
-    return isUsernameAlignedWithIdentity(candidate, name, mail);
-  } catch {
-    return true;
-  }
-}
-
-function safeCheckUsernameTaken(candidate: string, initial: string): boolean {
-  try {
-    return isUsernameTaken(candidate, initial);
-  } catch {
-    return false;
-  }
-}
-
-function safeSaveProfile(patch: Partial<AccountProfile>): AccountProfile {
-  try {
-    return saveAccountProfile(patch);
-  } catch {
-    return { ...FALLBACK_PROFILE, ...patch };
-  }
-}
-
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      navigator.vibrate(duration);
-    } catch {
-      // Abaikan jika perangkat memblokir getaran
-    }
+    navigator.vibrate(duration);
   }
 }
 
@@ -254,26 +199,13 @@ function looksLikeCompletedEmailAttempt(value: string): boolean {
 }
 
 export default function EditAccountInfoPage() {
-  const layoutCtx = useAppLayout();
+  const { isMobile, isReady, navigateWithTransition } = useAppLayout();
   const ionRouter = useIonRouter();
 
-  const isMobile = layoutCtx?.isMobile ?? true;
-  const isReady = layoutCtx?.isReady ?? true;
-  const navigateWithTransition =
-    layoutCtx?.navigateWithTransition ??
-    ((path: string) => {
-      if (ionRouter) {
-        ionRouter.push(path);
-      } else if (typeof window !== "undefined") {
-        window.location.assign(path);
-      }
-    });
-
-  const initialProfile = useRef<AccountProfile>(safeReadInitialProfile());
-  const defaultAvatar = DEFAULT_AVATAR_URL || "";
+  const initialProfile = useRef(getAccountProfile());
 
   const [avatarUrl, setAvatarUrl] = useState<string>(
-    initialProfile.current.avatarUrl || defaultAvatar
+    initialProfile.current.avatarUrl || DEFAULT_AVATAR_URL
   );
   const [avatarError, setAvatarError] = useState(false);
 
@@ -284,10 +216,10 @@ export default function EditAccountInfoPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
-  const [fullName, setFullName] = useState(initialProfile.current.fullName || "");
-  const [username, setUsername] = useState(initialProfile.current.username || "");
-  const [email, setEmail] = useState(initialProfile.current.email || "");
-  const [phone, setPhone] = useState(initialProfile.current.phone || "");
+  const [fullName, setFullName] = useState(initialProfile.current.fullName);
+  const [username, setUsername] = useState(initialProfile.current.username);
+  const [email, setEmail] = useState(initialProfile.current.email);
+  const [phone, setPhone] = useState(initialProfile.current.phone);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [usernameStatus, setUsernameStatus] =
     useState<UsernameCheckStatus>("idle");
@@ -296,10 +228,10 @@ export default function EditAccountInfoPage() {
   const [showEmailOtpNotice, setShowEmailOtpNotice] = useState(false);
 
   const [verifiedEmail, setVerifiedEmail] = useState<string>(
-    (initialProfile.current.email || "").trim().toLowerCase()
+    initialProfile.current.email.trim().toLowerCase()
   );
   const [verifiedPhone, setVerifiedPhone] = useState<string>(
-    (initialProfile.current.phone || "").trim()
+    initialProfile.current.phone.trim()
   );
   const [otpModal, setOtpModal] = useState<OtpVerificationState | null>(null);
 
@@ -322,8 +254,8 @@ export default function EditAccountInfoPage() {
   const doneTimerRef = useRef<number | null>(null);
 
   const identityRef = useRef({
-    fullName: initialProfile.current.fullName || "",
-    email: initialProfile.current.email || "",
+    fullName: initialProfile.current.fullName,
+    email: initialProfile.current.email,
   });
 
   useEffect(() => {
@@ -357,7 +289,7 @@ export default function EditAccountInfoPage() {
   }, [needsEmailOtp, errors.email]);
 
   useEffect(() => {
-    if (!isMobileView || typeof document === "undefined") return;
+    if (!isMobileView) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
   }, [isMobileView]);
@@ -440,26 +372,23 @@ export default function EditAccountInfoPage() {
     setIsPhotoSheetOpen(true);
   }, [isBusy]);
 
-  const closePhotoSheet = useCallback(
-    (afterClose?: () => void) => {
-      if (!isPhotoSheetOpen || isPhotoSheetClosing) {
-        afterClose?.();
-        return;
-      }
-      triggerHaptic(6);
-      setIsPhotoSheetClosing(true);
-      if (photoSheetExitRef.current !== null) {
-        window.clearTimeout(photoSheetExitRef.current);
-      }
-      photoSheetExitRef.current = window.setTimeout(() => {
-        setIsPhotoSheetOpen(false);
-        setIsPhotoSheetClosing(false);
-        photoSheetExitRef.current = null;
-        afterClose?.();
-      }, PHOTO_SHEET_EXIT_MS);
-    },
-    [isPhotoSheetClosing, isPhotoSheetOpen]
-  );
+  const closePhotoSheet = useCallback((afterClose?: () => void) => {
+    if (!isPhotoSheetOpen || isPhotoSheetClosing) {
+      afterClose?.();
+      return;
+    }
+    triggerHaptic(6);
+    setIsPhotoSheetClosing(true);
+    if (photoSheetExitRef.current !== null) {
+      window.clearTimeout(photoSheetExitRef.current);
+    }
+    photoSheetExitRef.current = window.setTimeout(() => {
+      setIsPhotoSheetOpen(false);
+      setIsPhotoSheetClosing(false);
+      photoSheetExitRef.current = null;
+      afterClose?.();
+    }, PHOTO_SHEET_EXIT_MS);
+  }, [isPhotoSheetClosing, isPhotoSheetOpen]);
 
   const openDeleteConfirmSheet = useCallback(() => {
     if (deleteConfirmExitRef.current !== null) {
@@ -473,26 +402,23 @@ export default function EditAccountInfoPage() {
     setIsDeleteConfirmOpen(true);
   }, []);
 
-  const closeDeleteConfirmSheet = useCallback(
-    (afterClose?: () => void) => {
-      if (!isDeleteConfirmOpen || isDeleteConfirmClosing) {
-        afterClose?.();
-        return;
-      }
-      triggerHaptic(6);
-      setIsDeleteConfirmClosing(true);
-      if (deleteConfirmExitRef.current !== null) {
-        window.clearTimeout(deleteConfirmExitRef.current);
-      }
-      deleteConfirmExitRef.current = window.setTimeout(() => {
-        setIsDeleteConfirmOpen(false);
-        setIsDeleteConfirmClosing(false);
-        deleteConfirmExitRef.current = null;
-        afterClose?.();
-      }, PHOTO_SHEET_EXIT_MS);
-    },
-    [isDeleteConfirmClosing, isDeleteConfirmOpen]
-  );
+  const closeDeleteConfirmSheet = useCallback((afterClose?: () => void) => {
+    if (!isDeleteConfirmOpen || isDeleteConfirmClosing) {
+      afterClose?.();
+      return;
+    }
+    triggerHaptic(6);
+    setIsDeleteConfirmClosing(true);
+    if (deleteConfirmExitRef.current !== null) {
+      window.clearTimeout(deleteConfirmExitRef.current);
+    }
+    deleteConfirmExitRef.current = window.setTimeout(() => {
+      setIsDeleteConfirmOpen(false);
+      setIsDeleteConfirmClosing(false);
+      deleteConfirmExitRef.current = null;
+      afterClose?.();
+    }, PHOTO_SHEET_EXIT_MS);
+  }, [isDeleteConfirmClosing, isDeleteConfirmOpen]);
 
   const handleOpenCameraOverlay = () => {
     triggerHaptic(8);
@@ -511,7 +437,7 @@ export default function EditAccountInfoPage() {
   const handlePhotoSelected = (dataUrl: string) => {
     setAvatarError(false);
     setAvatarUrl(dataUrl);
-    safeSaveProfile({ avatarUrl: dataUrl });
+    saveAccountProfile({ avatarUrl: dataUrl });
     setIsCameraOpen(false);
     setIsGalleryOpen(false);
     triggerToast("Foto profil diperbarui.", "success", SNACKBAR_SHOW_DELAY_MS);
@@ -521,8 +447,8 @@ export default function EditAccountInfoPage() {
     triggerHaptic([8, 20, 10]);
     closeDeleteConfirmSheet(() => {
       setAvatarError(false);
-      setAvatarUrl(defaultAvatar);
-      safeSaveProfile({ avatarUrl: defaultAvatar });
+      setAvatarUrl(DEFAULT_AVATAR_URL);
+      saveAccountProfile({ avatarUrl: DEFAULT_AVATAR_URL });
       triggerToast("Foto profil dihapus.", "success", SNACKBAR_SHOW_DELAY_MS);
     });
   };
@@ -640,12 +566,10 @@ export default function EditAccountInfoPage() {
           if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) {
             return "Username hanya boleh huruf, angka, titik, atau underscore.";
           }
-          if (!safeCheckUsernameAligned(trimmed, activeName, activeEmail)) {
+          if (!isUsernameAlignedWithIdentity(trimmed, activeName, activeEmail)) {
             return "Username harus mengacu pada nama atau alamat email Anda.";
           }
-          if (
-            safeCheckUsernameTaken(trimmed, initialProfile.current.username || "")
-          ) {
+          if (isUsernameTaken(trimmed, initialProfile.current.username)) {
             return "Username sudah digunakan pengguna lain.";
           }
           return undefined;
@@ -691,7 +615,7 @@ export default function EditAccountInfoPage() {
     const trimmed = username.trim();
     const isSameAsInitial =
       trimmed.toLowerCase() ===
-      (initialProfile.current.username || "").trim().toLowerCase();
+      initialProfile.current.username.trim().toLowerCase();
 
     const { fullName: currentFullName, email: currentEmail } =
       identityRef.current;
@@ -700,7 +624,7 @@ export default function EditAccountInfoPage() {
       !trimmed ||
       trimmed.length < 4 ||
       !/^[a-zA-Z0-9._]+$/.test(trimmed) ||
-      !safeCheckUsernameAligned(trimmed, currentFullName, currentEmail) ||
+      !isUsernameAlignedWithIdentity(trimmed, currentFullName, currentEmail) ||
       isSameAsInitial
     ) {
       setUsernameStatus("idle");
@@ -709,10 +633,7 @@ export default function EditAccountInfoPage() {
 
     setUsernameStatus("checking");
     usernameCheckRef.current = window.setTimeout(() => {
-      const taken = safeCheckUsernameTaken(
-        trimmed,
-        initialProfile.current.username || ""
-      );
+      const taken = isUsernameTaken(trimmed, initialProfile.current.username);
       if (taken) {
         setUsernameStatus("taken");
         setErrors((prev) => ({
@@ -732,7 +653,7 @@ export default function EditAccountInfoPage() {
   }, [username]);
 
   const navigateBackSmooth = useCallback(() => {
-    if (ionRouter?.canGoBack()) {
+    if (ionRouter.canGoBack()) {
       ionRouter.goBack();
     } else {
       navigateWithTransition("/profile/account-info", "back");
@@ -780,16 +701,16 @@ export default function EditAccountInfoPage() {
     setSavePhase("saving");
 
     saveTimerRef.current = window.setTimeout(() => {
-      const updated = safeSaveProfile({
+      const updated = saveAccountProfile({
         fullName: fullName.trim(),
         username: username.trim().toLowerCase(),
         email: email.trim(),
         phone: phone.trim(),
         avatarUrl,
       });
-      initialProfile.current = { ...FALLBACK_PROFILE, ...updated };
-      setVerifiedEmail((updated.email || "").trim().toLowerCase());
-      setVerifiedPhone((updated.phone || "").trim());
+      initialProfile.current = updated;
+      setVerifiedEmail(updated.email.trim().toLowerCase());
+      setVerifiedPhone(updated.phone.trim());
       setSavePhase("saved");
       triggerHaptic([8, 30, 10]);
       triggerToast("Informasi akun berhasil disimpan.", "success");
@@ -825,10 +746,7 @@ export default function EditAccountInfoPage() {
     if (firstInvalidId) {
       triggerHaptic(14);
       triggerToast("Periksa kembali kolom yang bertanda merah.", "error");
-      const targetEl =
-        typeof document !== "undefined"
-          ? document.getElementById(firstInvalidId)
-          : null;
+      const targetEl = document.getElementById(firstInvalidId);
       if (targetEl) {
         targetEl.focus();
         targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -899,31 +817,30 @@ export default function EditAccountInfoPage() {
         noValidate
         className="moku-edit-enter mx-auto w-full max-w-[680px] px-[calc(16*var(--u))] pt-[calc(24*var(--u))]"
       >
-        {/* Avatar Proporsional & Nyaman Tanpa Teks Nama/Jabatan di Bawahnya */}
         <section className="flex flex-col items-center text-center">
           <div
             style={{ marginBottom: "calc(12 * var(--u))" }}
             className="relative"
           >
             <div
-              key={avatarUrl || "default-avatar"}
+              key={avatarUrl}
               style={{
-                width: "calc(116 * var(--u))",
-                height: "calc(116 * var(--u))",
+                width: "calc(104 * var(--u))",
+                height: "calc(104 * var(--u))",
               }}
-              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF] shadow-[0_6px_20px_rgba(116,3,25,0.08)]"
+              className="moku-avatar-pop flex items-center justify-center overflow-hidden rounded-full bg-[#FCECEF]"
             >
-              {!avatarError && (avatarUrl || defaultAvatar) ? (
+              {!avatarError ? (
                 <img
-                  src={avatarUrl || defaultAvatar}
-                  alt="Foto Profil"
+                  src={avatarUrl || DEFAULT_AVATAR_URL}
+                  alt={fullName || "Profil"}
                   onError={() => setAvatarError(true)}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <User
                   weight="fill"
-                  className="h-[calc(46*var(--u))] w-[calc(46*var(--u))] text-[#740319]"
+                  className="h-[calc(42*var(--u))] w-[calc(42*var(--u))] text-[#740319]"
                 />
               )}
             </div>
@@ -933,14 +850,14 @@ export default function EditAccountInfoPage() {
               onClick={openPhotoSheet}
               aria-label="Ubah Foto Profil"
               style={{
-                width: "calc(36 * var(--u))",
-                height: "calc(36 * var(--u))",
+                width: "calc(32 * var(--u))",
+                height: "calc(32 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white transition-[transform,background-color] duration-260 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
-                className="h-[calc(17*var(--u))] w-[calc(17*var(--u))]"
+                className="h-[calc(16*var(--u))] w-[calc(16*var(--u))]"
               />
             </button>
           </div>
@@ -1497,6 +1414,7 @@ export default function EditAccountInfoPage() {
                 className="mx-auto rounded-full bg-[#D6D6DC]"
               />
 
+              {/* Header Sheet dengan Tombol Batal Compact di Kanan */}
               <div
                 style={{ marginBottom: "calc(12 * var(--u))" }}
                 className="flex items-center justify-between gap-[calc(12*var(--u))]"
@@ -1590,6 +1508,7 @@ export default function EditAccountInfoPage() {
           document.body
         )}
 
+      {/* Bottom Sheet Konfirmasi "Hapus Foto Profil?" */}
       {isDeleteConfirmOpen &&
         typeof document !== "undefined" &&
         createPortal(
