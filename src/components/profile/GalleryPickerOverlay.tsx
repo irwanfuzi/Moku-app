@@ -6,6 +6,7 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
+  type PointerEvent,
   type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -13,6 +14,8 @@ import {
   ArrowLeft,
   Check,
   Image as ImageIcon,
+  MagnifyingGlassMinus,
+  MagnifyingGlassPlus,
 } from "@phosphor-icons/react";
 
 const MOBILE_SCALE_VARS = {
@@ -20,9 +23,11 @@ const MOBILE_SCALE_VARS = {
 } as CSSProperties;
 
 const CLOSE_ANIMATION_MS = 260;
-const EDGE_SWIPE_ZONE_PX = 48;
+const EDGE_SWIPE_ZONE_PX = 40;
 const DISMISS_DISTANCE_PX = 76;
 const DISMISS_VELOCITY_PX_MS = 0.35;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
 
 interface DevicePhotoItem {
   id: string;
@@ -48,6 +53,11 @@ export default function GalleryPickerOverlay({
   onSelectPhoto,
 }: GalleryPickerOverlayProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cropStageRef = useRef<HTMLDivElement | null>(null);
+  const cropCircleRef = useRef<HTMLDivElement | null>(null);
+  const cropImageRef = useRef<HTMLImageElement | null>(null);
+  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
@@ -69,13 +79,35 @@ export default function GalleryPickerOverlay({
     lockedHorizontal: false,
   });
 
+  const panRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  });
+
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   const [devicePhotos, setDevicePhotos] = useState<DevicePhotoItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Mode layar Sesuaikan Foto setelah tombol "Gunakan Foto" diklik
+  const [adjustingUrl, setAdjustingUrl] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<number>(1.15);
+  const [offset, setOffset] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [isPanning, setIsPanning] = useState(false);
 
   const selectedItem = useMemo(
     () => devicePhotos.find((item) => item.id === selectedId) ?? null,
@@ -106,7 +138,9 @@ export default function GalleryPickerOverlay({
         isClosingRef.current = false;
         setIsExiting(false);
         setDragX(0);
-        setPreviewUrl(null);
+        setAdjustingUrl(null);
+        setZoom(1.15);
+        setOffset({ x: 0, y: 0 });
         onClose();
         afterClose?.();
       }, CLOSE_ANIMATION_MS);
@@ -116,7 +150,9 @@ export default function GalleryPickerOverlay({
 
   useEffect(() => {
     if (!isOpen) {
-      setPreviewUrl(null);
+      setAdjustingUrl(null);
+      setZoom(1.15);
+      setOffset({ x: 0, y: 0 });
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -126,7 +162,9 @@ export default function GalleryPickerOverlay({
     }
 
     isClosingRef.current = false;
-    setPreviewUrl(null);
+    setAdjustingUrl(null);
+    setZoom(1.15);
+    setOffset({ x: 0, y: 0 });
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
@@ -163,7 +201,14 @@ export default function GalleryPickerOverlay({
         "",
         lockedUrlRef.current
       );
-      triggerOverlayClose();
+      if (adjustingUrl) {
+        triggerHaptic(6);
+        setAdjustingUrl(null);
+        setZoom(1.15);
+        setOffset({ x: 0, y: 0 });
+      } else {
+        triggerOverlayClose();
+      }
     };
 
     const handleIonBack = (ev: Event) => {
@@ -174,8 +219,18 @@ export default function GalleryPickerOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          triggerOverlayClose();
+          if (adjustingUrl) {
+            setAdjustingUrl(null);
+            setZoom(1.15);
+            setOffset({ x: 0, y: 0 });
+          } else {
+            triggerOverlayClose();
+          }
         });
+      } else if (adjustingUrl) {
+        setAdjustingUrl(null);
+        setZoom(1.15);
+        setOffset({ x: 0, y: 0 });
       } else {
         triggerOverlayClose();
       }
@@ -189,12 +244,12 @@ export default function GalleryPickerOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [isOpen, triggerOverlayClose]);
+  }, [adjustingUrl, isOpen, triggerOverlayClose]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if (isClosingRef.current || e.touches.length !== 1) return;
+    if (adjustingUrl || isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
     const vw = window.innerWidth;
     const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
@@ -217,7 +272,14 @@ export default function GalleryPickerOverlay({
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     const state = swipeStartRef.current;
-    if (!state.active || isClosingRef.current || e.touches.length !== 1) return;
+    if (
+      adjustingUrl ||
+      !state.active ||
+      isClosingRef.current ||
+      e.touches.length !== 1
+    ) {
+      return;
+    }
 
     const touch = e.touches[0];
     const rawDx = touch.clientX - state.x;
@@ -286,27 +348,124 @@ export default function GalleryPickerOverlay({
     reader.readAsDataURL(file);
   };
 
-  // Buka layar Pratinjau Foto setelah foto dipilih dari grid
-  const handleOpenPreview = () => {
+  // Saat klik "Gunakan Foto" di grid galeri, buka layar "Sesuaikan Foto"
+  const handleStartAdjustPhoto = () => {
     if (!selectedItem || isClosingRef.current) return;
     triggerHaptic(8);
-    setPreviewUrl(selectedItem.src);
+    setZoom(1.15);
+    setOffset({ x: 0, y: 0 });
+    setAdjustingUrl(selectedItem.src);
   };
 
-  // Terapkan foto ke profil dengan transisi keluar mulus
-  const handleUsePhoto = () => {
-    if (!previewUrl || isClosingRef.current) return;
-    triggerHaptic([8, 25, 10]);
-    const chosenSrc = previewUrl;
-    triggerOverlayClose(() => {
-      onSelectPhoto(chosenSrc);
+  const handleCancelAdjust = () => {
+    if (isClosingRef.current) return;
+    triggerHaptic(6);
+    setAdjustingUrl(null);
+    setZoom(1.15);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const handlePanPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (!adjustingUrl) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsPanning(true);
+    panRef.current = {
+      dragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: offset.x,
+      originY: offset.y,
+    };
+  };
+
+  const handlePanPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (!panRef.current.dragging) return;
+    const dx = e.clientX - panRef.current.startX;
+    const dy = e.clientY - panRef.current.startY;
+    const maxPan = 180 * zoom;
+    setOffset({
+      x: Math.max(-maxPan, Math.min(maxPan, panRef.current.originX + dx)),
+      y: Math.max(-maxPan, Math.min(maxPan, panRef.current.originY + dy)),
     });
   };
 
-  const handleChooseAnotherPhoto = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic(6);
-    setPreviewUrl(null);
+  const handlePanPointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    if (!panRef.current.dragging) return;
+    panRef.current.dragging = false;
+    setIsPanning(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const handleSaveAdjustedPhoto = () => {
+    const imgEl = cropImageRef.current;
+    const circleEl = cropCircleRef.current;
+    const canvas = exportCanvasRef.current;
+    if (!adjustingUrl || !imgEl || !circleEl || !canvas || isClosingRef.current) {
+      return;
+    }
+
+    triggerHaptic([8, 25, 10]);
+
+    const natW = imgEl.naturalWidth || 720;
+    const natH = imgEl.naturalHeight || 720;
+
+    const imgRect = imgEl.getBoundingClientRect();
+    const circleRect = circleEl.getBoundingClientRect();
+
+    canvas.width = 720;
+    canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (
+      imgRect.width > 0 &&
+      imgRect.height > 0 &&
+      circleRect.width > 0 &&
+      circleRect.height > 0
+    ) {
+      const scaleX = natW / imgRect.width;
+      const scaleY = natH / imgRect.height;
+
+      const sx = (circleRect.left - imgRect.left) * scaleX;
+      const sy = (circleRect.top - imgRect.top) * scaleY;
+      const sWidth = circleRect.width * scaleX;
+      const sHeight = circleRect.height * scaleY;
+
+      ctx.drawImage(
+        imgEl,
+        sx,
+        sy,
+        sWidth,
+        sHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+    } else {
+      const size = Math.min(natW, natH);
+      ctx.drawImage(
+        imgEl,
+        (natW - size) / 2,
+        (natH - size) / 2,
+        size,
+        size,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+    }
+
+    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    triggerOverlayClose(() => {
+      onSelectPhoto(croppedDataUrl);
+    });
   };
 
   const overlayStyle: CSSProperties = {
@@ -322,20 +481,21 @@ export default function GalleryPickerOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
-  // Tampilan Pratinjau Foto setelah memilih foto dari galeri
-  if (previewUrl) {
+  // Layar "Sesuaikan Foto" setelah "Gunakan Foto" diklik
+  if (adjustingUrl) {
+    const zoomPercent = Math.round(
+      ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100
+    );
+
     return createPortal(
       <div
         style={overlayStyle}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
         role="dialog"
         aria-modal="true"
-        aria-label="Pratinjau Foto"
-        className="moku-gal-preview-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-white text-[#171717] select-none"
+        aria-label="Sesuaikan Foto"
+        className="moku-crop-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#1F1F23] text-white select-none"
       >
+        {/* Top Header Marun */}
         <header className="w-full bg-[#740319] text-white">
           <div
             style={{
@@ -346,7 +506,7 @@ export default function GalleryPickerOverlay({
           >
             <button
               type="button"
-              onClick={() => triggerOverlayClose()}
+              onClick={handleCancelAdjust}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -359,95 +519,182 @@ export default function GalleryPickerOverlay({
               style={{ margin: 0 }}
               className="font-display text-[calc(19*var(--u))] font-bold tracking-[-0.015em] text-white"
             >
-              Pratinjau Foto
+              Sesuaikan Foto
             </h2>
           </div>
         </header>
 
-        <div className="moku-gal-preview-circle mx-auto flex w-full max-w-[680px] flex-1 flex-col items-center justify-center px-[calc(24*var(--u))] text-center">
-          <div
+        {/* Area Crop + Grid 3x3 + Lingkaran Avatar + Teks Panduan */}
+        <div
+          ref={cropStageRef}
+          onPointerDown={handlePanPointerDown}
+          onPointerMove={handlePanPointerMove}
+          onPointerUp={handlePanPointerUp}
+          onPointerCancel={handlePanPointerUp}
+          style={{ touchAction: "none" }}
+          className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-grab flex-col items-center justify-center overflow-hidden bg-[#26262A] active:cursor-grabbing"
+        >
+          {/* Foto yang dapat di-pan & di-zoom */}
+          <img
+            ref={cropImageRef}
+            src={adjustingUrl}
+            alt="Sesuaikan Foto Profil"
+            draggable={false}
             style={{
-              width: "min(76vw, 312 * var(--u))",
-              height: "min(76vw, 312 * var(--u))",
-              marginBottom: "calc(28 * var(--u))",
+              width: "min(86vw, 356 * var(--u))",
+              height: "min(86vw, 356 * var(--u))",
+              transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
+              transition: isPanning
+                ? "none"
+                : "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
-            className="overflow-hidden rounded-full bg-[#F3F4F6] shadow-[0_6px_24px_rgba(0,0,0,0.08)]"
+            className="pointer-events-none object-cover"
+          />
+
+          {/* Overlay Grid 3x3 + Lingkaran Putih */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            <img
-              src={previewUrl}
-              alt="Pratinjau Foto Profil"
-              draggable={false}
-              className="h-full w-full object-cover"
-            />
+            <div
+              ref={cropCircleRef}
+              style={{
+                width: "min(86vw, 356 * var(--u))",
+                height: "min(86vw, 356 * var(--u))",
+              }}
+              className="relative overflow-hidden rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.48)]"
+            >
+              <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
+              <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
+              <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
+              <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
+            </div>
           </div>
 
+          {/* Keterangan Panduan */}
           <p
-            style={{ margin: 0 }}
-            className="max-w-[260px] text-[calc(13.5*var(--u))] font-normal leading-relaxed text-[#6B6B76]"
+            style={{
+              margin: 0,
+              marginTop: "calc(22 * var(--u))",
+            }}
+            className="relative z-10 max-w-[260px] text-center text-[calc(13*var(--u))] font-normal leading-relaxed text-white/90"
           >
-            Pastikan foto sudah sesuai untuk digunakan sebagai foto profil.
+            Atur posisi dan ukuran foto agar sesuai dengan lingkaran avatar.
           </p>
         </div>
 
+        {/* Panel Bawah Putih: Slider Zoom + Tombol Batal & Simpan */}
         <div
           style={{
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
+            paddingTop: "calc(18 * var(--u))",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 22 * var(--u))",
           }}
-          className="moku-gal-preview-actions mx-auto w-full max-w-[680px] space-y-[calc(12*var(--u))] px-[calc(16*var(--u))]"
+          className="w-full bg-white px-[calc(16*var(--u))] text-[#171717]"
         >
-          <button
-            type="button"
-            onClick={handleUsePhoto}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
-          >
-            Gunakan Foto
-          </button>
+          <div className="mx-auto w-full max-w-[680px]">
+            {/* Kontrol Zoom (- / Slider / +) */}
+            <div
+              style={{ marginBottom: "calc(20 * var(--u))" }}
+              className="mx-auto flex w-full max-w-[440px] items-center gap-[calc(14*var(--u))]"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(5);
+                  setZoom((prev) =>
+                    Math.max(MIN_ZOOM, Number((prev - 0.2).toFixed(2)))
+                  );
+                }}
+                aria-label="Perkecil Foto"
+                className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
+              >
+                <MagnifyingGlassMinus
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                />
+              </button>
 
-          <button
-            type="button"
-            onClick={handleChooseAnotherPhoto}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
-          >
-            Pilih Foto Lain
-          </button>
+              <div className="relative flex flex-1 items-center">
+                <div className="h-[calc(4*var(--u))] w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+                  <div
+                    style={{ width: `${zoomPercent}%` }}
+                    className="h-full bg-[#740319] transition-[width] duration-100"
+                  />
+                </div>
+                <input
+                  type="range"
+                  min={MIN_ZOOM}
+                  max={MAX_ZOOM}
+                  step={0.02}
+                  value={zoom}
+                  aria-label="Tingkat Zoom Foto"
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="moku-zoom-range absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <div
+                  aria-hidden="true"
+                  style={{
+                    left: `calc(${zoomPercent}% - 8 * var(--u))`,
+                    width: "calc(16 * var(--u))",
+                    height: "calc(16 * var(--u))",
+                  }}
+                  className="pointer-events-none absolute rounded-full border-[calc(3*var(--u))] border-[#740319] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.25)]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(5);
+                  setZoom((prev) =>
+                    Math.min(MAX_ZOOM, Number((prev + 0.2).toFixed(2)))
+                  );
+                }}
+                aria-label="Perbesar Foto"
+                className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-[#171717] transition-transform active:scale-90 active:bg-[#F4F4F7]"
+              >
+                <MagnifyingGlassPlus
+                  weight="regular"
+                  className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
+                />
+              </button>
+            </div>
+
+            {/* Tombol Batal & Simpan */}
+            <div className="grid grid-cols-2 gap-[calc(12*var(--u))]">
+              <button
+                type="button"
+                onClick={handleCancelAdjust}
+                className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveAdjustedPhoto}
+                className="flex h-[calc(46*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(14*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
         </div>
 
+        <canvas ref={exportCanvasRef} className="hidden" />
+
         <style>{`
-          .moku-gal-preview-enter {
-            animation: moku-gal-prev-fade 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          .moku-crop-enter {
+            animation: moku-crop-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
-          .moku-gal-preview-circle {
-            animation: moku-gal-prev-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-          }
-          .moku-gal-preview-actions {
-            animation: moku-gal-prev-up 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
-          }
-          @keyframes moku-gal-prev-fade {
+          @keyframes moku-crop-in {
             from {
               opacity: 0;
-            }
-            to {
-              opacity: 1;
-            }
-          }
-          @keyframes moku-gal-prev-pop {
-            from {
-              opacity: 0;
-              transform: scale(0.92) translate3d(0, 12px, 0);
+              transform: scale(0.97) translate3d(0, 10px, 0);
             }
             to {
               opacity: 1;
               transform: scale(1) translate3d(0, 0, 0);
-            }
-          }
-          @keyframes moku-gal-prev-up {
-            from {
-              opacity: 0;
-              transform: translate3d(0, 18px, 0);
-            }
-            to {
-              opacity: 1;
-              transform: translate3d(0, 0, 0);
             }
           }
         `}</style>
@@ -588,7 +835,7 @@ export default function GalleryPickerOverlay({
 
           <button
             type="button"
-            onClick={handleOpenPreview}
+            onClick={handleStartAdjustPhoto}
             disabled={!selectedItem}
             className="flex h-[calc(44*var(--u))] min-w-[calc(168*var(--u))] cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(20*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-200 active:scale-[0.98] active:bg-[#5B0213] disabled:cursor-not-allowed disabled:opacity-45"
           >
