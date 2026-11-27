@@ -6,6 +6,7 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
+  type MouseEvent,
   type PointerEvent,
   type TouchEvent,
 } from "react";
@@ -17,6 +18,7 @@ import {
   Image as ImageIcon,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
+  Trash,
 } from "@phosphor-icons/react";
 
 const MOBILE_SCALE_VARS = {
@@ -183,7 +185,6 @@ export default function GalleryPickerOverlay({
     };
   }, [isOpen, resetAdjustState]);
 
-  // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
     if (!isOpen) return;
 
@@ -345,6 +346,16 @@ export default function GalleryPickerOverlay({
     reader.readAsDataURL(file);
   };
 
+  const handleDeleteGalleryItem = (
+    e: MouseEvent<HTMLButtonElement>,
+    targetId: string
+  ) => {
+    e.stopPropagation();
+    triggerHaptic(8);
+    setDevicePhotos((prev) => prev.filter((item) => item.id !== targetId));
+    setSelectedId((prev) => (prev === targetId ? "" : prev));
+  };
+
   const handleStartAdjustPhoto = () => {
     if (!selectedItem || isClosingRef.current) return;
     triggerHaptic(8);
@@ -354,7 +365,6 @@ export default function GalleryPickerOverlay({
     setAdjustingUrl(selectedItem.src);
   };
 
-  // Putar searah jarum jam bertahap: 90, 180, 270, 360, dst.
   const handleRotateClockwise = () => {
     triggerHaptic(7);
     setRotation((prev) => prev + 90);
@@ -459,6 +469,8 @@ export default function GalleryPickerOverlay({
 
   const overlayStyle: CSSProperties = {
     ...MOBILE_SCALE_VARS,
+    WebkitTouchCallout: "none",
+    WebkitUserSelect: "none",
     transform: isExiting
       ? "translate3d(100%, 0, 0)"
       : dragX > 0
@@ -479,6 +491,7 @@ export default function GalleryPickerOverlay({
     return createPortal(
       <div
         style={overlayStyle}
+        onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label="Sesuaikan Foto"
@@ -520,27 +533,28 @@ export default function GalleryPickerOverlay({
           onPointerMove={handlePanPointerMove}
           onPointerUp={handlePanPointerUp}
           onPointerCancel={handlePanPointerUp}
+          onContextMenu={(e) => e.preventDefault()}
           style={{ touchAction: "none" }}
           className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-grab flex-col items-center justify-center overflow-hidden bg-[#26262A] active:cursor-grabbing"
         >
-          {/* Foto yang dapat di-pan, di-zoom, dan di-rotasi searah jarum jam */}
           <img
             ref={cropImageRef}
             src={adjustingUrl}
             alt="Sesuaikan Foto Profil"
             draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
             style={{
               width: "min(86vw, 356 * var(--u))",
               height: "min(86vw, 356 * var(--u))",
+              WebkitTouchCallout: "none",
               transform: `translate3d(${offset.x}px, ${offset.y}px, 0) rotate(${rotation}deg) scale(${zoom})`,
               transition: isPanning
                 ? "none"
                 : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
-            className="pointer-events-none object-cover"
+            className="pointer-events-none object-cover select-none"
           />
 
-          {/* Overlay Grid 3x3 + Lingkaran Putih */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -560,7 +574,6 @@ export default function GalleryPickerOverlay({
             </div>
           </div>
 
-          {/* Keterangan Panduan */}
           <p
             style={{
               margin: 0,
@@ -573,7 +586,7 @@ export default function GalleryPickerOverlay({
           </p>
         </div>
 
-        {/* Panel Bawah Putih: Slider Zoom + Tombol Rotasi Searah Jarum Jam + Tombol Batal & Simpan */}
+        {/* Panel Bawah Putih */}
         <div
           style={{
             paddingTop: "calc(18 * var(--u))",
@@ -716,6 +729,7 @@ export default function GalleryPickerOverlay({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      onContextMenu={(e) => e.preventDefault()}
       role="dialog"
       aria-modal="true"
       aria-label="Pilih dari Galeri"
@@ -765,16 +779,26 @@ export default function GalleryPickerOverlay({
             const isSelected = item.id === selectedId;
 
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
                 onClick={() => {
                   triggerHaptic(6);
                   setSelectedId(isSelected ? "" : item.id);
                 }}
+                onContextMenu={(e) => e.preventDefault()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    triggerHaptic(6);
+                    setSelectedId(isSelected ? "" : item.id);
+                  }
+                }}
                 aria-pressed={isSelected}
                 aria-label={item.label}
-                className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-[calc(12*var(--u))] bg-[#F3F4F6] text-left transition-[transform,box-shadow] duration-200 active:scale-[0.97] ${
+                style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+                className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-[calc(12*var(--u))] bg-[#F3F4F6] text-left select-none transition-[transform,box-shadow] duration-200 active:scale-[0.97] ${
                   isSelected
                     ? "ring-[calc(2*var(--u))] ring-[#740319]"
                     : "ring-1 ring-black/5"
@@ -784,12 +808,33 @@ export default function GalleryPickerOverlay({
                   src={item.src}
                   alt={item.label}
                   draggable={false}
-                  className="h-full w-full object-cover"
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+                  className="pointer-events-none h-full w-full object-cover select-none"
                 />
 
+                {/* Tombol Compact Hapus Foto di Pojok Kiri Atas */}
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteGalleryItem(e, item.id)}
+                  onContextMenu={(e) => e.preventDefault()}
+                  aria-label={`Hapus ${item.label}`}
+                  style={{
+                    width: "calc(24 * var(--u))",
+                    height: "calc(24 * var(--u))",
+                  }}
+                  className="absolute left-[calc(8*var(--u))] top-[calc(8*var(--u))] z-10 flex cursor-pointer items-center justify-center rounded-full bg-black/55 text-white transition-[transform,background-color] duration-150 active:scale-90 active:bg-[#C8102E]"
+                >
+                  <Trash
+                    weight="bold"
+                    className="h-[calc(12*var(--u))] w-[calc(12*var(--u))]"
+                  />
+                </button>
+
+                {/* Indikator Centang / Lingkaran Kosong di Pojok Kanan Atas */}
                 <span
                   aria-hidden="true"
-                  className={`absolute right-[calc(8*var(--u))] top-[calc(8*var(--u))] flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
+                  className={`pointer-events-none absolute right-[calc(8*var(--u))] top-[calc(8*var(--u))] flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
                     isSelected
                       ? "bg-[#740319] text-white"
                       : "border-[calc(1.8*var(--u))] border-white bg-black/20"
@@ -802,7 +847,7 @@ export default function GalleryPickerOverlay({
                     />
                   )}
                 </span>
-              </button>
+              </div>
             );
           })}
 
@@ -810,6 +855,7 @@ export default function GalleryPickerOverlay({
           <button
             type="button"
             onClick={openDevicePicker}
+            onContextMenu={(e) => e.preventDefault()}
             aria-label="Pilih dari Perangkat"
             className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[calc(6*var(--u))] rounded-[calc(12*var(--u))] border border-dashed border-[#D4D4DC] bg-[#FAFAFB] p-[calc(8*var(--u))] text-center transition-colors active:bg-[#FDF2F4]"
           >
