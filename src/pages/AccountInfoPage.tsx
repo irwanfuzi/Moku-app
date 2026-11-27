@@ -1,12 +1,10 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
   type CSSProperties,
-  type TouchEvent,
 } from "react";
-import { useIonRouter } from "@ionic/react";
+import { useIonRouter, useIonViewWillEnter } from "@ionic/react";
 import {
   ArrowLeft,
   At,
@@ -25,8 +23,6 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const EDGE_SWIPE_ZONE_PX = 40;
-
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
@@ -40,26 +36,20 @@ export default function AccountInfoPage() {
   const [profile, setProfile] = useState(() => getAccountProfile());
   const [avatarError, setAvatarError] = useState(false);
 
-  const swipeStartRef = useRef<{
-    x: number;
-    y: number;
-    active: boolean;
-    direction: 1 | -1;
-    lockedHorizontal: boolean;
-  }>({
-    x: 0,
-    y: 0,
-    active: false,
-    direction: 1,
-    lockedHorizontal: false,
-  });
-
   const isMobileView = !isReady || isMobile;
 
-  useEffect(() => {
+  const refreshProfile = useCallback(() => {
     setProfile(getAccountProfile());
     setAvatarError(false);
   }, []);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
+  useIonViewWillEnter(() => {
+    refreshProfile();
+  });
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -75,6 +65,25 @@ export default function AccountInfoPage() {
     }
   }, [ionRouter, navigateWithTransition]);
 
+  useEffect(() => {
+    const handleIonBack = (ev: Event) => {
+      const customEv = ev as CustomEvent<{
+        register: (priority: number, handler: () => void) => void;
+      }>;
+      if (customEv.detail?.register) {
+        customEv.detail.register(100, () => {
+          triggerHaptic(6);
+          navigateBackSmooth();
+        });
+      }
+    };
+
+    document.addEventListener("ionBackButton", handleIonBack);
+    return () => {
+      document.removeEventListener("ionBackButton", handleIonBack);
+    };
+  }, [navigateBackSmooth]);
+
   const handleBack = () => {
     triggerHaptic(6);
     navigateBackSmooth();
@@ -85,59 +94,6 @@ export default function AccountInfoPage() {
     navigateWithTransition("/profile/account-info/edit", "forward");
   };
 
-  const handleTouchStart = (e: TouchEvent<HTMLElement>) => {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    const vw = window.innerWidth;
-    const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
-    const isFromRightEdge = touch.clientX >= vw - EDGE_SWIPE_ZONE_PX;
-
-    if (!isFromLeftEdge && !isFromRightEdge) {
-      swipeStartRef.current.active = false;
-      return;
-    }
-
-    swipeStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      active: true,
-      direction: isFromLeftEdge ? 1 : -1,
-      lockedHorizontal: false,
-    };
-  };
-
-  const handleTouchMove = (e: TouchEvent<HTMLElement>) => {
-    const state = swipeStartRef.current;
-    if (!state.active || e.touches.length !== 1) return;
-
-    const touch = e.touches[0];
-    const rawDx = touch.clientX - state.x;
-    const dy = touch.clientY - state.y;
-    const inwardDelta = rawDx * state.direction;
-
-    if (!state.lockedHorizontal) {
-      if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
-        state.active = false;
-        return;
-      }
-      if (inwardDelta > 12) {
-        state.lockedHorizontal = true;
-      } else {
-        return;
-      }
-    }
-
-    if (inwardDelta >= 68) {
-      state.active = false;
-      triggerHaptic(6);
-      navigateBackSmooth();
-    }
-  };
-
-  const handleTouchEnd = () => {
-    swipeStartRef.current.active = false;
-  };
-
   const formattedPhone = profile.phone.startsWith("+62")
     ? profile.phone
     : `+62 ${profile.phone}`;
@@ -145,10 +101,6 @@ export default function AccountInfoPage() {
   return (
     <main
       style={MOBILE_SCALE_VARS}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(36*var(--u)+env(safe-area-inset-bottom))]"
     >
       {/* Top Header Marun */}
@@ -333,8 +285,8 @@ export default function AccountInfoPage() {
             Data Operasional
           </h2>
 
-          <div className="space-y-[calc(14*var(--u))]">
-            <div className="flex items-center gap-[calc(12*var(--u))]">
+          <div className="divide-y divide-[#F2F2F6]">
+            <div className="flex items-center gap-[calc(12*var(--u))] pb-[calc(14*var(--u))]">
               <Briefcase
                 weight="regular"
                 className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
@@ -355,7 +307,7 @@ export default function AccountInfoPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-[calc(12*var(--u))]">
+            <div className="flex items-center gap-[calc(12*var(--u))] py-[calc(14*var(--u))]">
               <Buildings
                 weight="regular"
                 className="h-[calc(20*var(--u))] w-[calc(20*var(--u))] shrink-0 text-[#1E1E24]"
@@ -375,20 +327,23 @@ export default function AccountInfoPage() {
                 </p>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-start gap-[calc(12*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]">
-              <Info
-                weight="regular"
-                className="mt-[1px] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#740319]"
-              />
-              <p
-                style={{ margin: 0 }}
-                className="text-[calc(12*var(--u))] font-normal leading-relaxed text-[#2D2D34]"
-              >
-                Jabatan dan cabang tidak dapat diubah. Hubungi admin jika ada
-                perubahan data operasional.
-              </p>
-            </div>
+          <div
+            style={{ marginTop: "calc(6 * var(--u))" }}
+            className="flex items-start gap-[calc(12*var(--u))] rounded-[calc(10*var(--u))] bg-[#FDF2F4] px-[calc(12*var(--u))] py-[calc(12*var(--u))]"
+          >
+            <Info
+              weight="regular"
+              className="mt-[1px] h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#740319]"
+            />
+            <p
+              style={{ margin: 0 }}
+              className="text-[calc(12*var(--u))] font-normal leading-relaxed text-[#2D2D34]"
+            >
+              Jabatan dan cabang tidak dapat diubah. Hubungi admin jika ada
+              perubahan data operasional.
+            </p>
           </div>
         </section>
       </div>
