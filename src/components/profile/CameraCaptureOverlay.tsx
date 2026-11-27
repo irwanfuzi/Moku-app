@@ -23,10 +23,10 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 260;
-const EDGE_SWIPE_ZONE_PX = 48;
-const DISMISS_DISTANCE_PX = 72;
-const DISMISS_VELOCITY_PX_MS = 0.32;
+const CLOSE_ANIMATION_MS = 240;
+const EDGE_SWIPE_ZONE_PX = 64;
+const DISMISS_DISTANCE_PX = 56;
+const DISMISS_VELOCITY_PX_MS = 0.25;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -62,7 +62,7 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const pushedHistoryRef = useRef(false);
+  const hasGuardStateRef = useRef(false);
 
   const swipeStartRef = useRef<{
     x: number;
@@ -105,6 +105,7 @@ export default function CameraCaptureOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
+      hasGuardStateRef.current = false;
       triggerHaptic(6);
       stopStream();
       setIsDragging(false);
@@ -116,7 +117,6 @@ export default function CameraCaptureOverlay({
       closeTimerRef.current = window.setTimeout(() => {
         closeTimerRef.current = null;
         isClosingRef.current = false;
-        pushedHistoryRef.current = false;
         setIsExiting(false);
         setDragX(0);
         setPreviewUrl(null);
@@ -192,7 +192,7 @@ export default function CameraCaptureOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      pushedHistoryRef.current = false;
+      hasGuardStateRef.current = false;
       return;
     }
 
@@ -203,13 +203,13 @@ export default function CameraCaptureOverlay({
     setIsDragging(false);
     setIsExiting(false);
 
-    if (typeof window !== "undefined" && !pushedHistoryRef.current) {
+    if (typeof window !== "undefined" && !hasGuardStateRef.current) {
       window.history.pushState(
-        { mokuCameraOverlay: true },
+        { mokuCameraGuard: true },
         "",
         window.location.href
       );
-      pushedHistoryRef.current = true;
+      hasGuardStateRef.current = true;
     }
 
     return () => {
@@ -251,9 +251,10 @@ export default function CameraCaptureOverlay({
 
     const handlePopState = (ev: PopStateEvent) => {
       if (isClosingRef.current) return;
-      ev.stopImmediatePropagation();
-      pushedHistoryRef.current = false;
-
+      if (hasGuardStateRef.current) {
+        hasGuardStateRef.current = false;
+        ev.stopImmediatePropagation();
+      }
       if (previewUrl) {
         handleRetakePhoto();
       } else {
@@ -404,7 +405,7 @@ export default function CameraCaptureOverlay({
         setDragX(0);
         return;
       }
-      if (inwardDelta > 10) {
+      if (inwardDelta > 8) {
         state.lockedHorizontal = true;
         setIsDragging(true);
       } else {
@@ -956,4 +957,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-        }
+}
