@@ -243,8 +243,10 @@ export default function EditAccountInfoPage() {
 
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPhone = phone.trim();
-  const isEmailChanged = normalizedEmail !== verifiedEmail;
-  const isPhoneChanged = normalizedPhone !== verifiedPhone;
+  const isEmailValid = !getEmailError(email);
+  const isPhoneValid = !getPhoneError(phone);
+  const needsEmailOtp = isEmailValid && normalizedEmail !== verifiedEmail;
+  const needsPhoneOtp = isPhoneValid && normalizedPhone !== verifiedPhone;
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -404,27 +406,15 @@ export default function EditAccountInfoPage() {
             return "Username sudah digunakan pengguna lain.";
           }
           return undefined;
-        case "email": {
-          const fmtErr = getEmailError(value);
-          if (fmtErr) return fmtErr;
-          if (trimmed.toLowerCase() !== verifiedEmail) {
-            return "Klik Verifikasi untuk memvalidasi email baru Anda.";
-          }
-          return undefined;
-        }
-        case "phone": {
-          const phErr = getPhoneError(value);
-          if (phErr) return phErr;
-          if (trimmed !== verifiedPhone) {
-            return "Klik Verifikasi untuk memvalidasi nomor baru Anda.";
-          }
-          return undefined;
-        }
+        case "email":
+          return getEmailError(value);
+        case "phone":
+          return getPhoneError(value);
         default:
           return undefined;
       }
     },
-    [email, fullName, verifiedEmail, verifiedPhone]
+    [email, fullName]
   );
 
   useEffect(() => {
@@ -438,7 +428,7 @@ export default function EditAccountInfoPage() {
     if (!shouldEvaluate) return;
 
     emailTypingRef.current = window.setTimeout(() => {
-      const emailErr = validateField("email", email);
+      const emailErr = getEmailError(email);
       setErrors((prev) => {
         if (prev.email === emailErr) return prev;
         const next = { ...prev };
@@ -447,7 +437,7 @@ export default function EditAccountInfoPage() {
         return next;
       });
     }, 500);
-  }, [email, errors.email, validateField]);
+  }, [email, errors.email]);
 
   useEffect(() => {
     if (usernameCheckRef.current !== null) {
@@ -587,15 +577,6 @@ export default function EditAccountInfoPage() {
 
     if (firstInvalidId) {
       triggerHaptic(14);
-      if (nextErrors.email && !getEmailError(email) && isEmailChanged) {
-        openOtpVerification("email", normalizedEmail);
-        return;
-      }
-      if (nextErrors.phone && !getPhoneError(phone) && isPhoneChanged) {
-        openOtpVerification("phone", normalizedPhone);
-        return;
-      }
-
       triggerToast("Periksa kembali kolom yang bertanda merah.", "error");
       const targetEl = document.getElementById(firstInvalidId);
       if (targetEl) {
@@ -605,13 +586,25 @@ export default function EditAccountInfoPage() {
       return;
     }
 
+    if (needsEmailOtp) {
+      openOtpVerification("email", normalizedEmail);
+      return;
+    }
+
+    if (needsPhoneOtp) {
+      openOtpVerification("phone", normalizedPhone);
+      return;
+    }
+
     commitSaveProfile();
   };
 
-  const getInputClass = (hasError: boolean) =>
+  const getInputClass = (hasError: boolean, hasPendingOtp = false) =>
     `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-220 placeholder:text-[#9E9EA9] ${
       hasError
         ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15"
+        : hasPendingOtp
+        ? "border-[#E11D48]/60 bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
         : "border-[#DDDDE4] bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
     }`;
 
@@ -858,12 +851,14 @@ export default function EditAccountInfoPage() {
               </div>
             </div>
 
-            {/* Email + Banner Verifikasi */}
+            {/* Email + Informasi Verifikasi OTP (1 baris) */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
                 className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
-                  errors.email ? "text-[#C8102E]" : "text-[#1E1E24]"
+                  errors.email || needsEmailOtp
+                    ? "text-[#C8102E]"
+                    : "text-[#1E1E24]"
                 }`}
               >
                 <EnvelopeSimple
@@ -894,7 +889,7 @@ export default function EditAccountInfoPage() {
                   }}
                   onBlur={() => handleBlur("email", email)}
                   placeholder="nama@moku.id"
-                  className={getInputClass(Boolean(errors.email))}
+                  className={getInputClass(Boolean(errors.email), needsEmailOtp)}
                 />
 
                 {errors.email && (
@@ -912,31 +907,35 @@ export default function EditAccountInfoPage() {
                   </p>
                 )}
 
-                {isEmailChanged && !getEmailError(email) && (
+                {needsEmailOtp && (
                   <button
                     type="button"
-                    onClick={() => openOtpVerification("email", normalizedEmail)}
+                    onClick={() =>
+                      openOtpVerification("email", normalizedEmail)
+                    }
                     style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
+                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
                   >
                     <Info
                       weight="regular"
-                      className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#1F2937]"
+                      className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span className="text-[calc(12*var(--u))] font-normal text-[#1F2937]">
-                      Klik Verifikasi untuk memvalidasi email baru Anda.
+                    <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
+                      Klik verifikasi OTP email baru.
                     </span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Nomor Telepon + Banner Verifikasi */}
+            {/* Nomor Telepon + Informasi Verifikasi OTP (1 baris) */}
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
                 className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-220 ${
-                  errors.phone ? "text-[#C8102E]" : "text-[#1E1E24]"
+                  errors.phone || needsPhoneOtp
+                    ? "text-[#C8102E]"
+                    : "text-[#1E1E24]"
                 }`}
               >
                 <Phone
@@ -961,6 +960,8 @@ export default function EditAccountInfoPage() {
                     className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-220 active:bg-[#F4F4F7] ${
                       errors.phone
                         ? "border-[#C8102E] bg-[#FFF9FA]"
+                        : needsPhoneOtp
+                        ? "border-[#E11D48]/60 bg-white"
                         : "border-[#DDDDE4] bg-white"
                     }`}
                   >
@@ -994,7 +995,8 @@ export default function EditAccountInfoPage() {
                     onBlur={() => handleBlur("phone", phone)}
                     placeholder="812-3456-7890"
                     className={`min-w-0 flex-1 ${getInputClass(
-                      Boolean(errors.phone)
+                      Boolean(errors.phone),
+                      needsPhoneOtp
                     )}`}
                   />
                 </div>
@@ -1014,19 +1016,21 @@ export default function EditAccountInfoPage() {
                   </p>
                 )}
 
-                {isPhoneChanged && !getPhoneError(phone) && (
+                {needsPhoneOtp && (
                   <button
                     type="button"
-                    onClick={() => openOtpVerification("phone", normalizedPhone)}
+                    onClick={() =>
+                      openOtpVerification("phone", normalizedPhone)
+                    }
                     style={{ marginTop: "calc(8 * var(--u))" }}
-                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
+                    className="moku-field-msg flex w-full cursor-pointer items-center gap-[calc(8*var(--u))] rounded-[calc(10*var(--u))] border border-[#E5E7EB] bg-[#F2F3F5] px-[calc(10*var(--u))] py-[calc(8*var(--u))] text-left transition-colors duration-150 active:bg-[#E7E9ED]"
                   >
                     <Info
                       weight="regular"
-                      className="h-[calc(18*var(--u))] w-[calc(18*var(--u))] shrink-0 text-[#1F2937]"
+                      className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] shrink-0 text-[#1F2937]"
                     />
-                    <span className="text-[calc(12*var(--u))] font-normal text-[#1F2937]">
-                      Klik Verifikasi untuk memvalidasi nomor baru Anda.
+                    <span className="truncate text-[calc(11.5*var(--u))] font-normal text-[#1F2937]">
+                      Klik verifikasi OTP nomor baru.
                     </span>
                   </button>
                 )}
