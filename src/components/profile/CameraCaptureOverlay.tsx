@@ -54,7 +54,7 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const guardEntryActiveRef = useRef(false);
+  const guardActiveRef = useRef(false);
   const lockedUrlRef = useRef<string>("");
 
   const swipeStartRef = useRef<{
@@ -90,10 +90,11 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Fungsi penutup visual tunggal — identik untuk tombol Back & Swipe-Back
-  const closeOverlayVisual = useCallback(() => {
+  // Satu pintu penutupan yang dipakai tombol back kiri atas, swipe-back, dan system back
+  const triggerOverlayClose = useCallback(() => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
+    guardActiveRef.current = false;
     triggerHaptic(6);
     stopStream();
     setIsDragging(false);
@@ -110,16 +111,6 @@ export default function CameraCaptureOverlay({
       onClose();
     }, CLOSE_ANIMATION_MS);
   }, [onClose, stopStream]);
-
-  // Dipanggil dari tombol panah kiri atas atau gestur swipe layar
-  const handleBackAction = useCallback(() => {
-    if (isClosingRef.current) return;
-    if (guardEntryActiveRef.current) {
-      guardEntryActiveRef.current = false;
-      window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
-    }
-    closeOverlayVisual();
-  }, [closeOverlayVisual]);
 
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
@@ -170,6 +161,7 @@ export default function CameraCaptureOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
+      guardActiveRef.current = false;
       return;
     }
 
@@ -193,38 +185,43 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, startCamera, stopStream]);
 
-  // Pasang anchor state + overlay state pada URL saat ini agar system swipe-back menutup kamera dan kembali ke Ubah Informasi Akun
+  // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
     if (!isOpen) return;
 
     lockedUrlRef.current = window.location.href;
-    window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
     window.history.pushState(
       { mokuCameraOverlay: true },
       "",
       lockedUrlRef.current
     );
-    guardEntryActiveRef.current = true;
+    guardActiveRef.current = true;
 
     const handlePopState = (ev: PopStateEvent) => {
+      if (!guardActiveRef.current) return;
       ev.stopImmediatePropagation();
-      if (guardEntryActiveRef.current) {
-        guardEntryActiveRef.current = false;
-        closeOverlayVisual();
-      }
+
+      // Pertahankan posisi stack di halaman Ubah Informasi Akun agar tidak keluar ke home screen / dashboard
+      window.history.pushState(
+        { mokuCameraRestored: true },
+        "",
+        lockedUrlRef.current
+      );
+      triggerOverlayClose();
     };
 
     const handleIonBack = (ev: Event) => {
+      if (!guardActiveRef.current) return;
       ev.stopImmediatePropagation();
       const customEv = ev as CustomEvent<{
         register: (priority: number, handler: () => void) => void;
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          handleBackAction();
+          triggerOverlayClose();
         });
       } else {
-        handleBackAction();
+        triggerOverlayClose();
       }
     };
 
@@ -234,12 +231,9 @@ export default function CameraCaptureOverlay({
     return () => {
       window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
-      if (guardEntryActiveRef.current) {
-        guardEntryActiveRef.current = false;
-        window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
-      }
+      guardActiveRef.current = false;
     };
-  }, [closeOverlayVisual, handleBackAction, isOpen]);
+  }, [isOpen, triggerOverlayClose]);
 
   useEffect(() => {
     const stream = streamRef.current;
@@ -325,7 +319,7 @@ export default function CameraCaptureOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      handleBackAction();
+      triggerOverlayClose();
     } else {
       setIsDragging(false);
       setDragX(0);
@@ -421,10 +415,7 @@ export default function CameraCaptureOverlay({
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     stopStream();
-    if (guardEntryActiveRef.current) {
-      guardEntryActiveRef.current = false;
-      window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
-    }
+    guardActiveRef.current = false;
     onCapture(dataUrl);
   };
 
@@ -472,7 +463,7 @@ export default function CameraCaptureOverlay({
           <div className="flex items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={handleBackAction}
+              onClick={triggerOverlayClose}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -579,10 +570,7 @@ export default function CameraCaptureOverlay({
               type="button"
               onClick={() => {
                 stopStream();
-                if (guardEntryActiveRef.current) {
-                  guardEntryActiveRef.current = false;
-                  window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
-                }
+                guardActiveRef.current = false;
                 onOpenGallery();
               }}
               className="cursor-pointer rounded-[calc(10*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(10*var(--u))] text-[calc(13*var(--u))] font-semibold text-white active:bg-[#5B0213]"
@@ -633,10 +621,7 @@ export default function CameraCaptureOverlay({
             onClick={() => {
               triggerHaptic(6);
               stopStream();
-              if (guardEntryActiveRef.current) {
-                guardEntryActiveRef.current = false;
-                window.history.replaceState({ mokuBase: true }, "", lockedUrlRef.current);
-              }
+              guardActiveRef.current = false;
               onOpenGallery();
             }}
             aria-label="Pilih dari Galeri"
