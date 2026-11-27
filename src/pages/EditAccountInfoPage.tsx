@@ -5,6 +5,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import { useIonRouter } from "@ionic/react";
@@ -43,6 +44,10 @@ import {
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
+
+const EDGE_SWIPE_ZONE_PX = 40;
+const DISMISS_DISTANCE_PX = 76;
+const DISMISS_VELOCITY_PX_MS = 0.35;
 
 const SNACKBAR_SHOW_DELAY_MS = 140;
 const SNACKBAR_VISIBLE_MS = 3600;
@@ -226,6 +231,9 @@ export default function EditAccountInfoPage() {
     useState<UsernameCheckStatus>("idle");
   const [savePhase, setSavePhase] = useState<SavePhase>("idle");
 
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   const [showEmailOtpNotice, setShowEmailOtpNotice] = useState(false);
 
   const [verifiedEmail, setVerifiedEmail] = useState<string>(
@@ -242,6 +250,23 @@ export default function EditAccountInfoPage() {
     tone: "success" | "error";
   } | null>(null);
   const [isToastClosing, setIsToastClosing] = useState(false);
+
+  const isNavigatingBackRef = useRef(false);
+  const swipeStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    active: boolean;
+    direction: 1 | -1;
+    lockedHorizontal: boolean;
+  }>({
+    x: 0,
+    y: 0,
+    time: 0,
+    active: false,
+    direction: 1,
+    lockedHorizontal: false,
+  });
 
   const toastDelayRef = useRef<number | null>(null);
   const toastAutoRef = useRef<number | null>(null);
@@ -667,10 +692,110 @@ export default function EditAccountInfoPage() {
     }
   }, [ionRouter, navigateWithTransition]);
 
-  const handleBack = () => {
-    if (isBusy) return;
+  // Jalur tunggal kembali: dipakai tombol panah kiri atas, swipe kiri/kanan, dan ionBackButton
+  const triggerBackAction = useCallback(() => {
+    if (isBusy || isNavigatingBackRef.current) return;
+    isNavigatingBackRef.current = true;
     triggerHaptic(6);
+    setIsDragging(false);
+    setDragX(0);
     navigateBackSmooth();
+  }, [isBusy, navigateBackSmooth]);
+
+  useEffect(() => {
+    const handleIonBack = (ev: Event) => {
+      const customEv = ev as CustomEvent<{
+        register: (priority: number, handler: () => void) => void;
+      }>;
+      if (customEv.detail?.register) {
+        customEv.detail.register(100, () => {
+          triggerBackAction();
+        });
+      }
+    };
+
+    document.addEventListener("ionBackButton", handleIonBack);
+    return () => {
+      document.removeEventListener("ionBackButton", handleIonBack);
+    };
+  }, [triggerBackAction]);
+
+  const handleTouchStart = (e: TouchEvent<HTMLElement>) => {
+    if (isBusy || isNavigatingBackRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const vw = window.innerWidth;
+    const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
+    const isFromRightEdge = touch.clientX >= vw - EDGE_SWIPE_ZONE_PX;
+
+    if (!isFromLeftEdge && !isFromRightEdge) {
+      swipeStartRef.current.active = false;
+      return;
+    }
+
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: performance.now(),
+      active: true,
+      direction: isFromLeftEdge ? 1 : -1,
+      lockedHorizontal: false,
+    };
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLElement>) => {
+    const state = swipeStartRef.current;
+    if (
+      !state.active ||
+      isBusy ||
+      isNavigatingBackRef.current ||
+      e.touches.length !== 1
+    ) {
+      return;
+    }
+
+    const touch = e.touches[0];
+    const rawDx = touch.clientX - state.x;
+    const dy = touch.clientY - state.y;
+    const inwardDelta = rawDx * state.direction;
+
+    if (!state.lockedHorizontal) {
+      if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
+        state.active = false;
+        setIsDragging(false);
+        setDragX(0);
+        return;
+      }
+      if (inwardDelta > 10) {
+        state.lockedHorizontal = true;
+        setIsDragging(true);
+      } else {
+        return;
+      }
+    }
+
+    setDragX(Math.max(0, inwardDelta));
+  };
+
+  const handleTouchEnd = () => {
+    const state = swipeStartRef.current;
+    if (!state.active) return;
+    state.active = false;
+
+    if (!state.lockedHorizontal) {
+      setIsDragging(false);
+      setDragX(0);
+      return;
+    }
+
+    const elapsed = Math.max(1, performance.now() - state.time);
+    const velocity = dragX / elapsed;
+
+    if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
+      triggerBackAction();
+    } else {
+      setIsDragging(false);
+      setDragX(0);
+    }
   };
 
   const clearFieldError = (field: FieldKey) => {
@@ -783,9 +908,22 @@ export default function EditAccountInfoPage() {
         : "border-[#DDDDE4] bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
     }`;
 
+  const pageStyle: CSSProperties = {
+    ...MOBILE_SCALE_VARS,
+    transform: dragX > 0 ? `translate3d(${dragX}px, 0, 0)` : undefined,
+    opacity: dragX > 0 ? Math.max(0.65, 1 - dragX / 480) : 1,
+    transition: isDragging
+      ? "none"
+      : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+  };
+
   return (
     <main
-      style={MOBILE_SCALE_VARS}
+      style={pageStyle}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#FAFAFB] pb-[calc(104*var(--u)+env(safe-area-inset-bottom))]"
     >
       <header className="sticky top-0 z-40 w-full bg-[#740319] text-white">
@@ -798,7 +936,7 @@ export default function EditAccountInfoPage() {
         >
           <button
             type="button"
-            onClick={handleBack}
+            onClick={triggerBackAction}
             disabled={isBusy}
             aria-label="Kembali"
             className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-260 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
@@ -1325,7 +1463,7 @@ export default function EditAccountInfoPage() {
         >
           <button
             type="button"
-            onClick={handleBack}
+            onClick={triggerBackAction}
             disabled={isBusy}
             className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-260 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -1945,4 +2083,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-}
+  }
