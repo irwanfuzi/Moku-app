@@ -38,16 +38,24 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SNACKBAR_EXIT_MS = 320;
+const SNACKBAR_EXIT_MS = 440;
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 type FieldKey = "fullName" | "username" | "email" | "phone";
 type FieldErrors = Partial<Record<FieldKey, string>>;
 type UsernameCheckStatus = "idle" | "checking" | "available" | "taken";
+type SavePhase = "idle" | "saving" | "saved";
 
 function triggerHaptic(duration = 8) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(duration);
   }
+}
+
+function isValidEmailFormat(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed || /\s/.test(trimmed) || trimmed.includes("..")) return false;
+  return EMAIL_REGEX.test(trimmed);
 }
 
 export default function EditAccountInfoPage() {
@@ -64,7 +72,7 @@ export default function EditAccountInfoPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [usernameStatus, setUsernameStatus] =
     useState<UsernameCheckStatus>("idle");
-  const [isSaving, setIsSaving] = useState(false);
+  const [savePhase, setSavePhase] = useState<SavePhase>("idle");
 
   const [toast, setToast] = useState<{
     id: number;
@@ -76,8 +84,20 @@ export default function EditAccountInfoPage() {
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
   const usernameCheckRef = useRef<number | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+  const doneTimerRef = useRef<number | null>(null);
+
+  const identityRef = useRef({
+    fullName: initialProfile.current.fullName,
+    email: initialProfile.current.email,
+  });
+
+  useEffect(() => {
+    identityRef.current = { fullName, email };
+  }, [fullName, email]);
 
   const isMobileView = !isReady || isMobile;
+  const isBusy = savePhase !== "idle";
 
   useEffect(() => {
     if (!isMobileView) return;
@@ -113,7 +133,7 @@ export default function EditAccountInfoPage() {
       setToast({ id: Date.now(), message, tone });
       toastAutoRef.current = window.setTimeout(() => {
         dismissToast();
-      }, 2800);
+      }, 3200);
     },
     [dismissToast]
   );
@@ -128,6 +148,12 @@ export default function EditAccountInfoPage() {
       }
       if (usernameCheckRef.current !== null) {
         window.clearTimeout(usernameCheckRef.current);
+      }
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+      if (doneTimerRef.current !== null) {
+        window.clearTimeout(doneTimerRef.current);
       }
     };
   }, []);
@@ -161,9 +187,9 @@ export default function EditAccountInfoPage() {
           }
           return undefined;
         case "email":
-          if (!trimmed) return "Email wajib diisi.";
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-            return "Format email tidak valid.";
+          if (!trimmed) return "Alamat email wajib diisi.";
+          if (!isValidEmailFormat(trimmed)) {
+            return "Masukkan alamat email yang valid (contoh: nama@domain.com).";
           }
           return undefined;
         case "phone": {
@@ -181,10 +207,11 @@ export default function EditAccountInfoPage() {
     [email, fullName]
   );
 
-  // Cek ketersediaan username secara real-time (debounced)
+  // Cek ketersediaan username HANYA ketika username diubah
   useEffect(() => {
     if (usernameCheckRef.current !== null) {
       window.clearTimeout(usernameCheckRef.current);
+      usernameCheckRef.current = null;
     }
 
     const trimmed = username.trim();
@@ -192,11 +219,14 @@ export default function EditAccountInfoPage() {
       trimmed.toLowerCase() ===
       initialProfile.current.username.trim().toLowerCase();
 
+    const { fullName: currentFullName, email: currentEmail } =
+      identityRef.current;
+
     if (
       !trimmed ||
       trimmed.length < 4 ||
       !/^[a-zA-Z0-9._]+$/.test(trimmed) ||
-      !isUsernameAlignedWithIdentity(trimmed, fullName, email) ||
+      !isUsernameAlignedWithIdentity(trimmed, currentFullName, currentEmail) ||
       isSameAsInitial
     ) {
       setUsernameStatus("idle");
@@ -221,10 +251,11 @@ export default function EditAccountInfoPage() {
           return next;
         });
       }
-    }, 380);
-  }, [username, fullName, email]);
+    }, 420);
+  }, [username]);
 
   const handleBack = () => {
+    if (isBusy) return;
     triggerHaptic(6);
     if (ionRouter.canGoBack()) {
       ionRouter.goBack();
@@ -253,7 +284,6 @@ export default function EditAccountInfoPage() {
     });
   };
 
-  // Blokir tombol Enter di seluruh form (termasuk simulator mobile di desktop)
   const handlePreventEnter = (e: KeyboardEvent<HTMLFormElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -261,7 +291,7 @@ export default function EditAccountInfoPage() {
   };
 
   const handleSave = () => {
-    if (isSaving || usernameStatus === "checking") return;
+    if (isBusy || usernameStatus === "checking") return;
 
     const nextErrors: FieldErrors = {};
     const fields: Array<{ key: FieldKey; value: string; id: string }> = [
@@ -294,9 +324,9 @@ export default function EditAccountInfoPage() {
     }
 
     triggerHaptic(10);
-    setIsSaving(true);
+    setSavePhase("saving");
 
-    window.setTimeout(() => {
+    saveTimerRef.current = window.setTimeout(() => {
       const updated = saveAccountProfile({
         fullName: fullName.trim(),
         username: username.trim().toLowerCase(),
@@ -304,16 +334,22 @@ export default function EditAccountInfoPage() {
         phone: phone.trim(),
       });
       initialProfile.current = updated;
-      setIsSaving(false);
+      setSavePhase("saved");
+      triggerHaptic([8, 40, 10]);
       triggerToast("Informasi akun berhasil disimpan.", "success");
-      window.setTimeout(() => {
-        handleBack();
-      }, 650);
-    }, 450);
+
+      doneTimerRef.current = window.setTimeout(() => {
+        if (ionRouter.canGoBack()) {
+          ionRouter.goBack();
+        } else {
+          navigateWithTransition("/profile/account-info", "back");
+        }
+      }, 900);
+    }, 750);
   };
 
   const getInputClass = (hasError: boolean) =>
-    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-[#9E9EA9] ${
+    `h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-[calc(14*var(--u))] font-normal text-[#171717] outline-none transition-[border-color,box-shadow,background-color] duration-250 placeholder:text-[#9E9EA9] ${
       hasError
         ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15"
         : "border-[#DDDDE4] bg-white focus:border-[#740319] focus:ring-2 focus:ring-[#740319]/15"
@@ -336,8 +372,9 @@ export default function EditAccountInfoPage() {
           <button
             type="button"
             onClick={handleBack}
+            disabled={isBusy}
             aria-label="Kembali"
-            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-150 active:scale-90 active:bg-white/15"
+            className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,opacity] duration-250 ease-out active:scale-90 active:bg-white/15 disabled:opacity-50"
           >
             <ArrowLeft
               weight="regular"
@@ -399,7 +436,7 @@ export default function EditAccountInfoPage() {
                 width: "calc(32 * var(--u))",
                 height: "calc(32 * var(--u))",
               }}
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-150 active:scale-90 active:bg-[#5B0213]"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full border-[calc(2.5*var(--u))] border-white bg-[#740319] text-white shadow-[0_2px_8px_rgba(116,3,25,0.35)] transition-[transform,background-color] duration-250 ease-out active:scale-90 active:bg-[#5B0213]"
             >
               <Camera
                 weight="fill"
@@ -414,13 +451,13 @@ export default function EditAccountInfoPage() {
               triggerHaptic(6);
               triggerToast("Fitur ubah foto profil segera tersedia.");
             }}
-            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-150 active:bg-[#F0F0F4] active:text-[#171717]"
+            className="cursor-pointer rounded-[calc(8*var(--u))] px-[calc(8*var(--u))] py-[calc(4*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#6B6B76] transition-colors duration-250 active:bg-[#F0F0F4] active:text-[#171717]"
           >
             Ubah Foto Profil
           </button>
         </section>
 
-        {/* Kartu 1: Data Pribadi (Editable + Error State) */}
+        {/* Kartu 1: Data Pribadi */}
         <section
           style={{ marginTop: "calc(20 * var(--u))" }}
           className="rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(16*var(--u))] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
@@ -437,7 +474,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
                   errors.fullName ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -474,7 +511,7 @@ export default function EditAccountInfoPage() {
                     id="edit-fullname-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -490,7 +527,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
                   errors.username ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -528,13 +565,13 @@ export default function EditAccountInfoPage() {
                   {usernameStatus === "checking" && (
                     <CircleNotch
                       weight="bold"
-                      className="pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(16*var(--u))] w-[calc(16*var(--u))] animate-spin text-[#6B6B76]"
+                      className="moku-spin-slow pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#6B6B76]"
                     />
                   )}
                   {usernameStatus === "available" && !errors.username && (
                     <CheckCircle
                       weight="fill"
-                      className="pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-[#16A34A]"
+                      className="moku-field-msg pointer-events-none absolute right-[calc(12*var(--u))] h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-[#16A34A]"
                     />
                   )}
                 </div>
@@ -544,7 +581,7 @@ export default function EditAccountInfoPage() {
                     id="edit-username-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -555,7 +592,7 @@ export default function EditAccountInfoPage() {
                 ) : usernameStatus === "available" ? (
                   <p
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#16A34A]"
+                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#16A34A]"
                   >
                     <CheckCircle
                       weight="fill"
@@ -571,7 +608,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
                   errors.email ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -590,17 +627,23 @@ export default function EditAccountInfoPage() {
                 <input
                   id="edit-email"
                   type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   value={email}
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={
                     errors.email ? "edit-email-error" : undefined
                   }
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    clearFieldError("email");
+                    const nextVal = e.target.value;
+                    setEmail(nextVal);
+                    if (errors.email && isValidEmailFormat(nextVal)) {
+                      clearFieldError("email");
+                    }
                   }}
                   onBlur={() => handleBlur("email", email)}
-                  placeholder="Masukkan email"
+                  placeholder="nama@domain.com"
                   className={getInputClass(Boolean(errors.email))}
                 />
                 {errors.email && (
@@ -608,7 +651,7 @@ export default function EditAccountInfoPage() {
                     id="edit-email-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -624,7 +667,7 @@ export default function EditAccountInfoPage() {
             <div className="flex items-start gap-[calc(12*var(--u))]">
               <div
                 style={{ marginTop: "calc(22 * var(--u))" }}
-                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-150 ${
+                className={`flex h-[calc(44*var(--u))] w-[calc(24*var(--u))] shrink-0 items-center justify-center transition-colors duration-250 ${
                   errors.phone ? "text-[#C8102E]" : "text-[#1E1E24]"
                 }`}
               >
@@ -648,7 +691,7 @@ export default function EditAccountInfoPage() {
                       triggerHaptic(6);
                       triggerToast("Kode negara aktif: Indonesia (+62).");
                     }}
-                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-150 active:bg-[#F4F4F7] ${
+                    className={`flex h-[calc(44*var(--u))] shrink-0 cursor-pointer items-center gap-[calc(6*var(--u))] rounded-[calc(10*var(--u))] border px-[calc(10*var(--u))] text-[calc(13.5*var(--u))] font-normal text-[#171717] transition-colors duration-250 active:bg-[#F4F4F7] ${
                       errors.phone
                         ? "border-[#C8102E] bg-[#FFF9FA]"
                         : "border-[#DDDDE4] bg-white"
@@ -694,7 +737,7 @@ export default function EditAccountInfoPage() {
                     id="edit-phone-error"
                     role="alert"
                     style={{ margin: 0, marginTop: "calc(4 * var(--u))" }}
-                    className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
+                    className="moku-field-msg flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
                   >
                     <WarningCircle
                       weight="fill"
@@ -802,7 +845,7 @@ export default function EditAccountInfoPage() {
           </div>
         </section>
 
-        {/* Tombol Aksi (type="button" agar tidak terpicu tombol Enter) */}
+        {/* Tombol Aksi dengan Micro-Interaksi Smooth */}
         <section
           style={{ marginTop: "calc(24 * var(--u))" }}
           className="space-y-[calc(12*var(--u))]"
@@ -810,16 +853,41 @@ export default function EditAccountInfoPage() {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving || usernameStatus === "checking"}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white shadow-[0_4px_12px_rgba(116,3,25,0.22)] transition-[transform,background-color,opacity] duration-150 active:scale-[0.985] active:bg-[#5B0213] disabled:cursor-not-allowed disabled:opacity-65"
+            disabled={isBusy || usernameStatus === "checking"}
+            className={`relative flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center gap-[calc(8*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color,box-shadow,opacity] duration-300 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
+              savePhase === "saved"
+                ? "bg-[#15803D] shadow-[0_4px_14px_rgba(21,128,61,0.28)]"
+                : savePhase === "saving"
+                ? "moku-save-pulse bg-[#5B0213] shadow-[0_4px_14px_rgba(116,3,25,0.28)]"
+                : "bg-[#740319] shadow-[0_4px_12px_rgba(116,3,25,0.22)] hover:bg-[#620215] active:bg-[#5B0213] disabled:opacity-65"
+            }`}
           >
-            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            {savePhase === "saving" && (
+              <>
+                <CircleNotch
+                  weight="bold"
+                  className="moku-spin-slow h-[calc(18*var(--u))] w-[calc(18*var(--u))] text-white"
+                />
+                <span>Menyimpan...</span>
+              </>
+            )}
+            {savePhase === "saved" && (
+              <span className="moku-saved-pop inline-flex items-center gap-[calc(8*var(--u))]">
+                <CheckCircle
+                  weight="fill"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-white"
+                />
+                <span>Tersimpan</span>
+              </span>
+            )}
+            {savePhase === "idle" && <span>Simpan Perubahan</span>}
           </button>
 
           <button
             type="button"
             onClick={handleBack}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-150 active:scale-[0.985] active:bg-[#FDF2F4]"
+            disabled={isBusy}
+            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer select-none items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color,opacity] duration-250 ease-out active:scale-[0.985] active:bg-[#FDF2F4] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Batal
           </button>
@@ -861,28 +929,80 @@ export default function EditAccountInfoPage() {
 
       <style>{`
         .moku-edit-enter {
-          animation: moku-edit-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-edit-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-field-msg {
+          animation: moku-field-fade 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-spin-slow {
+          animation: moku-spin 1050ms linear infinite;
+        }
+        .moku-save-pulse {
+          animation: moku-save-ring 1400ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
+        .moku-saved-pop {
+          animation: moku-saved-scale 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-toast-enter {
-          animation: moku-toast-up 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: moku-toast-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-toast-exit {
-          animation: moku-toast-down 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+          animation: moku-toast-down 440ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes moku-edit-in {
           from {
             opacity: 0;
-            transform: translate3d(0, 10px, 0);
+            transform: translate3d(0, 14px, 0);
           }
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
         }
+        @keyframes moku-field-fade {
+          from {
+            opacity: 0;
+            transform: translate3d(0, -4px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes moku-save-ring {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(116, 3, 25, 0.32), 0 4px 14px rgba(116, 3, 25, 0.26);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(116, 3, 25, 0), 0 4px 14px rgba(116, 3, 25, 0.26);
+          }
+        }
+        @keyframes moku-saved-scale {
+          0% {
+            opacity: 0;
+            transform: scale(0.92);
+          }
+          60% {
+            opacity: 1;
+            transform: scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
         @keyframes moku-toast-up {
           from {
             opacity: 0;
-            transform: translate3d(0, 16px, 0);
+            transform: translate3d(0, 18px, 0);
           }
           to {
             opacity: 1;
@@ -896,7 +1016,7 @@ export default function EditAccountInfoPage() {
           }
           to {
             opacity: 0;
-            transform: translate3d(0, 16px, 0);
+            transform: translate3d(0, 18px, 0);
           }
         }
       `}</style>
