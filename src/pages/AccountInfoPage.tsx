@@ -6,6 +6,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+import { useIonRouter } from "@ionic/react";
 import {
   ArrowLeft,
   Briefcase,
@@ -37,6 +38,7 @@ function triggerHaptic(duration = 8) {
 
 export default function AccountInfoPage() {
   const { isMobile, isReady, navigateWithTransition } = useAppLayout();
+  const ionRouter = useIonRouter();
 
   const [avatarError, setAvatarError] = useState(false);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
@@ -101,7 +103,11 @@ export default function AccountInfoPage() {
 
   const handleBack = () => {
     triggerHaptic(6);
-    navigateWithTransition("/profile", "back");
+    if (ionRouter.canGoBack()) {
+      ionRouter.goBack();
+    } else {
+      navigateWithTransition("/profile", "back");
+    }
   };
 
   return (
