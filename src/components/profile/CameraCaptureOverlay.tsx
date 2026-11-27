@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent,
   type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -29,6 +30,12 @@ const DISMISS_VELOCITY_PX_MS = 0.35;
 
 type FlashMode = "auto" | "on" | "off";
 
+interface FocusIndicatorState {
+  id: number;
+  x: number;
+  y: number;
+}
+
 interface CameraCaptureOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,11 +55,13 @@ export default function CameraCaptureOverlay({
   onCapture,
   onOpenGallery,
 }: CameraCaptureOverlayProps) {
+  const viewfinderRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const circleGuideRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const focusTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const guardActiveRef = useRef(false);
   const lockedUrlRef = useRef<string>("");
@@ -82,6 +91,8 @@ export default function CameraCaptureOverlay({
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isFlashingScreen, setIsFlashingScreen] = useState(false);
+  const [focusIndicator, setFocusIndicator] =
+    useState<FocusIndicatorState | null>(null);
 
   // State Pratinjau Foto setelah jepret
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -112,6 +123,7 @@ export default function CameraCaptureOverlay({
       setIsExiting(false);
       setDragX(0);
       setPreviewUrl(null);
+      setFocusIndicator(null);
       onClose();
     }, CLOSE_ANIMATION_MS);
   }, [onClose, stopStream]);
@@ -150,7 +162,7 @@ export default function CameraCaptureOverlay({
           try {
             await videoEl.play();
           } catch {
-            // Biarkan frame tetap bisa diambil selama srcObject terpasang
+            // Frame tetap dapat diambil selama srcObject tersedia
           }
         }
       } catch {
@@ -162,12 +174,12 @@ export default function CameraCaptureOverlay({
     [stopStream]
   );
 
-  // Reset state saat overlay dibuka atau ditutup
   useEffect(() => {
     if (!isOpen) {
       stopStream();
       setCameraReady(false);
       setPreviewUrl(null);
+      setFocusIndicator(null);
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -178,6 +190,7 @@ export default function CameraCaptureOverlay({
 
     isClosingRef.current = false;
     setPreviewUrl(null);
+    setFocusIndicator(null);
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
@@ -188,10 +201,13 @@ export default function CameraCaptureOverlay({
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
     };
   }, [isOpen, stopStream]);
 
-  // Sinkronkan status bar theme-color sesuai mode kamera vs pratinjau
   useEffect(() => {
     if (!isOpen) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
@@ -203,7 +219,6 @@ export default function CameraCaptureOverlay({
     };
   }, [isOpen, previewUrl]);
 
-  // Jalankan kamera hanya saat overlay terbuka dan belum berada di mode Pratinjau Foto
   useEffect(() => {
     if (!isOpen || previewUrl) {
       stopStream();
@@ -218,7 +233,6 @@ export default function CameraCaptureOverlay({
     };
   }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
 
-  // Samakan perilaku system swipe-back & hardware back dengan tombol back kiri atas
   useEffect(() => {
     if (!isOpen) return;
 
@@ -286,6 +300,69 @@ export default function CameraCaptureOverlay({
   }, [flashMode, facingMode, cameraReady]);
 
   if (!isOpen || typeof document === "undefined") return null;
+
+  // Tekan layar viewfinder untuk memicu fokus kamera pada titik sentuh
+  const handleViewfinderPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (cameraError || isClosingRef.current || swipeStartRef.current.active) {
+      return;
+    }
+    const container = viewfinderRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+    triggerHaptic(5);
+    setFocusIndicator({
+      id: Date.now(),
+      x: localX,
+      y: localY,
+    });
+
+    if (focusTimerRef.current !== null) {
+      window.clearTimeout(focusTimerRef.current);
+    }
+    focusTimerRef.current = window.setTimeout(() => {
+      setFocusIndicator(null);
+      focusTimerRef.current = null;
+    }, 950);
+
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track && track.getCapabilities && track.applyConstraints) {
+      const caps = track.getCapabilities() as MediaTrackCapabilities & {
+        focusMode?: string[];
+      };
+      const constraints: Record<string, unknown>[] = [];
+
+      const normX = facingMode === "user" ? 1 - localX / rect.width : localX / rect.width;
+      const normY = localY / rect.height;
+
+      if (Array.isArray(caps.focusMode)) {
+        if (caps.focusMode.includes("single-shot")) {
+          constraints.push({
+            focusMode: "single-shot",
+            pointsOfInterest: [{ x: normX, y: normY }],
+          });
+        } else if (caps.focusMode.includes("continuous")) {
+          constraints.push({
+            focusMode: "continuous",
+            pointsOfInterest: [{ x: normX, y: normY }],
+          });
+        }
+      }
+
+      if (constraints.length > 0) {
+        track
+          .applyConstraints({
+            advanced: constraints as MediaTrackConstraintSet[],
+          })
+          .catch(() => {});
+      }
+    }
+  };
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     if (isClosingRef.current || e.touches.length !== 1) return;
@@ -470,6 +547,7 @@ export default function CameraCaptureOverlay({
 
   const overlayStyle: CSSProperties = {
     ...MOBILE_SCALE_VARS,
+    WebkitTouchCallout: "none",
     transform: isExiting
       ? "translate3d(100%, 0, 0)"
       : dragX > 0
@@ -481,7 +559,6 @@ export default function CameraCaptureOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.25, 1, 0.5, 1)`,
   };
 
-  // Tampilan Pratinjau Foto setelah tombol shutter ditekan
   if (previewUrl) {
     return createPortal(
       <div
@@ -490,6 +567,7 @@ export default function CameraCaptureOverlay({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label="Pratinjau Foto"
@@ -535,6 +613,8 @@ export default function CameraCaptureOverlay({
             <img
               src={previewUrl}
               alt="Pratinjau Foto Profil"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
               className="h-full w-full object-cover"
             />
           </div>
@@ -597,6 +677,7 @@ export default function CameraCaptureOverlay({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      onContextMenu={(e) => e.preventDefault()}
       role="dialog"
       aria-modal="true"
       aria-label="Ambil Foto"
@@ -679,16 +760,24 @@ export default function CameraCaptureOverlay({
         </div>
       </div>
 
-      {/* Area Viewfinder Kamera + Grid 3x3 + Lingkaran Panduan */}
-      <div className="relative mx-auto flex w-full max-w-[680px] flex-1 items-center justify-center overflow-hidden bg-[#17171A]">
+      {/* Area Viewfinder Kamera + Tap-to-Focus + Grid 3x3 + Lingkaran Panduan */}
+      <div
+        ref={viewfinderRef}
+        onPointerDown={handleViewfinderPointerDown}
+        onContextMenu={(e) => e.preventDefault()}
+        className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-crosshair items-center justify-center overflow-hidden bg-[#17171A]"
+      >
         <video
           ref={videoRef}
           playsInline
           muted
           autoPlay
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
           onLoadedMetadata={() => setCameraReady(true)}
           onCanPlay={() => setCameraReady(true)}
-          className={`h-full w-full object-cover transition-opacity duration-300 ${
+          style={{ WebkitTouchCallout: "none" }}
+          className={`pointer-events-none h-full w-full object-cover select-none transition-opacity duration-300 ${
             facingMode === "user" ? "-scale-x-100" : ""
           } ${cameraReady ? "opacity-100" : "opacity-0"}`}
         />
@@ -712,6 +801,22 @@ export default function CameraCaptureOverlay({
               className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]"
             />
           </div>
+        )}
+
+        {/* Indikator Ring Fokus saat layar ditekan */}
+        {focusIndicator && !cameraError && (
+          <div
+            key={focusIndicator.id}
+            aria-hidden="true"
+            style={{
+              left: `${focusIndicator.x}px`,
+              top: `${focusIndicator.y}px`,
+              width: "calc(64 * var(--u))",
+              height: "calc(64 * var(--u))",
+              transform: "translate3d(-50%, -50%, 0)",
+            }}
+            className="moku-focus-ring pointer-events-none absolute z-20 rounded-full border-[calc(1.5*var(--u))] border-[#FACC15] shadow-[0_0_0_1px_rgba(0,0,0,0.45)]"
+          />
         )}
 
         {cameraError && (
@@ -800,6 +905,9 @@ export default function CameraCaptureOverlay({
         .moku-cam-enter {
           animation: moku-cam-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
+        .moku-focus-ring {
+          animation: moku-focus-pulse 900ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
         @keyframes moku-cam-in {
           from {
             opacity: 0;
@@ -808,6 +916,20 @@ export default function CameraCaptureOverlay({
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
+          }
+        }
+        @keyframes moku-focus-pulse {
+          0% {
+            opacity: 0.95;
+            transform: translate3d(-50%, -50%, 0) scale(1.25);
+          }
+          45% {
+            opacity: 1;
+            transform: translate3d(-50%, -50%, 0) scale(0.95);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(1);
           }
         }
       `}</style>
