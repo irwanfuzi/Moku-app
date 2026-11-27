@@ -103,7 +103,6 @@ export default function GalleryPickerOverlay({
   const [devicePhotos, setDevicePhotos] = useState<DevicePhotoItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
 
-  // Mode layar Sesuaikan Foto setelah tombol "Gunakan Foto" diklik
   const [adjustingUrl, setAdjustingUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1.15);
   const [rotation, setRotation] = useState<number>(0);
@@ -157,6 +156,23 @@ export default function GalleryPickerOverlay({
     [onClose, resetAdjustState]
   );
 
+  const handleCancelAdjust = useCallback(() => {
+    if (isClosingRef.current) return;
+    triggerHaptic(6);
+    setIsDragging(false);
+    setDragX(0);
+    resetAdjustState();
+  }, [resetAdjustState]);
+
+  const triggerBackStep = useCallback(() => {
+    if (isClosingRef.current) return;
+    if (adjustingUrl) {
+      handleCancelAdjust();
+    } else {
+      triggerOverlayClose();
+    }
+  }, [adjustingUrl, handleCancelAdjust, triggerOverlayClose]);
+
   useEffect(() => {
     if (!isOpen) {
       resetAdjustState();
@@ -205,12 +221,7 @@ export default function GalleryPickerOverlay({
         "",
         lockedUrlRef.current
       );
-      if (adjustingUrl) {
-        triggerHaptic(6);
-        resetAdjustState();
-      } else {
-        triggerOverlayClose();
-      }
+      triggerBackStep();
     };
 
     const handleIonBack = (ev: Event) => {
@@ -221,16 +232,10 @@ export default function GalleryPickerOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          if (adjustingUrl) {
-            resetAdjustState();
-          } else {
-            triggerOverlayClose();
-          }
+          triggerBackStep();
         });
-      } else if (adjustingUrl) {
-        resetAdjustState();
       } else {
-        triggerOverlayClose();
+        triggerBackStep();
       }
     };
 
@@ -242,12 +247,12 @@ export default function GalleryPickerOverlay({
       document.removeEventListener("ionBackButton", handleIonBack, true);
       guardActiveRef.current = false;
     };
-  }, [adjustingUrl, isOpen, resetAdjustState, triggerOverlayClose]);
+  }, [isOpen, triggerBackStep]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if (adjustingUrl || isClosingRef.current || e.touches.length !== 1) return;
+    if (isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
     const vw = window.innerWidth;
     const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
@@ -270,12 +275,7 @@ export default function GalleryPickerOverlay({
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     const state = swipeStartRef.current;
-    if (
-      adjustingUrl ||
-      !state.active ||
-      isClosingRef.current ||
-      e.touches.length !== 1
-    ) {
+    if (!state.active || isClosingRef.current || e.touches.length !== 1) {
       return;
     }
 
@@ -317,7 +317,7 @@ export default function GalleryPickerOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      triggerOverlayClose();
+      triggerBackStep();
     } else {
       setIsDragging(false);
       setDragX(0);
@@ -368,12 +368,6 @@ export default function GalleryPickerOverlay({
   const handleRotateClockwise = () => {
     triggerHaptic(7);
     setRotation((prev) => prev + 90);
-  };
-
-  const handleCancelAdjust = () => {
-    if (isClosingRef.current) return;
-    triggerHaptic(6);
-    resetAdjustState();
   };
 
   const handlePanPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -482,7 +476,6 @@ export default function GalleryPickerOverlay({
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
   };
 
-  // Layar "Sesuaikan Foto" setelah "Gunakan Foto" diklik
   if (adjustingUrl) {
     const zoomPercent = Math.round(
       ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100
@@ -491,13 +484,16 @@ export default function GalleryPickerOverlay({
     return createPortal(
       <div
         style={overlayStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label="Sesuaikan Foto"
         className="moku-crop-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#1F1F23] text-white select-none"
       >
-        {/* Top Header Marun */}
         <header className="w-full bg-[#740319] text-white">
           <div
             style={{
@@ -526,7 +522,6 @@ export default function GalleryPickerOverlay({
           </div>
         </header>
 
-        {/* Area Crop + Grid 3x3 + Lingkaran Avatar + Teks Panduan */}
         <div
           ref={cropStageRef}
           onPointerDown={handlePanPointerDown}
@@ -586,7 +581,6 @@ export default function GalleryPickerOverlay({
           </p>
         </div>
 
-        {/* Panel Bawah Putih */}
         <div
           style={{
             paddingTop: "calc(18 * var(--u))",
@@ -743,7 +737,6 @@ export default function GalleryPickerOverlay({
         className="sr-only"
       />
 
-      {/* Top Header Marun */}
       <header className="sticky top-0 z-30 w-full bg-[#740319] text-white">
         <div
           style={{
@@ -772,7 +765,6 @@ export default function GalleryPickerOverlay({
         </div>
       </header>
 
-      {/* Grid Foto 3 Kolom dari Perangkat */}
       <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col overflow-y-auto px-[calc(16*var(--u))] pt-[calc(16*var(--u))] pb-[calc(20*var(--u))]">
         <div className="grid grid-cols-3 gap-[calc(10*var(--u))]">
           {devicePhotos.map((item) => {
@@ -813,7 +805,6 @@ export default function GalleryPickerOverlay({
                   className="pointer-events-none h-full w-full object-cover select-none"
                 />
 
-                {/* Tombol Compact Hapus Foto di Pojok Kiri Atas */}
                 <button
                   type="button"
                   onClick={(e) => handleDeleteGalleryItem(e, item.id)}
@@ -831,7 +822,6 @@ export default function GalleryPickerOverlay({
                   />
                 </button>
 
-                {/* Indikator Centang / Lingkaran Kosong di Pojok Kanan Atas */}
                 <span
                   aria-hidden="true"
                   className={`pointer-events-none absolute right-[calc(8*var(--u))] top-[calc(8*var(--u))] flex h-[calc(24*var(--u))] w-[calc(24*var(--u))] items-center justify-center rounded-full transition-colors duration-200 ${
@@ -851,7 +841,6 @@ export default function GalleryPickerOverlay({
             );
           })}
 
-          {/* Kartu Pilih dari Perangkat */}
           <button
             type="button"
             onClick={openDevicePicker}
@@ -872,7 +861,6 @@ export default function GalleryPickerOverlay({
         </div>
       </div>
 
-      {/* Bottom Bar: Counter & Tombol "Gunakan Foto" */}
       <div
         style={{
           paddingTop: "calc(12 * var(--u))",
@@ -914,4 +902,4 @@ export default function GalleryPickerOverlay({
     </div>,
     document.body
   );
-        }
+    }
