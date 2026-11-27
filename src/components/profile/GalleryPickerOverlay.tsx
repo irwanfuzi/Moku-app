@@ -11,7 +11,6 @@ import {
 import { createPortal } from "react-dom";
 import {
   ArrowLeft,
-  CaretDown,
   Check,
   Image as ImageIcon,
 } from "@phosphor-icons/react";
@@ -25,20 +24,11 @@ const EDGE_SWIPE_ZONE_PX = 48;
 const DISMISS_DISTANCE_PX = 76;
 const DISMISS_VELOCITY_PX_MS = 0.35;
 
-type AlbumFilter = "all" | "field" | "workspace";
-
 interface DevicePhotoItem {
   id: string;
   src: string;
-  album: Exclude<AlbumFilter, "all">;
   label: string;
 }
-
-const ALBUM_OPTIONS: Array<{ value: AlbumFilter; label: string }> = [
-  { value: "all", label: "Semua Foto" },
-  { value: "field", label: "Kunjungan & Unit" },
-  { value: "workspace", label: "Ruang & Perangkat" },
-];
 
 interface GalleryPickerOverlayProps {
   isOpen: boolean;
@@ -83,15 +73,8 @@ export default function GalleryPickerOverlay({
   const [isDragging, setIsDragging] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const [album, setAlbum] = useState<AlbumFilter>("all");
-  const [isAlbumMenuOpen, setIsAlbumMenuOpen] = useState(false);
   const [devicePhotos, setDevicePhotos] = useState<DevicePhotoItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-
-  const visibleItems = useMemo(() => {
-    if (album === "all") return devicePhotos;
-    return devicePhotos.filter((item) => item.album === album);
-  }, [album, devicePhotos]);
 
   const selectedItem = useMemo(
     () => devicePhotos.find((item) => item.id === selectedId) ?? null,
@@ -111,7 +94,6 @@ export default function GalleryPickerOverlay({
       isClosingRef.current = true;
       guardActiveRef.current = false;
       triggerHaptic(6);
-      setIsAlbumMenuOpen(false);
       setIsDragging(false);
       setIsExiting(true);
 
@@ -132,7 +114,6 @@ export default function GalleryPickerOverlay({
 
   useEffect(() => {
     if (!isOpen) {
-      setIsAlbumMenuOpen(false);
       setDragX(0);
       setIsDragging(false);
       setIsExiting(false);
@@ -142,7 +123,6 @@ export default function GalleryPickerOverlay({
     }
 
     isClosingRef.current = false;
-    setIsAlbumMenuOpen(false);
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
@@ -290,12 +270,9 @@ export default function GalleryPickerOverlay({
       const result = typeof reader.result === "string" ? reader.result : null;
       if (!result) return;
       const newId = `gal-${Date.now()}`;
-      const assignedAlbum: Exclude<AlbumFilter, "all"> =
-        album === "workspace" ? "workspace" : "field";
       const newItem: DevicePhotoItem = {
         id: newId,
         src: result,
-        album: assignedAlbum,
         label: file.name || "Foto Galeri",
       };
       triggerHaptic([8, 20, 8]);
@@ -313,9 +290,6 @@ export default function GalleryPickerOverlay({
       onSelectPhoto(chosenSrc);
     });
   };
-
-  const activeAlbumLabel =
-    ALBUM_OPTIONS.find((opt) => opt.value === album)?.label ?? "Semua Foto";
 
   const overlayStyle: CSSProperties = {
     ...MOBILE_SCALE_VARS,
@@ -379,69 +353,10 @@ export default function GalleryPickerOverlay({
         </div>
       </header>
 
-      {/* Filter Bar + Grid Foto 3 Kolom dari Perangkat */}
+      {/* Grid Foto 3 Kolom dari Perangkat */}
       <div className="mx-auto flex w-full max-w-[680px] flex-1 flex-col overflow-y-auto px-[calc(16*var(--u))] pt-[calc(16*var(--u))] pb-[calc(20*var(--u))]">
-        {/* Dropdown Filter Album */}
-        <div className="relative mb-[calc(16*var(--u))] inline-block self-start">
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(6);
-              setIsAlbumMenuOpen((prev) => !prev);
-            }}
-            aria-expanded={isAlbumMenuOpen}
-            className="flex h-[calc(38*var(--u))] cursor-pointer items-center gap-[calc(10*var(--u))] rounded-[calc(10*var(--u))] border border-[#E4E4EA] bg-white px-[calc(14*var(--u))] text-[calc(13.5*var(--u))] font-medium text-[#171717] shadow-[0_1px_4px_rgba(0,0,0,0.04)] active:bg-[#F7F7F9]"
-          >
-            <span>{activeAlbumLabel}</span>
-            <CaretDown
-              weight="bold"
-              className={`h-[calc(14*var(--u))] w-[calc(14*var(--u))] text-[#52525B] transition-transform duration-200 ${
-                isAlbumMenuOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isAlbumMenuOpen && (
-            <div
-              role="menu"
-              className="moku-gal-menu absolute left-0 top-[calc(100%+6*var(--u))] z-40 min-w-[calc(176*var(--u))] overflow-hidden rounded-[calc(12*var(--u))] border border-[#ECECF0] bg-white py-[calc(4*var(--u))] shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-            >
-              {ALBUM_OPTIONS.map((opt) => {
-                const isActive = opt.value === album;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={isActive}
-                    onClick={() => {
-                      triggerHaptic(6);
-                      setAlbum(opt.value);
-                      setIsAlbumMenuOpen(false);
-                    }}
-                    className={`flex w-full cursor-pointer items-center justify-between px-[calc(14*var(--u))] py-[calc(10*var(--u))] text-left text-[calc(13*var(--u))] transition-colors ${
-                      isActive
-                        ? "bg-[#FDF2F4] font-semibold text-[#740319]"
-                        : "font-normal text-[#171717] active:bg-[#F4F4F7]"
-                    }`}
-                  >
-                    <span>{opt.label}</span>
-                    {isActive && (
-                      <Check
-                        weight="bold"
-                        className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] text-[#740319]"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Grid 3 Kolom + Kartu Pilih dari Perangkat */}
         <div className="grid grid-cols-3 gap-[calc(10*var(--u))]">
-          {visibleItems.map((item) => {
+          {devicePhotos.map((item) => {
             const isSelected = item.id === selectedId;
 
             return (
@@ -534,9 +449,6 @@ export default function GalleryPickerOverlay({
         .moku-gal-enter {
           animation: moku-gal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .moku-gal-menu {
-          animation: moku-gal-drop 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
         @keyframes moku-gal-in {
           from {
             opacity: 0;
@@ -545,16 +457,6 @@ export default function GalleryPickerOverlay({
           to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
-          }
-        }
-        @keyframes moku-gal-drop {
-          from {
-            opacity: 0;
-            transform: translate3d(0, -6px, 0) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
           }
         }
       `}</style>
