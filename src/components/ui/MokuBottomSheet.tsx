@@ -15,12 +15,11 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 240;
-const DISMISS_DRAG_Y_PX = 64;
-const DISMISS_VELOCITY_Y = 0.34;
+const SHEET_ANIMATION_MS = 280;
+const DISMISS_DRAG_Y_PX = 56;
+const DISMISS_VELOCITY_Y = 0.28;
 
 export interface MokuBottomSheetRef {
-  /** Menutup sheet dengan animasi meluncur turun terlebih dahulu sebelum memanggil callback */
   closeSheet: (afterClose?: () => void) => void;
 }
 
@@ -30,21 +29,13 @@ export interface MokuBottomSheetProps {
   children: ReactNode;
   ariaLabel?: string;
   ariaLabelledBy?: string;
-  /** Default: true */
   showHandle?: boolean;
-  /** Default: true */
   closeOnBackdropClick?: boolean;
-  /** Default: true */
   enableDragToDismiss?: boolean;
-  /** Prioritas tombol back sistem, default: 9998 */
   backButtonPriority?: number;
-  /** z-index overlay, default: "z-[9998]" */
   zIndexClassName?: string;
-  /** Padding horizontal & styling tambahan pada panel sheet */
   sheetClassName?: string;
-  /** Styling tambahan untuk area konten scrollable di dalam sheet */
   contentClassName?: string;
-  /** Offset tambahan padding bawah di atas safe-area-inset-bottom (dalam satuan --u), default: 18 */
   bottomPaddingUnits?: number;
 }
 
@@ -74,6 +65,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     ref
   ) {
     const closeTimerRef = useRef<number | null>(null);
+    const enterRafRef = useRef<number | null>(null);
     const isClosingRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -87,17 +79,23 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       tracking: false,
     });
 
+    const [isEntered, setIsEntered] = useState(false);
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [isExiting, setIsExiting] = useState(false);
 
     const dismissSheet = useCallback(
       (afterClose?: () => void) => {
         if (isClosingRef.current) return;
         isClosingRef.current = true;
         triggerHaptic(6);
+
+        if (enterRafRef.current !== null) {
+          window.cancelAnimationFrame(enterRafRef.current);
+          enterRafRef.current = null;
+        }
+
         setIsDragging(false);
-        setIsExiting(true);
+        setIsEntered(false);
 
         if (closeTimerRef.current !== null) {
           window.clearTimeout(closeTimerRef.current);
@@ -105,11 +103,10 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         closeTimerRef.current = window.setTimeout(() => {
           closeTimerRef.current = null;
           isClosingRef.current = false;
-          setIsExiting(false);
           setDragY(0);
           onClose();
           afterClose?.();
-        }, CLOSE_ANIMATION_MS);
+        }, SHEET_ANIMATION_MS);
       },
       [onClose]
     );
@@ -125,18 +122,30 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     useEffect(() => {
       if (!isOpen) {
         isClosingRef.current = false;
-        setIsExiting(false);
+        setIsEntered(false);
         setIsDragging(false);
         setDragY(0);
         return;
       }
 
       isClosingRef.current = false;
-      setIsExiting(false);
+      setIsEntered(false);
       setIsDragging(false);
       setDragY(0);
 
+      // Mulai posisi di 100%, lalu transisikan naik ke 0% di frame berikutnya
+      enterRafRef.current = window.requestAnimationFrame(() => {
+        enterRafRef.current = window.requestAnimationFrame(() => {
+          enterRafRef.current = null;
+          setIsEntered(true);
+        });
+      });
+
       return () => {
+        if (enterRafRef.current !== null) {
+          window.cancelAnimationFrame(enterRafRef.current);
+          enterRafRef.current = null;
+        }
         if (closeTimerRef.current !== null) {
           window.clearTimeout(closeTimerRef.current);
           closeTimerRef.current = null;
@@ -185,7 +194,6 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         return;
       }
 
-      // Jangan bajak gesture jika konten internal sedang di-scroll ke bawah
       const scrollEl = scrollContainerRef.current;
       if (scrollEl && scrollEl.scrollTop > 0) {
         dragRef.current.tracking = false;
@@ -216,7 +224,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         return;
       }
 
-      if (!isDragging && dy > 6) {
+      if (!isDragging && dy > 4) {
         setIsDragging(true);
       }
       setDragY(dy);
@@ -240,21 +248,21 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       }
     };
 
-    const sheetTranslateY = isExiting
+    const sheetTranslateY = !isEntered
       ? "100%"
       : dragY > 0
       ? `${dragY}px`
       : "0px";
 
-    const backdropOpacity = isExiting
+    const backdropOpacity = !isEntered
       ? 0
       : dragY > 0
-      ? Math.max(0.25, 1 - dragY / 360)
+      ? Math.max(0.2, 1 - dragY / 340)
       : 1;
 
     return createPortal(
       <div
-        style={MOBILE_SCALE_VARS}
+        style={{ ...MOBILE_SCALE_VARS, touchAction: "none" }}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
@@ -272,9 +280,9 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
             opacity: backdropOpacity,
             transition: isDragging
               ? "none"
-              : `opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              : `opacity ${SHEET_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
           }}
-          className="moku-bs-backdrop fixed inset-0 bg-black/48"
+          className="fixed inset-0 bg-black/48"
         />
 
         {/* Panel Sheet */}
@@ -284,14 +292,16 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
           style={{
+            touchAction: "none",
             paddingTop: "calc(10 * var(--u))",
             paddingBottom: `calc(env(safe-area-inset-bottom) + ${bottomPaddingUnits} * var(--u))`,
             transform: `translate3d(0, ${sheetTranslateY}, 0)`,
             transition: isDragging
               ? "none"
-              : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              : `transform ${SHEET_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+            willChange: "transform",
           }}
-          className={`moku-bs-panel relative z-10 mx-auto flex max-h-[88dvh] w-full max-w-[680px] flex-col rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] ${sheetClassName}`}
+          className={`relative z-10 mx-auto flex max-h-[88dvh] w-full max-w-[680px] flex-col rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] ${sheetClassName}`}
         >
           {showHandle && (
             <div
@@ -307,36 +317,12 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
 
           <div
             ref={scrollContainerRef}
+            style={{ touchAction: "pan-y" }}
             className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
           >
             {children}
           </div>
         </div>
-
-        <style>{`
-          .moku-bs-backdrop {
-            animation: moku-bs-fade ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both;
-          }
-          .moku-bs-panel {
-            animation: moku-bs-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
-          }
-          @keyframes moku-bs-fade {
-            from {
-              opacity: 0;
-            }
-            to {
-              opacity: 1;
-            }
-          }
-          @keyframes moku-bs-up {
-            from {
-              transform: translate3d(0, 100%, 0);
-            }
-            to {
-              transform: translate3d(0, 0, 0);
-            }
-          }
-        `}</style>
       </div>,
       document.body
     );
