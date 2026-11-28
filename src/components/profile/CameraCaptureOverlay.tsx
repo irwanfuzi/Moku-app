@@ -972,4 +972,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-      }
+}
