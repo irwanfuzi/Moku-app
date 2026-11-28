@@ -72,6 +72,11 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const releaseLockRef = useRef<(() => void) | null>(null);
     const isClosingRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const onCloseRef = useRef(onClose);
+
+    useEffect(() => {
+      onCloseRef.current = onClose;
+    }, [onClose]);
 
     const dragRef = useRef<{
       startY: number;
@@ -87,35 +92,33 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
 
-    const dismissSheet = useCallback(
-      (afterClose?: () => void) => {
-        if (isClosingRef.current) return;
-        isClosingRef.current = true;
-        triggerHaptic(6);
+    // Stabil 100% (tanpa dependency onClose) agar tidak memicu cleanup/re-open saat parent re-render
+    const dismissSheet = useCallback((afterClose?: () => void) => {
+      if (isClosingRef.current) return;
+      isClosingRef.current = true;
+      triggerHaptic(6);
 
-        if (enterRafRef.current !== null) {
-          window.cancelAnimationFrame(enterRafRef.current);
-          enterRafRef.current = null;
-        }
+      if (enterRafRef.current !== null) {
+        window.cancelAnimationFrame(enterRafRef.current);
+        enterRafRef.current = null;
+      }
 
-        setIsDragging(false);
-        setIsEntered(false);
+      setIsDragging(false);
+      setIsEntered(false);
 
-        if (closeTimerRef.current !== null) {
-          window.clearTimeout(closeTimerRef.current);
-        }
-        closeTimerRef.current = window.setTimeout(() => {
-          closeTimerRef.current = null;
-          isClosingRef.current = false;
-          setDragY(0);
-          releaseLockRef.current?.();
-          releaseLockRef.current = null;
-          onClose();
-          afterClose?.();
-        }, SHEET_ANIMATION_MS);
-      },
-      [onClose]
-    );
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
+        isClosingRef.current = false;
+        setDragY(0);
+        releaseLockRef.current?.();
+        releaseLockRef.current = null;
+        onCloseRef.current();
+        afterClose?.();
+      }, SHEET_ANIMATION_MS);
+    }, []);
 
     useImperativeHandle(
       ref,
