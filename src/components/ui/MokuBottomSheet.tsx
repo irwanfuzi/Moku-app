@@ -91,8 +91,38 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const [isEntered, setIsEntered] = useState(false);
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
+    const [keyboardInset, setKeyboardInset] = useState(0);
 
-    // Stabil 100% (tanpa dependency onClose) agar tidak memicu cleanup/re-open saat parent re-render
+    // Lacak tinggi virtual keyboard lewat visualViewport agar sheet selalu duduk di atas keyboard
+    useEffect(() => {
+      if (!isOpen || typeof window === "undefined") {
+        setKeyboardInset(0);
+        return;
+      }
+
+      const vv = window.visualViewport;
+      if (!vv) return;
+
+      const updateViewport = () => {
+        const inset = Math.max(
+          0,
+          Math.round(window.innerHeight - vv.height - vv.offsetTop)
+        );
+        setKeyboardInset(inset);
+      };
+
+      updateViewport();
+      vv.addEventListener("resize", updateViewport);
+      vv.addEventListener("scroll", updateViewport);
+      window.addEventListener("resize", updateViewport);
+
+      return () => {
+        vv.removeEventListener("resize", updateViewport);
+        vv.removeEventListener("scroll", updateViewport);
+        window.removeEventListener("resize", updateViewport);
+      };
+    }, [isOpen]);
+
     const dismissSheet = useCallback((afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
@@ -338,13 +368,17 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
 
     return createPortal(
       <div
-        style={{ ...MOBILE_SCALE_VARS, touchAction: "none" }}
+        style={{
+          ...MOBILE_SCALE_VARS,
+          touchAction: "none",
+          paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        }}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none`}
+        className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none transition-[padding-bottom] duration-200 ease-out`}
       >
         <div
           onClick={() => {
@@ -367,15 +401,22 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           onTouchCancel={handlePanelTouchEnd}
           style={{
             touchAction: "none",
+            maxHeight:
+              keyboardInset > 0
+                ? `calc(100dvh - ${keyboardInset}px - 16px)`
+                : "88dvh",
             paddingTop: "calc(10 * var(--u))",
-            paddingBottom: `calc(env(safe-area-inset-bottom) + ${bottomPaddingUnits} * var(--u))`,
+            paddingBottom:
+              keyboardInset > 0
+                ? "calc(12 * var(--u))"
+                : `calc(env(safe-area-inset-bottom) + ${bottomPaddingUnits} * var(--u))`,
             transform: `translate3d(0, ${sheetTranslateY}, 0)`,
             transition: isDragging
               ? "none"
               : `transform ${SHEET_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
             willChange: "transform",
           }}
-          className={`relative z-10 mx-auto flex max-h-[88dvh] w-full max-w-[680px] flex-col rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] ${sheetClassName}`}
+          className={`relative z-10 mx-auto flex w-full max-w-[680px] flex-col rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] ${sheetClassName}`}
         >
           {showHandle && (
             <div
