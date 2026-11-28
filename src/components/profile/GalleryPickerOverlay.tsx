@@ -25,9 +25,9 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 180;
-const SWIPE_TRIGGER_PX = 54;
-const SWIPE_VELOCITY_PX_MS = 0.25;
+const CLOSE_ANIMATION_MS = 220;
+const SWIPE_TRIGGER_PX = 52;
+const SWIPE_VELOCITY_PX_MS = 0.24;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 
@@ -249,7 +249,7 @@ export default function GalleryPickerOverlay({
         setDragX(0);
         return;
       }
-      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.1) {
         state.swiping = true;
         setIsDragging(true);
       } else {
@@ -464,7 +464,7 @@ export default function GalleryPickerOverlay({
           >
             <button
               type="button"
-              onClick={triggerBackStep}
+              onClick={handleCancelAdjust}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -862,4 +862,4 @@ export default function GalleryPickerOverlay({
     </div>,
     document.body
   );
-}
+                                                 }
