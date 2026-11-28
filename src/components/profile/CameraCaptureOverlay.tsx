@@ -23,10 +23,10 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 240;
-const EDGE_SWIPE_ZONE_PX = 64;
-const DISMISS_DISTANCE_PX = 56;
-const DISMISS_VELOCITY_PX_MS = 0.25;
+const CLOSE_ANIMATION_MS = 220;
+const EDGE_SWIPE_ZONE_PX = 56;
+const DISMISS_DISTANCE_PX = 52;
+const DISMISS_VELOCITY_PX_MS = 0.24;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -62,7 +62,6 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const hasGuardStateRef = useRef(false);
 
   const swipeStartRef = useRef<{
     x: number;
@@ -105,7 +104,6 @@ export default function CameraCaptureOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      hasGuardStateRef.current = false;
       triggerHaptic(6);
       stopStream();
       setIsDragging(false);
@@ -135,6 +133,16 @@ export default function CameraCaptureOverlay({
     setIsDragging(false);
     setPreviewUrl(null);
   }, []);
+
+  // Jalur kembali tunggal: dipakai tombol panah kiri atas, swipe kiri/kanan, dan ionBackButton
+  const triggerBackAction = useCallback(() => {
+    if (isClosingRef.current) return;
+    if (previewUrl) {
+      handleRetakePhoto();
+    } else {
+      triggerOverlayClose();
+    }
+  }, [handleRetakePhoto, previewUrl, triggerOverlayClose]);
 
   const startCamera = useCallback(
     async (targetFacing: "user" | "environment") => {
@@ -192,7 +200,6 @@ export default function CameraCaptureOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      hasGuardStateRef.current = false;
       return;
     }
 
@@ -202,15 +209,6 @@ export default function CameraCaptureOverlay({
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
-
-    if (typeof window !== "undefined" && !hasGuardStateRef.current) {
-      window.history.pushState(
-        { mokuCameraGuard: true },
-        "",
-        window.location.href
-      );
-      hasGuardStateRef.current = true;
-    }
 
     return () => {
       stopStream();
@@ -247,20 +245,7 @@ export default function CameraCaptureOverlay({
   }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
 
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") return;
-
-    const handlePopState = (ev: PopStateEvent) => {
-      if (isClosingRef.current) return;
-      if (hasGuardStateRef.current) {
-        hasGuardStateRef.current = false;
-        ev.stopImmediatePropagation();
-      }
-      if (previewUrl) {
-        handleRetakePhoto();
-      } else {
-        triggerOverlayClose();
-      }
-    };
+    if (!isOpen) return;
 
     const handleIonBack = (ev: Event) => {
       if (isClosingRef.current) return;
@@ -270,27 +255,18 @@ export default function CameraCaptureOverlay({
       }>;
       if (customEv.detail?.register) {
         customEv.detail.register(9999, () => {
-          if (previewUrl) {
-            handleRetakePhoto();
-          } else {
-            triggerOverlayClose();
-          }
+          triggerBackAction();
         });
-      } else if (previewUrl) {
-        handleRetakePhoto();
       } else {
-        triggerOverlayClose();
+        triggerBackAction();
       }
     };
 
-    window.addEventListener("popstate", handlePopState, true);
     document.addEventListener("ionBackButton", handleIonBack, true);
-
     return () => {
-      window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
     };
-  }, [handleRetakePhoto, isOpen, previewUrl, triggerOverlayClose]);
+  }, [isOpen, triggerBackAction]);
 
   useEffect(() => {
     const stream = streamRef.current;
@@ -405,7 +381,7 @@ export default function CameraCaptureOverlay({
         setDragX(0);
         return;
       }
-      if (inwardDelta > 8) {
+      if (inwardDelta > 6) {
         state.lockedHorizontal = true;
         setIsDragging(true);
       } else {
@@ -431,11 +407,7 @@ export default function CameraCaptureOverlay({
     const velocity = dragX / elapsed;
 
     if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
-      if (previewUrl) {
-        handleRetakePhoto();
-      } else {
-        triggerOverlayClose();
-      }
+      triggerBackAction();
     } else {
       setIsDragging(false);
       setDragX(0);
@@ -585,7 +557,7 @@ export default function CameraCaptureOverlay({
           >
             <button
               type="button"
-              onClick={handleRetakePhoto}
+              onClick={triggerBackAction}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -727,9 +699,9 @@ export default function CameraCaptureOverlay({
           <div className="flex items-center gap-[calc(8*var(--u))]">
             <button
               type="button"
-              onClick={() => triggerOverlayClose()}
+              onClick={triggerBackAction}
               aria-label="Kembali"
-              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+              className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
               <ArrowLeft
                 weight="regular"
@@ -957,4 +929,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-}
+      }
