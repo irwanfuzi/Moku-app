@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type CSSProperties,
   type KeyboardEvent,
 } from "react";
 import {
@@ -36,7 +37,8 @@ interface OtpVerificationSheetProps {
 }
 
 const OTP_LENGTH = 6;
-const AUTO_VERIFY_DELAY_MS = 140;
+const AUTO_VERIFY_DELAY_MS = 200;
+const SUCCESS_HOLD_MS = 480;
 
 function triggerLightHaptic(pattern: number | number[] = 4) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -91,10 +93,10 @@ export default function OtpVerificationSheet({
     setPoppedIndex(null);
     setIsSuccess(false);
 
-    // Fokus setelah transisi naik MokuBottomSheet (280ms) selesai agar keyboard tidak memutus animasi
+    // Fokus setelah animasi naik MokuBottomSheet (420ms) selesai agar transisi tetap mulus
     const focusTimer = window.setTimeout(() => {
       inputRefs.current[0]?.focus({ preventScroll: true });
-    }, 340);
+    }, 450);
 
     return () => {
       window.clearTimeout(focusTimer);
@@ -123,7 +125,7 @@ export default function OtpVerificationSheet({
         return;
       }
 
-      // Tutup keyboard dulu, tampilkan feedback sukses singkat, lalu luncurkan sheet turun ke bawah
+      // Tutup keyboard dulu, tampilkan feedback sukses yang nyaman dibaca, lalu luncurkan sheet turun
       inputRefs.current.forEach((el) => el?.blur());
       setIsSuccess(true);
       triggerLightHaptic([8, 25, 10]);
@@ -133,7 +135,7 @@ export default function OtpVerificationSheet({
         sheetRef.current?.closeSheet(() => {
           onVerifySuccess();
         });
-      }, 220);
+      }, SUCCESS_HOLD_MS);
     },
     [clearAutoVerifyTimer, isSuccess, onVerify, onVerifySuccess]
   );
@@ -165,7 +167,6 @@ export default function OtpVerificationSheet({
       return;
     }
 
-    // Dukung paste / autofill OTP lebih dari 1 digit
     if (clean.length > 1) {
       const next = [...digits];
       let lastFilled = index;
@@ -261,6 +262,73 @@ export default function OtpVerificationSheet({
     });
   };
 
+  const getOtpBoxStyle = (
+    isFocused: boolean,
+    hasValue: boolean
+  ): CSSProperties => {
+    const base: CSSProperties = {
+      height: "calc(54 * var(--u))",
+      fontSize: "clamp(24px, calc(28 * var(--u)), 30px)",
+      borderStyle: "solid",
+      outline: "none",
+      WebkitTapHighlightColor: "transparent",
+      appearance: "none",
+    };
+
+    if (isSuccess) {
+      return {
+        ...base,
+        borderWidth: "1.5px",
+        borderColor: "#16A34A",
+        backgroundColor: "#F0FDF4",
+        color: "#15803D",
+        boxShadow: "0 0 0 3px rgba(22, 163, 74, 0.12)",
+      };
+    }
+
+    if (error) {
+      return {
+        ...base,
+        borderWidth: "1.5px",
+        borderColor: "#C8102E",
+        backgroundColor: "#FFF9FA",
+        color: "#171717",
+        boxShadow: "0 0 0 3px rgba(200, 16, 46, 0.10)",
+      };
+    }
+
+    if (isFocused) {
+      return {
+        ...base,
+        borderWidth: "2px",
+        borderColor: "#740319",
+        backgroundColor: "#FFFFFF",
+        color: "#171717",
+        boxShadow: "0 0 0 3px rgba(116, 3, 25, 0.10)",
+      };
+    }
+
+    if (hasValue) {
+      return {
+        ...base,
+        borderWidth: "1.5px",
+        borderColor: "rgba(116, 3, 25, 0.42)",
+        backgroundColor: "#FDF8F9",
+        color: "#171717",
+        boxShadow: "none",
+      };
+    }
+
+    return {
+      ...base,
+      borderWidth: "1.5px",
+      borderColor: "#E2E2E8",
+      backgroundColor: "#FFFFFF",
+      color: "#171717",
+      boxShadow: "none",
+    };
+  };
+
   const isEmail = target === "email";
   const formattedDestination = isEmail ? destination : `+62 ${destination}`;
   const isComplete = digits.every((d) => d !== "");
@@ -322,7 +390,7 @@ export default function OtpVerificationSheet({
           </div>
         </div>
 
-        {/* 6 Kotak Input OTP dengan Mikro-Interaksi */}
+        {/* 6 Kotak Input OTP Bersih Tanpa Outline Browser */}
         <div
           key={shakeNonce}
           className={`grid grid-cols-6 gap-[calc(8*var(--u))] px-[calc(6*var(--u))] ${
@@ -351,22 +419,9 @@ export default function OtpVerificationSheet({
                 onChange={(e) => handleDigitChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 onPaste={handlePaste}
-                style={{
-                  height: "calc(54 * var(--u))",
-                  fontSize: "clamp(24px, calc(28 * var(--u)), 30px)",
-                }}
-                className={`w-full rounded-[calc(12*var(--u))] border text-center font-display font-bold leading-none caret-[#740319] outline-none transition-[border-color,background-color,box-shadow,transform,color] duration-200 ${
+                style={getOtpBoxStyle(isFocused, hasValue)}
+                className={`moku-otp-input w-full rounded-[calc(12*var(--u))] text-center font-display font-bold leading-none caret-[#740319] transition-[border-color,background-color,box-shadow,transform,color] duration-250 ease-out ${
                   isPopping && hasValue ? "moku-otp-pop" : ""
-                } ${
-                  isSuccess
-                    ? "border-[1.5px] border-[#16A34A] bg-[#F0FDF4] text-[#15803D]"
-                    : error
-                    ? "border-[1.5px] border-[#C8102E] bg-[#FFF9FA] text-[#171717]"
-                    : isFocused
-                    ? "border-[1.8px] border-[#740319] bg-white text-[#171717] ring-[3px] ring-[#740319]/12"
-                    : hasValue
-                    ? "border-[#740319]/45 bg-[#FDF8F9] text-[#171717]"
-                    : "border-[#D4D4DC] bg-white text-[#171717]"
                 }`}
               />
             );
@@ -388,13 +443,13 @@ export default function OtpVerificationSheet({
           </p>
         )}
 
-        {/* Tombol Verifikasi (Fallback jika user ingin submit manual) */}
+        {/* Tombol Verifikasi */}
         <button
           type="button"
           onClick={() => executeVerify(digits.join(""))}
           disabled={isSuccess || !isComplete}
           style={{ marginTop: "calc(22 * var(--u))" }}
-          className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-220 active:scale-[0.985] disabled:cursor-not-allowed ${
+          className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-300 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
             isSuccess
               ? "bg-[#15803D]"
               : isComplete
@@ -464,22 +519,26 @@ export default function OtpVerificationSheet({
       </div>
 
       <style>{`
+        .moku-otp-input:focus,
+        .moku-otp-input:focus-visible {
+          outline: none !important;
+        }
         .moku-otp-content-in {
-          animation: moku-otp-rise 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-otp-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-otp-pop {
-          animation: moku-otp-box-pop 200ms cubic-bezier(0.22, 1, 0.36, 1);
+          animation: moku-otp-box-pop 240ms cubic-bezier(0.22, 1, 0.36, 1);
         }
         .moku-otp-shake {
-          animation: moku-otp-box-shake 340ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+          animation: moku-otp-box-shake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
         .moku-otp-fade-in {
-          animation: moku-otp-fade 220ms ease-out both;
+          animation: moku-otp-fade 260ms ease-out both;
         }
         @keyframes moku-otp-rise {
           from {
             opacity: 0;
-            transform: translate3d(0, 10px, 0);
+            transform: translate3d(0, 12px, 0);
           }
           to {
             opacity: 1;
@@ -491,7 +550,7 @@ export default function OtpVerificationSheet({
             transform: scale(0.94);
           }
           55% {
-            transform: scale(1.07);
+            transform: scale(1.06);
           }
           100% {
             transform: scale(1);
@@ -527,4 +586,4 @@ export default function OtpVerificationSheet({
       `}</style>
     </MokuBottomSheet>
   );
-                }
+            }
