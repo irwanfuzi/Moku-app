@@ -25,10 +25,10 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 260;
-const EDGE_SWIPE_ZONE_PX = 40;
-const DISMISS_DISTANCE_PX = 72;
-const DISMISS_VELOCITY_PX_MS = 0.32;
+const CLOSE_ANIMATION_MS = 240;
+const EDGE_SWIPE_ZONE_PX = 64;
+const DISMISS_DISTANCE_PX = 56;
+const DISMISS_VELOCITY_PX_MS = 0.25;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 
@@ -63,6 +63,7 @@ export default function GalleryPickerOverlay({
 
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
+  const hasGuardStateRef = useRef(false);
 
   const swipeStartRef = useRef<{
     x: number;
@@ -133,6 +134,7 @@ export default function GalleryPickerOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
+      hasGuardStateRef.current = false;
       triggerHaptic(6);
       setIsDragging(false);
       setIsExiting(true);
@@ -177,6 +179,7 @@ export default function GalleryPickerOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
+      hasGuardStateRef.current = false;
       return;
     }
 
@@ -185,6 +188,15 @@ export default function GalleryPickerOverlay({
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
+
+    if (typeof window !== "undefined" && !hasGuardStateRef.current) {
+      window.history.pushState(
+        { mokuGalleryGuard: true },
+        "",
+        window.location.href
+      );
+      hasGuardStateRef.current = true;
+    }
 
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
@@ -198,7 +210,16 @@ export default function GalleryPickerOverlay({
   }, [isOpen, resetAdjustState]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || typeof window === "undefined") return;
+
+    const handlePopState = (ev: PopStateEvent) => {
+      if (isClosingRef.current) return;
+      if (hasGuardStateRef.current) {
+        hasGuardStateRef.current = false;
+        ev.stopImmediatePropagation();
+      }
+      triggerBackStep();
+    };
 
     const handleIonBack = (ev: Event) => {
       if (isClosingRef.current) return;
@@ -215,8 +236,11 @@ export default function GalleryPickerOverlay({
       }
     };
 
+    window.addEventListener("popstate", handlePopState, true);
     document.addEventListener("ionBackButton", handleIonBack, true);
+
     return () => {
+      window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
     };
   }, [isOpen, triggerBackStep]);
@@ -263,7 +287,7 @@ export default function GalleryPickerOverlay({
         setDragX(0);
         return;
       }
-      if (inwardDelta > 10) {
+      if (inwardDelta > 8) {
         state.lockedHorizontal = true;
         setIsDragging(true);
       } else {
@@ -874,4 +898,4 @@ export default function GalleryPickerOverlay({
     </div>,
     document.body
   );
-    }
+}
