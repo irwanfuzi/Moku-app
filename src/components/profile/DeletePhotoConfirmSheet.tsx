@@ -241,12 +241,12 @@ export default function DeletePhotoConfirmSheet({
           className="mx-auto rounded-full bg-[#D4D4DC]"
         />
 
-        {/* Ilustrasi Hapus Foto (Proporsi Besar & Dominan) */}
+        {/* Ilustrasi Hapus Foto */}
         <div
           style={{
             width: "calc(216 * var(--u))",
             height: "calc(196 * var(--u))",
-            marginBottom: "calc(10 * var(--u))",
+            marginBottom: "calc(4 * var(--u))",
           }}
           className="mx-auto flex items-center justify-center"
         >
