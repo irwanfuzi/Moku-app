@@ -26,6 +26,7 @@ const MOBILE_SCALE_VARS = {
 const CLOSE_ANIMATION_MS = 220;
 const SWIPE_TRIGGER_PX = 52;
 const SWIPE_VELOCITY_PX_MS = 0.24;
+const CAMERA_SWITCH_COOLDOWN_MS = 380;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -60,7 +61,10 @@ export default function CameraCaptureOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const switchTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
+  const isSwitchingCameraRef = useRef(false);
+  const cameraSessionRef = useRef(0);
 
   const swipeRef = useRef<{
     x: number;
@@ -91,9 +95,31 @@ export default function CameraCaptureOverlay({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const stopStream = useCallback(() => {
+    cameraSessionRef.current += 1;
+    if (switchTimerRef.current !== null) {
+      window.clearTimeout(switchTimerRef.current);
+      switchTimerRef.current = null;
+    }
+    isSwitchingCameraRef.current = false;
+
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {
+          // Abaikan error saat menghentikan track
+        }
+      });
       streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        // Abaikan error pause
+      }
+      videoRef.current.srcObject = null;
     }
   }, []);
 
@@ -140,18 +166,22 @@ export default function CameraCaptureOverlay({
     }
   }, [handleRetakePhoto, previewUrl, triggerOverlayClose]);
 
-  const startCamera = useCallback(
-    async (targetFacing: "user" | "environment") => {
-      stopStream();
-      setCameraReady(false);
-      setCameraError(null);
+  const openCameraStream = useCallback(
+    async (targetFacing: "user" | "environment", sessionId: number) => {
+      if (isClosingRef.current || sessionId !== cameraSessionRef.current) {
+        return;
+      }
 
       if (
         typeof navigator === "undefined" ||
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
-        setCameraError("Perangkat atau browser tidak mendukung akses kamera.");
+        if (sessionId === cameraSessionRef.current) {
+          setCameraError("Perangkat atau browser tidak mendukung akses kamera.");
+          setCameraReady(false);
+          isSwitchingCameraRef.current = false;
+        }
         return;
       }
 
@@ -165,31 +195,51 @@ export default function CameraCaptureOverlay({
           audio: false,
         });
 
+        if (isClosingRef.current || sessionId !== cameraSessionRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
         streamRef.current = stream;
 
         const videoEl = videoRef.current;
         if (videoEl) {
           videoEl.srcObject = stream;
-          setCameraReady(true);
           try {
             await videoEl.play();
           } catch {
-            // Frame tetap dapat diambil selama srcObject tersedia
+            // Frame tetap bisa diambil selama srcObject tersedia
           }
         }
+
+        if (sessionId === cameraSessionRef.current) {
+          setCameraError(null);
+          setCameraReady(true);
+        }
       } catch {
-        setCameraError(
-          "Izin kamera ditolak atau kamera sedang digunakan aplikasi lain."
-        );
+        if (sessionId === cameraSessionRef.current) {
+          setCameraReady(false);
+          setCameraError(
+            "Izin kamera ditolak atau kamera sedang digunakan aplikasi lain."
+          );
+        }
+      } finally {
+        if (sessionId === cameraSessionRef.current) {
+          switchTimerRef.current = window.setTimeout(() => {
+            switchTimerRef.current = null;
+            isSwitchingCameraRef.current = false;
+          }, 120);
+        }
       }
     },
-    [stopStream]
+    []
   );
 
   useEffect(() => {
     if (!isOpen) {
       stopStream();
       setCameraReady(false);
+      setCameraError(null);
       setPreviewUrl(null);
       setFocusIndicator(null);
       setDragX(0);
@@ -231,12 +281,21 @@ export default function CameraCaptureOverlay({
       return;
     }
 
-    startCamera(facingMode);
+    stopStream();
+    const sessionId = cameraSessionRef.current;
+    setCameraReady(false);
+    setCameraError(null);
+    isSwitchingCameraRef.current = true;
+
+    const timer = window.setTimeout(() => {
+      void openCameraStream(facingMode, sessionId);
+    }, 90);
 
     return () => {
+      window.clearTimeout(timer);
       stopStream();
     };
-  }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
+  }, [facingMode, isOpen, openCameraStream, previewUrl, stopStream]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -408,15 +467,27 @@ export default function CameraCaptureOverlay({
   };
 
   const handleSwitchCamera = () => {
+    if (isClosingRef.current || isSwitchingCameraRef.current) return;
+    isSwitchingCameraRef.current = true;
     triggerHaptic(8);
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
+
+    if (switchTimerRef.current !== null) {
+      window.clearTimeout(switchTimerRef.current);
+    }
+    switchTimerRef.current = window.setTimeout(() => {
+      switchTimerRef.current = null;
+      isSwitchingCameraRef.current = false;
+    }, CAMERA_SWITCH_COOLDOWN_MS);
   };
 
   const handleTakeSnapshot = () => {
     const video = videoRef.current;
     const circleEl = circleGuideRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || isClosingRef.current) return;
+    if (!video || !canvas || isClosingRef.current || isSwitchingCameraRef.current) {
+      return;
+    }
 
     const hasStreamFrame =
       cameraReady || video.videoWidth > 0 || video.readyState >= 2;
@@ -674,7 +745,6 @@ export default function CameraCaptureOverlay({
         />
       )}
 
-      {/* Top Bar Marun + Instruksi Pill */}
       <div
         style={{
           paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
@@ -744,7 +814,6 @@ export default function CameraCaptureOverlay({
         </div>
       </div>
 
-      {/* Area Viewfinder Kamera + Tap-to-Focus + Grid 3x3 + Lingkaran Panduan */}
       <div
         ref={viewfinderRef}
         onPointerDown={handleViewfinderPointerDown}
@@ -758,10 +827,18 @@ export default function CameraCaptureOverlay({
           autoPlay
           disablePictureInPicture
           onContextMenu={(e) => e.preventDefault()}
-          onLoadedMetadata={() => setCameraReady(true)}
-          onCanPlay={() => setCameraReady(true)}
+          onLoadedMetadata={() => {
+            if (!isSwitchingCameraRef.current) {
+              setCameraReady(true);
+            }
+          }}
+          onCanPlay={() => {
+            if (!isSwitchingCameraRef.current) {
+              setCameraReady(true);
+            }
+          }}
           style={{ WebkitTouchCallout: "none" }}
-          className={`pointer-events-none h-full w-full object-cover select-none transition-opacity duration-300 ${
+          className={`pointer-events-none h-full w-full object-cover select-none transition-opacity duration-200 ${
             facingMode === "user" ? "-scale-x-100" : ""
           } ${cameraReady ? "opacity-100" : "opacity-0"}`}
         />
@@ -829,7 +906,6 @@ export default function CameraCaptureOverlay({
         )}
       </div>
 
-      {/* Bottom Controls Marun Accent: Switch Camera | Shutter | Gallery */}
       <div
         style={{
           paddingTop: "calc(22 * var(--u))",
@@ -918,4 +994,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-                        }
+      }
