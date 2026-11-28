@@ -24,7 +24,6 @@ import {
   Info,
   LockSimple,
   Phone,
-  ShieldCheck,
   Trash,
   User,
   WarningCircle,
@@ -34,6 +33,9 @@ import { useAppLayout } from "@/components/layout/app-shell";
 import CameraCaptureOverlay from "@/components/profile/CameraCaptureOverlay";
 import DeletePhotoConfirmSheet from "@/components/profile/DeletePhotoConfirmSheet";
 import GalleryPickerOverlay from "@/components/profile/GalleryPickerOverlay";
+import OtpVerificationSheet, {
+  type OtpTarget,
+} from "@/components/profile/OtpVerificationSheet";
 import MokuBottomSheet, {
   type MokuBottomSheetRef,
 } from "@/components/ui/MokuBottomSheet";
@@ -88,12 +90,10 @@ type FieldKey = "fullName" | "username" | "email" | "phone";
 type FieldErrors = Partial<Record<FieldKey, string>>;
 type UsernameCheckStatus = "idle" | "checking" | "available" | "taken";
 type SavePhase = "idle" | "saving" | "saved";
-type OtpTarget = "email" | "phone";
 
 interface OtpVerificationState {
   target: OtpTarget;
   destination: string;
-  code: string;
   error?: string;
   resendCooldown: number;
 }
@@ -468,7 +468,6 @@ export default function EditAccountInfoPage() {
       setOtpModal({
         target,
         destination,
-        code: "",
         resendCooldown: 30,
       });
       triggerToast(
@@ -480,44 +479,6 @@ export default function EditAccountInfoPage() {
     },
     [triggerToast]
   );
-
-  const handleConfirmOtp = () => {
-    if (!otpModal) return;
-    const cleanCode = otpModal.code.trim();
-    if (cleanCode.length !== 6) {
-      triggerHaptic(12);
-      setOtpModal((prev) =>
-        prev ? { ...prev, error: "Masukkan 6 digit kode OTP." } : null
-      );
-      return;
-    }
-
-    if (cleanCode !== DEMO_OTP_CODE) {
-      triggerHaptic(14);
-      setOtpModal((prev) =>
-        prev
-          ? {
-              ...prev,
-              error: `Kode OTP tidak sesuai (gunakan ${DEMO_OTP_CODE}).`,
-            }
-          : null
-      );
-      return;
-    }
-
-    triggerHaptic([8, 25, 10]);
-    if (otpModal.target === "email") {
-      setVerifiedEmail(otpModal.destination.trim().toLowerCase());
-      setShowEmailOtpNotice(false);
-      clearFieldError("email");
-      triggerToast("Email baru berhasil diverifikasi.", "success");
-    } else {
-      setVerifiedPhone(otpModal.destination.trim());
-      clearFieldError("phone");
-      triggerToast("Nomor telepon baru berhasil diverifikasi.", "success");
-    }
-    setOtpModal(null);
-  };
 
   const validateField = useCallback(
     (
@@ -1471,7 +1432,7 @@ export default function EditAccountInfoPage() {
         onConfirmDelete={handleConfirmRemovePhoto}
       />
 
-      {/* Bottom Sheet Ubah Foto Profil (MokuBottomSheet: Drag-to-dismiss, Slide-down, & Prioritas Swipe-back) */}
+      {/* Bottom Sheet Ubah Foto Profil */}
       <MokuBottomSheet
         ref={photoSheetRef}
         isOpen={isPhotoSheetOpen}
@@ -1575,134 +1536,70 @@ export default function EditAccountInfoPage() {
         </div>
       </MokuBottomSheet>
 
-      {otpModal &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            style={MOBILE_SCALE_VARS}
-            className="fixed inset-0 z-[9997] flex items-center justify-center bg-black/45 px-[calc(16*var(--u))] backdrop-blur-[1px]"
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="otp-modal-title"
-              className="moku-smooth-swap w-full max-w-[420px] rounded-[calc(16*var(--u))] border border-[#EFEFF3] bg-white p-[calc(20*var(--u))]"
-            >
-              <div className="mb-[calc(12*var(--u))] flex items-center gap-[calc(10*var(--u))]">
-                <div className="flex h-[calc(36*var(--u))] w-[calc(36*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
-                  <ShieldCheck
-                    weight="fill"
-                    className="h-[calc(20*var(--u))] w-[calc(20*var(--u))]"
-                  />
-                </div>
-                <h3
-                  id="otp-modal-title"
-                  style={{ margin: 0 }}
-                  className="font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
-                >
-                  {otpModal.target === "email"
-                    ? "Verifikasi Email Baru"
-                    : "Verifikasi Nomor Telepon"}
-                </h3>
-              </div>
+      {/* Bottom Sheet Verifikasi OTP Email / Nomor Telepon */}
+      <OtpVerificationSheet
+        isOpen={Boolean(otpModal)}
+        target={otpModal?.target ?? "email"}
+        destination={otpModal?.destination ?? ""}
+        resendCooldown={otpModal?.resendCooldown ?? 0}
+        error={otpModal?.error}
+        onClose={() => setOtpModal(null)}
+        onChangeDestination={() => {
+          const targetId =
+            otpModal?.target === "phone" ? "edit-phone" : "edit-email";
+          setOtpModal(null);
+          window.setTimeout(() => {
+            document.getElementById(targetId)?.focus();
+          }, 120);
+        }}
+        onClearError={() => {
+          setOtpModal((prev) => (prev ? { ...prev, error: undefined } : null));
+        }}
+        onResend={() => {
+          triggerHaptic(6);
+          setOtpModal((prev) =>
+            prev ? { ...prev, resendCooldown: 30, error: undefined } : null
+          );
+          triggerToast("Kode OTP baru telah dikirim ulang.", "success");
+        }}
+        onVerify={(code) => {
+          if (!otpModal) return;
+          const cleanCode = code.trim();
+          if (cleanCode.length !== 6) {
+            triggerHaptic(12);
+            setOtpModal((prev) =>
+              prev ? { ...prev, error: "Masukkan 6 digit kode OTP." } : null
+            );
+            return;
+          }
 
-              <p
-                style={{ margin: 0, marginBottom: "calc(16 * var(--u))" }}
-                className="text-[calc(12.5*var(--u))] font-normal leading-relaxed text-[#52525B]"
-              >
-                Masukkan 6 digit kode OTP yang dikirim ke{" "}
-                <span className="font-semibold text-[#171717]">
-                  {otpModal.target === "email"
-                    ? otpModal.destination
-                    : `+62 ${otpModal.destination}`}
-                </span>
-                .
-              </p>
+          if (cleanCode !== DEMO_OTP_CODE) {
+            triggerHaptic(14);
+            setOtpModal((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    error: `Kode OTP tidak sesuai (gunakan ${DEMO_OTP_CODE}).`,
+                  }
+                : null
+            );
+            return;
+          }
 
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                autoFocus
-                value={otpModal.code}
-                onChange={(e) => {
-                  const digitsOnly = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 6);
-                  setOtpModal((prev) =>
-                    prev ? { ...prev, code: digitsOnly, error: undefined } : null
-                  );
-                }}
-                placeholder="6 digit kode OTP"
-                className={`h-[calc(44*var(--u))] w-full rounded-[calc(10*var(--u))] border px-[calc(12*var(--u))] text-center text-[calc(16*var(--u))] font-semibold tracking-[0.28em] text-[#171717] outline-none ${
-                  otpModal.error
-                    ? "border-[#C8102E] bg-[#FFF9FA] focus:border-[#C8102E]"
-                    : "border-[#DDDDE4] bg-white focus:border-[#740319]"
-                }`}
-              />
-
-              {otpModal.error && (
-                <p
-                  role="alert"
-                  style={{ margin: 0, marginTop: "calc(6 * var(--u))" }}
-                  className="flex items-center gap-[calc(4*var(--u))] text-[calc(11.5*var(--u))] font-medium text-[#C8102E]"
-                >
-                  <WarningCircle
-                    weight="fill"
-                    className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
-                  />
-                  <span>{otpModal.error}</span>
-                </p>
-              )}
-
-              <div
-                style={{ marginTop: "calc(12 * var(--u))" }}
-                className="flex items-center justify-between text-[calc(12*var(--u))]"
-              >
-                <span className="text-[#6B6B76]">Kode uji: {DEMO_OTP_CODE}</span>
-                <button
-                  type="button"
-                  disabled={otpModal.resendCooldown > 0}
-                  onClick={() => {
-                    triggerHaptic(6);
-                    setOtpModal((prev) =>
-                      prev
-                        ? { ...prev, resendCooldown: 30, error: undefined }
-                        : null
-                    );
-                    triggerToast("Kode OTP baru telah dikirim ulang.", "success");
-                  }}
-                  className="cursor-pointer font-semibold text-[#740319] disabled:cursor-not-allowed disabled:text-[#9E9EA9]"
-                >
-                  {otpModal.resendCooldown > 0
-                    ? `Kirim ulang (${otpModal.resendCooldown}d)`
-                    : "Kirim ulang OTP"}
-                </button>
-              </div>
-
-              <div
-                style={{ marginTop: "calc(16 * var(--u))" }}
-                className="flex items-center gap-[calc(10*var(--u))]"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOtpModal(null)}
-                  className="flex h-[calc(44*var(--u))] flex-1 cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] border border-[#DDDDE4] bg-white text-[calc(13.5*var(--u))] font-semibold text-[#2D2D34] active:bg-[#F4F4F7]"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmOtp}
-                  className="flex h-[calc(44*var(--u))] flex-1 cursor-pointer items-center justify-center rounded-[calc(10*var(--u))] bg-[#740319] text-[calc(13.5*var(--u))] font-semibold text-white active:bg-[#5B0213]"
-                >
-                  Verifikasi
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+          triggerHaptic([8, 25, 10]);
+          if (otpModal.target === "email") {
+            setVerifiedEmail(otpModal.destination.trim().toLowerCase());
+            setShowEmailOtpNotice(false);
+            clearFieldError("email");
+            triggerToast("Email baru berhasil diverifikasi.", "success");
+          } else {
+            setVerifiedPhone(otpModal.destination.trim());
+            clearFieldError("phone");
+            triggerToast("Nomor telepon baru berhasil diverifikasi.", "success");
+          }
+          setOtpModal(null);
+        }}
+      />
 
       {toast &&
         typeof document !== "undefined" &&
