@@ -18,6 +18,8 @@ const MOBILE_SCALE_VARS = {
 const SHEET_ANIMATION_MS = 280;
 const DISMISS_DRAG_Y_PX = 56;
 const DISMISS_VELOCITY_Y = 0.28;
+const EDGE_BACK_ZONE_PX = 36;
+const EDGE_BACK_TRIGGER_PX = 48;
 
 export interface MokuBottomSheetRef {
   closeSheet: (afterClose?: () => void) => void;
@@ -68,6 +70,8 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const enterRafRef = useRef<number | null>(null);
     const isClosingRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const hasHistoryGuardRef = useRef(false);
+    const ignoreNextPopRef = useRef(false);
 
     const dragRef = useRef<{
       startY: number;
@@ -79,15 +83,40 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       tracking: false,
     });
 
+    const edgeSwipeRef = useRef<{
+      startX: number;
+      startY: number;
+      direction: 1 | -1;
+      tracking: boolean;
+    }>({
+      startX: 0,
+      startY: 0,
+      direction: 1,
+      tracking: false,
+    });
+
     const [isEntered, setIsEntered] = useState(false);
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
 
+    const cleanupHistoryGuard = useCallback(() => {
+      if (!hasHistoryGuardRef.current || typeof window === "undefined") return;
+      hasHistoryGuardRef.current = false;
+      ignoreNextPopRef.current = true;
+      window.history.back();
+    }, []);
+
     const dismissSheet = useCallback(
-      (afterClose?: () => void) => {
+      (afterClose?: () => void, fromPopState = false) => {
         if (isClosingRef.current) return;
         isClosingRef.current = true;
         triggerHaptic(6);
+
+        if (!fromPopState) {
+          cleanupHistoryGuard();
+        } else {
+          hasHistoryGuardRef.current = false;
+        }
 
         if (enterRafRef.current !== null) {
           window.cancelAnimationFrame(enterRafRef.current);
@@ -108,13 +137,13 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           afterClose?.();
         }, SHEET_ANIMATION_MS);
       },
-      [onClose]
+      [cleanupHistoryGuard, onClose]
     );
 
     useImperativeHandle(
       ref,
       () => ({
-        closeSheet: dismissSheet,
+        closeSheet: (afterClose?: () => void) => dismissSheet(afterClose, false),
       }),
       [dismissSheet]
     );
@@ -133,7 +162,6 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       setIsDragging(false);
       setDragY(0);
 
-      // Mulai posisi di 100%, lalu transisikan naik ke 0% di frame berikutnya
       enterRafRef.current = window.requestAnimationFrame(() => {
         enterRafRef.current = window.requestAnimationFrame(() => {
           enterRafRef.current = null;
@@ -153,8 +181,27 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       };
     }, [isOpen]);
 
+    // Cegah swipe-back browser/OS memundurkan rute halaman saat sheet terbuka
     useEffect(() => {
-      if (!isOpen) return;
+      if (!isOpen || typeof window === "undefined") return;
+
+      if (!hasHistoryGuardRef.current) {
+        window.history.pushState(
+          { ...(window.history.state || {}), mokuSheetOpen: true },
+          ""
+        );
+        hasHistoryGuardRef.current = true;
+      }
+
+      const handlePopState = () => {
+        if (ignoreNextPopRef.current) {
+          ignoreNextPopRef.current = false;
+          return;
+        }
+        if (hasHistoryGuardRef.current) {
+          dismissSheet(undefined, true);
+        }
+      };
 
       const handleIonBack = (ev: Event) => {
         if (isClosingRef.current) return;
@@ -164,10 +211,10 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         }>;
         if (customEv.detail?.register) {
           customEv.detail.register(backButtonPriority, () => {
-            dismissSheet();
+            dismissSheet(undefined, false);
           });
         } else {
-          dismissSheet();
+          dismissSheet(undefined, false);
         }
       };
 
@@ -175,21 +222,73 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         if (isClosingRef.current) return;
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        dismissSheet();
+        dismissSheet(undefined, false);
       };
 
+      window.addEventListener("popstate", handlePopState, true);
       document.addEventListener("ionBackButton", handleIonBack, true);
       document.addEventListener("backbutton", handleHardwareBack, true);
 
       return () => {
+        window.removeEventListener("popstate", handlePopState, true);
         document.removeEventListener("ionBackButton", handleIonBack, true);
         document.removeEventListener("backbutton", handleHardwareBack, true);
+        if (hasHistoryGuardRef.current) {
+          hasHistoryGuardRef.current = false;
+          ignoreNextPopRef.current = true;
+          window.history.back();
+        }
       };
     }, [backButtonPriority, dismissSheet, isOpen]);
 
     if (!isOpen || typeof document === "undefined") return null;
 
-    const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    // Tangkap swipe gesture dari tepi kiri/kanan layar saat sheet terbuka -> tutup sheet ke bawah
+    const handleOverlayTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+      if (isClosingRef.current || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const vw = window.innerWidth;
+      const fromLeft = touch.clientX <= EDGE_BACK_ZONE_PX;
+      const fromRight = touch.clientX >= vw - EDGE_BACK_ZONE_PX;
+
+      if (fromLeft || fromRight) {
+        edgeSwipeRef.current = {
+          startX: touch.clientX,
+          startY: touch.clientY,
+          direction: fromLeft ? 1 : -1,
+          tracking: true,
+        };
+      } else {
+        edgeSwipeRef.current.tracking = false;
+      }
+    };
+
+    const handleOverlayTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+      const edge = edgeSwipeRef.current;
+      if (!edge.tracking || isClosingRef.current || e.touches.length !== 1) {
+        return;
+      }
+
+      const touch = e.touches[0];
+      const inwardDx = (touch.clientX - edge.startX) * edge.direction;
+      const dy = Math.abs(touch.clientY - edge.startY);
+
+      if (dy > Math.abs(inwardDx) && dy > 12) {
+        edge.tracking = false;
+        return;
+      }
+
+      if (inwardDx >= EDGE_BACK_TRIGGER_PX) {
+        edge.tracking = false;
+        dismissSheet(undefined, false);
+      }
+    };
+
+    const handleOverlayTouchEnd = () => {
+      edgeSwipeRef.current.tracking = false;
+    };
+
+    const handlePanelTouchStart = (e: TouchEvent<HTMLDivElement>) => {
       if (!enableDragToDismiss || isClosingRef.current || e.touches.length !== 1) {
         return;
       }
@@ -207,7 +306,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       };
     };
 
-    const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    const handlePanelTouchMove = (e: TouchEvent<HTMLDivElement>) => {
       const state = dragRef.current;
       if (
         !enableDragToDismiss ||
@@ -230,7 +329,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       setDragY(dy);
     };
 
-    const handleTouchEnd = () => {
+    const handlePanelTouchEnd = () => {
       const state = dragRef.current;
       if (!state.tracking) return;
       state.tracking = false;
@@ -241,7 +340,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       const velocity = dragY / elapsed;
 
       if (dragY >= DISMISS_DRAG_Y_PX || velocity >= DISMISS_VELOCITY_Y) {
-        dismissSheet();
+        dismissSheet(undefined, false);
       } else {
         setIsDragging(false);
         setDragY(0);
@@ -264,16 +363,19 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       <div
         style={{ ...MOBILE_SCALE_VARS, touchAction: "none" }}
         onContextMenu={(e) => e.preventDefault()}
+        onTouchStart={handleOverlayTouchStart}
+        onTouchMove={handleOverlayTouchMove}
+        onTouchEnd={handleOverlayTouchEnd}
+        onTouchCancel={handleOverlayTouchEnd}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none`}
       >
-        {/* Backdrop */}
         <div
           onClick={() => {
-            if (closeOnBackdropClick) dismissSheet();
+            if (closeOnBackdropClick) dismissSheet(undefined, false);
           }}
           aria-hidden="true"
           style={{
@@ -285,12 +387,11 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           className="fixed inset-0 bg-black/48"
         />
 
-        {/* Panel Sheet */}
         <div
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
+          onTouchStart={handlePanelTouchStart}
+          onTouchMove={handlePanelTouchMove}
+          onTouchEnd={handlePanelTouchEnd}
+          onTouchCancel={handlePanelTouchEnd}
           style={{
             touchAction: "none",
             paddingTop: "calc(10 * var(--u))",
