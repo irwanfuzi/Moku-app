@@ -16,7 +16,7 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SHEET_ANIMATION_MS = 420;
+const SHEET_ANIMATION_MS = 400;
 const SHEET_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const DISMISS_DRAG_Y_PX = 56;
 const DISMISS_VELOCITY_Y = 0.28;
@@ -92,12 +92,16 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const [isEntered, setIsEntered] = useState(false);
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [keyboardInset, setKeyboardInset] = useState(0);
+    const [viewportBox, setViewportBox] = useState<{
+      top: number;
+      height: number;
+      keyboardOpen: boolean;
+    } | null>(null);
 
-    // Lacak tinggi virtual keyboard lewat visualViewport agar sheet selalu duduk di atas keyboard
+    // Kunci overlay tepat ke visualViewport (tanpa animasi padding-bottom yang bikin loncat)
     useEffect(() => {
       if (!isOpen || typeof window === "undefined") {
-        setKeyboardInset(0);
+        setViewportBox(null);
         return;
       }
 
@@ -105,22 +109,29 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       if (!vv) return;
 
       const updateViewport = () => {
-        const inset = Math.max(
-          0,
-          Math.round(window.innerHeight - vv.height - vv.offsetTop)
-        );
-        setKeyboardInset(inset);
+        const height = Math.round(vv.height);
+        const top = Math.max(0, Math.round(vv.offsetTop));
+        const keyboardOpen = window.innerHeight - height > 120;
+        setViewportBox((prev) => {
+          if (
+            prev &&
+            prev.top === top &&
+            prev.height === height &&
+            prev.keyboardOpen === keyboardOpen
+          ) {
+            return prev;
+          }
+          return { top, height, keyboardOpen };
+        });
       };
 
       updateViewport();
       vv.addEventListener("resize", updateViewport);
       vv.addEventListener("scroll", updateViewport);
-      window.addEventListener("resize", updateViewport);
 
       return () => {
         vv.removeEventListener("resize", updateViewport);
         vv.removeEventListener("scroll", updateViewport);
-        window.removeEventListener("resize", updateViewport);
       };
     }, [isOpen]);
 
@@ -367,20 +378,24 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       ? Math.max(0.2, 1 - dragY / 340)
       : 1;
 
+    const isKeyboardOpen = viewportBox?.keyboardOpen ?? false;
+
     return createPortal(
       <div
         style={{
           ...MOBILE_SCALE_VARS,
           touchAction: "none",
-          paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
-          transition: `padding-bottom 320ms ${SHEET_EASING}`,
+          top: viewportBox ? `${viewportBox.top}px` : 0,
+          height: viewportBox ? `${viewportBox.height}px` : "100dvh",
+          left: 0,
+          right: 0,
         }}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none`}
+        className={`fixed ${zIndexClassName} flex flex-col justify-end select-none`}
       >
         <div
           onClick={() => {
@@ -403,15 +418,13 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           onTouchCancel={handlePanelTouchEnd}
           style={{
             touchAction: "none",
-            maxHeight:
-              keyboardInset > 0
-                ? `calc(100dvh - ${keyboardInset}px - 16px)`
-                : "88dvh",
+            maxHeight: viewportBox
+              ? `${Math.max(240, viewportBox.height - 16)}px`
+              : "88dvh",
             paddingTop: "calc(10 * var(--u))",
-            paddingBottom:
-              keyboardInset > 0
-                ? "calc(12 * var(--u))"
-                : `calc(env(safe-area-inset-bottom) + ${bottomPaddingUnits} * var(--u))`,
+            paddingBottom: isKeyboardOpen
+              ? "calc(12 * var(--u))"
+              : `calc(env(safe-area-inset-bottom) + ${bottomPaddingUnits} * var(--u))`,
             transform: `translate3d(0, ${sheetTranslateY}, 0)`,
             transition: isDragging
               ? "none"
