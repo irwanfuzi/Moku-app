@@ -70,8 +70,6 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const enterRafRef = useRef<number | null>(null);
     const isClosingRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-    const hasHistoryGuardRef = useRef(false);
-    const ignoreNextPopRef = useRef(false);
 
     const dragRef = useRef<{
       startY: number;
@@ -99,24 +97,11 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
 
-    const cleanupHistoryGuard = useCallback(() => {
-      if (!hasHistoryGuardRef.current || typeof window === "undefined") return;
-      hasHistoryGuardRef.current = false;
-      ignoreNextPopRef.current = true;
-      window.history.back();
-    }, []);
-
     const dismissSheet = useCallback(
-      (afterClose?: () => void, fromPopState = false) => {
+      (afterClose?: () => void) => {
         if (isClosingRef.current) return;
         isClosingRef.current = true;
         triggerHaptic(6);
-
-        if (!fromPopState) {
-          cleanupHistoryGuard();
-        } else {
-          hasHistoryGuardRef.current = false;
-        }
 
         if (enterRafRef.current !== null) {
           window.cancelAnimationFrame(enterRafRef.current);
@@ -137,13 +122,13 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           afterClose?.();
         }, SHEET_ANIMATION_MS);
       },
-      [cleanupHistoryGuard, onClose]
+      [onClose]
     );
 
     useImperativeHandle(
       ref,
       () => ({
-        closeSheet: (afterClose?: () => void) => dismissSheet(afterClose, false),
+        closeSheet: dismissSheet,
       }),
       [dismissSheet]
     );
@@ -181,27 +166,8 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       };
     }, [isOpen]);
 
-    // Cegah swipe-back browser/OS memundurkan rute halaman saat sheet terbuka
     useEffect(() => {
-      if (!isOpen || typeof window === "undefined") return;
-
-      if (!hasHistoryGuardRef.current) {
-        window.history.pushState(
-          { ...(window.history.state || {}), mokuSheetOpen: true },
-          ""
-        );
-        hasHistoryGuardRef.current = true;
-      }
-
-      const handlePopState = () => {
-        if (ignoreNextPopRef.current) {
-          ignoreNextPopRef.current = false;
-          return;
-        }
-        if (hasHistoryGuardRef.current) {
-          dismissSheet(undefined, true);
-        }
-      };
+      if (!isOpen) return;
 
       const handleIonBack = (ev: Event) => {
         if (isClosingRef.current) return;
@@ -211,10 +177,10 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         }>;
         if (customEv.detail?.register) {
           customEv.detail.register(backButtonPriority, () => {
-            dismissSheet(undefined, false);
+            dismissSheet();
           });
         } else {
-          dismissSheet(undefined, false);
+          dismissSheet();
         }
       };
 
@@ -222,28 +188,20 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         if (isClosingRef.current) return;
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        dismissSheet(undefined, false);
+        dismissSheet();
       };
 
-      window.addEventListener("popstate", handlePopState, true);
       document.addEventListener("ionBackButton", handleIonBack, true);
       document.addEventListener("backbutton", handleHardwareBack, true);
 
       return () => {
-        window.removeEventListener("popstate", handlePopState, true);
         document.removeEventListener("ionBackButton", handleIonBack, true);
         document.removeEventListener("backbutton", handleHardwareBack, true);
-        if (hasHistoryGuardRef.current) {
-          hasHistoryGuardRef.current = false;
-          ignoreNextPopRef.current = true;
-          window.history.back();
-        }
       };
     }, [backButtonPriority, dismissSheet, isOpen]);
 
     if (!isOpen || typeof document === "undefined") return null;
 
-    // Tangkap swipe gesture dari tepi kiri/kanan layar saat sheet terbuka -> tutup sheet ke bawah
     const handleOverlayTouchStart = (e: TouchEvent<HTMLDivElement>) => {
       if (isClosingRef.current || e.touches.length !== 1) return;
       const touch = e.touches[0];
@@ -280,7 +238,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
 
       if (inwardDx >= EDGE_BACK_TRIGGER_PX) {
         edge.tracking = false;
-        dismissSheet(undefined, false);
+        dismissSheet();
       }
     };
 
@@ -340,7 +298,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       const velocity = dragY / elapsed;
 
       if (dragY >= DISMISS_DRAG_Y_PX || velocity >= DISMISS_VELOCITY_Y) {
-        dismissSheet(undefined, false);
+        dismissSheet();
       } else {
         setIsDragging(false);
         setDragY(0);
@@ -375,7 +333,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       >
         <div
           onClick={() => {
-            if (closeOnBackdropClick) dismissSheet(undefined, false);
+            if (closeOnBackdropClick) dismissSheet();
           }}
           aria-hidden="true"
           style={{
