@@ -1563,18 +1563,16 @@ export default function EditAccountInfoPage() {
           triggerToast("Kode OTP baru telah dikirim ulang.", "success");
         }}
         onVerify={(code) => {
-          if (!otpModal) return;
+          if (!otpModal) return false;
           const cleanCode = code.trim();
           if (cleanCode.length !== 6) {
-            triggerHaptic(12);
             setOtpModal((prev) =>
               prev ? { ...prev, error: "Masukkan 6 digit kode OTP." } : null
             );
-            return;
+            return false;
           }
 
           if (cleanCode !== DEMO_OTP_CODE) {
-            triggerHaptic(14);
             setOtpModal((prev) =>
               prev
                 ? {
@@ -1583,21 +1581,31 @@ export default function EditAccountInfoPage() {
                   }
                 : null
             );
-            return;
+            return false;
           }
 
-          triggerHaptic([8, 25, 10]);
+          return true;
+        }}
+        onVerifySuccess={() => {
+          if (!otpModal) return;
           if (otpModal.target === "email") {
             setVerifiedEmail(otpModal.destination.trim().toLowerCase());
             setShowEmailOtpNotice(false);
             clearFieldError("email");
-            triggerToast("Email baru berhasil diverifikasi.", "success");
+            triggerToast(
+              "Email baru berhasil diverifikasi.",
+              "success",
+              SNACKBAR_SHOW_DELAY_MS
+            );
           } else {
             setVerifiedPhone(otpModal.destination.trim());
             clearFieldError("phone");
-            triggerToast("Nomor telepon baru berhasil diverifikasi.", "success");
+            triggerToast(
+              "Nomor telepon baru berhasil diverifikasi.",
+              "success",
+              SNACKBAR_SHOW_DELAY_MS
+            );
           }
-          setOtpModal(null);
         }}
       />
 
@@ -1730,4 +1738,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-    }
+}
