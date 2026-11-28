@@ -23,9 +23,9 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 180;
-const SWIPE_TRIGGER_PX = 54;
-const SWIPE_VELOCITY_PX_MS = 0.25;
+const CLOSE_ANIMATION_MS = 220;
+const SWIPE_TRIGGER_PX = 52;
+const SWIPE_VELOCITY_PX_MS = 0.24;
 
 type FlashMode = "auto" | "on" | "off";
 
@@ -61,7 +61,6 @@ export default function CameraCaptureOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const hasGuardEntryRef = useRef(false);
 
   const swipeRef = useRef<{
     x: number;
@@ -98,32 +97,10 @@ export default function CameraCaptureOverlay({
     }
   }, []);
 
-  // Tutup overlay secara langsung agar tidak melewati layar EditAccountInfoPage
-  const closeImmediately = useCallback(
-    (afterClose?: () => void) => {
-      if (isClosingRef.current) return;
-      isClosingRef.current = true;
-      hasGuardEntryRef.current = false;
-      stopStream();
-      setIsDragging(false);
-      setIsExiting(false);
-      setDragX(0);
-      setPreviewUrl(null);
-      setFocusIndicator(null);
-      onClose();
-      window.setTimeout(() => {
-        isClosingRef.current = false;
-        afterClose?.();
-      }, 0);
-    },
-    [onClose, stopStream]
-  );
-
   const triggerOverlayClose = useCallback(
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      hasGuardEntryRef.current = false;
       triggerHaptic(6);
       stopStream();
       setIsDragging(false);
@@ -219,7 +196,6 @@ export default function CameraCaptureOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      hasGuardEntryRef.current = false;
       return;
     }
 
@@ -229,15 +205,6 @@ export default function CameraCaptureOverlay({
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
-
-    if (typeof window !== "undefined" && !hasGuardEntryRef.current) {
-      window.history.pushState(
-        { mokuCameraOverlayGuard: true },
-        "",
-        window.location.href
-      );
-      hasGuardEntryRef.current = true;
-    }
 
     return () => {
       stopStream();
@@ -249,61 +216,13 @@ export default function CameraCaptureOverlay({
   }, [isOpen, stopStream]);
 
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") return;
-
-    const handlePopState = (ev: PopStateEvent) => {
-      if (isClosingRef.current) return;
-      if (hasGuardEntryRef.current) {
-        hasGuardEntryRef.current = false;
-        ev.stopImmediatePropagation();
-      }
-      if (previewUrl) {
-        handleRetakePhoto();
-      } else {
-        closeImmediately();
-      }
-    };
-
-    const handleIonBack = (ev: Event) => {
-      if (isClosingRef.current) return;
-      ev.stopImmediatePropagation();
-      const customEv = ev as CustomEvent<{
-        register: (priority: number, handler: () => void) => void;
-      }>;
-      if (customEv.detail?.register) {
-        customEv.detail.register(9999, () => {
-          if (previewUrl) {
-            handleRetakePhoto();
-          } else {
-            closeImmediately();
-          }
-        });
-      } else if (previewUrl) {
-        handleRetakePhoto();
-      } else {
-        closeImmediately();
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState, true);
-    document.addEventListener("ionBackButton", handleIonBack, true);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState, true);
-      document.removeEventListener("ionBackButton", handleIonBack, true);
-    };
-  }, [closeImmediately, handleRetakePhoto, isOpen, previewUrl]);
-
-  useEffect(() => {
     if (!isOpen) return;
     const metas = document.querySelectorAll('meta[name="theme-color"]');
-    metas.forEach((meta) =>
-      meta.setAttribute("content", previewUrl ? "#740319" : "#000000")
-    );
+    metas.forEach((meta) => meta.setAttribute("content", "#740319"));
     return () => {
       metas.forEach((meta) => meta.setAttribute("content", "#740319"));
     };
-  }, [isOpen, previewUrl]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || previewUrl) {
@@ -318,6 +237,30 @@ export default function CameraCaptureOverlay({
       stopStream();
     };
   }, [facingMode, isOpen, previewUrl, startCamera, stopStream]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleIonBack = (ev: Event) => {
+      if (isClosingRef.current) return;
+      ev.stopImmediatePropagation();
+      const customEv = ev as CustomEvent<{
+        register: (priority: number, handler: () => void) => void;
+      }>;
+      if (customEv.detail?.register) {
+        customEv.detail.register(9999, () => {
+          triggerBackAction();
+        });
+      } else {
+        triggerBackAction();
+      }
+    };
+
+    document.addEventListener("ionBackButton", handleIonBack, true);
+    return () => {
+      document.removeEventListener("ionBackButton", handleIonBack, true);
+    };
+  }, [isOpen, triggerBackAction]);
 
   useEffect(() => {
     const stream = streamRef.current;
@@ -421,7 +364,7 @@ export default function CameraCaptureOverlay({
         setDragX(0);
         return;
       }
-      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy) * 1.2) {
         state.swiping = true;
         setFocusIndicator(null);
         setIsDragging(true);
@@ -625,7 +568,7 @@ export default function CameraCaptureOverlay({
               height: "min(76vw, 312 * var(--u))",
               marginBottom: "calc(28 * var(--u))",
             }}
-            className="overflow-hidden rounded-full bg-[#F3F4F6] shadow-[0_6px_24px_rgba(0,0,0,0.08)]"
+            className="overflow-hidden rounded-full border-[calc(2.5*var(--u))] border-[#740319]/25 bg-[#F3F4F6] shadow-[0_6px_24px_rgba(116,3,25,0.12)]"
           >
             <img
               src={previewUrl}
@@ -722,7 +665,7 @@ export default function CameraCaptureOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="Ambil Foto"
-      className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-black text-white select-none"
+      className="moku-cam-enter fixed inset-0 z-[9999] flex flex-col justify-between bg-[#110608] text-white select-none"
     >
       {isFlashingScreen && (
         <div
@@ -731,12 +674,13 @@ export default function CameraCaptureOverlay({
         />
       )}
 
+      {/* Top Bar Marun + Instruksi Pill */}
       <div
         style={{
           paddingTop: "calc(env(safe-area-inset-top) + 12 * var(--u))",
           paddingBottom: "calc(14 * var(--u))",
         }}
-        className="relative z-20 flex flex-col bg-black px-[calc(12*var(--u))]"
+        className="relative z-20 flex flex-col bg-[#740319] px-[calc(12*var(--u))] shadow-[0_4px_18px_rgba(0,0,0,0.28)]"
       >
         <div className="mx-auto flex w-full max-w-[680px] items-center justify-between">
           <div className="flex items-center gap-[calc(8*var(--u))]">
@@ -780,7 +724,7 @@ export default function CameraCaptureOverlay({
             {flashMode === "off" && (
               <LightningSlash
                 weight="regular"
-                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white/70"
+                className="h-[calc(22*var(--u))] w-[calc(22*var(--u))] text-white/75"
               />
             )}
           </button>
@@ -788,7 +732,7 @@ export default function CameraCaptureOverlay({
 
         <div
           style={{ marginTop: "calc(12 * var(--u))" }}
-          className="mx-auto flex items-center gap-[calc(8*var(--u))] rounded-full bg-[#1F1F23] px-[calc(14*var(--u))] py-[calc(7*var(--u))]"
+          className="mx-auto flex items-center gap-[calc(8*var(--u))] rounded-full border border-white/20 bg-[#5B0213] px-[calc(14*var(--u))] py-[calc(7*var(--u))]"
         >
           <Info
             weight="regular"
@@ -800,11 +744,12 @@ export default function CameraCaptureOverlay({
         </div>
       </div>
 
+      {/* Area Viewfinder Kamera + Tap-to-Focus + Grid 3x3 + Lingkaran Panduan */}
       <div
         ref={viewfinderRef}
         onPointerDown={handleViewfinderPointerDown}
         onContextMenu={(e) => e.preventDefault()}
-        className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-crosshair items-center justify-center overflow-hidden bg-[#17171A]"
+        className="relative mx-auto flex w-full max-w-[680px] flex-1 cursor-crosshair items-center justify-center overflow-hidden bg-[#190B0E]"
       >
         <video
           ref={videoRef}
@@ -826,10 +771,10 @@ export default function CameraCaptureOverlay({
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/35" />
-            <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/35" />
-            <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/35" />
-            <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/35" />
+            <div className="absolute inset-y-0 left-1/3 w-[1px] bg-white/30" />
+            <div className="absolute inset-y-0 left-2/3 w-[1px] bg-white/30" />
+            <div className="absolute inset-x-0 top-1/3 h-[1px] bg-white/30" />
+            <div className="absolute inset-x-0 top-2/3 h-[1px] bg-white/30" />
 
             <div
               ref={circleGuideRef}
@@ -837,7 +782,7 @@ export default function CameraCaptureOverlay({
                 width: "min(84vw, 336 * var(--u))",
                 height: "min(84vw, 336 * var(--u))",
               }}
-              className="rounded-full border-[calc(2*var(--u))] border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]"
+              className="rounded-full border-[calc(2.5*var(--u))] border-[#E11D48]/75 ring-[calc(1.5*var(--u))] ring-[#740319] shadow-[0_0_0_9999px_rgba(20,5,8,0.46)]"
             />
           </div>
         )}
@@ -853,15 +798,15 @@ export default function CameraCaptureOverlay({
               height: "calc(64 * var(--u))",
               transform: "translate3d(-50%, -50%, 0)",
             }}
-            className="moku-focus-ring pointer-events-none absolute z-20 rounded-full border-[calc(1.5*var(--u))] border-[#FACC15] shadow-[0_0_0_1px_rgba(0,0,0,0.45)]"
+            className="moku-focus-ring pointer-events-none absolute z-20 rounded-full border-[calc(1.5*var(--u))] border-[#FDA4AF] shadow-[0_0_0_1px_rgba(116,3,25,0.65)]"
           />
         )}
 
         {cameraError && (
-          <div className="relative z-10 mx-[calc(24*var(--u))] flex max-w-[340px] flex-col items-center rounded-[calc(16*var(--u))] bg-[#1F1F23] p-[calc(20*var(--u))] text-center">
+          <div className="relative z-10 mx-[calc(24*var(--u))] flex max-w-[340px] flex-col items-center rounded-[calc(16*var(--u))] border border-[#740319]/50 bg-[#1F1417] p-[calc(20*var(--u))] text-center">
             <WarningCircle
               weight="fill"
-              className="mb-[calc(10*var(--u))] h-[calc(32*var(--u))] w-[calc(32*var(--u))] text-[#F87171]"
+              className="mb-[calc(10*var(--u))] h-[calc(32*var(--u))] w-[calc(32*var(--u))] text-[#FB7185]"
             />
             <p
               style={{ margin: 0, marginBottom: "calc(14 * var(--u))" }}
@@ -884,23 +829,24 @@ export default function CameraCaptureOverlay({
         )}
       </div>
 
+      {/* Bottom Controls Marun Accent: Switch Camera | Shutter | Gallery */}
       <div
         style={{
           paddingTop: "calc(22 * var(--u))",
           paddingBottom: "calc(env(safe-area-inset-bottom) + 26 * var(--u))",
         }}
-        className="relative z-20 bg-black px-[calc(28*var(--u))]"
+        className="relative z-20 border-t border-[#740319]/45 bg-[#16080B] px-[calc(28*var(--u))]"
       >
         <div className="mx-auto flex w-full max-w-[420px] items-center justify-between">
           <button
             type="button"
             onClick={handleSwitchCamera}
             aria-label="Ganti Kamera"
-            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full bg-[#740319]/25 text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-[#740319]"
           >
             <CameraRotate
               weight="regular"
-              className="h-[calc(28*var(--u))] w-[calc(28*var(--u))]"
+              className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
             />
           </button>
 
@@ -912,9 +858,9 @@ export default function CameraCaptureOverlay({
               width: "calc(72 * var(--u))",
               height: "calc(72 * var(--u))",
             }}
-            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white p-[calc(4*var(--u))] transition-transform duration-150 active:scale-92"
+            className="flex cursor-pointer items-center justify-center rounded-full border-[calc(3*var(--u))] border-white/90 bg-[#740319]/35 p-[calc(4*var(--u))] shadow-[0_0_20px_rgba(116,3,25,0.45)] transition-transform duration-150 active:scale-92"
           >
-            <span className="h-full w-full rounded-full bg-white" />
+            <span className="h-full w-full rounded-full bg-[#740319] ring-1 ring-white/40" />
           </button>
 
           <button
@@ -925,11 +871,11 @@ export default function CameraCaptureOverlay({
               });
             }}
             aria-label="Pilih dari Galeri"
-            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
+            className="flex h-[calc(48*var(--u))] w-[calc(48*var(--u))] cursor-pointer items-center justify-center rounded-full bg-[#740319]/25 text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-[#740319]"
           >
             <ImageIcon
               weight="regular"
-              className="h-[calc(26*var(--u))] w-[calc(26*var(--u))]"
+              className="h-[calc(25*var(--u))] w-[calc(25*var(--u))]"
             />
           </button>
         </div>
@@ -972,4 +918,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-}
+                        }
