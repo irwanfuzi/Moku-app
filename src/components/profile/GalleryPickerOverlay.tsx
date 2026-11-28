@@ -25,10 +25,9 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 240;
-const EDGE_SWIPE_ZONE_PX = 64;
-const DISMISS_DISTANCE_PX = 56;
-const DISMISS_VELOCITY_PX_MS = 0.25;
+const CLOSE_ANIMATION_MS = 180;
+const SWIPE_TRIGGER_PX = 54;
+const SWIPE_VELOCITY_PX_MS = 0.25;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 
@@ -63,22 +62,19 @@ export default function GalleryPickerOverlay({
 
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const hasGuardStateRef = useRef(false);
 
-  const swipeStartRef = useRef<{
+  const swipeRef = useRef<{
     x: number;
     y: number;
     time: number;
-    active: boolean;
-    direction: 1 | -1;
-    lockedHorizontal: boolean;
+    tracking: boolean;
+    swiping: boolean;
   }>({
     x: 0,
     y: 0,
     time: 0,
-    active: false,
-    direction: 1,
-    lockedHorizontal: false,
+    tracking: false,
+    swiping: false,
   });
 
   const panRef = useRef<{
@@ -134,7 +130,6 @@ export default function GalleryPickerOverlay({
     (afterClose?: () => void) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      hasGuardStateRef.current = false;
       triggerHaptic(6);
       setIsDragging(false);
       setIsExiting(true);
@@ -179,7 +174,6 @@ export default function GalleryPickerOverlay({
       setIsDragging(false);
       setIsExiting(false);
       isClosingRef.current = false;
-      hasGuardStateRef.current = false;
       return;
     }
 
@@ -188,15 +182,6 @@ export default function GalleryPickerOverlay({
     setDragX(0);
     setIsDragging(false);
     setIsExiting(false);
-
-    if (typeof window !== "undefined" && !hasGuardStateRef.current) {
-      window.history.pushState(
-        { mokuGalleryGuard: true },
-        "",
-        window.location.href
-      );
-      hasGuardStateRef.current = true;
-    }
 
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     metas.forEach((meta) => meta.setAttribute("content", "#740319"));
@@ -210,16 +195,7 @@ export default function GalleryPickerOverlay({
   }, [isOpen, resetAdjustState]);
 
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") return;
-
-    const handlePopState = (ev: PopStateEvent) => {
-      if (isClosingRef.current) return;
-      if (hasGuardStateRef.current) {
-        hasGuardStateRef.current = false;
-        ev.stopImmediatePropagation();
-      }
-      triggerBackStep();
-    };
+    if (!isOpen) return;
 
     const handleIonBack = (ev: Event) => {
       if (isClosingRef.current) return;
@@ -236,11 +212,8 @@ export default function GalleryPickerOverlay({
       }
     };
 
-    window.addEventListener("popstate", handlePopState, true);
     document.addEventListener("ionBackButton", handleIonBack, true);
-
     return () => {
-      window.removeEventListener("popstate", handlePopState, true);
       document.removeEventListener("ionBackButton", handleIonBack, true);
     };
   }, [isOpen, triggerBackStep]);
@@ -250,60 +223,51 @@ export default function GalleryPickerOverlay({
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     if (isClosingRef.current || e.touches.length !== 1) return;
     const touch = e.touches[0];
-    const vw = window.innerWidth;
-    const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
-    const isFromRightEdge = touch.clientX >= vw - EDGE_SWIPE_ZONE_PX;
-
-    if (!isFromLeftEdge && !isFromRightEdge) {
-      swipeStartRef.current.active = false;
-      return;
-    }
-
-    swipeStartRef.current = {
+    swipeRef.current = {
       x: touch.clientX,
       y: touch.clientY,
       time: performance.now(),
-      active: true,
-      direction: isFromLeftEdge ? 1 : -1,
-      lockedHorizontal: false,
+      tracking: true,
+      swiping: false,
     };
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    const state = swipeStartRef.current;
-    if (!state.active || isClosingRef.current || e.touches.length !== 1) {
+    const state = swipeRef.current;
+    if (!state.tracking || isClosingRef.current || e.touches.length !== 1) {
       return;
     }
 
     const touch = e.touches[0];
-    const rawDx = touch.clientX - state.x;
+    const dx = touch.clientX - state.x;
     const dy = touch.clientY - state.y;
-    const inwardDelta = rawDx * state.direction;
 
-    if (!state.lockedHorizontal) {
-      if (Math.abs(dy) > Math.abs(rawDx) && Math.abs(dy) > 10) {
-        state.active = false;
+    if (!state.swiping) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 12) {
+        state.tracking = false;
         setIsDragging(false);
         setDragX(0);
         return;
       }
-      if (inwardDelta > 8) {
-        state.lockedHorizontal = true;
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        state.swiping = true;
         setIsDragging(true);
       } else {
         return;
       }
     }
 
-    setDragX(Math.max(0, inwardDelta));
+    setDragX(Math.abs(dx));
   };
 
   const handleTouchEnd = () => {
-    const state = swipeStartRef.current;
-    if (!state.active) return;
-    state.active = false;
+    const state = swipeRef.current;
+    if (!state.tracking) return;
+    const wasSwiping = state.swiping;
+    state.tracking = false;
+    state.swiping = false;
 
-    if (!state.lockedHorizontal) {
+    if (!wasSwiping) {
       setIsDragging(false);
       setDragX(0);
       return;
@@ -312,7 +276,7 @@ export default function GalleryPickerOverlay({
     const elapsed = Math.max(1, performance.now() - state.time);
     const velocity = dragX / elapsed;
 
-    if (dragX >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY_PX_MS) {
+    if (dragX >= SWIPE_TRIGGER_PX || velocity >= SWIPE_VELOCITY_PX_MS) {
       triggerBackStep();
     } else {
       setIsDragging(false);
@@ -466,7 +430,7 @@ export default function GalleryPickerOverlay({
       : dragX > 0
       ? `translate3d(${dragX}px, 0, 0)`
       : undefined,
-    opacity: isExiting ? 0 : dragX > 0 ? Math.max(0.55, 1 - dragX / 480) : 1,
+    opacity: isExiting ? 0 : dragX > 0 ? Math.max(0.6, 1 - dragX / 420) : 1,
     transition: isDragging
       ? "none"
       : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
@@ -500,7 +464,7 @@ export default function GalleryPickerOverlay({
           >
             <button
               type="button"
-              onClick={handleCancelAdjust}
+              onClick={triggerBackStep}
               aria-label="Kembali"
               className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
             >
@@ -694,7 +658,7 @@ export default function GalleryPickerOverlay({
 
         <style>{`
           .moku-crop-enter {
-            animation: moku-crop-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation: moku-crop-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
           }
           @keyframes moku-crop-in {
             from {
@@ -743,7 +707,7 @@ export default function GalleryPickerOverlay({
         >
           <button
             type="button"
-            onClick={() => triggerOverlayClose()}
+            onClick={triggerBackStep}
             aria-label="Kembali"
             className="flex h-[calc(40*var(--u))] w-[calc(40*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color] duration-200 active:scale-90 active:bg-white/15"
           >
@@ -882,7 +846,7 @@ export default function GalleryPickerOverlay({
 
       <style>{`
         .moku-gal-enter {
-          animation: moku-gal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-gal-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         @keyframes moku-gal-in {
           from {
