@@ -12,9 +12,9 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const CLOSE_ANIMATION_MS = 230;
-const DISMISS_DRAG_Y_PX = 68;
-const DISMISS_VELOCITY_Y = 0.35;
+const CLOSE_ANIMATION_MS = 240;
+const DISMISS_DRAG_Y_PX = 64;
+const DISMISS_VELOCITY_Y = 0.34;
 
 interface DeletePhotoConfirmSheetProps {
   isOpen: boolean;
@@ -212,7 +212,7 @@ export default function DeletePhotoConfirmSheet({
             ? "none"
             : `opacity ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         }}
-        className="moku-del-backdrop fixed inset-0 bg-black/52"
+        className="moku-del-backdrop fixed inset-0 bg-black/48"
       />
 
       <div
@@ -230,7 +230,6 @@ export default function DeletePhotoConfirmSheet({
         }}
         className="moku-del-sheet relative z-10 mx-auto flex w-full max-w-[680px] flex-col items-center rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] text-center"
       >
-        {/* Drag Handle */}
         <div
           aria-hidden="true"
           style={{
@@ -241,7 +240,6 @@ export default function DeletePhotoConfirmSheet({
           className="mx-auto rounded-full bg-[#D4D4DC]"
         />
 
-        {/* Ilustrasi Hapus Foto */}
         <div
           style={{
             width: "calc(216 * var(--u))",
@@ -260,7 +258,6 @@ export default function DeletePhotoConfirmSheet({
           />
         </div>
 
-        {/* Judul */}
         <h3
           id="moku-delete-photo-title"
           style={{
@@ -272,7 +269,6 @@ export default function DeletePhotoConfirmSheet({
           Hapus Foto Profil?
         </h3>
 
-        {/* Deskripsi */}
         <p
           style={{
             marginTop: 0,
@@ -285,7 +281,6 @@ export default function DeletePhotoConfirmSheet({
           diganti dengan avatar default.
         </p>
 
-        {/* Tombol Aksi */}
         <div className="w-full space-y-[calc(10*var(--u))]">
           <button
             type="button"
@@ -307,10 +302,10 @@ export default function DeletePhotoConfirmSheet({
 
       <style>{`
         .moku-del-backdrop {
-          animation: moku-del-fade 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-del-fade 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-del-sheet {
-          animation: moku-del-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-del-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         @keyframes moku-del-fade {
           from {
