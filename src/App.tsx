@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Route } from "react-router-dom";
 import {
   IonApp,
@@ -24,6 +24,10 @@ import {
   enforceLatestBuildCache,
 } from "@/lib/cache-buster";
 import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
+import {
+  isAnyBottomSheetOpen,
+  subscribeBottomSheetLock,
+} from "@/lib/bottom-sheet-lock";
 
 const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
   const duration = 400;
@@ -164,9 +168,39 @@ function EditAccountInfoRoute() {
 }
 
 export default function App() {
+  const [isSheetLocked, setIsSheetLocked] = useState(false);
+
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
     return bindAutoUpdateOnResume();
+  }, []);
+
+  useEffect(() => {
+    return subscribeBottomSheetLock((locked) => {
+      setIsSheetLocked(locked);
+    });
+  }, []);
+
+  useEffect(() => {
+    const blockRouterSwipeWhenSheetOpen = (ev: Event) => {
+      if (isAnyBottomSheetOpen()) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener(
+      "ionSwipeBackStart",
+      blockRouterSwipeWhenSheetOpen,
+      true
+    );
+    return () => {
+      document.removeEventListener(
+        "ionSwipeBackStart",
+        blockRouterSwipeWhenSheetOpen,
+        true
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -188,7 +222,10 @@ export default function App() {
   return (
     <IonApp>
       <IonReactRouter>
-        <IonRouterOutlet animated={true}>
+        <IonRouterOutlet
+          animated={true}
+          swipeBackEnabled={!isSheetLocked}
+        >
           <Route exact path="/" component={DashboardRoute} />
           <Route exact path="/dashboard" component={DashboardRoute} />
           <Route exact path="/notifications" component={NotificationsRoute} />
