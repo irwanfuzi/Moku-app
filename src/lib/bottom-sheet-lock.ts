@@ -17,19 +17,6 @@ function notify() {
 export function registerOpenBottomSheet(dismiss: () => void): () => void {
   const id = nextSheetId++;
   openSheets.push({ id, dismiss });
-
-  // Sisipkan 1 state history agar system back / swipe-back browser memakan state ini dulu,
-  // bukan memundurkan rute halaman utama.
-  if (typeof window !== "undefined") {
-    const currentState = window.history.state || {};
-    if (currentState.__mokuSheetGuard !== openSheets.length) {
-      window.history.pushState(
-        { ...currentState, __mokuSheetGuard: openSheets.length },
-        ""
-      );
-    }
-  }
-
   notify();
 
   let released = false;
