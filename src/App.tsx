@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Route } from "react-router-dom";
+import { Route, useHistory } from "react-router-dom";
 import {
   IonApp,
   IonContent,
@@ -25,6 +25,7 @@ import {
 } from "@/lib/cache-buster";
 import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
 import {
+  dismissTopBottomSheet,
   isAnyBottomSheetOpen,
   subscribeBottomSheetLock,
 } from "@/lib/bottom-sheet-lock";
@@ -70,6 +71,31 @@ setupIonicReact({
   swipeBackEnabled: true,
   navAnimation: seamlessSlideAnimation,
 });
+
+/**
+ * Mencegat system swipe-back (POP) di level React Router.
+ * Jika ada bottom sheet terbuka -> batalkan pindah halaman (return false) dan turunkan sheet.
+ * Jika semua sheet sudah tertutup -> izinkan pindah ke halaman sebelumnya.
+ */
+function BottomSheetBackBlocker() {
+  const history = useHistory();
+
+  useEffect(() => {
+    const unblock = history.block((_location, action) => {
+      if (action === "POP" && isAnyBottomSheetOpen()) {
+        dismissTopBottomSheet();
+        return false;
+      }
+      return undefined;
+    });
+
+    return () => {
+      unblock();
+    };
+  }, [history]);
+
+  return null;
+}
 
 function DashboardRoute() {
   return (
@@ -236,6 +262,7 @@ export default function App() {
   return (
     <IonApp>
       <IonReactRouter>
+        <BottomSheetBackBlocker />
         <IonRouterOutlet
           animated={true}
           swipeBackEnabled={!isSheetLocked}
