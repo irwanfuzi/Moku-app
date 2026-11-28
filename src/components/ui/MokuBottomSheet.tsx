@@ -10,6 +10,7 @@ import {
   type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { registerOpenBottomSheet } from "@/lib/bottom-sheet-lock";
 
 const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
@@ -18,8 +19,8 @@ const MOBILE_SCALE_VARS = {
 const SHEET_ANIMATION_MS = 280;
 const DISMISS_DRAG_Y_PX = 56;
 const DISMISS_VELOCITY_Y = 0.28;
-const EDGE_BACK_ZONE_PX = 36;
-const EDGE_BACK_TRIGGER_PX = 48;
+const EDGE_BACK_ZONE_PX = 40;
+const EDGE_BACK_TRIGGER_PX = 36;
 
 export interface MokuBottomSheetRef {
   closeSheet: (afterClose?: () => void) => void;
@@ -68,6 +69,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
   ) {
     const closeTimerRef = useRef<number | null>(null);
     const enterRafRef = useRef<number | null>(null);
+    const releaseLockRef = useRef<(() => void) | null>(null);
     const isClosingRef = useRef(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -78,18 +80,6 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
     }>({
       startY: 0,
       startTime: 0,
-      tracking: false,
-    });
-
-    const edgeSwipeRef = useRef<{
-      startX: number;
-      startY: number;
-      direction: 1 | -1;
-      tracking: boolean;
-    }>({
-      startX: 0,
-      startY: 0,
-      direction: 1,
       tracking: false,
     });
 
@@ -118,6 +108,8 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           closeTimerRef.current = null;
           isClosingRef.current = false;
           setDragY(0);
+          releaseLockRef.current?.();
+          releaseLockRef.current = null;
           onClose();
           afterClose?.();
         }, SHEET_ANIMATION_MS);
@@ -139,7 +131,13 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         setIsEntered(false);
         setIsDragging(false);
         setDragY(0);
+        releaseLockRef.current?.();
+        releaseLockRef.current = null;
         return;
+      }
+
+      if (!releaseLockRef.current) {
+        releaseLockRef.current = registerOpenBottomSheet();
       }
 
       isClosingRef.current = false;
@@ -163,11 +161,59 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           window.clearTimeout(closeTimerRef.current);
           closeTimerRef.current = null;
         }
+        releaseLockRef.current?.();
+        releaseLockRef.current = null;
       };
     }, [isOpen]);
 
     useEffect(() => {
       if (!isOpen) return;
+
+      let edgeStartX = 0;
+      let edgeStartY = 0;
+      let edgeDir: 1 | -1 = 1;
+      let edgeTracking = false;
+
+      const onCaptureTouchStart = (e: globalThis.TouchEvent) => {
+        if (isClosingRef.current || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        const vw = window.innerWidth;
+        const fromLeft = t.clientX <= EDGE_BACK_ZONE_PX;
+        const fromRight = t.clientX >= vw - EDGE_BACK_ZONE_PX;
+        if (fromLeft || fromRight) {
+          edgeStartX = t.clientX;
+          edgeStartY = t.clientY;
+          edgeDir = fromLeft ? 1 : -1;
+          edgeTracking = true;
+          e.stopPropagation();
+        } else {
+          edgeTracking = false;
+        }
+      };
+
+      const onCaptureTouchMove = (e: globalThis.TouchEvent) => {
+        if (!edgeTracking || isClosingRef.current || e.touches.length !== 1) {
+          return;
+        }
+        const t = e.touches[0];
+        const inwardDx = (t.clientX - edgeStartX) * edgeDir;
+        const dy = Math.abs(t.clientY - edgeStartY);
+
+        if (dy > Math.abs(inwardDx) && dy > 12) {
+          edgeTracking = false;
+          return;
+        }
+
+        e.stopPropagation();
+        if (inwardDx >= EDGE_BACK_TRIGGER_PX) {
+          edgeTracking = false;
+          dismissSheet();
+        }
+      };
+
+      const onCaptureTouchEnd = () => {
+        edgeTracking = false;
+      };
 
       const handleIonBack = (ev: Event) => {
         if (isClosingRef.current) return;
@@ -191,60 +237,28 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         dismissSheet();
       };
 
+      window.addEventListener("touchstart", onCaptureTouchStart, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("touchmove", onCaptureTouchMove, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("touchend", onCaptureTouchEnd, true);
       document.addEventListener("ionBackButton", handleIonBack, true);
       document.addEventListener("backbutton", handleHardwareBack, true);
 
       return () => {
+        window.removeEventListener("touchstart", onCaptureTouchStart, true);
+        window.removeEventListener("touchmove", onCaptureTouchMove, true);
+        window.removeEventListener("touchend", onCaptureTouchEnd, true);
         document.removeEventListener("ionBackButton", handleIonBack, true);
         document.removeEventListener("backbutton", handleHardwareBack, true);
       };
     }, [backButtonPriority, dismissSheet, isOpen]);
 
     if (!isOpen || typeof document === "undefined") return null;
-
-    const handleOverlayTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-      if (isClosingRef.current || e.touches.length !== 1) return;
-      const touch = e.touches[0];
-      const vw = window.innerWidth;
-      const fromLeft = touch.clientX <= EDGE_BACK_ZONE_PX;
-      const fromRight = touch.clientX >= vw - EDGE_BACK_ZONE_PX;
-
-      if (fromLeft || fromRight) {
-        edgeSwipeRef.current = {
-          startX: touch.clientX,
-          startY: touch.clientY,
-          direction: fromLeft ? 1 : -1,
-          tracking: true,
-        };
-      } else {
-        edgeSwipeRef.current.tracking = false;
-      }
-    };
-
-    const handleOverlayTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-      const edge = edgeSwipeRef.current;
-      if (!edge.tracking || isClosingRef.current || e.touches.length !== 1) {
-        return;
-      }
-
-      const touch = e.touches[0];
-      const inwardDx = (touch.clientX - edge.startX) * edge.direction;
-      const dy = Math.abs(touch.clientY - edge.startY);
-
-      if (dy > Math.abs(inwardDx) && dy > 12) {
-        edge.tracking = false;
-        return;
-      }
-
-      if (inwardDx >= EDGE_BACK_TRIGGER_PX) {
-        edge.tracking = false;
-        dismissSheet();
-      }
-    };
-
-    const handleOverlayTouchEnd = () => {
-      edgeSwipeRef.current.tracking = false;
-    };
 
     const handlePanelTouchStart = (e: TouchEvent<HTMLDivElement>) => {
       if (!enableDragToDismiss || isClosingRef.current || e.touches.length !== 1) {
@@ -321,10 +335,6 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       <div
         style={{ ...MOBILE_SCALE_VARS, touchAction: "none" }}
         onContextMenu={(e) => e.preventDefault()}
-        onTouchStart={handleOverlayTouchStart}
-        onTouchMove={handleOverlayTouchMove}
-        onTouchEnd={handleOverlayTouchEnd}
-        onTouchCancel={handleOverlayTouchEnd}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
