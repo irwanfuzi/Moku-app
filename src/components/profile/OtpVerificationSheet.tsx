@@ -8,7 +8,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
-  CheckCircle,
   EnvelopeSimple,
   PencilSimpleLine,
   Phone,
@@ -19,6 +18,7 @@ import MokuBottomSheet, {
 } from "@/components/ui/MokuBottomSheet";
 
 export type OtpTarget = "email" | "phone";
+type VerifyPhase = "input" | "wave" | "verified";
 
 interface OtpVerificationSheetProps {
   isOpen: boolean;
@@ -37,8 +37,9 @@ interface OtpVerificationSheetProps {
 }
 
 const OTP_LENGTH = 6;
-const AUTO_VERIFY_DELAY_MS = 200;
-const SUCCESS_HOLD_MS = 480;
+const AUTO_VERIFY_DELAY_MS = 180;
+const WAVE_DURATION_MS = 460;
+const VERIFIED_HOLD_MS = 950;
 
 function triggerLightHaptic(pattern: number | number[] = 4) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -61,52 +62,56 @@ export default function OtpVerificationSheet({
 }: OtpVerificationSheetProps) {
   const sheetRef = useRef<MokuBottomSheetRef>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const successTimerRef = useRef<number | null>(null);
   const autoVerifyTimerRef = useRef<number | null>(null);
+  const waveTimerRef = useRef<number | null>(null);
+  const closeHoldTimerRef = useRef<number | null>(null);
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [activeIndex, setActiveIndex] = useState(0);
   const [poppedIndex, setPoppedIndex] = useState<number | null>(null);
   const [popNonce, setPopNonce] = useState(0);
   const [shakeNonce, setShakeNonce] = useState(0);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [phase, setPhase] = useState<VerifyPhase>("input");
 
-  const clearAutoVerifyTimer = useCallback(() => {
+  const focusBox = useCallback((idx: number) => {
+    inputRefs.current[idx]?.focus({ preventScroll: true });
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
     if (autoVerifyTimerRef.current !== null) {
       window.clearTimeout(autoVerifyTimerRef.current);
       autoVerifyTimerRef.current = null;
+    }
+    if (waveTimerRef.current !== null) {
+      window.clearTimeout(waveTimerRef.current);
+      waveTimerRef.current = null;
+    }
+    if (closeHoldTimerRef.current !== null) {
+      window.clearTimeout(closeHoldTimerRef.current);
+      closeHoldTimerRef.current = null;
     }
   }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      clearAutoVerifyTimer();
-      if (successTimerRef.current !== null) {
-        window.clearTimeout(successTimerRef.current);
-        successTimerRef.current = null;
-      }
+      clearAllTimers();
       return;
     }
 
     setDigits(Array(OTP_LENGTH).fill(""));
     setActiveIndex(0);
     setPoppedIndex(null);
-    setIsSuccess(false);
+    setPhase("input");
 
-    // Fokus setelah animasi naik MokuBottomSheet (420ms) selesai agar transisi tetap mulus
     const focusTimer = window.setTimeout(() => {
-      inputRefs.current[0]?.focus({ preventScroll: true });
-    }, 450);
+      focusBox(0);
+    }, 420);
 
     return () => {
       window.clearTimeout(focusTimer);
-      clearAutoVerifyTimer();
-      if (successTimerRef.current !== null) {
-        window.clearTimeout(successTimerRef.current);
-        successTimerRef.current = null;
-      }
+      clearAllTimers();
     };
-  }, [clearAutoVerifyTimer, isOpen, destination, target]);
+  }, [clearAllTimers, focusBox, isOpen, destination, target]);
 
   const triggerBoxPop = (idx: number) => {
     setPoppedIndex(idx);
@@ -115,8 +120,11 @@ export default function OtpVerificationSheet({
 
   const executeVerify = useCallback(
     (codeToVerify: string) => {
-      if (isSuccess) return;
-      clearAutoVerifyTimer();
+      if (phase !== "input") return;
+      if (autoVerifyTimerRef.current !== null) {
+        window.clearTimeout(autoVerifyTimerRef.current);
+        autoVerifyTimerRef.current = null;
+      }
 
       const valid = onVerify(codeToVerify);
       if (!valid) {
@@ -125,24 +133,35 @@ export default function OtpVerificationSheet({
         return;
       }
 
-      // Tutup keyboard dulu, tampilkan feedback sukses yang nyaman dibaca, lalu luncurkan sheet turun
+      // Tahap 1: Gelombang hijau kiri-ke-kanan pada 6 kotak OTP
       inputRefs.current.forEach((el) => el?.blur());
-      setIsSuccess(true);
+      setPhase("wave");
       triggerLightHaptic([8, 25, 10]);
 
-      successTimerRef.current = window.setTimeout(() => {
-        successTimerRef.current = null;
-        sheetRef.current?.closeSheet(() => {
-          onVerifySuccess();
-        });
-      }, SUCCESS_HOLD_MS);
+      // Tahap 2: Transisi halus ke tampilan centang SVG terverifikasi
+      waveTimerRef.current = window.setTimeout(() => {
+        waveTimerRef.current = null;
+        setPhase("verified");
+        triggerLightHaptic(10);
+
+        // Tahap 3: Tutup bottom sheet meluncur turun
+        closeHoldTimerRef.current = window.setTimeout(() => {
+          closeHoldTimerRef.current = null;
+          sheetRef.current?.closeSheet(() => {
+            onVerifySuccess();
+          });
+        }, VERIFIED_HOLD_MS);
+      }, WAVE_DURATION_MS);
     },
-    [clearAutoVerifyTimer, isSuccess, onVerify, onVerifySuccess]
+    [onVerify, onVerifySuccess, phase]
   );
 
   const scheduleAutoVerifyIfComplete = useCallback(
     (nextDigits: string[]) => {
-      clearAutoVerifyTimer();
+      if (autoVerifyTimerRef.current !== null) {
+        window.clearTimeout(autoVerifyTimerRef.current);
+        autoVerifyTimerRef.current = null;
+      }
       const joined = nextDigits.join("");
       if (joined.length === OTP_LENGTH && nextDigits.every((d) => d !== "")) {
         autoVerifyTimerRef.current = window.setTimeout(() => {
@@ -151,16 +170,19 @@ export default function OtpVerificationSheet({
         }, AUTO_VERIFY_DELAY_MS);
       }
     },
-    [clearAutoVerifyTimer, executeVerify]
+    [executeVerify]
   );
 
   const handleDigitChange = (index: number, rawValue: string) => {
-    if (isSuccess) return;
+    if (phase !== "input") return;
     const clean = rawValue.replace(/\D/g, "");
     onClearError?.();
 
     if (!clean) {
-      clearAutoVerifyTimer();
+      if (autoVerifyTimerRef.current !== null) {
+        window.clearTimeout(autoVerifyTimerRef.current);
+        autoVerifyTimerRef.current = null;
+      }
       const next = [...digits];
       next[index] = "";
       setDigits(next);
@@ -180,7 +202,7 @@ export default function OtpVerificationSheet({
 
       const nextFocus = Math.min(index + clean.length, OTP_LENGTH - 1);
       setActiveIndex(nextFocus);
-      inputRefs.current[nextFocus]?.focus();
+      focusBox(nextFocus);
       scheduleAutoVerifyIfComplete(next);
       return;
     }
@@ -193,17 +215,20 @@ export default function OtpVerificationSheet({
 
     if (index < OTP_LENGTH - 1) {
       setActiveIndex(index + 1);
-      inputRefs.current[index + 1]?.focus();
+      focusBox(index + 1);
     }
 
     scheduleAutoVerifyIfComplete(next);
   };
 
   const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (isSuccess) return;
+    if (phase !== "input") return;
 
     if (e.key === "Backspace") {
-      clearAutoVerifyTimer();
+      if (autoVerifyTimerRef.current !== null) {
+        window.clearTimeout(autoVerifyTimerRef.current);
+        autoVerifyTimerRef.current = null;
+      }
       onClearError?.();
       triggerLightHaptic(3);
       if (digits[index]) {
@@ -215,14 +240,14 @@ export default function OtpVerificationSheet({
         next[index - 1] = "";
         setDigits(next);
         setActiveIndex(index - 1);
-        inputRefs.current[index - 1]?.focus();
+        focusBox(index - 1);
       }
     } else if (e.key === "ArrowLeft" && index > 0) {
       setActiveIndex(index - 1);
-      inputRefs.current[index - 1]?.focus();
+      focusBox(index - 1);
     } else if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
       setActiveIndex(index + 1);
-      inputRefs.current[index + 1]?.focus();
+      focusBox(index + 1);
     } else if (e.key === "Enter") {
       e.preventDefault();
       executeVerify(digits.join(""));
@@ -230,7 +255,7 @@ export default function OtpVerificationSheet({
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    if (isSuccess) return;
+    if (phase !== "input") return;
     e.preventDefault();
     const pasted = e.clipboardData
       .getData("text")
@@ -249,13 +274,13 @@ export default function OtpVerificationSheet({
     const nextFocus = Math.min(pasted.length - 1, OTP_LENGTH - 1);
     triggerBoxPop(nextFocus);
     setActiveIndex(nextFocus);
-    inputRefs.current[nextFocus]?.focus();
+    focusBox(nextFocus);
     scheduleAutoVerifyIfComplete(next);
   };
 
   const handleChangeDestination = () => {
-    if (isSuccess) return;
-    clearAutoVerifyTimer();
+    if (phase !== "input") return;
+    clearAllTimers();
     inputRefs.current.forEach((el) => el?.blur());
     sheetRef.current?.closeSheet(() => {
       onChangeDestination();
@@ -263,6 +288,7 @@ export default function OtpVerificationSheet({
   };
 
   const getOtpBoxStyle = (
+    idx: number,
     isFocused: boolean,
     hasValue: boolean
   ): CSSProperties => {
@@ -275,14 +301,15 @@ export default function OtpVerificationSheet({
       appearance: "none",
     };
 
-    if (isSuccess) {
+    if (phase === "wave") {
       return {
         ...base,
         borderWidth: "1.5px",
         borderColor: "#16A34A",
-        backgroundColor: "#F0FDF4",
+        backgroundColor: "#ECFDF5",
         color: "#15803D",
-        boxShadow: "0 0 0 3px rgba(22, 163, 74, 0.12)",
+        boxShadow: "0 0 0 3px rgba(22, 163, 74, 0.14)",
+        animationDelay: `${idx * 55}ms`,
       };
     }
 
@@ -332,6 +359,7 @@ export default function OtpVerificationSheet({
   const isEmail = target === "email";
   const formattedDestination = isEmail ? destination : `+62 ${destination}`;
   const isComplete = digits.every((d) => d !== "");
+  const isLocked = phase !== "input";
 
   return (
     <MokuBottomSheet
@@ -343,180 +371,241 @@ export default function OtpVerificationSheet({
       zIndexClassName="z-[9998]"
       bottomPaddingUnits={18}
     >
-      <div className="moku-otp-content-in">
-        {/* Header: Ikon + Judul + Deskripsi */}
+      {phase === "verified" ? (
+        /* Tahap 2: Tampilan Terverifikasi (SVG Checkmark Draw-In + Pulse Ring) */
         <div
-          style={{ marginBottom: "calc(22 * var(--u))" }}
-          className="flex items-start gap-[calc(14*var(--u))] pt-[calc(4*var(--u))]"
+          style={{
+            paddingTop: "calc(22 * var(--u))",
+            paddingBottom: "calc(24 * var(--u))",
+          }}
+          className="moku-verified-in flex flex-col items-center justify-center text-center"
         >
           <div
             style={{
-              width: "calc(48 * var(--u))",
-              height: "calc(48 * var(--u))",
+              width: "calc(76 * var(--u))",
+              height: "calc(76 * var(--u))",
+              marginBottom: "calc(18 * var(--u))",
             }}
-            className="flex shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#FCECEF] text-[#740319]"
+            className="relative flex items-center justify-center"
           >
-            {isEmail ? (
-              <EnvelopeSimple
-                weight="regular"
-                className="h-[calc(24*var(--u))] w-[calc(24*var(--u))]"
+            <span
+              aria-hidden="true"
+              className="moku-verified-ring absolute inset-0 rounded-full bg-[#16A34A]/15"
+            />
+            <span className="relative flex h-full w-full items-center justify-center rounded-full bg-[#ECFDF5] ring-2 ring-[#16A34A]/25">
+              <svg
+                viewBox="0 0 52 52"
+                className="h-[calc(42*var(--u))] w-[calc(42*var(--u))]"
+                fill="none"
+              >
+                <circle
+                  cx="26"
+                  cy="26"
+                  r="22"
+                  stroke="#16A34A"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  className="moku-check-circle"
+                />
+                <path
+                  d="M16.5 26.8L23 33.2L36 19.5"
+                  stroke="#15803D"
+                  strokeWidth="3.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="moku-check-mark"
+                />
+              </svg>
+            </span>
+          </div>
+
+          <h3
+            id="moku-otp-sheet-title"
+            style={{ margin: 0, marginBottom: "calc(6 * var(--u))" }}
+            className="font-display text-[calc(20*var(--u))] font-bold tracking-[-0.015em] text-[#171717]"
+          >
+            {isEmail ? "Email Terverifikasi" : "Nomor Terverifikasi"}
+          </h3>
+          <p
+            style={{ margin: 0 }}
+            className="text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#52525B]"
+          >
+            <span className="font-semibold text-[#171717]">
+              {formattedDestination}
+            </span>{" "}
+            berhasil divalidasi.
+          </p>
+        </div>
+      ) : (
+        <div className="moku-otp-content-in">
+          {/* Header: Ikon + Judul + Deskripsi */}
+          <div
+            style={{ marginBottom: "calc(22 * var(--u))" }}
+            className="flex items-start gap-[calc(14*var(--u))] pt-[calc(4*var(--u))]"
+          >
+            <div
+              style={{
+                width: "calc(48 * var(--u))",
+                height: "calc(48 * var(--u))",
+              }}
+              className="flex shrink-0 items-center justify-center rounded-[calc(12*var(--u))] bg-[#FCECEF] text-[#740319]"
+            >
+              {isEmail ? (
+                <EnvelopeSimple
+                  weight="regular"
+                  className="h-[calc(24*var(--u))] w-[calc(24*var(--u))]"
+                />
+              ) : (
+                <Phone
+                  weight="regular"
+                  className="h-[calc(24*var(--u))] w-[calc(24*var(--u))]"
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 text-left">
+              <h3
+                id="moku-otp-sheet-title"
+                style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
+                className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]"
+              >
+                {isEmail ? "Verifikasi Email" : "Verifikasi Nomor Telepon"}
+              </h3>
+              <p
+                style={{ margin: 0 }}
+                className="text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#4B4B55]"
+              >
+                Masukkan 6 digit kode OTP yang telah dikirim ke{" "}
+                {isEmail ? "email" : "nomor"}{" "}
+                <span className="font-semibold text-[#171717]">
+                  {formattedDestination}.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* 6 Kotak Input OTP */}
+          <div
+            key={shakeNonce}
+            className={`grid grid-cols-6 gap-[calc(8*var(--u))] px-[calc(6*var(--u))] ${
+              shakeNonce > 0 && error ? "moku-otp-shake" : ""
+            }`}
+          >
+            {digits.map((digit, idx) => {
+              const isFocused = activeIndex === idx && phase === "input";
+              const hasValue = digit !== "";
+              const isPopping = poppedIndex === idx && phase === "input";
+
+              return (
+                <input
+                  key={`${idx}-${isPopping ? popNonce : 0}`}
+                  ref={(el) => {
+                    inputRefs.current[idx] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete={idx === 0 ? "one-time-code" : "off"}
+                  maxLength={OTP_LENGTH}
+                  value={digit}
+                  readOnly={isLocked}
+                  aria-label={`Digit OTP ke-${idx + 1}`}
+                  onFocus={() => setActiveIndex(idx)}
+                  onChange={(e) => handleDigitChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(idx, e)}
+                  onPaste={handlePaste}
+                  style={getOtpBoxStyle(idx, isFocused, hasValue)}
+                  className={`moku-otp-input w-full rounded-[calc(12*var(--u))] text-center font-display font-bold leading-none caret-[#740319] transition-[border-color,background-color,box-shadow,color] duration-250 ease-out ${
+                    phase === "wave"
+                      ? "moku-otp-wave"
+                      : isPopping && hasValue
+                      ? "moku-otp-pop"
+                      : ""
+                  }`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Pesan Error Validasi OTP */}
+          {error && phase === "input" && (
+            <p
+              role="alert"
+              style={{ margin: 0, marginTop: "calc(10 * var(--u))" }}
+              className="moku-otp-fade-in flex items-center justify-center gap-[calc(5*var(--u))] text-[calc(12*var(--u))] font-medium text-[#C8102E]"
+            >
+              <WarningCircle
+                weight="fill"
+                className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
               />
+              <span>{error}</span>
+            </p>
+          )}
+
+          {/* Tombol Verifikasi */}
+          <button
+            type="button"
+            onClick={() => executeVerify(digits.join(""))}
+            disabled={isLocked || !isComplete}
+            style={{ marginTop: "calc(22 * var(--u))" }}
+            className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-300 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
+              phase === "wave"
+                ? "bg-[#15803D]"
+                : isComplete
+                ? "bg-[#740319] active:bg-[#5B0213]"
+                : "bg-[#740319]/45"
+            }`}
+          >
+            <span>{phase === "wave" ? "Memverifikasi..." : "Verifikasi"}</span>
+          </button>
+
+          {/* Kirim Ulang OTP */}
+          <div
+            style={{
+              marginTop: "calc(16 * var(--u))",
+              marginBottom: "calc(18 * var(--u))",
+            }}
+            className="text-center text-[calc(13*var(--u))] text-[#3F3F46]"
+          >
+            <span>Belum menerima kode? </span>
+            {resendCooldown > 0 ? (
+              <>
+                <span>Kirim ulang dalam </span>
+                <span className="font-semibold text-[#740319] underline underline-offset-2">
+                  {resendCooldown} detik
+                </span>
+              </>
             ) : (
-              <Phone
-                weight="regular"
-                className="h-[calc(24*var(--u))] w-[calc(24*var(--u))]"
-              />
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={onResend}
+                className="cursor-pointer font-semibold text-[#740319] underline underline-offset-2 active:opacity-75 disabled:opacity-50"
+              >
+                Kirim ulang
+              </button>
             )}
           </div>
 
-          <div className="min-w-0 flex-1 text-left">
-            <h3
-              id="moku-otp-sheet-title"
-              style={{ margin: 0, marginBottom: "calc(4 * var(--u))" }}
-              className="font-display text-[calc(19*var(--u))] font-bold leading-tight tracking-[-0.015em] text-[#171717]"
-            >
-              {isEmail ? "Verifikasi Email" : "Verifikasi Nomor Telepon"}
-            </h3>
-            <p
-              style={{ margin: 0 }}
-              className="text-[calc(13.5*var(--u))] font-normal leading-[1.45] text-[#4B4B55]"
-            >
-              Masukkan 6 digit kode OTP yang telah dikirim ke{" "}
-              {isEmail ? "email" : "nomor"}{" "}
-              <span className="font-semibold text-[#171717]">
-                {formattedDestination}.
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* 6 Kotak Input OTP Bersih Tanpa Outline Browser */}
-        <div
-          key={shakeNonce}
-          className={`grid grid-cols-6 gap-[calc(8*var(--u))] px-[calc(6*var(--u))] ${
-            shakeNonce > 0 && error ? "moku-otp-shake" : ""
-          }`}
-        >
-          {digits.map((digit, idx) => {
-            const isFocused = activeIndex === idx && !isSuccess;
-            const hasValue = digit !== "";
-            const isPopping = poppedIndex === idx;
-
-            return (
-              <input
-                key={`${idx}-${isPopping ? popNonce : 0}`}
-                ref={(el) => {
-                  inputRefs.current[idx] = el;
-                }}
-                type="text"
-                inputMode="numeric"
-                autoComplete={idx === 0 ? "one-time-code" : "off"}
-                maxLength={OTP_LENGTH}
-                value={digit}
-                readOnly={isSuccess}
-                aria-label={`Digit OTP ke-${idx + 1}`}
-                onFocus={() => setActiveIndex(idx)}
-                onChange={(e) => handleDigitChange(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                onPaste={handlePaste}
-                style={getOtpBoxStyle(isFocused, hasValue)}
-                className={`moku-otp-input w-full rounded-[calc(12*var(--u))] text-center font-display font-bold leading-none caret-[#740319] transition-[border-color,background-color,box-shadow,transform,color] duration-250 ease-out ${
-                  isPopping && hasValue ? "moku-otp-pop" : ""
-                }`}
-              />
-            );
-          })}
-        </div>
-
-        {/* Pesan Error Validasi OTP */}
-        {error && !isSuccess && (
-          <p
-            role="alert"
-            style={{ margin: 0, marginTop: "calc(10 * var(--u))" }}
-            className="moku-otp-fade-in flex items-center justify-center gap-[calc(5*var(--u))] text-[calc(12*var(--u))] font-medium text-[#C8102E]"
+          {/* Garis Pemisah + Aksi Ubah Email / Nomor */}
+          <div
+            style={{ paddingTop: "calc(14 * var(--u))" }}
+            className="border-t border-[#EFEFF3] text-center"
           >
-            <WarningCircle
-              weight="fill"
-              className="h-[calc(14*var(--u))] w-[calc(14*var(--u))] shrink-0"
-            />
-            <span>{error}</span>
-          </p>
-        )}
-
-        {/* Tombol Verifikasi */}
-        <button
-          type="button"
-          onClick={() => executeVerify(digits.join(""))}
-          disabled={isSuccess || !isComplete}
-          style={{ marginTop: "calc(22 * var(--u))" }}
-          className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-300 ease-out active:scale-[0.985] disabled:cursor-not-allowed ${
-            isSuccess
-              ? "bg-[#15803D]"
-              : isComplete
-              ? "bg-[#740319] active:bg-[#5B0213]"
-              : "bg-[#740319]/45"
-          }`}
-        >
-          {isSuccess ? (
-            <span className="moku-otp-pop inline-flex items-center gap-[calc(8*var(--u))]">
-              <CheckCircle
-                weight="fill"
-                className="h-[calc(19*var(--u))] w-[calc(19*var(--u))] text-white"
-              />
-              <span>Terverifikasi</span>
-            </span>
-          ) : (
-            <span>Verifikasi</span>
-          )}
-        </button>
-
-        {/* Kirim Ulang OTP */}
-        <div
-          style={{
-            marginTop: "calc(16 * var(--u))",
-            marginBottom: "calc(18 * var(--u))",
-          }}
-          className="text-center text-[calc(13*var(--u))] text-[#3F3F46]"
-        >
-          <span>Belum menerima kode? </span>
-          {resendCooldown > 0 ? (
-            <>
-              <span>Kirim ulang dalam </span>
-              <span className="font-semibold text-[#740319] underline underline-offset-2">
-                {resendCooldown} detik
-              </span>
-            </>
-          ) : (
             <button
               type="button"
-              disabled={isSuccess}
-              onClick={onResend}
-              className="cursor-pointer font-semibold text-[#740319] underline underline-offset-2 active:opacity-75 disabled:opacity-50"
+              disabled={isLocked}
+              onClick={handleChangeDestination}
+              className="inline-flex cursor-pointer items-center justify-center gap-[calc(8*var(--u))] py-[calc(4*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] underline underline-offset-4 transition-opacity duration-200 active:opacity-75 disabled:opacity-50"
             >
-              Kirim ulang
+              <PencilSimpleLine
+                weight="regular"
+                className="h-[calc(17*var(--u))] w-[calc(17*var(--u))]"
+              />
+              <span>{isEmail ? "Ubah Email" : "Ubah Nomor Telepon"}</span>
             </button>
-          )}
+          </div>
         </div>
-
-        {/* Garis Pemisah + Aksi Ubah Email / Nomor */}
-        <div
-          style={{ paddingTop: "calc(14 * var(--u))" }}
-          className="border-t border-[#EFEFF3] text-center"
-        >
-          <button
-            type="button"
-            disabled={isSuccess}
-            onClick={handleChangeDestination}
-            className="inline-flex cursor-pointer items-center justify-center gap-[calc(8*var(--u))] py-[calc(4*var(--u))] font-display text-[calc(14*var(--u))] font-semibold text-[#740319] underline underline-offset-4 transition-opacity duration-200 active:opacity-75 disabled:opacity-50"
-          >
-            <PencilSimpleLine
-              weight="regular"
-              className="h-[calc(17*var(--u))] w-[calc(17*var(--u))]"
-            />
-            <span>{isEmail ? "Ubah Email" : "Ubah Nomor Telepon"}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       <style>{`
         .moku-otp-input:focus,
@@ -524,16 +613,35 @@ export default function OtpVerificationSheet({
           outline: none !important;
         }
         .moku-otp-content-in {
-          animation: moku-otp-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: moku-otp-rise 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-otp-pop {
           animation: moku-otp-box-pop 240ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .moku-otp-wave {
+          animation: moku-otp-box-wave 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .moku-otp-shake {
           animation: moku-otp-box-shake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
         .moku-otp-fade-in {
           animation: moku-otp-fade 260ms ease-out both;
+        }
+        .moku-verified-in {
+          animation: moku-verified-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .moku-verified-ring {
+          animation: moku-ring-pulse 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .moku-check-circle {
+          stroke-dasharray: 140;
+          stroke-dashoffset: 140;
+          animation: moku-draw-stroke 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms forwards;
+        }
+        .moku-check-mark {
+          stroke-dasharray: 44;
+          stroke-dashoffset: 44;
+          animation: moku-draw-stroke 320ms cubic-bezier(0.22, 1, 0.36, 1) 240ms forwards;
         }
         @keyframes moku-otp-rise {
           from {
@@ -554,6 +662,17 @@ export default function OtpVerificationSheet({
           }
           100% {
             transform: scale(1);
+          }
+        }
+        @keyframes moku-otp-box-wave {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          45% {
+            transform: translate3d(0, -5px, 0) scale(1.06);
+          }
+          100% {
+            transform: translate3d(0, 0, 0) scale(1);
           }
         }
         @keyframes moku-otp-box-shake {
@@ -583,7 +702,32 @@ export default function OtpVerificationSheet({
             transform: translate3d(0, 0, 0);
           }
         }
+        @keyframes moku-verified-enter {
+          from {
+            opacity: 0;
+            transform: scale(0.94);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes moku-ring-pulse {
+          0% {
+            opacity: 0.7;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.38);
+          }
+        }
+        @keyframes moku-draw-stroke {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
       `}</style>
     </MokuBottomSheet>
   );
-            }
+          }
