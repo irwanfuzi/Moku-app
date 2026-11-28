@@ -25,7 +25,7 @@ import {
 } from "@/lib/cache-buster";
 import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
 import {
-  dismissTopBottomSheet,
+  handleSheetPopState,
   isAnyBottomSheetOpen,
   subscribeBottomSheetLock,
 } from "@/lib/bottom-sheet-lock";
@@ -187,7 +187,6 @@ export default function App() {
       if (locked) {
         setIsSheetLocked(true);
       } else {
-        // Beri jeda 300ms setelah sheet turun agar sisa gesture swipe tidak langsung men-trigger back halaman
         unlockTimerRef.current = window.setTimeout(() => {
           setIsSheetLocked(false);
           unlockTimerRef.current = null;
@@ -204,12 +203,9 @@ export default function App() {
       }
     };
 
-    const handleSystemPopState = (ev: PopStateEvent) => {
-      if (isAnyBottomSheetOpen()) {
-        // Pulihkan entry URL saat ini tanpa merusak tumpukan history di belakangnya
-        window.history.pushState(window.history.state, "", window.location.href);
+    const onWindowPopState = (ev: PopStateEvent) => {
+      if (handleSheetPopState()) {
         ev.stopImmediatePropagation();
-        dismissTopBottomSheet();
       }
     };
 
@@ -218,7 +214,7 @@ export default function App() {
       blockRouterSwipeWhenSheetOpen,
       true
     );
-    window.addEventListener("popstate", handleSystemPopState, true);
+    window.addEventListener("popstate", onWindowPopState, true);
 
     return () => {
       document.removeEventListener(
@@ -226,7 +222,7 @@ export default function App() {
         blockRouterSwipeWhenSheetOpen,
         true
       );
-      window.removeEventListener("popstate", handleSystemPopState, true);
+      window.removeEventListener("popstate", onWindowPopState, true);
     };
   }, []);
 
