@@ -34,6 +34,9 @@ import { useAppLayout } from "@/components/layout/app-shell";
 import CameraCaptureOverlay from "@/components/profile/CameraCaptureOverlay";
 import DeletePhotoConfirmSheet from "@/components/profile/DeletePhotoConfirmSheet";
 import GalleryPickerOverlay from "@/components/profile/GalleryPickerOverlay";
+import MokuBottomSheet, {
+  type MokuBottomSheetRef,
+} from "@/components/ui/MokuBottomSheet";
 import {
   DEFAULT_AVATAR_URL,
   getAccountProfile,
@@ -53,9 +56,6 @@ const DISMISS_VELOCITY_PX_MS = 0.35;
 const SNACKBAR_SHOW_DELAY_MS = 140;
 const SNACKBAR_VISIBLE_MS = 3600;
 const SNACKBAR_EXIT_MS = 420;
-const PHOTO_SHEET_EXIT_MS = 240;
-const SHEET_DISMISS_DRAG_Y_PX = 64;
-const SHEET_DISMISS_VELOCITY_Y = 0.34;
 const DEMO_OTP_CODE = "123456";
 
 const VALID_DOMAINS = new Set([
@@ -212,6 +212,7 @@ export default function EditAccountInfoPage() {
   const ionRouter = useIonRouter();
 
   const initialProfile = useRef(getAccountProfile());
+  const photoSheetRef = useRef<MokuBottomSheetRef>(null);
 
   const [avatarUrl, setAvatarUrl] = useState<string>(
     initialProfile.current.avatarUrl || DEFAULT_AVATAR_URL
@@ -219,10 +220,6 @@ export default function EditAccountInfoPage() {
   const [avatarError, setAvatarError] = useState(false);
 
   const [isPhotoSheetOpen, setIsPhotoSheetOpen] = useState(false);
-  const [isPhotoSheetClosing, setIsPhotoSheetClosing] = useState(false);
-  const [photoSheetDragY, setPhotoSheetDragY] = useState(0);
-  const [isPhotoSheetDragging, setIsPhotoSheetDragging] = useState(false);
-
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -273,20 +270,9 @@ export default function EditAccountInfoPage() {
     lockedHorizontal: false,
   });
 
-  const photoSheetDragRef = useRef<{
-    startY: number;
-    startTime: number;
-    tracking: boolean;
-  }>({
-    startY: 0,
-    startTime: 0,
-    tracking: false,
-  });
-
   const toastDelayRef = useRef<number | null>(null);
   const toastAutoRef = useRef<number | null>(null);
   const toastExitRef = useRef<number | null>(null);
-  const photoSheetExitRef = useRef<number | null>(null);
   const usernameCheckRef = useRef<number | null>(null);
   const emailTypingRef = useRef<number | null>(null);
   const emailOtpNoticeRef = useRef<number | null>(null);
@@ -403,132 +389,24 @@ export default function EditAccountInfoPage() {
 
   const openPhotoSheet = useCallback(() => {
     if (isBusy) return;
-    if (photoSheetExitRef.current !== null) {
-      window.clearTimeout(photoSheetExitRef.current);
-      photoSheetExitRef.current = null;
-    }
     triggerHaptic(8);
-    setPhotoSheetDragY(0);
-    setIsPhotoSheetDragging(false);
-    setIsPhotoSheetClosing(false);
     setIsPhotoSheetOpen(true);
   }, [isBusy]);
 
-  const closePhotoSheet = useCallback(
-    (afterClose?: () => void) => {
-      if (!isPhotoSheetOpen || isPhotoSheetClosing) {
-        afterClose?.();
-        return;
-      }
-      triggerHaptic(6);
-      setIsPhotoSheetDragging(false);
-      setIsPhotoSheetClosing(true);
-      if (photoSheetExitRef.current !== null) {
-        window.clearTimeout(photoSheetExitRef.current);
-      }
-      photoSheetExitRef.current = window.setTimeout(() => {
-        setIsPhotoSheetOpen(false);
-        setIsPhotoSheetClosing(false);
-        setPhotoSheetDragY(0);
-        photoSheetExitRef.current = null;
-        afterClose?.();
-      }, PHOTO_SHEET_EXIT_MS);
-    },
-    [isPhotoSheetClosing, isPhotoSheetOpen]
-  );
-
-  useEffect(() => {
-    if (!isPhotoSheetOpen) return;
-
-    const handleIonBack = (ev: Event) => {
-      if (isPhotoSheetClosing) return;
-      ev.stopImmediatePropagation();
-      const customEv = ev as CustomEvent<{
-        register: (priority: number, handler: () => void) => void;
-      }>;
-      if (customEv.detail?.register) {
-        customEv.detail.register(9998, () => {
-          closePhotoSheet();
-        });
-      } else {
-        closePhotoSheet();
-      }
-    };
-
-    const handleHardwareBack = (ev: Event) => {
-      if (isPhotoSheetClosing) return;
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
-      closePhotoSheet();
-    };
-
-    document.addEventListener("ionBackButton", handleIonBack, true);
-    document.addEventListener("backbutton", handleHardwareBack, true);
-
-    return () => {
-      document.removeEventListener("ionBackButton", handleIonBack, true);
-      document.removeEventListener("backbutton", handleHardwareBack, true);
-    };
-  }, [closePhotoSheet, isPhotoSheetClosing, isPhotoSheetOpen]);
-
-  const handlePhotoSheetTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if (isPhotoSheetClosing || e.touches.length !== 1) return;
-    photoSheetDragRef.current = {
-      startY: e.touches[0].clientY,
-      startTime: performance.now(),
-      tracking: true,
-    };
-  };
-
-  const handlePhotoSheetTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    const state = photoSheetDragRef.current;
-    if (!state.tracking || isPhotoSheetClosing || e.touches.length !== 1) return;
-
-    const dy = e.touches[0].clientY - state.startY;
-    if (dy <= 0) {
-      setPhotoSheetDragY(0);
-      return;
-    }
-
-    if (!isPhotoSheetDragging && dy > 6) {
-      setIsPhotoSheetDragging(true);
-    }
-    setPhotoSheetDragY(dy);
-  };
-
-  const handlePhotoSheetTouchEnd = () => {
-    const state = photoSheetDragRef.current;
-    if (!state.tracking) return;
-    state.tracking = false;
-
-    const elapsed = Math.max(1, performance.now() - state.startTime);
-    const velocity = photoSheetDragY / elapsed;
-
-    if (
-      photoSheetDragY >= SHEET_DISMISS_DRAG_Y_PX ||
-      velocity >= SHEET_DISMISS_VELOCITY_Y
-    ) {
-      closePhotoSheet();
-    } else {
-      setIsPhotoSheetDragging(false);
-      setPhotoSheetDragY(0);
-    }
-  };
-
   const openDeleteConfirmSheet = useCallback(() => {
-    closePhotoSheet(() => {
+    photoSheetRef.current?.closeSheet(() => {
       setIsDeleteConfirmOpen(true);
     });
-  }, [closePhotoSheet]);
+  }, []);
 
   const handleOpenCameraOverlay = () => {
-    closePhotoSheet(() => {
+    photoSheetRef.current?.closeSheet(() => {
       setIsCameraOpen(true);
     });
   };
 
   const handleOpenGalleryOverlay = () => {
-    closePhotoSheet(() => {
+    photoSheetRef.current?.closeSheet(() => {
       setIsGalleryOpen(true);
     });
   };
@@ -559,9 +437,6 @@ export default function EditAccountInfoPage() {
       }
       if (toastExitRef.current !== null) {
         window.clearTimeout(toastExitRef.current);
-      }
-      if (photoSheetExitRef.current !== null) {
-        window.clearTimeout(photoSheetExitRef.current);
       }
       if (usernameCheckRef.current !== null) {
         window.clearTimeout(usernameCheckRef.current);
@@ -976,18 +851,6 @@ export default function EditAccountInfoPage() {
       ? "none"
       : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)",
   };
-
-  const photoSheetTranslateY = isPhotoSheetClosing
-    ? "100%"
-    : photoSheetDragY > 0
-    ? `${photoSheetDragY}px`
-    : "0px";
-
-  const photoSheetBackdropOpacity = isPhotoSheetClosing
-    ? 0
-    : photoSheetDragY > 0
-    ? Math.max(0.25, 1 - photoSheetDragY / 360)
-    : 1;
 
   return (
     <main
@@ -1594,149 +1457,109 @@ export default function EditAccountInfoPage() {
         onConfirmDelete={handleConfirmRemovePhoto}
       />
 
-      {/* Bottom Sheet Ubah Foto Profil (Drag-to-dismiss & Slide-down saat ditutup) */}
-      {isPhotoSheetOpen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            style={MOBILE_SCALE_VARS}
-            className="fixed inset-0 z-[9996] flex items-end justify-center select-none"
+      {/* Bottom Sheet Ubah Foto Profil (MokuBottomSheet: Drag-to-dismiss & Slide-down saat ditutup) */}
+      <MokuBottomSheet
+        ref={photoSheetRef}
+        isOpen={isPhotoSheetOpen}
+        onClose={() => setIsPhotoSheetOpen(false)}
+        ariaLabelledBy="photo-sheet-title"
+        backButtonPriority={9998}
+        zIndexClassName="z-[9996]"
+        bottomPaddingUnits={14}
+      >
+        <div
+          style={{ marginBottom: "calc(12 * var(--u))" }}
+          className="flex items-center justify-between gap-[calc(12*var(--u))]"
+        >
+          <div className="w-[calc(32*var(--u))]" aria-hidden="true" />
+          <h3
+            id="photo-sheet-title"
+            style={{ margin: 0 }}
+            className="text-center font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
           >
-            <div
-              onClick={() => closePhotoSheet()}
-              aria-hidden="true"
-              style={{
-                opacity: photoSheetBackdropOpacity,
-                transition: isPhotoSheetDragging
-                  ? "none"
-                  : `opacity ${PHOTO_SHEET_EXIT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-              }}
-              className="moku-backdrop-in fixed inset-0 bg-black/48"
+            Ubah Foto Profil
+          </h3>
+          <button
+            type="button"
+            onClick={() => photoSheetRef.current?.closeSheet()}
+            aria-label="Tutup"
+            className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F4F4F6] text-[#52525B] transition-[transform,background-color] duration-200 active:scale-90 active:bg-[#E4E4EA]"
+          >
+            <X
+              weight="bold"
+              className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
             />
+          </button>
+        </div>
 
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="photo-sheet-title"
-              onTouchStart={handlePhotoSheetTouchStart}
-              onTouchMove={handlePhotoSheetTouchMove}
-              onTouchEnd={handlePhotoSheetTouchEnd}
-              onTouchCancel={handlePhotoSheetTouchEnd}
-              style={{
-                paddingBottom:
-                  "calc(env(safe-area-inset-bottom) + 14 * var(--u))",
-                transform: `translate3d(0, ${photoSheetTranslateY}, 0)`,
-                transition: isPhotoSheetDragging
-                  ? "none"
-                  : `transform ${PHOTO_SHEET_EXIT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-              }}
-              className="moku-sheet-up relative z-10 w-full max-w-[680px] rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(16*var(--u))] pt-[calc(10*var(--u))]"
-            >
-              <div
-                style={{
-                  width: "calc(40 * var(--u))",
-                  height: "calc(4 * var(--u))",
-                  marginBottom: "calc(12 * var(--u))",
-                }}
-                className="mx-auto rounded-full bg-[#D4D4DC]"
-              />
+        <div className="divide-y divide-[#F0F0F4]">
+          <button
+            type="button"
+            onClick={handleOpenCameraOverlay}
+            className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
+          >
+            <span className="flex items-center gap-[calc(12*var(--u))]">
+              <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <Camera
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                />
+              </span>
+              <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
+                Ambil Foto
+              </span>
+            </span>
+            <CaretRight
+              weight="regular"
+              className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
+            />
+          </button>
 
-              <div
-                style={{ marginBottom: "calc(12 * var(--u))" }}
-                className="flex items-center justify-between gap-[calc(12*var(--u))]"
-              >
-                <div className="w-[calc(32*var(--u))]" aria-hidden="true" />
-                <h3
-                  id="photo-sheet-title"
-                  style={{ margin: 0 }}
-                  className="text-center font-display text-[calc(16*var(--u))] font-bold text-[#171717]"
-                >
-                  Ubah Foto Profil
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => closePhotoSheet()}
-                  aria-label="Tutup"
-                  className="flex h-[calc(32*var(--u))] w-[calc(32*var(--u))] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F4F4F6] text-[#52525B] transition-[transform,background-color] duration-200 active:scale-90 active:bg-[#E4E4EA]"
-                >
-                  <X
-                    weight="bold"
-                    className="h-[calc(15*var(--u))] w-[calc(15*var(--u))]"
-                  />
-                </button>
-              </div>
+          <button
+            type="button"
+            onClick={handleOpenGalleryOverlay}
+            className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
+          >
+            <span className="flex items-center gap-[calc(12*var(--u))]">
+              <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <ImageIcon
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                />
+              </span>
+              <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
+                Pilih dari Galeri
+              </span>
+            </span>
+            <CaretRight
+              weight="regular"
+              className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
+            />
+          </button>
 
-              <div className="divide-y divide-[#F0F0F4]">
-                <button
-                  type="button"
-                  onClick={handleOpenCameraOverlay}
-                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
-                >
-                  <span className="flex items-center gap-[calc(12*var(--u))]">
-                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
-                      <Camera
-                        weight="regular"
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                      />
-                    </span>
-                    <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
-                      Ambil Foto
-                    </span>
-                  </span>
-                  <CaretRight
-                    weight="regular"
-                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenGalleryOverlay}
-                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FAFAFB]"
-                >
-                  <span className="flex items-center gap-[calc(12*var(--u))]">
-                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
-                      <ImageIcon
-                        weight="regular"
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                      />
-                    </span>
-                    <span className="text-[calc(14*var(--u))] font-medium text-[#171717]">
-                      Pilih dari Galeri
-                    </span>
-                  </span>
-                  <CaretRight
-                    weight="regular"
-                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#8A8A96]"
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openDeleteConfirmSheet}
-                  className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FFF9FA]"
-                >
-                  <span className="flex items-center gap-[calc(12*var(--u))]">
-                    <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
-                      <Trash
-                        weight="regular"
-                        className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
-                      />
-                    </span>
-                    <span className="text-[calc(14*var(--u))] font-medium text-[#740319]">
-                      Hapus Foto
-                    </span>
-                  </span>
-                  <CaretRight
-                    weight="regular"
-                    className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#740319]/70"
-                  />
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+          <button
+            type="button"
+            onClick={openDeleteConfirmSheet}
+            className="flex min-h-[calc(54*var(--u))] w-full cursor-pointer items-center justify-between gap-[calc(12*var(--u))] py-[calc(10*var(--u))] text-left transition-colors duration-200 active:bg-[#FFF9FA]"
+          >
+            <span className="flex items-center gap-[calc(12*var(--u))]">
+              <span className="flex h-[calc(38*var(--u))] w-[calc(38*var(--u))] shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] text-[#740319]">
+                <Trash
+                  weight="regular"
+                  className="h-[calc(19*var(--u))] w-[calc(19*var(--u))]"
+                />
+              </span>
+              <span className="text-[calc(14*var(--u))] font-medium text-[#740319]">
+                Hapus Foto
+              </span>
+            </span>
+            <CaretRight
+              weight="regular"
+              className="h-[calc(16*var(--u))] w-[calc(16*var(--u))] text-[#740319]/70"
+            />
+          </button>
+        </div>
+      </MokuBottomSheet>
 
       {otpModal &&
         typeof document !== "undefined" &&
@@ -1909,12 +1732,6 @@ export default function EditAccountInfoPage() {
         .moku-smooth-swap {
           animation: moku-swap-in 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
         }
-        .moku-backdrop-in {
-          animation: moku-fade-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        .moku-sheet-up {
-          animation: moku-sheet-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
         .moku-spin-slow {
           animation: moku-spin 950ms linear infinite;
         }
@@ -1954,22 +1771,6 @@ export default function EditAccountInfoPage() {
           }
           to {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-        @keyframes moku-fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes moku-sheet-in {
-          from {
-            transform: translate3d(0, 100%, 0);
-          }
-          to {
             transform: translate3d(0, 0, 0);
           }
         }
@@ -2018,4 +1819,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-  }
+        }
