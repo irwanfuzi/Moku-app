@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route } from "react-router-dom";
 import {
   IonApp,
@@ -170,6 +170,7 @@ function EditAccountInfoRoute() {
 
 export default function App() {
   const [isSheetLocked, setIsSheetLocked] = useState(false);
+  const unlockTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
@@ -178,7 +179,20 @@ export default function App() {
 
   useEffect(() => {
     return subscribeBottomSheetLock((locked) => {
-      setIsSheetLocked(locked);
+      if (unlockTimerRef.current !== null) {
+        window.clearTimeout(unlockTimerRef.current);
+        unlockTimerRef.current = null;
+      }
+
+      if (locked) {
+        setIsSheetLocked(true);
+      } else {
+        // Beri jeda 300ms setelah sheet turun agar sisa gesture swipe tidak langsung men-trigger back halaman
+        unlockTimerRef.current = window.setTimeout(() => {
+          setIsSheetLocked(false);
+          unlockTimerRef.current = null;
+        }, 300);
+      }
     });
   }, []);
 
@@ -190,9 +204,10 @@ export default function App() {
       }
     };
 
-    // Tangkap Chrome/Android system swipe-back (popstate) sebelum router menggeser halaman
     const handleSystemPopState = (ev: PopStateEvent) => {
       if (isAnyBottomSheetOpen()) {
+        // Pulihkan entry URL saat ini tanpa merusak tumpukan history di belakangnya
+        window.history.pushState(window.history.state, "", window.location.href);
         ev.stopImmediatePropagation();
         dismissTopBottomSheet();
       }
