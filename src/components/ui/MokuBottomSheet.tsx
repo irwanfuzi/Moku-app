@@ -20,7 +20,7 @@ const SHEET_ANIMATION_MS = 280;
 const DISMISS_DRAG_Y_PX = 56;
 const DISMISS_VELOCITY_Y = 0.28;
 const EDGE_BACK_ZONE_PX = 40;
-const EDGE_BACK_TRIGGER_PX = 36;
+const EDGE_BACK_TRIGGER_PX = 32;
 
 export interface MokuBottomSheetRef {
   closeSheet: (afterClose?: () => void) => void;
@@ -137,7 +137,9 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
       }
 
       if (!releaseLockRef.current) {
-        releaseLockRef.current = registerOpenBottomSheet();
+        releaseLockRef.current = registerOpenBottomSheet(() => {
+          dismissSheet();
+        });
       }
 
       isClosingRef.current = false;
@@ -164,7 +166,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
         releaseLockRef.current?.();
         releaseLockRef.current = null;
       };
-    }, [isOpen]);
+    }, [dismissSheet, isOpen]);
 
     useEffect(() => {
       if (!isOpen) return;
