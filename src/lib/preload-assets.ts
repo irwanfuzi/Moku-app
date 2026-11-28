@@ -8,6 +8,7 @@ const MOKU_ASSET_URLS = Object.keys(MOKU_ASSET_MODULES).map((path) =>
   path.replace(/^\/public/, "")
 );
 
+const preloadedImages: HTMLImageElement[] = [];
 let hasPreloaded = false;
 
 export function preloadAllMokuIllustrations(): void {
@@ -18,8 +19,9 @@ export function preloadAllMokuIllustrations(): void {
     const img = new Image();
     img.decoding = "async";
     img.src = url;
+    // Simpan referensi di memori agar tidak langsung di-garbage-collect oleh browser
+    preloadedImages.push(img);
 
-    // Decode piksel di memory cache agar langsung tampil tanpa jeda render
     if (typeof img.decode === "function") {
       img.decode().catch(() => {
         // Abaikan jika browser menunda decode
