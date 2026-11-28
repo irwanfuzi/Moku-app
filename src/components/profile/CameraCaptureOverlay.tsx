@@ -49,6 +49,54 @@ function triggerHaptic(duration = 8) {
   }
 }
 
+async function pickPreferredBackCameraId(): Promise<string | undefined> {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.enumerateDevices
+  ) {
+    return undefined;
+  }
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = devices.filter((d) => d.kind === "videoinput");
+    if (videoInputs.length === 0) return undefined;
+
+    const backCameras = videoInputs.filter((d) => {
+      const label = d.label.toLowerCase();
+      return (
+        label.includes("back") ||
+        label.includes("rear") ||
+        label.includes("environment") ||
+        (!label.includes("front") && !label.includes("user"))
+      );
+    });
+
+    if (backCameras.length === 0) return undefined;
+
+    // Hindari lensa ultra-wide (0.5x), macro, atau telephoto agar memakai lensa utama (1x)
+    const primaryBack = backCameras.find((d) => {
+      const label = d.label.toLowerCase();
+      const isSecondaryLens =
+        label.includes("ultra") ||
+        label.includes("wide") ||
+        label.includes("0.5") ||
+        label.includes("0,5") ||
+        label.includes("macro") ||
+        label.includes("tele") ||
+        label.includes("depth") ||
+        label.includes("bokeh");
+      return !isSecondaryLens;
+    });
+
+    const chosen = primaryBack ?? backCameras[0];
+    return chosen?.deviceId || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export default function CameraCaptureOverlay({
   isOpen,
   onClose,
@@ -186,14 +234,40 @@ export default function CameraCaptureOverlay({
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: targetFacing },
-            width: { ideal: 1280 },
-            height: { ideal: 1280 },
-          },
-          audio: false,
-        });
+        let videoConstraints: MediaTrackConstraints = {
+          facingMode: { ideal: targetFacing },
+          width: { ideal: 1920 },
+          height: { ideal: 1920 },
+        };
+
+        if (targetFacing === "environment") {
+          const mainBackId = await pickPreferredBackCameraId();
+          if (mainBackId) {
+            videoConstraints = {
+              deviceId: { exact: mainBackId },
+              width: { ideal: 1920 },
+              height: { ideal: 1920 },
+            };
+          }
+        }
+
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraints,
+            audio: false,
+          });
+        } catch {
+          // Fallback jika constraint exact deviceId ditolak browser
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: targetFacing },
+              width: { ideal: 1280 },
+              height: { ideal: 1280 },
+            },
+            audio: false,
+          });
+        }
 
         if (isClosingRef.current || sessionId !== cameraSessionRef.current) {
           stream.getTracks().forEach((track) => track.stop());
@@ -201,6 +275,29 @@ export default function CameraCaptureOverlay({
         }
 
         streamRef.current = stream;
+
+        // Aktifkan continuous autofocus & zoom 1x bila didukung
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && videoTrack.getCapabilities && videoTrack.applyConstraints) {
+          const caps = videoTrack.getCapabilities() as MediaTrackCapabilities & {
+            focusMode?: string[];
+            zoom?: { min: number; max: number };
+          };
+          const advancedConstraints: Record<string, unknown>[] = [];
+          if (Array.isArray(caps.focusMode) && caps.focusMode.includes("continuous")) {
+            advancedConstraints.push({ focusMode: "continuous" });
+          }
+          if (caps.zoom && typeof caps.zoom.min === "number" && caps.zoom.min <= 1) {
+            advancedConstraints.push({ zoom: 1 });
+          }
+          if (advancedConstraints.length > 0) {
+            videoTrack
+              .applyConstraints({
+                advanced: advancedConstraints as MediaTrackConstraintSet[],
+              })
+              .catch(() => {});
+          }
+        }
 
         const videoEl = videoRef.current;
         if (videoEl) {
@@ -994,4 +1091,4 @@ export default function CameraCaptureOverlay({
     </div>,
     document.body
   );
-      }
+  }
