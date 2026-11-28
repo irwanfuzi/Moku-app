@@ -25,7 +25,6 @@ import {
 } from "@/lib/cache-buster";
 import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
 import {
-  handleSheetPopState,
   isAnyBottomSheetOpen,
   subscribeBottomSheetLock,
 } from "@/lib/bottom-sheet-lock";
@@ -190,7 +189,7 @@ export default function App() {
         unlockTimerRef.current = window.setTimeout(() => {
           setIsSheetLocked(false);
           unlockTimerRef.current = null;
-        }, 300);
+        }, 320);
       }
     });
   }, []);
@@ -203,18 +202,11 @@ export default function App() {
       }
     };
 
-    const onWindowPopState = (ev: PopStateEvent) => {
-      if (handleSheetPopState()) {
-        ev.stopImmediatePropagation();
-      }
-    };
-
     document.addEventListener(
       "ionSwipeBackStart",
       blockRouterSwipeWhenSheetOpen,
       true
     );
-    window.addEventListener("popstate", onWindowPopState, true);
 
     return () => {
       document.removeEventListener(
@@ -222,7 +214,6 @@ export default function App() {
         blockRouterSwipeWhenSheetOpen,
         true
       );
-      window.removeEventListener("popstate", onWindowPopState, true);
     };
   }, []);
 
