@@ -290,6 +290,12 @@ export default function EditAccountInfoPage() {
 
   const isMobileView = !isReady || isMobile;
   const isBusy = savePhase !== "idle";
+  const isBlockingPageBack =
+    isPhotoSheetOpen ||
+    isDeleteConfirmOpen ||
+    isCameraOpen ||
+    isGalleryOpen ||
+    Boolean(otpModal);
 
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPhone = phone.trim();
@@ -629,13 +635,13 @@ export default function EditAccountInfoPage() {
   }, [ionRouter, navigateWithTransition]);
 
   const triggerBackAction = useCallback(() => {
-    if (isBusy || isNavigatingBackRef.current) return;
+    if (isBusy || isBlockingPageBack || isNavigatingBackRef.current) return;
     isNavigatingBackRef.current = true;
     triggerHaptic(6);
     setIsDragging(false);
     setDragX(0);
     navigateBackSmooth();
-  }, [isBusy, navigateBackSmooth]);
+  }, [isBlockingPageBack, isBusy, navigateBackSmooth]);
 
   useEffect(() => {
     const handleIonBack = (ev: Event) => {
@@ -656,7 +662,14 @@ export default function EditAccountInfoPage() {
   }, [triggerBackAction]);
 
   const handleTouchStart = (e: TouchEvent<HTMLElement>) => {
-    if (isBusy || isNavigatingBackRef.current || e.touches.length !== 1) return;
+    if (
+      isBusy ||
+      isBlockingPageBack ||
+      isNavigatingBackRef.current ||
+      e.touches.length !== 1
+    ) {
+      return;
+    }
     const touch = e.touches[0];
     const vw = window.innerWidth;
     const isFromLeftEdge = touch.clientX <= EDGE_SWIPE_ZONE_PX;
@@ -682,6 +695,7 @@ export default function EditAccountInfoPage() {
     if (
       !state.active ||
       isBusy ||
+      isBlockingPageBack ||
       isNavigatingBackRef.current ||
       e.touches.length !== 1
     ) {
@@ -1457,7 +1471,7 @@ export default function EditAccountInfoPage() {
         onConfirmDelete={handleConfirmRemovePhoto}
       />
 
-      {/* Bottom Sheet Ubah Foto Profil (MokuBottomSheet: Drag-to-dismiss & Slide-down saat ditutup) */}
+      {/* Bottom Sheet Ubah Foto Profil (MokuBottomSheet: Drag-to-dismiss, Slide-down, & Prioritas Swipe-back) */}
       <MokuBottomSheet
         ref={photoSheetRef}
         isOpen={isPhotoSheetOpen}
@@ -1819,4 +1833,4 @@ export default function EditAccountInfoPage() {
       `}</style>
     </main>
   );
-        }
+    }
