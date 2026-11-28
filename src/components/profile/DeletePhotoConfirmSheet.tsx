@@ -222,28 +222,30 @@ export default function DeletePhotoConfirmSheet({
         onTouchCancel={handleTouchEnd}
         style={{
           paddingTop: "calc(12 * var(--u))",
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 22 * var(--u))",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 24 * var(--u))",
           transform: `translate3d(0, ${sheetTranslateY}, 0)`,
           transition: isDragging
             ? "none"
             : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         }}
-        className="moku-del-sheet relative z-10 mx-auto w-full max-w-[680px] rounded-t-[calc(24*var(--u))] bg-white px-[calc(20*var(--u))] text-center shadow-[0_-10px_32px_rgba(0,0,0,0.16)]"
+        className="moku-del-sheet relative z-10 mx-auto flex w-full max-w-[680px] flex-col items-center rounded-t-[calc(28*var(--u))] bg-white px-[calc(18*var(--u))] text-center shadow-[0_-10px_32px_rgba(0,0,0,0.16)]"
       >
+        {/* Drag Handle */}
         <div
           aria-hidden="true"
           style={{
-            width: "calc(44 * var(--u))",
-            height: "calc(4 * var(--u))",
-            marginBottom: "calc(18 * var(--u))",
+            width: "calc(46 * var(--u))",
+            height: "calc(4.5 * var(--u))",
+            marginBottom: "calc(22 * var(--u))",
           }}
-          className="mx-auto rounded-full bg-[#D4D4DC]"
+          className="mx-auto rounded-full bg-[#D1D1D6]"
         />
 
+        {/* Ilustrasi Hapus Foto */}
         <div
           style={{
-            width: "calc(136 * var(--u))",
-            height: "calc(136 * var(--u))",
+            width: "calc(168 * var(--u))",
+            height: "calc(168 * var(--u))",
             marginBottom: "calc(14 * var(--u))",
           }}
           className="mx-auto flex items-center justify-center"
@@ -258,32 +260,37 @@ export default function DeletePhotoConfirmSheet({
           />
         </div>
 
+        {/* Judul */}
         <h3
           id="moku-delete-photo-title"
           style={{
-            margin: 0,
-            marginBottom: "calc(8 * var(--u))",
+            marginTop: 0,
+            marginBottom: "calc(10 * var(--u))",
           }}
-          className="font-display text-[calc(20*var(--u))] font-bold tracking-[-0.015em] text-[#171717]"
+          className="w-full text-center font-display text-[calc(22*var(--u))] font-bold tracking-[-0.02em] text-[#171717]"
         >
           Hapus Foto Profil?
         </h3>
 
+        {/* Deskripsi */}
         <p
           style={{
-            margin: 0,
-            marginBottom: "calc(24 * var(--u))",
+            marginTop: 0,
+            marginBottom: "calc(28 * var(--u))",
           }}
-          className="mx-auto max-w-[290px] text-[calc(14*var(--u))] font-normal leading-relaxed text-[#3F3F46]"
+          className="w-full text-center text-[calc(14.5*var(--u))] font-normal leading-[1.48] text-[#3F3F46]"
         >
-          Foto profil kamu akan dihapus dan diganti dengan avatar default.
+          Foto profil kamu akan dihapus dan
+          <br />
+          diganti dengan avatar default.
         </p>
 
-        <div className="space-y-[calc(12*var(--u))]">
+        {/* Tombol Aksi Kapsul */}
+        <div className="w-full space-y-[calc(12*var(--u))]">
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] bg-[#740319] px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
+            className="flex min-h-[calc(50*var(--u))] w-full cursor-pointer items-center justify-center rounded-full bg-[#740319] px-[calc(20*var(--u))] py-[calc(13*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#5B0213]"
           >
             Hapus Foto
           </button>
@@ -291,7 +298,7 @@ export default function DeletePhotoConfirmSheet({
           <button
             type="button"
             onClick={() => dismissSheet()}
-            className="flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center rounded-[calc(12*var(--u))] border-[1.5px] border-[#740319] bg-white px-[calc(16*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(14.5*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
+            className="flex min-h-[calc(50*var(--u))] w-full cursor-pointer items-center justify-center rounded-full border-[1.5px] border-[#740319] bg-white px-[calc(20*var(--u))] py-[calc(13*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-[#740319] transition-[transform,background-color] duration-200 active:scale-[0.985] active:bg-[#FDF2F4]"
           >
             Batal
           </button>
