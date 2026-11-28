@@ -23,6 +23,7 @@ import {
   bindAutoUpdateOnResume,
   enforceLatestBuildCache,
 } from "@/lib/cache-buster";
+import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
 
 const seamlessSlideAnimation = (_baseEl: HTMLElement, opts?: any) => {
   const duration = 400;
@@ -166,6 +167,22 @@ export default function App() {
   useEffect(() => {
     enforceLatestBuildCache().catch(() => {});
     return bindAutoUpdateOnResume();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => {
+        preloadAllMokuIllustrations();
+      });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timer = window.setTimeout(() => {
+      preloadAllMokuIllustrations();
+    }, 150);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
