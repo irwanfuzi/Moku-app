@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -35,6 +36,7 @@ interface OtpVerificationSheetProps {
 }
 
 const OTP_LENGTH = 6;
+const AUTO_VERIFY_DELAY_MS = 140;
 
 function triggerLightHaptic(pattern: number | number[] = 4) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -58,6 +60,7 @@ export default function OtpVerificationSheet({
   const sheetRef = useRef<MokuBottomSheetRef>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const successTimerRef = useRef<number | null>(null);
+  const autoVerifyTimerRef = useRef<number | null>(null);
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [activeIndex, setActiveIndex] = useState(0);
@@ -66,8 +69,16 @@ export default function OtpVerificationSheet({
   const [shakeNonce, setShakeNonce] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const clearAutoVerifyTimer = useCallback(() => {
+    if (autoVerifyTimerRef.current !== null) {
+      window.clearTimeout(autoVerifyTimerRef.current);
+      autoVerifyTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (!isOpen) {
+      clearAutoVerifyTimer();
       if (successTimerRef.current !== null) {
         window.clearTimeout(successTimerRef.current);
         successTimerRef.current = null;
@@ -87,17 +98,59 @@ export default function OtpVerificationSheet({
 
     return () => {
       window.clearTimeout(focusTimer);
+      clearAutoVerifyTimer();
       if (successTimerRef.current !== null) {
         window.clearTimeout(successTimerRef.current);
         successTimerRef.current = null;
       }
     };
-  }, [isOpen, destination, target]);
+  }, [clearAutoVerifyTimer, isOpen, destination, target]);
 
   const triggerBoxPop = (idx: number) => {
     setPoppedIndex(idx);
     setPopNonce((n) => n + 1);
   };
+
+  const executeVerify = useCallback(
+    (codeToVerify: string) => {
+      if (isSuccess) return;
+      clearAutoVerifyTimer();
+
+      const valid = onVerify(codeToVerify);
+      if (!valid) {
+        triggerLightHaptic([12, 24, 12]);
+        setShakeNonce((n) => n + 1);
+        return;
+      }
+
+      // Tutup keyboard dulu, tampilkan feedback sukses singkat, lalu luncurkan sheet turun ke bawah
+      inputRefs.current.forEach((el) => el?.blur());
+      setIsSuccess(true);
+      triggerLightHaptic([8, 25, 10]);
+
+      successTimerRef.current = window.setTimeout(() => {
+        successTimerRef.current = null;
+        sheetRef.current?.closeSheet(() => {
+          onVerifySuccess();
+        });
+      }, 220);
+    },
+    [clearAutoVerifyTimer, isSuccess, onVerify, onVerifySuccess]
+  );
+
+  const scheduleAutoVerifyIfComplete = useCallback(
+    (nextDigits: string[]) => {
+      clearAutoVerifyTimer();
+      const joined = nextDigits.join("");
+      if (joined.length === OTP_LENGTH && nextDigits.every((d) => d !== "")) {
+        autoVerifyTimerRef.current = window.setTimeout(() => {
+          autoVerifyTimerRef.current = null;
+          executeVerify(joined);
+        }, AUTO_VERIFY_DELAY_MS);
+      }
+    },
+    [clearAutoVerifyTimer, executeVerify]
+  );
 
   const handleDigitChange = (index: number, rawValue: string) => {
     if (isSuccess) return;
@@ -105,6 +158,7 @@ export default function OtpVerificationSheet({
     onClearError?.();
 
     if (!clean) {
+      clearAutoVerifyTimer();
       const next = [...digits];
       next[index] = "";
       setDigits(next);
@@ -126,6 +180,7 @@ export default function OtpVerificationSheet({
       const nextFocus = Math.min(index + clean.length, OTP_LENGTH - 1);
       setActiveIndex(nextFocus);
       inputRefs.current[nextFocus]?.focus();
+      scheduleAutoVerifyIfComplete(next);
       return;
     }
 
@@ -139,12 +194,15 @@ export default function OtpVerificationSheet({
       setActiveIndex(index + 1);
       inputRefs.current[index + 1]?.focus();
     }
+
+    scheduleAutoVerifyIfComplete(next);
   };
 
   const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
     if (isSuccess) return;
 
     if (e.key === "Backspace") {
+      clearAutoVerifyTimer();
       onClearError?.();
       triggerLightHaptic(3);
       if (digits[index]) {
@@ -166,7 +224,7 @@ export default function OtpVerificationSheet({
       inputRefs.current[index + 1]?.focus();
     } else if (e.key === "Enter") {
       e.preventDefault();
-      handleSubmitVerify();
+      executeVerify(digits.join(""));
     }
   };
 
@@ -191,35 +249,12 @@ export default function OtpVerificationSheet({
     triggerBoxPop(nextFocus);
     setActiveIndex(nextFocus);
     inputRefs.current[nextFocus]?.focus();
-  };
-
-  const handleSubmitVerify = () => {
-    if (isSuccess) return;
-
-    const code = digits.join("");
-    const valid = onVerify(code);
-
-    if (!valid) {
-      triggerLightHaptic([12, 24, 12]);
-      setShakeNonce((n) => n + 1);
-      return;
-    }
-
-    // Tutup keyboard dulu, tampilkan feedback sukses singkat, lalu luncurkan sheet turun ke bawah
-    inputRefs.current.forEach((el) => el?.blur());
-    setIsSuccess(true);
-    triggerLightHaptic([8, 25, 10]);
-
-    successTimerRef.current = window.setTimeout(() => {
-      successTimerRef.current = null;
-      sheetRef.current?.closeSheet(() => {
-        onVerifySuccess();
-      });
-    }, 220);
+    scheduleAutoVerifyIfComplete(next);
   };
 
   const handleChangeDestination = () => {
     if (isSuccess) return;
+    clearAutoVerifyTimer();
     inputRefs.current.forEach((el) => el?.blur());
     sheetRef.current?.closeSheet(() => {
       onChangeDestination();
@@ -228,6 +263,7 @@ export default function OtpVerificationSheet({
 
   const isEmail = target === "email";
   const formattedDestination = isEmail ? destination : `+62 ${destination}`;
+  const isComplete = digits.every((d) => d !== "");
 
   return (
     <MokuBottomSheet
@@ -317,8 +353,9 @@ export default function OtpVerificationSheet({
                 onPaste={handlePaste}
                 style={{
                   height: "calc(54 * var(--u))",
+                  fontSize: "clamp(24px, calc(28 * var(--u)), 30px)",
                 }}
-                className={`w-full rounded-[calc(12*var(--u))] border text-center font-display text-[calc(24*var(--u))] font-bold leading-none caret-[#740319] outline-none transition-[border-color,background-color,box-shadow,transform,color] duration-200 ${
+                className={`w-full rounded-[calc(12*var(--u))] border text-center font-display font-bold leading-none caret-[#740319] outline-none transition-[border-color,background-color,box-shadow,transform,color] duration-200 ${
                   isPopping && hasValue ? "moku-otp-pop" : ""
                 } ${
                   isSuccess
@@ -351,16 +388,18 @@ export default function OtpVerificationSheet({
           </p>
         )}
 
-        {/* Tombol Verifikasi */}
+        {/* Tombol Verifikasi (Fallback jika user ingin submit manual) */}
         <button
           type="button"
-          onClick={handleSubmitVerify}
-          disabled={isSuccess}
+          onClick={() => executeVerify(digits.join(""))}
+          disabled={isSuccess || !isComplete}
           style={{ marginTop: "calc(22 * var(--u))" }}
-          className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color] duration-220 active:scale-[0.985] ${
+          className={`flex min-h-[calc(48*var(--u))] w-full cursor-pointer items-center justify-center gap-[calc(8*var(--u))] rounded-[calc(12*var(--u))] px-[calc(18*var(--u))] py-[calc(12*var(--u))] font-display text-[calc(15*var(--u))] font-semibold text-white transition-[transform,background-color,opacity] duration-220 active:scale-[0.985] disabled:cursor-not-allowed ${
             isSuccess
               ? "bg-[#15803D]"
-              : "bg-[#740319] active:bg-[#5B0213]"
+              : isComplete
+              ? "bg-[#740319] active:bg-[#5B0213]"
+              : "bg-[#740319]/45"
           }`}
         >
           {isSuccess ? (
@@ -488,4 +527,4 @@ export default function OtpVerificationSheet({
       `}</style>
     </MokuBottomSheet>
   );
-}
+                }
