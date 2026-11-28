@@ -16,7 +16,8 @@ const MOBILE_SCALE_VARS = {
   "--u": "clamp(0.72px, min(0.2427vw, 0.1094dvh), 1.06px)",
 } as CSSProperties;
 
-const SHEET_ANIMATION_MS = 280;
+const SHEET_ANIMATION_MS = 420;
+const SHEET_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const DISMISS_DRAG_Y_PX = 56;
 const DISMISS_VELOCITY_Y = 0.28;
 const EDGE_BACK_ZONE_PX = 40;
@@ -372,13 +373,14 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
           ...MOBILE_SCALE_VARS,
           touchAction: "none",
           paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+          transition: `padding-bottom 320ms ${SHEET_EASING}`,
         }}
         onContextMenu={(e) => e.preventDefault()}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none transition-[padding-bottom] duration-200 ease-out`}
+        className={`fixed inset-0 ${zIndexClassName} flex flex-col justify-end select-none`}
       >
         <div
           onClick={() => {
@@ -389,7 +391,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
             opacity: backdropOpacity,
             transition: isDragging
               ? "none"
-              : `opacity ${SHEET_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              : `opacity ${SHEET_ANIMATION_MS}ms ${SHEET_EASING}`,
           }}
           className="fixed inset-0 bg-black/48"
         />
@@ -413,7 +415,7 @@ const MokuBottomSheet = forwardRef<MokuBottomSheetRef, MokuBottomSheetProps>(
             transform: `translate3d(0, ${sheetTranslateY}, 0)`,
             transition: isDragging
               ? "none"
-              : `transform ${SHEET_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              : `transform ${SHEET_ANIMATION_MS}ms ${SHEET_EASING}`,
             willChange: "transform",
           }}
           className={`relative z-10 mx-auto flex w-full max-w-[680px] flex-col rounded-t-[calc(24*var(--u))] border-t border-[#EFEFF3] bg-white px-[calc(18*var(--u))] ${sheetClassName}`}
