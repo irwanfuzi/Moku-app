@@ -35,8 +35,10 @@ export default function DeletePhotoConfirmSheet({
       ariaLabelledBy="moku-delete-photo-title"
       backButtonPriority={9999}
       zIndexClassName="z-[9998]"
+      bottomPaddingUnits={18}
       contentClassName="flex flex-col items-center text-center"
     >
+      {/* Ilustrasi Hapus Foto */}
       <div
         style={{
           width: "calc(216 * var(--u))",
@@ -55,6 +57,7 @@ export default function DeletePhotoConfirmSheet({
         />
       </div>
 
+      {/* Judul */}
       <h3
         id="moku-delete-photo-title"
         style={{
@@ -66,6 +69,7 @@ export default function DeletePhotoConfirmSheet({
         Hapus Foto Profil?
       </h3>
 
+      {/* Deskripsi */}
       <p
         style={{
           marginTop: 0,
@@ -78,6 +82,7 @@ export default function DeletePhotoConfirmSheet({
         diganti dengan avatar default.
       </p>
 
+      {/* Tombol Aksi */}
       <div className="w-full space-y-[calc(10*var(--u))]">
         <button
           type="button"
