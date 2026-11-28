@@ -25,6 +25,7 @@ import {
 } from "@/lib/cache-buster";
 import { preloadAllMokuIllustrations } from "@/lib/preload-assets";
 import {
+  dismissTopBottomSheet,
   isAnyBottomSheetOpen,
   subscribeBottomSheetLock,
 } from "@/lib/bottom-sheet-lock";
@@ -189,17 +190,28 @@ export default function App() {
       }
     };
 
+    // Tangkap Chrome/Android system swipe-back (popstate) sebelum router menggeser halaman
+    const handleSystemPopState = (ev: PopStateEvent) => {
+      if (isAnyBottomSheetOpen()) {
+        ev.stopImmediatePropagation();
+        dismissTopBottomSheet();
+      }
+    };
+
     document.addEventListener(
       "ionSwipeBackStart",
       blockRouterSwipeWhenSheetOpen,
       true
     );
+    window.addEventListener("popstate", handleSystemPopState, true);
+
     return () => {
       document.removeEventListener(
         "ionSwipeBackStart",
         blockRouterSwipeWhenSheetOpen,
         true
       );
+      window.removeEventListener("popstate", handleSystemPopState, true);
     };
   }, []);
 
